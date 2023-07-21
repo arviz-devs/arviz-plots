@@ -1,0 +1,113 @@
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "arviz-plots"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [
+    {name = "ArviZ team", email = "arvizdevs@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Framework :: Matplotlib",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dynamic = ["version", "description"]
+dependencies = [
+  "arviz-base",
+  "arviz-stats @ git+https://github.com/arviz-devs/arviz-stats",
+]
+
+[tool.flit.module]
+name = "arviz_plots"
+
+[project.urls]
+source = "https://github.com/arviz-devs/arviz-plots"
+tracker = "https://github.com/arviz-devs/arviz-plots/issues"
+documentation = "https://arviz-plots.readthedocs.io"
+funding = "https://opencollective.com/arviz"
+
+[project.optional-dependencies]
+test = [
+    "hypothesis",
+    "pytest",
+    "pytest-cov",
+]
+doc = [
+    "furo",
+    "myst-parser[linkify]",
+    "myst-nb",
+    "sphinx-copybutton",
+    "numpydoc",
+    "sphinx>=5",
+    "sphinx-design",
+    "jupyter-sphinx",
+    "h5netcdf"
+]
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+include_trailing_comma = true
+use_parentheses = true
+multi_line_output = 3
+line_length = 100
+skip = [
+    "src/arviz_plots/__init__.py"
+]
+
+[tool.pydocstyle]
+convention = "numpy"
+match_dir = "^(?!docs|.tox).*"
+
+[tool.mypy]
+python_version = "3.10"
+warn_redundant_casts = true
+warn_unused_configs = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+show_column_numbers = true
+
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_reexport = true
+
+# More strict checks for library code
+[[tool.mypy.overrides]]
+module = "arviz_plots"
+disallow_untyped_defs = true
+
+# Ignore certain missing imports
+# [[tool.mypy.overrides]]
+# module = "thirdparty.*"
+# ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.run]
+source = ["arviz_plots"]
