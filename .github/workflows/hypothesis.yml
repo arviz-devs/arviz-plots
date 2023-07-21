@@ -1,0 +1,37 @@
+name: Run extended tests with hypothesis
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  hypothesis_testing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install arviz-plots
+        run: |
+          python -m pip install ".[test]"
+      - name: Execute tests
+        run: |
+          pytest --hypothesis-profile chron -k hypothesis
+          echo "DATE=$(date +'%Y-%m-%d %H:%M %z')" >> ${GITHUB_ENV}
+      - name: Comment on issue if failed
+        if: failure()
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: 43
+          body: |
+            The extended tests with hypothesis failed.
+
+            * Branch: ${{ github.ref_name }}
+            * Date: ${{ env.DATE }}
+
+            See [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details on which tests failed and why.
