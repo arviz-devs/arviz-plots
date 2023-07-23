@@ -44,6 +44,8 @@ test = [
     "hypothesis",
     "pytest",
     "pytest-cov",
+    "matplotlib",
+    "bokeh"
 ]
 doc = [
     "furo",

@@ -13,6 +13,7 @@ class UnsetDefault:
 
 unset = UnsetDefault()
 
+# object creation and i/o
 def show(chart):
     _show(chart)
 
@@ -78,11 +79,13 @@ def create_plotting_grid(
     return layout, figures.squeeze() if squeeze else figures
 
 
+# helper functions
 def _filter_kwargs(kwargs, artist_kws):
     kwargs = {key: value for key, value in kwargs.items() if value is not unset}
     return {**artist_kws, **kwargs}
 
 
+# "geoms"
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
@@ -123,7 +126,18 @@ def text(x, y, string, target, *, size=unset, alpha=unset, color=unset, vertical
     kwargs = {"text_font_size": size, "alpha": alpha, "color": color, "text_align": horizontal_align, "text_baseline": vertical_align}
     return target.text(np.atleast_1d(x), np.atleast_1d(y), np.atleast_1d(string), **_filter_kwargs(kwargs, artist_kws))
 
+# general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     kwargs = {"text_font_size": size, "text_color": color}
     target.title = Title(text=string, **_filter_kwargs(kwargs, artist_kws))
     return target.title
+
+def remove_axis(target, axis="y"):
+    if axis == "y":
+        target.yaxis.visible = False
+    elif axis == "x":
+        target.yaxis.visible = False
+    elif axis == "both":
+        target.axis.visible=False
+    else:
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
