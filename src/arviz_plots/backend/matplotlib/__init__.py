@@ -1,26 +1,35 @@
-"""Matplotlib interface layer."""
+"""Matplotlib interface layer.
 
+Notes
+-----
+Sets ``zorder`` of all non-text "geoms" to ``2`` so that elements plotted later
+on are on top of previous ones.
+"""
 import warnings
 from typing import Any, Dict
 
 from matplotlib.cbook import normalize_kwargs
 from matplotlib.collections import PathCollection
 from matplotlib.lines import Line2D
-from matplotlib.pyplot import subplots, show as _show
+from matplotlib.pyplot import show as _show
+from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
-__all__ = ["create_plotting_grid", "line", "scatter", "text"]
+__all__ = ["create_plotting_grid", "line", "scatter", "text", "title", "remove_axis"]
 
 
 class UnsetDefault:
-    pass
+    """Specific class to indicate an aesthetic hasn't been set."""
 
 
 unset = UnsetDefault()
 
+
 # object creation and i/o
 def show(chart):  # pylint: disable=unused-argument
+    """Show all existing matplotlib figures."""
     _show()
+
 
 def create_plotting_grid(
     number,
@@ -31,7 +40,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     subplot_kws=None,
-    **kwargs
+    **kwargs,
 ):
     """Create a chart with a grid of plotting targets in it.
 
@@ -41,13 +50,13 @@ def create_plotting_grid(
         Number of axes required
     rows, cols : int
         Number of rows and columns.
-    squeeze : bool
-    sharex, sharey : bool
+    squeeze : bool, default True
+    sharex, sharey : bool, default False
     polar : bool
     subplot_kws : bool
-        Passed to `~matplotlib.pyplot.subplots` as ``subplot_kw``
+        Passed to :func:`~matplotlib.pyplot.subplots` as ``subplot_kw``
     **kwargs: dict, optional
-        Passed to `~matplotlib.pyplot.subplots`
+        Passed to :func:`~matplotlib.pyplot.subplots`
 
     Returns
     -------
@@ -72,6 +81,11 @@ def create_plotting_grid(
 
 # helper functions
 def _filter_kwargs(kwargs, artist, artist_kws):
+    """Filter a dictionary to remove all keys whose values are ``unset``.
+
+    It also normalizes the matplotlib arguments and aliases to avoid clashing
+    of aliases with their extended version.
+    """
     kwargs = {key: value for key, value in kwargs.items() if value is not unset}
     if artist is not None:
         artist_kws = normalize_kwargs(artist_kws.copy(), artist)
@@ -80,6 +94,7 @@ def _filter_kwargs(kwargs, artist, artist_kws):
 
 # "geoms"
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to matplotlib for a line plot."""
     artist_kws.setdefault("zorder", 2)
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
@@ -97,33 +112,67 @@ def scatter(
     facecolor=unset,
     edgecolor=unset,
     width=unset,
-    **artist_kws
+    **artist_kws,
 ):
+    """Interface to matplotlib for a scatter plot."""
     artist_kws.setdefault("zorder", 2)
     if color is not unset:
         if facecolor is not unset or edgecolor is not unset:
-            warnings.warn("color overrides facecolor and edgecolor. Their values will be ignored.", UserWarning)
+            warnings.warn(
+                "color overrides facecolor and edgecolor. Their values will be ignored.",
+                UserWarning,
+            )
         facecolor = color
         edgecolor = color
     kwargs = {
-        "s": size, "marker": marker, "alpha": alpha, "c": facecolor, "edgecolors": edgecolor, "linewidths": width
+        "s": size,
+        "marker": marker,
+        "alpha": alpha,
+        "c": facecolor,
+        "edgecolors": edgecolor,
+        "linewidths": width,
     }
     return target.scatter(x, y, **_filter_kwargs(kwargs, None, artist_kws))
 
 
-def text(x, y, string, target, *, size=unset, alpha=unset, color=unset, vertical_align=unset, horizontal_align=unset, **artist_kws):
-    kwargs = {"fontsize": size, "alpha": alpha, "color": color, "horizontalalignment": horizontal_align, "verticalalignment": vertical_align}
+def text(
+    x,
+    y,
+    string,
+    target,
+    *,
+    size=unset,
+    alpha=unset,
+    color=unset,
+    vertical_align=unset,
+    horizontal_align=unset,
+    **artist_kws,
+):
+    """Interface to matplotlib for adding text to a plot."""
+    kwargs = {
+        "fontsize": size,
+        "alpha": alpha,
+        "color": color,
+        "horizontalalignment": horizontal_align,
+        "verticalalignment": vertical_align,
+    }
     return target.text(x, y, string, **_filter_kwargs(kwargs, Text, artist_kws))
+
 
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to matplotlib for adding a title to a plot."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_title(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
+
 def remove_axis(target, axis="y"):
+    """Interface to matplotlib for removing axis from a plot."""
     target.spines["top"].set_visible(False)
     target.spines["right"].set_visible(False)
-    target.tick_params(axis="both", which="both", left=axis == "x", top=False, right=False, bottom=axis == "y")
+    target.tick_params(
+        axis="both", which="both", left=axis == "x", top=False, right=False, bottom=axis == "y"
+    )
     if axis == "y":
         target.yaxis.set_ticks([])
         target.spines["left"].set_visible(False)

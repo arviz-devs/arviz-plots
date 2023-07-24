@@ -3,15 +3,37 @@ from importlib import import_module
 
 import numpy as np
 import xarray as xr
+from arviz_base import rcParams
 from arviz_base.sel_utils import xarray_sel_iter
 from datatree import DataTree
 
 
 def sel_subset(sel, present_dims):
+    """Subset a dictionary of dim: coord values.
+
+    The returned dictionary contains only the keys that
+    are present to ensure we can use the output of this function
+    to index correctly using ``.sel``.
+    """
     return {key: value for key, value in sel.items() if key in present_dims}
 
 
 def subset_ds(ds, var_name, sel):
+    """Subset a dataset in a non-idempotent way.
+
+    Get a subset indicated by `sel` of the variable in the Dataset indicated by `var_names`
+    and return a scalar or a numpy array. This helps with getting the proper matplotlib
+    axes or bokeh figure, converting the DataArrays we get from ``.sel`` to arrays to ensure
+    compatibility with all plotting backends... without having to add ``.item()`` or ``.value``
+    constantly in the code. It also calls :func:`sel_subset` to ensure ``.sel`` doesn't error.
+    The variable name indicated by `var_name` needs to exist though.
+
+    Parameters
+    ----------
+    ds : Dataset
+    var_name : hashable
+    sel : mapping
+    """
     subset_dict = sel_subset(sel, ds[var_name].dims)
     if subset_dict:
         out = ds[var_name].sel(subset_dict)
@@ -23,6 +45,11 @@ def subset_ds(ds, var_name, sel):
 
 
 def _process_facet_dims(data, facet_dims):
+    """Process facetting dimensions.
+
+    It takes into account the ``__variable__`` "special dimension name" and helps find out
+    how many plots are needed.
+    """
     if not facet_dims:
         return 1, {}
     facets_per_var = {}
@@ -47,8 +74,46 @@ def _process_facet_dims(data, facet_dims):
 
 
 class PlotMuseum:
-    def __init__(self, data, viz_dt, aes_dt=None, aes=None, backend=None, **kwargs):
+    """Low level base class for plotting with xarray Datasets.
 
+    This class instatiates a chart with multiple plots in it and provides methods to loop
+    over these plots and the provided data syncing each plot and data subset to
+    user given aesthetics.
+
+    Attributes
+    ----------
+    viz : DataTree
+        DataTree containing all the visual elements in the plot. If relevant, the variable
+        names in the input Dataset are set as groups, otherwise everything is stored in the
+        home group. The `viz` DataTree always contains the following variables:
+
+        * ``chart`` (always on the home group): Scalar object containing the highest level
+          plotting structure. i.e. the matplotlib figure or the bokeh layout
+        * ``plot``: Plot objects in this *chart*. These are the {term}`target` where *artists*
+          are added.
+        * ``row``: Integer row indicator
+        * ``col``: Integer column indicator
+
+        Plus all the artists that have been added to the plot and stored.
+        See :meth:`arviz_plots.PlotMuseum.map` for more details.
+    aes : DataTree
+        DataTree containing the aesthetic mappings. A subset of the input dataset
+        ``ds[var_name].sel(**kwargs)`` has associated the aesthetics in
+        ``aes[var_name].sel(**kwargs)``. Note that here `aes` is a DataTree so
+        ``aes[var_name]`` is a Dataset. There can be as many aesthetic mappings as desired,
+        and they can map to any dimensions *independently from one another* and independently
+        between variables even.
+    """
+
+    def __init__(self, data, viz_dt, aes_dt=None, aes=None, backend=None, **kwargs):
+        """Initialize a PlotMuseum.
+
+        It should not be called directly.
+
+        See Also
+        --------
+        arviz_plots.PlotMuseum.grid, arviz_plots.PlotMuseum.wrap
+        """
         self._data = data
         self.viz = viz_dt
         self.aes = aes_dt
@@ -64,6 +129,7 @@ class PlotMuseum:
 
     @property
     def data(self):
+        """Dataset to be used as data for plotting."""
         return self._data
 
     @data.setter
@@ -71,14 +137,15 @@ class PlotMuseum:
         # might want/be possible to make some checks on the data before setting it
         self._data = value
 
-
     def show(self):
+        """Call the backend function to show this *chart*."""
         if "chart" not in self.viz:
             raise ValueError("No plot found to be shown")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         plot_bknd.show(self.viz["chart"].item())
 
     def generate_aes_dt(self, aes, **kwargs):
+        """Generate the aesthetic mappings."""
         if aes is None:
             aes = {}
         self._aes = aes
@@ -107,11 +174,13 @@ class PlotMuseum:
 
     @property
     def base_loop_dims(self):
+        """Dimensions over which one should always loop over when using this PlotMuseum."""
         if "plot" in self.viz.data_vars:
             return set(self.viz["plot"].dims)
         return set(dim for da in self.viz.children.values() for dim in da["plot"].dims)
 
     def get_viz(self, var_name):
+        """Get the ``viz`` Dataset that corresponds to the provided variable."""
         return self.viz if "plot" in self.viz.data_vars else self.viz[var_name]
 
     @classmethod
@@ -120,14 +189,27 @@ class PlotMuseum:
         data,
         cols=None,
         col_wrap=4,
-        backend="matplotlib",
+        backend=None,
         plot_grid_kws=None,
         **kwargs,
     ):
+        """Instatiate a PlotMuseum and generate a plot grid iterating over subsets and wrapping.
+
+        Parameters
+        ----------
+        data : Dataset
+        cols : iterable of hashable, optional
+        col_wrap : int, default 4
+        backend : str, optional
+        plot_grid_kws : mapping, optional
+        **kwargs : mapping, optional
+        """
         if cols is None:
             cols = []
         if plot_grid_kws is None:
             plot_grid_kws = {}
+        if backend is None:
+            backend = rcParams["plot.backend"]
 
         n_plots, plots_per_var = _process_facet_dims(data, cols)
         if n_plots <= col_wrap:
@@ -196,16 +278,28 @@ class PlotMuseum:
         data,
         cols=None,
         rows=None,
-        backend="matplotlib",
+        backend=None,
         plot_grid_kws=None,
         **kwargs,
     ):
+        """Instatiate a PlotMuseum and generate a plot grid iterating over rows and cols.
+
+        Parameters
+        ----------
+        data : Dataset
+        cols, rows : hashable, optional
+        backend : str, optional
+        plot_grid_kws : mapping, optional
+        **kwargs : mapping, optional
+        """
         if cols is None:
             cols = []
         if rows is None:
             rows = []
         if plot_grid_kws is None:
             plot_grid_kws = {}
+        if backend is None:
+            backend = rcParams["plot.backend"]
         repeated_dims = [col for col in cols if col in rows]
         if repeated_dims:
             raise ValueError("The same dimension can't be used for both cols and rows.")
@@ -273,6 +367,7 @@ class PlotMuseum:
         return cls(data, viz_dt, backend=backend, **kwargs)
 
     def update_aes(self, ignore_aes=frozenset(), coords=None):
+        """Update list of aesthetics after indicating ignores and extra subsets."""
         if coords is None:
             coords = {}
         aes = [aes_key for aes_key in self._aes.keys() if aes_key not in ignore_aes]
@@ -281,15 +376,14 @@ class PlotMuseum:
         return aes, all_loop_dims
 
     def allocate_artist(self, fun_label, data, all_loop_dims, artist_dims=None):
+        """Allocate an artist in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
         for var_name, da in data.items():
             if var_name not in self.viz.children:
                 DataTree(name=var_name, parent=self.viz)
             inherited_dims = [dim for dim in da.dims if dim in all_loop_dims]
-            artist_shape = [da.sizes[dim] for dim in inherited_dims] + list(
-                artist_dims.values()
-            )
+            artist_shape = [da.sizes[dim] for dim in inherited_dims] + list(artist_dims.values())
             all_artist_dims = inherited_dims + list(artist_dims.keys())
 
             self.viz[var_name][fun_label] = xr.DataArray(
@@ -297,16 +391,20 @@ class PlotMuseum:
                 dims=all_artist_dims,
                 coords={dim: data[dim] for dim in inherited_dims},
             )
+
     def get_target(self, var_name, selection):
+        """Get the target that corresponds to the given variable and selection."""
         return subset_ds(self.get_viz(var_name), "plot", selection)
 
     def get_aes_kwargs(self, aes, var_name, selection):
+        """Get the aesthetic mappings for the given variable and selection as a dictionary."""
         aes_kwargs = {}
         for aes_key in aes:
             aes_kwargs[aes_key] = subset_ds(self.aes[var_name], aes_key, selection)
         return aes_kwargs
 
     def plot_iterator(self, ignore_aes=frozenset(), coords=None):
+        """Build a generator to loop over all plots in the PlotMuseum."""
         if coords is None:
             coords = {}
         if self.aes is None:
@@ -334,6 +432,7 @@ class PlotMuseum:
         artist_dims=None,
         **kwargs,
     ):
+        """Apply the given plotting function to all plots with the corresponding aesthetics."""
         if coords is None:
             coords = {}
         if self.aes is None:
@@ -348,7 +447,9 @@ class PlotMuseum:
             data, skip_dims={dim for dim in data.dims if dim not in all_loop_dims}
         )
         if store_artist:
-            self.allocate_artist(fun_label=fun_label, data=data, all_loop_dims=all_loop_dims, artist_dims=artist_dims)
+            self.allocate_artist(
+                fun_label=fun_label, data=data, all_loop_dims=all_loop_dims, artist_dims=artist_dims
+            )
 
         for var_name, sel, isel in plotters:
             da = data[var_name].sel(sel)
@@ -366,4 +467,5 @@ class PlotMuseum:
                 self.viz[var_name][fun_label].loc[sel] = aux_artist
 
     def add_legend(self, artist, **kwargs):
+        """Add a legend for the given artist/aesthetic to the plot."""
         raise NotImplementedError()

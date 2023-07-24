@@ -1,13 +1,26 @@
 """Posterior plot code."""
 from importlib import import_module
 
-from arviz_base.labels import BaseLabeller
-from arviz_base import rcParams
 import arviz_stats  # pylint: disable=unused-import
+from arviz_base import rcParams
+from arviz_base.labels import BaseLabeller
 
 from ..plot_collection import PlotMuseum
 
-def plot_posterior(ds, coords=None, labeller=None, sample_dims=None, kind=None, point_estimate=None, ci_kind=None, ci_prob=None, plot_museum=None, backend=None):
+
+def plot_posterior(
+    ds,
+    coords=None,
+    labeller=None,
+    sample_dims=None,
+    kind=None,
+    point_estimate=None,
+    ci_kind=None,
+    ci_prob=None,
+    plot_museum=None,
+    backend=None,
+):
+    """Plot 1D marginal densities in the style of John K. Kruschke’s book."""
     if coords is None:
         coords = {}
     if sample_dims is None:
@@ -26,7 +39,7 @@ def plot_posterior(ds, coords=None, labeller=None, sample_dims=None, kind=None, 
             backend = rcParams["plot.backend"]
         plot_museum = PlotMuseum.wrap(
             ds,
-            cols=["__variable__"]+[dim for dim in ds.dims if dim not in sample_dims],
+            cols=["__variable__"] + [dim for dim in ds.dims if dim not in sample_dims],
             col_wrap=6,
             backend=backend,
         )
@@ -52,7 +65,6 @@ def plot_posterior(ds, coords=None, labeller=None, sample_dims=None, kind=None, 
     else:
         raise NotImplementedError("coming soon")
 
-
     # plotting
     plot_backend = import_module(f"arviz_plots.backend.{plot_museum.backend}")
     _, all_loop_dims = plot_museum.update_aes()
@@ -66,10 +78,7 @@ def plot_posterior(ds, coords=None, labeller=None, sample_dims=None, kind=None, 
         ci_iter = ci[var_name].sel(sel)
         point_iter = point[var_name].sel(sel)
         plot_museum.viz[var_name]["kde"].loc[sel] = plot_backend.line(
-            density_iter.sel(plot_axis="x"),
-            density_iter.sel(plot_axis="y"),
-            target,
-            **aes_kwargs
+            density_iter.sel(plot_axis="x"), density_iter.sel(plot_axis="y"), target, **aes_kwargs
         )
         plot_museum.viz[var_name]["credible_interval"].loc[sel] = plot_backend.line(
             ci_iter, [0, 0], target, **aes_kwargs, color="grey"
@@ -78,9 +87,17 @@ def plot_posterior(ds, coords=None, labeller=None, sample_dims=None, kind=None, 
             point_iter, 0, target, **aes_kwargs, color="darkcyan"
         )
         plot_museum.viz[var_name]["point_estimate_text"].loc[sel] = plot_backend.text(
-            point_iter, 0.03 * density_iter.sel(plot_axis="y").max(), f"{point_iter.item():.3g} {point_estimate}", target, **aes_kwargs, color="darkcyan", horizontal_align="center"
+            point_iter,
+            0.03 * density_iter.sel(plot_axis="y").max(),
+            f"{point_iter.item():.3g} {point_estimate}",
+            target,
+            **aes_kwargs,
+            color="darkcyan",
+            horizontal_align="center",
         )
-        plot_museum.viz[var_name]["title"].loc[sel] = plot_backend.title(labeller.make_label_vert(var_name, sel, isel), target, **aes_kwargs, color="black")
+        plot_museum.viz[var_name]["title"].loc[sel] = plot_backend.title(
+            labeller.make_label_vert(var_name, sel, isel), target, **aes_kwargs, color="black"
+        )
         plot_backend.remove_axis(target, axis="y")
 
     return plot_museum

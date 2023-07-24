@@ -4,17 +4,22 @@ import warnings
 import numpy as np
 from bokeh.layouts import gridplot
 from bokeh.models import Title
-from bokeh.plotting import figure, show as _show
+from bokeh.plotting import figure
+from bokeh.plotting import show as _show
+
+__all__ = ["create_plotting_grid", "line", "scatter", "text", "title", "remove_axis"]
 
 
 class UnsetDefault:
-    pass
+    """Specific class to indicate an aesthetic hasn't been set."""
 
 
 unset = UnsetDefault()
 
+
 # object creation and i/o
 def show(chart):
+    """Show the provided bokeh layout."""
     _show(chart)
 
 
@@ -37,13 +42,13 @@ def create_plotting_grid(
         Number of axes required
     rows, cols : int
         Number of rows and columns.
-    squeeze : bool
-    sharex, sharey : bool
+    squeeze : bool, default True
+    sharex, sharey : bool, default False
     polar : bool
     subplot_kws : bool
-        Passed to `~bokeh.plotting.figure`
+        Passed to :func:`~bokeh.plotting.figure`
     **kwargs: dict, optional
-        Passed to `~bokeh.layouts.gridplot`
+        Passed to :func:`~bokeh.layouts.gridplot`
 
     Returns
     -------
@@ -81,12 +86,14 @@ def create_plotting_grid(
 
 # helper functions
 def _filter_kwargs(kwargs, artist_kws):
+    """Filter a dictionary to remove all keys whose values are ``unset``."""
     kwargs = {key: value for key, value in kwargs.items() if value is not unset}
     return {**artist_kws, **kwargs}
 
 
 # "geoms"
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to bokeh for a line plot."""
     kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
@@ -105,9 +112,13 @@ def scatter(
     edgewidth=unset,
     **artist_kws,
 ):
+    """Interface to bokeh for a scatter plot."""
     if color is not unset:
         if facecolor is not unset or edgecolor is not unset:
-            warnings.warn("color overrides facecolor and edgecolor. Their values will be ignored.", UserWarning)
+            warnings.warn(
+                "color overrides facecolor and edgecolor. Their values will be ignored.",
+                UserWarning,
+            )
         facecolor = color
         edgecolor = color
     kwargs = {
@@ -122,22 +133,50 @@ def scatter(
     return target.scatter(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 
-def text(x, y, string, target, *, size=unset, alpha=unset, color=unset, vertical_align=unset, horizontal_align=unset, **artist_kws):
-    kwargs = {"text_font_size": size, "alpha": alpha, "color": color, "text_align": horizontal_align, "text_baseline": vertical_align}
-    return target.text(np.atleast_1d(x), np.atleast_1d(y), np.atleast_1d(string), **_filter_kwargs(kwargs, artist_kws))
+def text(
+    x,
+    y,
+    string,
+    target,
+    *,
+    size=unset,
+    alpha=unset,
+    color=unset,
+    vertical_align=unset,
+    horizontal_align=unset,
+    **artist_kws,
+):
+    """Interface to bokeh for adding text to a plot."""
+    kwargs = {
+        "text_font_size": size,
+        "alpha": alpha,
+        "color": color,
+        "text_align": horizontal_align,
+        "text_baseline": vertical_align,
+    }
+    return target.text(
+        np.atleast_1d(x),
+        np.atleast_1d(y),
+        np.atleast_1d(string),
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+
 
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to bokeh for adding a title to a plot."""
     kwargs = {"text_font_size": size, "text_color": color}
     target.title = Title(text=string, **_filter_kwargs(kwargs, artist_kws))
     return target.title
 
+
 def remove_axis(target, axis="y"):
+    """Interface to bokeh for removing axis from a plot."""
     if axis == "y":
         target.yaxis.visible = False
     elif axis == "x":
         target.yaxis.visible = False
     elif axis == "both":
-        target.axis.visible=False
+        target.axis.visible = False
     else:
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")

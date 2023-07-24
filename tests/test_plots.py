@@ -1,10 +1,11 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test batteries-included plots."""
-import pytest
 import numpy as np
+import pytest
 import xarray as xr
 
 from arviz_plots import plot_posterior
+
 
 @pytest.fixture(scope="module")
 def data(seed=31):
