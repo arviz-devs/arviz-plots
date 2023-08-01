@@ -23,8 +23,10 @@ tutorials/plot_posterior_examples
 
 ```{toctree}
 :hidden:
+:caption: Reference
 
 api/index
+glossary
 ```
 
 ```{toctree}

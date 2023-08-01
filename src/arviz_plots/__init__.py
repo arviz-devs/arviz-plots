@@ -7,5 +7,5 @@ _log = logging.getLogger(__name__)
 
 from ._version import __version__
 
-from .plot_collection import PlotMuseum
+from .plot_collection import PlotCollection
 from .plots import *

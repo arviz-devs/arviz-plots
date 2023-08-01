@@ -73,7 +73,7 @@ def _process_facet_dims(data, facet_dims):
     return n_facets, facets_per_var
 
 
-class PlotMuseum:
+class PlotCollection:
     """Low level base class for plotting with xarray Datasets.
 
     This class instatiates a chart with multiple plots in it and provides methods to loop
@@ -95,7 +95,7 @@ class PlotMuseum:
         * ``col``: Integer column indicator
 
         Plus all the artists that have been added to the plot and stored.
-        See :meth:`arviz_plots.PlotMuseum.map` for more details.
+        See :meth:`arviz_plots.PlotCollection.map` for more details.
     aes : DataTree
         DataTree containing the aesthetic mappings. A subset of the input dataset
         ``ds[var_name].sel(**kwargs)`` has associated the aesthetics in
@@ -106,13 +106,14 @@ class PlotMuseum:
     """
 
     def __init__(self, data, viz_dt, aes_dt=None, aes=None, backend=None, **kwargs):
-        """Initialize a PlotMuseum.
+        """Initialize a PlotCollection.
 
-        It should not be called directly.
+        It is not recommeded to initialize ``PlotCollection`` objects directly.
+        Use its classmethods instead.
 
         See Also
         --------
-        arviz_plots.PlotMuseum.grid, arviz_plots.PlotMuseum.wrap
+        arviz_plots.PlotCollection.grid, arviz_plots.PlotCollection.wrap
         """
         self._data = data
         self.viz = viz_dt
@@ -136,6 +137,11 @@ class PlotMuseum:
     def data(self, value):
         # might want/be possible to make some checks on the data before setting it
         self._data = value
+
+    @property
+    def aes_set(self):
+        """Return all aesthetics with a mapping defined as a set."""
+        return set(self._aes.keys())
 
     def show(self):
         """Call the backend function to show this *chart*."""
@@ -174,7 +180,7 @@ class PlotMuseum:
 
     @property
     def base_loop_dims(self):
-        """Dimensions over which one should always loop over when using this PlotMuseum."""
+        """Dimensions over which one should always loop over when using this PlotCollection."""
         if "plot" in self.viz.data_vars:
             return set(self.viz["plot"].dims)
         return set(dim for da in self.viz.children.values() for dim in da["plot"].dims)
@@ -193,7 +199,7 @@ class PlotMuseum:
         plot_grid_kws=None,
         **kwargs,
     ):
-        """Instatiate a PlotMuseum and generate a plot grid iterating over subsets and wrapping.
+        """Instatiate a PlotCollection and generate a plot grid iterating over subsets and wrapping.
 
         Parameters
         ----------
@@ -282,7 +288,7 @@ class PlotMuseum:
         plot_grid_kws=None,
         **kwargs,
     ):
-        """Instatiate a PlotMuseum and generate a plot grid iterating over rows and cols.
+        """Instatiate a PlotCollection and generate a plot grid iterating over rows and cols.
 
         Parameters
         ----------
@@ -404,7 +410,7 @@ class PlotMuseum:
         return aes_kwargs
 
     def plot_iterator(self, ignore_aes=frozenset(), coords=None):
-        """Build a generator to loop over all plots in the PlotMuseum."""
+        """Build a generator to loop over all plots in the PlotCollection."""
         if coords is None:
             coords = {}
         if self.aes is None:

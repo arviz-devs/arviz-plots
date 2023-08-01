@@ -1,87 +1,81 @@
 """Posterior plot code."""
-from importlib import import_module
-
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotMuseum
-
-
-## probably move to utils.py or similar ##
-def filter_aes(pc, aes_map, artist, sample_dims):
-    artist_aes = aes_map.get(artist, {})
-    pc_aes = pc._aes.keys()
-    ignore_aes = set(pc_aes).difference(artist_aes)
-    _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)
-    artist_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
-    return artist_dims, artist_aes, ignore_aes
-
-
-### to go in visuals module ###
-def line_xy(da, target, backend, **kwargs):
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.line(da.sel(plot_axis="x"), da.sel(plot_axis="y"), target, **kwargs)
-
-
-def line_x(da, target, backend, y=None, **kwargs):
-    if y is None:
-        y = xr.zeros_like(da)
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.line(da, y, target, **kwargs)
-
-
-def scatter_x(da, target, backend, y=None, **kwargs):
-    if y is None:
-        y = xr.zeros_like(da)
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.scatter(da, y, target, **kwargs)
-
-
-def point_estimate_text(da, target, backend, *, point_estimate, y=None, **kwargs):
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.text(
-        da.sel(plot_axis="x"),
-        da.sel(plot_axis="y"),
-        f"{da.sel(plot_axis='x').item():.3g} {point_estimate}",
-        target,
-        **kwargs,
-    )
-
-
-def labelled_title(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.title(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
-
-
-def remove_axis(da, target, backend, **kwargs):
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    plot_backend.remove_axis(target, **kwargs)
-
-
-### end of visuals ###
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import filter_aes
+from arviz_plots.visuals import (
+    labelled_title,
+    line_x,
+    line_xy,
+    point_estimate_text,
+    remove_axis,
+    scatter_x,
+)
 
 
 def plot_posterior(
     ds,
-    coords=None,
-    labeller=None,
     sample_dims=None,
     kind=None,
     point_estimate=None,
     ci_kind=None,
     ci_prob=None,
-    plot_museum=None,
+    plot_collection=None,
     backend=None,
+    labeller=None,
     aes_map=None,
     plot_kwargs=None,
     stats_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot 1D marginal densities in the style of John K. Kruschke’s book."""
-    if coords is None:
-        coords = {}
+    """Plot 1D marginal densities in the style of John K. Kruschke’s book.
+
+    Parameters
+    ----------
+    ds : Dataset
+        Input data
+    sample_dims : iterable, optional
+        Dimensions to reduce unless mapped to an aesthetic.
+        Defaults to ``rcParams["data.sample_dims"]``
+    kind : {"kde", "hist", "dot", "ecdf"}, optional
+        How to represent the marginal density.
+    point_estimate : {"mean", "median", "mode"}, optional
+        Which point estimate to plot as a point
+    ci_kind : {"eti", "hdi"}, optional
+        Which credible interval to use.
+    ci_prob : float, optional
+    plot_collection : PlotCollection, optional
+    backend : {"matplotlib", "bokeh"}, optional
+    labeller : labeller, optional
+    aes_map : mapping, optional
+        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Defaults to only mapping properties to the density representation.
+    plot_kwargs : mapping, optional
+        Valid keys are:
+
+        * kde -> passed to visuals.line_xy
+        * credible_interval -> passed to visuals.line_x
+        * point_estimate -> passed to visuals.scatter_x
+        * point_estimate_text -> passed to visuals.point_estimate_text
+        * title -> passed to visuals.labelled_title
+
+    stats_kwargs : mapping
+        Valid keys are:
+
+        * density -> passed to kde
+        * credible_interval -> passed to eti or hdi
+        * point_estimate -> passed to mean, median or mode
+
+    pc_kwargs : mapping
+        Passed to :class:`arviz_plots.PlotCollection`
+
+    Returns
+    -------
+    PlotCollection
+    """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if ci_prob is None:
@@ -102,49 +96,51 @@ def plot_posterior(
     if stats_kwargs is None:
         stats_kwargs = {}
 
-    if plot_museum is None:
+    if plot_collection is None:
         if backend is None:
             backend = rcParams["plot.backend"]
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
             "cols", ["__variable__"] + [dim for dim in ds.dims if dim not in sample_dims]
         )
-        plot_museum = PlotMuseum.wrap(
+        plot_collection = PlotCollection.wrap(
             ds,
             backend=backend,
             **pc_kwargs,
         )
 
     if aes_map is None:
-        aes_map = {"kde": plot_museum._aes.keys()}
+        aes_map = {"kde": plot_collection.aes_set}
     if labeller is None:
         labeller = BaseLabeller()
 
     # density
-    density_dims, _, density_ignore = filter_aes(plot_museum, aes_map, "kde", sample_dims)
+    density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, "kde", sample_dims)
     if kind == "kde":
         density = ds.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
-        plot_museum.map(
+        plot_collection.map(
             line_xy, "kde", data=density, ignore_aes=density_ignore, **plot_kwargs.get("kde", {})
         )
     else:
         raise NotImplementedError("coming soon")
 
     # credible interval
-    ci_dims, ci_aes, ci_ignore = filter_aes(plot_museum, aes_map, "ci", sample_dims)
+    ci_dims, ci_aes, ci_ignore = filter_aes(
+        plot_collection, aes_map, "credible_interval", sample_dims
+    )
     if ci_kind == "eti":
-        ci = ds.azstats.eti(prob=ci_prob, dims=ci_dims, **stats_kwargs.get("ci", {}))
+        ci = ds.azstats.eti(prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {}))
     elif ci_kind == "hdi":
-        ci = ds.azstats.hdi(prob=ci_prob, dims=ci_dims, **stats_kwargs.get("ci", {}))
+        ci = ds.azstats.hdi(prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {}))
     else:
         raise NotImplementedError("coming soon")
-    ci_kwargs = plot_kwargs.get("ci", {}).copy()
+    ci_kwargs = plot_kwargs.get("credible_interval", {}).copy()
     if "color" not in ci_aes:
         ci_kwargs.setdefault("color", "gray")
-    plot_museum.map(line_x, "ci", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
+    plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
 
     # point estimate
-    pe_dims, pe_aes, pe_ignore = filter_aes(plot_museum, aes_map, "point_estimate", sample_dims)
+    pe_dims, pe_aes, pe_ignore = filter_aes(plot_collection, aes_map, "point_estimate", sample_dims)
     if point_estimate == "median":
         point = ds.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
     elif point_estimate == "mean":
@@ -158,7 +154,7 @@ def plot_posterior(
     pe_kwargs = plot_kwargs.get("point_estimate", {}).copy()
     if "color" not in pe_aes:
         pe_kwargs.setdefault("color", "darkcyan")
-    plot_museum.map(
+    plot_collection.map(
         scatter_x,
         "point_estimate",
         data=point.sel(plot_axis="x"),
@@ -169,7 +165,8 @@ def plot_posterior(
     if "color" not in pe_aes:
         pet_kwargs.setdefault("color", "darkcyan")
     pet_kwargs.setdefault("horizontal_align", "center")
-    plot_museum.map(
+    pet_kwargs.setdefault("point_label", "x")
+    plot_collection.map(
         point_estimate_text,
         "point_estimate_text",
         data=point,
@@ -179,11 +176,11 @@ def plot_posterior(
     )
 
     # aesthetics
-    _, title_aes, title_ignore = filter_aes(plot_museum, aes_map, "title", sample_dims)
+    _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
     title_kwargs = plot_kwargs.get("title", {}).copy()
     if "color" not in title_aes:
         title_kwargs.setdefault("color", "black")
-    plot_museum.map(
+    plot_collection.map(
         labelled_title,
         "title",
         ignore_aes=title_ignore,
@@ -191,6 +188,8 @@ def plot_posterior(
         labeller=labeller,
         **title_kwargs,
     )
-    plot_museum.map(remove_axis, store_artist=False, axis="y", ignore_aes=plot_museum._aes.keys())
+    plot_collection.map(
+        remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
+    )
 
-    return plot_museum
+    return plot_collection
