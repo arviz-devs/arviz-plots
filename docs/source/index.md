@@ -1,37 +1,25 @@
-# arviz-base
-ArviZ base features and converters.
+# arviz-plots
+ArviZ plotting elements and batteries included plots.
 
 ## Installation
 
 It currenly can only be installed with pip and from GitHub:
 
 ```bash
-pip install arviz-base @ git+https://github.com/arviz-devs/arviz-base
+pip install arviz-plots @ git+https://github.com/arviz-devs/arviz-plots
 ```
 
-Note that `arviz-base` is a minimal package, which only depends on
-xarray (and xarray-datatree), numpy and typing-extensions.
-Everything else (netcdf, zarr, dask...) are optional dependencies.
-This allows installing only those that are needed, e.g. if you
-only plan to use zarr, there is no need to install netcdf.
+Note that `arviz-plots` is a minimal package, which only depends on
+xarray (and xarray-datatree), numpy, arviz-base and arviz-stats.
+Plotting backends have to be added manually.
 
-For convenience, some bundles are available to be installed with:
+```{toctree}
+:hidden:
+:caption: Example notebooks
 
-```bash
-pip install "arviz-base[<option>] @ git+https://github.com/arviz-devs/arviz-base"
+tutorials/intro_to_plotmuseum
+tutorials/plot_posterior_examples
 ```
-
-where `<option>` can be one of:
-
-* `netcdf`
-* `h5netcdf`
-* `zarr`
-* `test` (for developers)
-* `doc` (for developers)
-
-
-You can install multiple bundles of optional dependencies separating them with commas.
-Thus, to install all user facing optional dependencies you should use `xarray-einstats[einops,numba]`
 
 ```{toctree}
 :hidden:
