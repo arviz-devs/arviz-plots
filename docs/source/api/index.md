@@ -16,5 +16,9 @@
 .. autosummary::
    :toctree: generated/
 
-   arviz_plots.PlotMuseum
+   arviz_plots.PlotCollection
+   arviz_plots.PlotCollection.grid
+   arviz_plots.PlotCollection.map
+   arviz_plots.PlotCollection.show
+   arviz_plots.PlotCollection.wrap
 ```
