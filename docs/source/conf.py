@@ -44,6 +44,7 @@ exclude_patterns = [
     ".DS_Store",
     ".ipynb_checkpoints",
 ]
+suppress_warnings = ["mystnb.unknown_mime_type"]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 default_role = "autolink"
