@@ -4,7 +4,9 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from arviz_plots import plot_posterior
+from arviz_base import load_arviz_data
+
+from arviz_plots import plot_posterior, plot_trace
 
 
 @pytest.fixture(scope="module")
@@ -17,6 +19,11 @@ def data(seed=31):
         {"mu": (["chain", "draw"], mu), "theta": (["chain", "draw", "hierarchy"], theta)},
     )
 
+@pytest.fixture(scope="module")
+def datatree():
+    return load_arviz_data("centered_eight")
+
+
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh"])
 class TestPlots:
@@ -28,3 +35,10 @@ class TestPlots:
         assert "hierarchy" in pc.viz["theta"].dims
         assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
         assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+
+
+    def test_plot_trace(self, datatree, backend):
+        pc = plot_trace(datatree, var_names=["mu"], backend=backend)
+        assert "/mu" in pc.aes.groups
+        assert "/theta" not in pc.aes.groups
+        assert pc.viz["mu"].trace.shape == (4,)
