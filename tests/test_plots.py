@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 import xarray as xr
-
 from arviz_base import convert_to_datatree
 
 from arviz_plots import plot_posterior, plot_trace
@@ -18,6 +17,7 @@ def data(seed=31):
     return xr.Dataset(
         {"mu": (["chain", "draw"], mu), "theta": (["chain", "draw", "hierarchy"], theta)},
     )
+
 
 @pytest.fixture(scope="module")
 def datatree(seed=31):
@@ -38,7 +38,6 @@ class TestPlots:
         assert "hierarchy" in pc.viz["theta"].dims
         assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
         assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
-
 
     def test_plot_trace(self, datatree, backend):
         pc = plot_trace(datatree, var_names=["mu"], backend=backend)

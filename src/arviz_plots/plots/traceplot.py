@@ -5,10 +5,7 @@ from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes
-from arviz_plots.visuals import (
-    labelled_title,
-    line,
-)
+from arviz_plots.visuals import labelled_title, line
 
 
 def plot_trace(
@@ -67,7 +64,7 @@ def plot_trace(
     else:
         pc_kwargs = pc_kwargs.copy()
 
-    var_names =  _var_names(var_names, dt.posterior.ds, filter_vars)
+    var_names = _var_names(var_names, dt.posterior.ds, filter_vars)
 
     if var_names is None:
         posterior = dt.posterior.ds
@@ -113,6 +110,5 @@ def plot_trace(
         labeller=labeller,
         **title_kwargs,
     )
-
 
     return plot_collection
