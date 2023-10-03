@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from arviz_base import load_arviz_data
+from arviz_base import convert_to_datatree
 
 from arviz_plots import plot_posterior, plot_trace
 
@@ -20,9 +20,12 @@ def data(seed=31):
     )
 
 @pytest.fixture(scope="module")
-def datatree():
-    return load_arviz_data("centered_eight")
+def datatree(seed=31):
+    rng = np.random.default_rng(seed)
+    mu = rng.normal(size=(4, 100))
+    theta = rng.normal(size=(4, 100, 7))
 
+    return convert_to_datatree({"mu": mu, "theta": theta})
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh"])
