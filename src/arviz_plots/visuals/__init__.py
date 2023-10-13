@@ -2,6 +2,7 @@
 """ArviZ intermediate level visuals."""
 from importlib import import_module
 
+import numpy as np
 import xarray as xr
 
 
@@ -20,6 +21,13 @@ def line_x(da, target, backend, y=None, **kwargs):
         y = xr.zeros_like(da)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.line(da, y, target, **kwargs)
+
+
+def line(da, target, backend, **kwargs):
+    """Plot a line along the y axis with x being the range of len(y)."""
+    values = da.values.flatten()
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.line(np.arange(len(values)), values, target, **kwargs)
 
 
 def scatter_x(da, target, backend, y=None, **kwargs):
