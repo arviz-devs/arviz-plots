@@ -7,6 +7,7 @@
    :toctree: generated/
 
    arviz_plots.plot_posterior
+   arviz_plots.plot_trace
 ```
 
 
