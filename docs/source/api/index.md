@@ -6,7 +6,7 @@
 .. autosummary::
    :toctree: generated/
 
-   arviz_plots.plot_posterior
+   arviz_plots.plot_dist
    arviz_plots.plot_trace
 ```
 
