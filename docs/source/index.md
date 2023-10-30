@@ -18,7 +18,7 @@ Plotting backends have to be added manually.
 :caption: Example notebooks
 
 tutorials/intro_to_plotmuseum
-tutorials/plot_posterior_examples
+tutorials/plot_dist_examples
 ```
 
 ```{toctree}

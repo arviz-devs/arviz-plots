@@ -1,8 +1,9 @@
-"""Posterior plot code."""
+"""dist plot code."""
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes
@@ -16,8 +17,11 @@ from arviz_plots.visuals import (
 )
 
 
-def plot_posterior(
-    ds,
+def plot_dist(
+    dt,
+    var_names=None,
+    filter_vars=None,
+    group="posterior",
     sample_dims=None,
     kind=None,
     point_estimate=None,
@@ -35,8 +39,17 @@ def plot_posterior(
 
     Parameters
     ----------
-    ds : Dataset
+    dt : DataTree
         Input data
+    var_names: str or list of str, optional
+        One or more variables to be plotted.
+        Prefix the variables by ~ when you want to exclude them from the plot.
+    filter_vars: {None, “like”, “regex”}, optional, default=None
+        If None (default), interpret var_names as the real variables names.
+        If “like”, interpret var_names as substrings of the real variables names.
+        If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str, optional
+        Group to be plotted. Defaults to ``posterior``
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -96,15 +109,21 @@ def plot_posterior(
     if stats_kwargs is None:
         stats_kwargs = {}
 
+    distribution = dt[group].ds
+    var_names = _var_names(var_names, distribution, filter_vars)
+
+    if var_names is not None:
+        distribution = dt[group].ds[var_names]
+
     if plot_collection is None:
         if backend is None:
             backend = rcParams["plot.backend"]
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
-            "cols", ["__variable__"] + [dim for dim in ds.dims if dim not in sample_dims]
+            "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
         )
         plot_collection = PlotCollection.wrap(
-            ds,
+            distribution,
             backend=backend,
             **pc_kwargs,
         )
@@ -117,7 +136,7 @@ def plot_posterior(
     # density
     density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, "kde", sample_dims)
     if kind == "kde":
-        density = ds.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
+        density = distribution.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
         plot_collection.map(
             line_xy, "kde", data=density, ignore_aes=density_ignore, **plot_kwargs.get("kde", {})
         )
@@ -129,9 +148,13 @@ def plot_posterior(
         plot_collection, aes_map, "credible_interval", sample_dims
     )
     if ci_kind == "eti":
-        ci = ds.azstats.eti(prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {}))
+        ci = distribution.azstats.eti(
+            prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+        )
     elif ci_kind == "hdi":
-        ci = ds.azstats.hdi(prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {}))
+        ci = distribution.azstats.hdi(
+            prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+        )
     else:
         raise NotImplementedError("coming soon")
     ci_kwargs = plot_kwargs.get("credible_interval", {}).copy()
@@ -142,9 +165,9 @@ def plot_posterior(
     # point estimate
     pe_dims, pe_aes, pe_ignore = filter_aes(plot_collection, aes_map, "point_estimate", sample_dims)
     if point_estimate == "median":
-        point = ds.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        point = distribution.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
     elif point_estimate == "mean":
-        point = ds.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
     else:
         raise NotImplementedError("coming soon")
     point_density_diff = [dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims]
