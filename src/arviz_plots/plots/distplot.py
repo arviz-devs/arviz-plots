@@ -8,6 +8,7 @@ from arviz_base.utils import _var_names
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes
 from arviz_plots.visuals import (
+    ecdf_line,
     labelled_title,
     line_x,
     line_xy,
@@ -89,6 +90,9 @@ def plot_dist(
     -------
     PlotCollection
     """
+    if ci_kind not in ["hdi", "eti", None]:
+        raise ValueError("ci_kind must be either 'hdi' or 'eti'")
+
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if ci_prob is None:
@@ -129,17 +133,30 @@ def plot_dist(
         )
 
     if aes_map is None:
-        aes_map = {"kde": plot_collection.aes_set}
+        aes_map = {kind: plot_collection.aes_set}
     if labeller is None:
         labeller = BaseLabeller()
 
     # density
-    density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, "kde", sample_dims)
+    density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
+
     if kind == "kde":
         density = distribution.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
         plot_collection.map(
             line_xy, "kde", data=density, ignore_aes=density_ignore, **plot_kwargs.get("kde", {})
         )
+
+    elif kind == "ecdf":
+        density = distribution.azstats.ecdf(dims=density_dims, **stats_kwargs.get("density", {}))
+        print(density)
+        plot_collection.map(
+            ecdf_line,
+            "ecdf",
+            data=density,
+            ignore_aes=density_ignore,
+            **plot_kwargs.get("ecdf", {}),
+        )
+
     else:
         raise NotImplementedError("coming soon")
 
@@ -155,8 +172,7 @@ def plot_dist(
         ci = distribution.azstats.hdi(
             prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
         )
-    else:
-        raise NotImplementedError("coming soon")
+
     ci_kwargs = plot_kwargs.get("credible_interval", {}).copy()
     if "color" not in ci_aes:
         ci_kwargs.setdefault("color", "gray")
@@ -170,13 +186,20 @@ def plot_dist(
         point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
     else:
         raise NotImplementedError("coming soon")
+
     point_density_diff = [dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims]
-    point_y = 0.03 * density.sel(plot_axis="y", drop=True).max(dim=["kde_dim"] + point_density_diff)
+    if kind == "kde":
+        point_y = 0.03 * density.sel(plot_axis="y", drop=True).max(
+            dim=["kde_dim"] + point_density_diff
+        )
+    elif kind == "ecdf":
+        point_y = 0.03 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
+
     point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
 
     pe_kwargs = plot_kwargs.get("point_estimate", {}).copy()
     if "color" not in pe_aes:
-        pe_kwargs.setdefault("color", "darkcyan")
+        pe_kwargs.setdefault("color", "gray")
     plot_collection.map(
         scatter_x,
         "point_estimate",
@@ -186,7 +209,7 @@ def plot_dist(
     )
     pet_kwargs = plot_kwargs.get("point_estimate_text", {}).copy()
     if "color" not in pe_aes:
-        pet_kwargs.setdefault("color", "darkcyan")
+        pet_kwargs.setdefault("color", "gray")
     pet_kwargs.setdefault("horizontal_align", "center")
     pet_kwargs.setdefault("point_label", "x")
     plot_collection.map(
