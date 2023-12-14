@@ -5,7 +5,7 @@ from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes
-from arviz_plots.visuals import labelled_x, labelled_y, remove_ticks, line, line_xy, ecdf_line
+from arviz_plots.visuals import ecdf_line, labelled_x, labelled_y, line, line_xy, remove_ticks
 
 
 def plot_trace_dens(
@@ -95,10 +95,10 @@ def plot_trace_dens(
         if compact:
             pc_kwargs.setdefault("rows", ["__variable__"])
         else:
-            pc_kwargs.setdefault("rows", ["__variable__"]+aux_dim_list)
+            pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
 
         plot_collection = PlotCollection.grid(
-           posterior.expand_dims(__column__=2),
+            posterior.expand_dims(__column__=2),
             backend=backend,
             **pc_kwargs,
         )
@@ -110,66 +110,94 @@ def plot_trace_dens(
         labeller = BaseLabeller()
 
     density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
-    
+
     if compact:
         density_dims += aux_dim_list
-
 
     # dens
     if kind == "kde":
         density = posterior.azstats.kde(dims=density_dims, **dens_kwargs.get("density", {}))
         plot_collection.map(
-            line_xy, "dens", data=density, ignore_aes=density_ignore, coords={"__column__": 0}, **trace_kwargs.get("dens", {})
+            line_xy,
+            "dens",
+            data=density,
+            ignore_aes=density_ignore,
+            coords={"__column__": 0},
+            **trace_kwargs.get("dens", {}),
         )
 
     elif kind == "ecdf":
         density = posterior.azstats.ecdf(dims=density_dims, **dens_kwargs.get("density", {}))
         plot_collection.map(
-            ecdf_line, "dens", data=density, ignore_aes=density_ignore, coords={"__column__": 0}, **trace_kwargs.get("dens", {}),
+            ecdf_line,
+            "dens",
+            data=density,
+            ignore_aes=density_ignore,
+            coords={"__column__": 0},
+            **trace_kwargs.get("dens", {}),
         )
 
     # trace
     plot_collection.map(
-        line, "trace", data=posterior, ignore_aes=density_ignore,  coords={"__column__": 1}, **trace_kwargs.get("trace", {})
+        line,
+        "trace",
+        data=posterior,
+        ignore_aes=density_ignore,
+        coords={"__column__": 1},
+        **trace_kwargs.get("trace", {}),
     )
 
-    # aesthetics
+    ## aesthetics
+    # Remove yticks, only for KDEs
     if kind == "kde":
         _, _, yticks_dens_ignore = filter_aes(plot_collection, aes_map, "yticks_dens", sample_dims)
-        yticks_dens_kwargs = dens_kwargs.get("yticks_dens", {}).copy()
 
         plot_collection.map(
             remove_ticks,
             "yticks_dens",
             ignore_aes=yticks_dens_ignore,
             coords={"__column__": 0},
-            **yticks_dens_kwargs,
         )
-
-    _, xlabel_dens_aes, xlabel_dens_ignore = filter_aes(plot_collection, aes_map, "xlabel_dens", sample_dims)
-    xlabel_dens_kwargs = dens_kwargs.get("xlabel_dens", {}).copy()
-
-    if "color" not in xlabel_dens_aes:
-        xlabel_dens_kwargs.setdefault("color", "black")
-        #xlabel_dens_kwargs.setdefault("fontsize", "5")
     
+    # Add varnames as x and y labels
+    _, labels_dens_aes, labels_dens_ignore = filter_aes(
+        plot_collection, aes_map, "labels_dens", sample_dims
+    )
+    labels_dens_kwargs = dens_kwargs.get("labels_dens", {}).copy()
+
+    if "color" not in labels_dens_aes:
+        labels_dens_kwargs.setdefault("color", "black")
+
     plot_collection.map(
         labelled_x,
-        "xlabel_dens",
-        ignore_aes=xlabel_dens_ignore,
+        "labels_dens",
+        ignore_aes=labels_dens_ignore,
         coords={"__column__": 0},
         subset_info=True,
         labeller=labeller,
-        **xlabel_dens_kwargs,
+        **labels_dens_kwargs,
     )
 
-    _, xlabel_trace_aes, xlabel_trace_ignore = filter_aes(plot_collection, aes_map, "xlabel_trace", sample_dims)
+    plot_collection.map(
+        labelled_y,
+        "labels_dens",
+        ignore_aes=labels_dens_ignore,
+        coords={"__column__": 1},
+        subset_info=True,
+        labeller=labeller,
+        **labels_dens_kwargs,
+    )
+
+    # Add "Steps" as x_label for trace
+    _, xlabel_trace_aes, xlabel_trace_ignore = filter_aes(
+        plot_collection, aes_map, "xlabel_trace", sample_dims
+    )
     xlabel_trace_kwargs = dens_kwargs.get("xlabel_trace", {}).copy()
 
     if "color" not in xlabel_trace_aes:
         xlabel_trace_kwargs.setdefault("color", "black")
-        #xlabel_trace_kwargs.setdefault("fontsize", "5")
-    
+        # xlabel_trace_kwargs.setdefault("fontsize", "5")
+
     plot_collection.map(
         labelled_x,
         "xlabel_trace",
@@ -180,24 +208,6 @@ def plot_trace_dens(
         text="Steps",
         **xlabel_trace_kwargs,
     )
-
-    _, ylabel_trace_aes, ylabel_trace_ignore = filter_aes(plot_collection, aes_map, "ylabel_trace", sample_dims)
-    ylabel_trace_kwargs = trace_kwargs.get("ylabel_trace", {}).copy()
-
-    if "color" not in ylabel_trace_aes:
-        ylabel_trace_kwargs.setdefault("color", "black")
-        #ylabel_trace_kwargs.setdefault("fontsize", "5")
-    
-    plot_collection.map(
-        labelled_y,
-        "xlabel_dens",
-        ignore_aes=ylabel_trace_ignore,
-        coords={"__column__": 1},
-        subset_info=True,
-        labeller=labeller,
-        **ylabel_trace_kwargs,
-    )
-
 
 
     return plot_collection

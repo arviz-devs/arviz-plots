@@ -81,6 +81,7 @@ def labelled_y(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.ylabel(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
 
+
 def labelled_x(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.xlabel(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
@@ -90,6 +91,7 @@ def remove_axis(da, target, backend, **kwargs):
     """Dispatch to ``remove_axis`` function in backend."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_backend.remove_axis(target, **kwargs)
+
 
 def remove_ticks(da, target, backend, **kwargs):
     """Dispatch to ``remove_axis`` function in backend."""

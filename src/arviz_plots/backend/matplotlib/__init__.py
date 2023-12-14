@@ -165,15 +165,18 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     kwargs = {"fontsize": size, "color": color}
     return target.set_title(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
+
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a title to a plot."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_ylabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
+
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a title to a plot."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
+
 
 def remove_ticks(target, axis="y"):
     """Interface to matplotlib for removing axis from a plot."""
@@ -184,6 +187,7 @@ def remove_ticks(target, axis="y"):
     elif axis == "both":
         target.xaxis.set_ticks([])
         target.yaxis.set_ticks([])
+
 
 def remove_axis(target, axis="y"):
     """Interface to matplotlib for removing axis from a plot."""
