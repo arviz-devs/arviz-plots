@@ -38,6 +38,12 @@ def scatter_x(da, target, backend, y=None, **kwargs):
     return plot_backend.scatter(da, y, target, **kwargs)
 
 
+def ecdf_line(values, target, backend, **kwargs):
+    """Plot an ecdf line."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.line(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
+
+
 def point_estimate_text(
     da, target, backend, *, point_estimate, x=None, y=None, point_label="x", **kwargs
 ):
