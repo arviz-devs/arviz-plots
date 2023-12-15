@@ -166,6 +166,34 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     return target.set_title(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
+def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to matplotlib for adding a title to a plot."""
+    kwargs = {"fontsize": size, "color": color}
+    return target.set_ylabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
+
+
+def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to matplotlib for adding a title to a plot."""
+    kwargs = {"fontsize": size, "color": color}
+    return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
+
+
+def ticks_size(value, target):
+    """Interface to matplotlib for setting ticks size."""
+    target.tick_params(axis="both", labelsize=value)
+
+
+def remove_ticks(target, axis="y"):
+    """Interface to matplotlib for removing axis from a plot."""
+    if axis == "y":
+        target.yaxis.set_ticks([])
+    elif axis == "x":
+        target.xaxis.set_ticks([])
+    elif axis == "both":
+        target.xaxis.set_ticks([])
+        target.yaxis.set_ticks([])
+
+
 def remove_axis(target, axis="y"):
     """Interface to matplotlib for removing axis from a plot."""
     target.spines["top"].set_visible(False)
