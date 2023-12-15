@@ -178,6 +178,11 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
+def ticks_size(value, target):
+    """Interface to matplotlib for setting ticks size."""
+    target.tick_params(axis="both", labelsize=value)
+
+
 def remove_ticks(target, axis="y"):
     """Interface to matplotlib for removing axis from a plot."""
     if axis == "y":
