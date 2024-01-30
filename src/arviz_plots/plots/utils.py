@@ -23,7 +23,7 @@ def filter_aes(pc, aes_map, artist, sample_dims):
 
 def get_size_of_var(group, compact=False):
     """Get the size of the variables in a group."""
-    coords = group.coords._names - {"chain", "draw"}  # pylint: disable=protected-access
+    coords = set(group.sizes) - set(sample_dims)
     var_size = 0
     for var in group.data_vars:
         dims_size = group[var].sizes
