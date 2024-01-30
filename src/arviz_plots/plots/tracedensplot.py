@@ -174,6 +174,8 @@ def plot_trace_dens(
             "yticks_dens",
             ignore_aes=yticks_dens_ignore,
             coords={"__column__": 0},
+            store_artist=False,
+            axis="y", # maybe also be explicit here?
         )
 
     # Add varnames as x and y labels
