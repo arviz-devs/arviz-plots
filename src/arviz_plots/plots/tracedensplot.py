@@ -96,7 +96,7 @@ def plot_trace_dens(
 
     figsize, textsize, linewidth = scale_fig_size(
         pc_kwargs.get("plot_grid_kws", {}).get("figsize", None),
-        rows=get_size_of_var(posterior, compact=compact),
+        rows=get_size_of_var(posterior, compact=compact, sample_dims=sample_dims),
         cols=2,
     )
 
@@ -175,7 +175,7 @@ def plot_trace_dens(
             ignore_aes=yticks_dens_ignore,
             coords={"__column__": 0},
             store_artist=False,
-            axis="y", # maybe also be explicit here?
+            axis="y",  # maybe also be explicit here?
         )
 
     # Add varnames as x and y labels

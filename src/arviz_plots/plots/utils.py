@@ -21,7 +21,7 @@ def filter_aes(pc, aes_map, artist, sample_dims):
     return artist_dims, artist_aes, ignore_aes
 
 
-def get_size_of_var(group, compact=False):
+def get_size_of_var(group, compact=False, sample_dims=None):
     """Get the size of the variables in a group."""
     coords = set(group.sizes) - set(sample_dims)
     var_size = 0
