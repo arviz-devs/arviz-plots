@@ -63,7 +63,7 @@ def scale_fig_size(figsize, rows=1, cols=1):
     """
     # we should read figsize from rcParams or bokeh theme
     if figsize is None:
-        width, height = 8, 2
+        width = 8
         height = (rows + 1) ** 1.1
     else:
         width, height = figsize
