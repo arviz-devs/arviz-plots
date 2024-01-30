@@ -92,7 +92,7 @@ def plot_trace_dens(
 
     pc_kwargs.setdefault("aes", {"color": ["chain"]})
 
-    aux_dim_list = [dim for dim in posterior.dims if dim not in {"chain", "draw"}]
+    aux_dim_list = [dim for dim in posterior.dims if dim not in sample_dims]
 
     figsize, textsize, linewidth = scale_fig_size(
         pc_kwargs.get("plot_grid_kws", {}).get("figsize", None),
