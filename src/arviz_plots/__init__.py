@@ -6,10 +6,10 @@ import os
 
 _log = logging.getLogger(__name__)
 
-from ._version import __version__
+from arviz_plots._version import __version__
 
-from .plot_collection import PlotCollection
-from .plots import *
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots import *
 
 
 if not logging.root.handlers:
