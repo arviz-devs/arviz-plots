@@ -301,9 +301,11 @@ try:
         _mpl_cm("gray", _linear_grey_10_95_c0)
         _mpl_cm("gray_r", list(reversed(_linear_grey_10_95_c0)))
 
+    del LinearSegmentedColormap, mpl
+
 except ImportError:
     pass
 
 
 # clean namespace
-del os, logging, LinearSegmentedColormap, mpl
+del os, logging
