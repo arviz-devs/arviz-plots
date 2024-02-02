@@ -1,4 +1,4 @@
-"""TraceDens plot code."""
+"""TraceDist plot code."""
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_base.utils import _var_names
@@ -16,7 +16,7 @@ from arviz_plots.visuals import (
 )
 
 
-def plot_trace_dens(
+def plot_trace_dist(
     dt,
     var_names=None,
     filter_vars=None,
@@ -27,11 +27,11 @@ def plot_trace_dens(
     backend=None,
     labeller=None,
     aes_map=None,
-    dens_kwargs=None,
+    dist_kwargs=None,
     plot_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot 1D marginal densities and iteration versus sampled values.
+    """Plot 1D marginal distributions and iteration versus sampled values.
 
     Parameters
     ----------
@@ -50,13 +50,13 @@ def plot_trace_dens(
     compact: bool, optional
         Plot multidimensional variables in a single plot. Defaults to True
     kind : {"kde", "hist", "dot", "ecdf"}, optional
-        How to represent the marginal density.
+        How to represent the marginal distribution.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
     aes_map : mapping, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Defaults to only mapping properties to the density representation.
+        when plotted. Defaults to only mapping properties to the distribution representation.
     plot_kwargs : mapping, optional
         Valid keys are:
 
@@ -74,8 +74,8 @@ def plot_trace_dens(
         sample_dims = rcParams["data.sample_dims"]
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if dens_kwargs is None:
-        dens_kwargs = {}
+    if dist_kwargs is None:
+        dist_kwargs = {}
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -100,7 +100,7 @@ def plot_trace_dens(
         cols=2,
     )
 
-    plot_kwargs.setdefault("dens", {}).setdefault("lw", linewidth)
+    plot_kwargs.setdefault("dist", {}).setdefault("lw", linewidth)
     plot_kwargs.setdefault("trace", {}).setdefault("lw", linewidth)
 
     if plot_collection is None:
@@ -133,25 +133,25 @@ def plot_trace_dens(
 
     # dens
     if kind == "kde":
-        density = posterior.azstats.kde(dims=density_dims, **dens_kwargs.get("density", {}))
+        density = posterior.azstats.kde(dims=density_dims, **dist_kwargs.get("density", {}))
         plot_collection.map(
             line_xy,
-            "dens",
+            "dist",
             data=density,
             ignore_aes=density_ignore,
             coords={"__column__": 0},
-            **plot_kwargs.get("dens", {}),
+            **plot_kwargs.get("dist", {}),
         )
 
     elif kind == "ecdf":
-        density = posterior.azstats.ecdf(dims=density_dims, **dens_kwargs.get("density", {}))
+        density = posterior.azstats.ecdf(dims=density_dims, **dist_kwargs.get("density", {}))
         plot_collection.map(
             ecdf_line,
-            "dens",
+            "dist",
             data=density,
             ignore_aes=density_ignore,
             coords={"__column__": 0},
-            **plot_kwargs.get("dens", {}),
+            **plot_kwargs.get("dist", {}),
         )
 
     # trace
@@ -167,63 +167,66 @@ def plot_trace_dens(
     ## aesthetics
     # Remove yticks, only for KDEs
     if kind == "kde":
-        _, _, yticks_dens_ignore = filter_aes(plot_collection, aes_map, "yticks_dens", sample_dims)
+        _, _, yticks_dist_ignore = filter_aes(plot_collection, aes_map, "yticks_dist", sample_dims)
 
         plot_collection.map(
             remove_ticks,
-            "yticks_dens",
-            ignore_aes=yticks_dens_ignore,
+            "yticks_dist",
+            ignore_aes=yticks_dist_ignore,
             coords={"__column__": 0},
             store_artist=False,
             axis="y",  # maybe also be explicit here?
         )
 
     # Add varnames as x and y labels
-    _, labels_dens_aes, labels_dens_ignore = filter_aes(
-        plot_collection, aes_map, "labels_dens", sample_dims
+    _, labels_dist_aes, labels_dist_ignore = filter_aes(
+        plot_collection, aes_map, "labels_dist", sample_dims
     )
-    labels_dens_kwargs = dens_kwargs.get("labels_dens", {}).copy()
+    labels_dist_kwargs = dist_kwargs.get("labels_dist", {}).copy()
 
-    if "color" not in labels_dens_aes:
-        labels_dens_kwargs.setdefault("color", "black")
+    if "color" not in labels_dist_aes:
+        labels_dist_kwargs.setdefault("color", "black")
 
-    labels_dens_kwargs.setdefault("fontsize", textsize)
+    labels_dist_kwargs.setdefault("fontsize", textsize)
 
     plot_collection.map(
         labelled_x,
-        "labels_dens",
-        ignore_aes=labels_dens_ignore,
+        "label_x_dist",
+        ignore_aes=labels_dist_ignore,
         coords={"__column__": 0},
         subset_info=True,
         labeller=labeller,
-        **labels_dens_kwargs,
+        store_artist=False,
+        **labels_dist_kwargs,
     )
 
     plot_collection.map(
         labelled_y,
-        "labels_dens",
-        ignore_aes=labels_dens_ignore,
+        "label_y_dist",
+        ignore_aes=labels_dist_ignore,
         coords={"__column__": 1},
         subset_info=True,
         labeller=labeller,
-        **labels_dens_kwargs,
+        store_artist=False,
+        **labels_dist_kwargs,
     )
 
     # Adjust ticks size
     plot_collection.map(
         ticks_size,
-        "labels_dens",
-        ignore_aes=labels_dens_ignore,
+        "ticks_size",
+        ignore_aes=labels_dist_ignore,
         subset_info=True,
         value=textsize,
-        **labels_dens_kwargs,
+        store_artist=False,
+        **labels_dist_kwargs,
     )
 
     # Add "Steps" as x_label for trace
     _, xlabel_trace_aes, xlabel_trace_ignore = filter_aes(
         plot_collection, aes_map, "xlabel_trace", sample_dims
     )
-    xlabel_plot_kwargs = dens_kwargs.get("xlabel_trace", {}).copy()
+    xlabel_plot_kwargs = dist_kwargs.get("xlabel_trace", {}).copy()
 
     if "color" not in xlabel_trace_aes:
         xlabel_plot_kwargs.setdefault("color", "black")
