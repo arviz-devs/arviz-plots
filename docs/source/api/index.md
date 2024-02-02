@@ -10,6 +10,7 @@
 
    plot_dist
    plot_trace
+   plot_trace_dist
 ```
 
 
