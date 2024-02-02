@@ -3,23 +3,28 @@
 ## Batteries included plots
 
 ```{eval-rst}
+.. currentmodule:: arviz_plots
+
 .. autosummary::
    :toctree: generated/
 
-   arviz_plots.plot_dist
-   arviz_plots.plot_trace
+   plot_dist
+   plot_trace
+   plot_trace_dist
 ```
 
 
 ## Base facetting and aesthetics mapping class
 
 ```{eval-rst}
+.. currentmodule:: arviz_plots
+
 .. autosummary::
    :toctree: generated/
 
-   arviz_plots.PlotCollection
-   arviz_plots.PlotCollection.grid
-   arviz_plots.PlotCollection.map
-   arviz_plots.PlotCollection.show
-   arviz_plots.PlotCollection.wrap
+   PlotCollection
+   PlotCollection.grid
+   PlotCollection.map
+   PlotCollection.show
+   PlotCollection.wrap
 ```

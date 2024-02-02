@@ -6,10 +6,10 @@ import os
 
 _log = logging.getLogger(__name__)
 
-from ._version import __version__
+from arviz_plots._version import __version__
 
-from .plot_collection import PlotCollection
-from .plots import *
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots import *
 
 
 if not logging.root.handlers:
@@ -301,9 +301,11 @@ try:
         _mpl_cm("gray", _linear_grey_10_95_c0)
         _mpl_cm("gray_r", list(reversed(_linear_grey_10_95_c0)))
 
+    del LinearSegmentedColormap, mpl
+
 except ImportError:
     pass
 
 
 # clean namespace
-del os, logging, LinearSegmentedColormap, mpl
+del os, logging

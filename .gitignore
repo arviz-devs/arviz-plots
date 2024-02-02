@@ -93,6 +93,7 @@ instance/
 docs/_build/
 docs/build
 docs/source/api/generated
+docs/jupyter_execute
 
 # PyBuilder
 .pybuilder/
