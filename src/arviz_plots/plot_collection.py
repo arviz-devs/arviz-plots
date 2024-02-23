@@ -472,6 +472,34 @@ class PlotCollection:
             if store_artist:
                 self.viz[var_name][fun_label].loc[sel] = aux_artist
 
-    def add_legend(self, artist, **kwargs):
+    def add_legend(self, dim, var_name=None, aes=None, artist_kwargs=None, title=None, **kwargs):
         """Add a legend for the given artist/aesthetic to the plot."""
-        raise NotImplementedError()
+        if title is None:
+            title = dim
+        if var_name is None:
+            var_name = [name for name, ds in self.aes.children.items() if dim in ds.dims][0]
+        aes_ds = self.aes[var_name].to_dataset()
+        if dim not in aes_ds.dims:
+            raise ValueError(
+                f"Legend can't be generated. Found no aesthetics mapped to dimension {dim}"
+            )
+        aes_ds = aes_ds.drop_dims([d for d in aes_ds.dims if d != dim])
+        if aes is None:
+            aes_ds = aes_ds.drop_vars(("y", "x"), errors="ignore")
+        else:
+            if isinstance(aes, str):
+                aes = [aes]
+            aes_ds = aes_ds[aes]
+        label_list = aes_ds[dim].values
+        kwarg_list = [
+            {k: v.item() for k, v in aes_ds.sel({dim: coord}).items()} for coord in label_list
+        ]
+        plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
+        return plot_bknd.legend(
+            self.viz["chart"].item(),
+            kwarg_list,
+            label_list,
+            title=title,
+            artist_kwargs=artist_kwargs,
+            **kwargs,
+        )

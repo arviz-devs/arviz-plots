@@ -134,6 +134,8 @@ def plot_dist(
 
     if aes_map is None:
         aes_map = {kind: plot_collection.aes_set}
+    if "point_estimate" in aes_map and "point_estimate_text" not in aes_map:
+        aes_map["point_estimate_text"] = aes_map["point_estimate"]
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -207,8 +209,11 @@ def plot_dist(
         ignore_aes=pe_ignore,
         **pe_kwargs,
     )
+    _, pet_aes, pet_ignore = filter_aes(
+        plot_collection, aes_map, "point_estimate_text", sample_dims
+    )
     pet_kwargs = plot_kwargs.get("point_estimate_text", {}).copy()
-    if "color" not in pe_aes:
+    if "color" not in pet_aes:
         pet_kwargs.setdefault("color", "gray")
     pet_kwargs.setdefault("horizontal_align", "center")
     pet_kwargs.setdefault("point_label", "x")
@@ -217,7 +222,7 @@ def plot_dist(
         "point_estimate_text",
         data=point,
         point_estimate=point_estimate,
-        ignore_aes=pe_ignore,
+        ignore_aes=pet_ignore,
         **pet_kwargs,
     )
 

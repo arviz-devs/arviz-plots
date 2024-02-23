@@ -15,7 +15,9 @@ from matplotlib.pyplot import show as _show
 from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
-__all__ = ["create_plotting_grid", "line", "scatter", "text", "title", "remove_axis"]
+from .legend import legend
+
+__all__ = ["create_plotting_grid", "line", "scatter", "text", "title", "remove_axis", "legend"]
 
 
 class UnsetDefault:
