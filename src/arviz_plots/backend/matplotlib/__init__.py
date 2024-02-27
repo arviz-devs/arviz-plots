@@ -17,8 +17,19 @@ from matplotlib.text import Text
 
 from .legend import legend
 
-__all__ = ["create_plotting_grid", "line", "scatter", "text", "title", "remove_axis", "legend"]
-
+__all__ = [
+    "create_plotting_grid",
+    "line",
+    "scatter",
+    "text",
+    "title",
+    "ylabel",
+    "xlabel",
+    "ticks_size",
+    "remove_ticks",
+    "remove_axis",
+    "legend",
+]
 
 class UnsetDefault:
     """Specific class to indicate an aesthetic hasn't been set."""
@@ -169,13 +180,13 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
 
 
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
-    """Interface to matplotlib for adding a title to a plot."""
+    """Interface to matplotlib for adding a label to the y axis."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_ylabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
-    """Interface to matplotlib for adding a title to a plot."""
+    """Interface to matplotlib for adding a label to the x axis."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
@@ -186,7 +197,7 @@ def ticks_size(value, target):
 
 
 def remove_ticks(target, axis="y"):
-    """Interface to matplotlib for removing axis from a plot."""
+    """Interface to matplotlib for removing ticks from a plot."""
     if axis == "y":
         target.yaxis.set_ticks([])
     elif axis == "x":
