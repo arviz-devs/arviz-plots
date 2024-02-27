@@ -1,6 +1,7 @@
 # pylint: disable=redefined-builtin,invalid-name
 import os
 from importlib.metadata import metadata
+from pathlib import Path
 
 # -- Project information
 
@@ -44,8 +45,21 @@ exclude_patterns = [
     ".DS_Store",
     ".ipynb_checkpoints",
     "*.template.rst",
+    "*.part.rst",
 ]
 suppress_warnings = ["mystnb.unknown_mime_type"]
+
+backend_modules = {
+    "interface": "arviz_plots.backend",
+    "mpl": "arviz_plots.backend.matplotlib",
+    "bokeh": "arviz_plots.backend.bokeh",
+}
+api_backend_dir = Path(__file__).parent.resolve() / "api" / "backend"
+with open(api_backend_dir / "interface.template.rst", "r", encoding="utf-8") as f:
+    interface_template = f.read()
+for file, module in backend_modules.items():
+    with open(api_backend_dir / f"{file}.part.rst", "w", encoding="utf-8") as f:
+        f.write(f".. currentmodule:: {module}\n\n" + interface_template)
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 default_role = "autolink"

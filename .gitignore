@@ -92,8 +92,9 @@ instance/
 # Sphinx documentation
 docs/_build/
 docs/build
-docs/source/api/generated
+docs/source/api/**/generated
 docs/jupyter_execute
+*.part.rst
 
 # PyBuilder
 .pybuilder/

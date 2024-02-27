@@ -9,11 +9,12 @@ Available backends
 ------------------
 
 .. toctree::
+   :maxdepth: 1
 
-   matplotlib
-   bokeh
+   Matplotlib <matplotlib>
+   Bokeh <bokeh>
 
 Common interface definition
 ---------------------------
 
-.. include:: interface.template.rst
+.. include:: interface.part.rst
