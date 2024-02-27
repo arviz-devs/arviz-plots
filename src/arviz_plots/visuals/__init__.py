@@ -1,5 +1,11 @@
 # pylint: disable=unused-argument
-"""ArviZ intermediate level visuals."""
+"""Intermediate level visuals elements.
+
+The visuals module provides backend-agnostic functionality.
+That is, the functions in this module take a set of arguments,
+take care of backend-agnostic processing of those arguments
+and eventually they call the requested plotting backend.
+"""
 from importlib import import_module
 
 import numpy as np

@@ -1,5 +1,10 @@
 # pylint: disable=wildcard-import,wrong-import-position
-"""ArviZ plots."""
+"""ArviZ-plots provides ready to use and composable plots for Bayesian Workflow.
+
+``arviz-plots`` implements and compiles both batteries-included plots and the plotting elements
+used within those batteries-included plots for use as standalone objects or pieces within
+custom tasks of Exploratory Analysis of Bayesian Models.
+"""
 
 import logging
 import os
