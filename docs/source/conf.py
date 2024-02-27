@@ -43,6 +43,7 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     ".ipynb_checkpoints",
+    "*.template.rst",
 ]
 suppress_warnings = ["mystnb.unknown_mime_type"]
 

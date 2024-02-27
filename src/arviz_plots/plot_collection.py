@@ -90,7 +90,7 @@ class PlotCollection:
         * ``chart`` (always on the home group): Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
         * ``plot``: :term:`Plot` objects in this :term:`chart`.
-          Generally, these are the target where :term:`artists` are added,
+          Generally, these are the target where :term:`artists <artist>` are added,
           although it is possible to have artists targetting the chart itself.
         * ``row``: Integer row indicator
         * ``col``: Integer column indicator
@@ -204,6 +204,17 @@ class PlotCollection:
             from datatree import DataTree
             from arviz_base import load_arviz_data
             from arviz_plots import PlotCollection
+            from arviz_base.datasets import REMOTE_DATASETS, RemoteFileMetadata
+            # TODO: remove this monkeypatching once the arviz_example_data repo has been updated
+            REMOTE_DATASETS.update({
+                "rugby_field": RemoteFileMetadata(
+                    name="rugby_field",
+                    filename="rugby_field.nc",
+                    url="https://figshare.com/ndownloader/files/44667112",
+                    checksum="53a99da7ac40d82cd01bb0b089263b9633ee016f975700e941b4c6ea289a1fb0",
+                    description="Variant of the rugby model."
+                )
+            })
             idata = load_arviz_data("rugby_field")
             pc = PlotCollection(idata, DataTree())
             pc.generate_aes_dt(

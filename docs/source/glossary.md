@@ -19,10 +19,12 @@ chart
   are contained within a chart or its children.
 
 plot
+plots
   Area (or areas) where the data will be plotted into. A {term}`chart`
   can contain multiple {term}`facetted` plots.
 
 artist
+artists
   Visual element added by `arviz-plots`
 
 facetting

@@ -56,8 +56,11 @@ doc = [
     "sphinx>=5",
     "sphinx-design",
     "jupyter-sphinx",
-    "h5netcdf"
+    "h5netcdf",
+    "matplotlib",
+    "bokeh",
 ]
+
 
 [tool.black]
 line-length = 100
