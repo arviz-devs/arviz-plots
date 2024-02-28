@@ -174,3 +174,33 @@ def remove_ticks(target, axis="y"):
 def remove_axis(target, axis="y"):
     """Interface to removing axis from a plot."""
     raise error
+
+def legend(
+    target,
+    kwarg_list,
+    label_list,
+    title=None,  # pylint: disable=redefined-outer-name
+    artist_type="line",
+    artist_kwargs=None,
+    **kwargs
+):
+    """Interface to manually generated legends.
+
+    Parameters
+    ----------
+    target : chart type
+    kwarg_list : list of dict
+        List of dictionaries that contain properties and their values for the miniatures
+        in each entry of the legend.
+    label_list : list of str
+        List of labels of the entries in the legend.
+    title : str, optional
+        Title of the legend.
+    artist_type : str, optional
+        Type of the artist that will be used for the legend miniature.
+    artist_kwargs : mapping, optional
+        Keyword arguments passed to the miniatures artist.
+    **kwargs : mapping, optional
+        Keyword arguments passed to the backend legend generating function
+    """
+    raise error

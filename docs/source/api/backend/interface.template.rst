@@ -29,3 +29,11 @@ Plot appeareance
    ticks_size
    remove_ticks
    remove_axis
+
+Legend
+......
+
+.. autosummary::
+   :toctree: generated/
+
+   legend

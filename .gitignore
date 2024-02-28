@@ -94,7 +94,9 @@ docs/_build/
 docs/build
 docs/source/api/**/generated
 docs/jupyter_execute
-*.part.rst
+docs/source/api/backend/matplotlib.rst
+docs/source/api/backend/bokeh.rst
+docs/source/api/backend/index.rst
 
 # PyBuilder
 .pybuilder/

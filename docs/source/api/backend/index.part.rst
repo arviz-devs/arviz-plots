@@ -2,9 +2,6 @@
 Interface to plotting backends
 ==============================
 
-.. automodule:: arviz_plots.backend
-
-
 Available backends
 ------------------
 
@@ -17,4 +14,3 @@ Available backends
 Common interface definition
 ---------------------------
 
-.. include:: interface.part.rst
