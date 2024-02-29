@@ -116,7 +116,7 @@ class PlotCollection:
 
         Parameters
         ----------
-        data : DataTree
+        data : Dataset
             The data from which `viz_dt` was generated and
             from which to generate the aesthetic mappings.
         viz_dt : DataTree
@@ -216,17 +216,18 @@ class PlotCollection:
                 )
             })
             idata = load_arviz_data("rugby_field")
-            pc = PlotCollection(idata, DataTree())
+            pc = PlotCollection(idata.posterior, DataTree())
             pc.generate_aes_dt(
                 aes={
                     "color": ["team"],
                     "y": ["field", "team"],
-                    "linestyle": ["field"]
+                    "linestyle": ["field"],
                 },
                 color=[f"C{i}" for i in range(6)],
-                y=list(range(12))
+                y=list(range(12)),
                 linestyle=["-", ":"],
             )
+            pc.aes
 
         The generated `aes_dt` has one group per variable in the posterior group
         in the provided data. Each group in the `aes_dt` DataTree is a Dataset
@@ -257,7 +258,8 @@ class PlotCollection:
             ds = xr.Dataset()
             for aes_key, dims in aes.items():
                 aes_vals = kwargs.get(aes_key, [None])
-                aes_raw_shape = [da.sizes[dim] for dim in dims if dim in da.dims]
+                aes_dims = [dim for dim in dims if dim in da.dims]
+                aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
                 if not aes_raw_shape:
                     ds[aes_key] = aes_vals[0]
                     continue
@@ -269,7 +271,7 @@ class PlotCollection:
                     aes_vals = np.tile(aes_vals, (n_aes // n_aes_vals) + 1)[:n_aes]
                 ds[aes_key] = xr.DataArray(
                     np.array(aes_vals).reshape(aes_raw_shape),
-                    dims=dims,
+                    dims=aes_dims,
                     coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
                 )
             DataTree(name=var_name, parent=self.aes, data=ds)
