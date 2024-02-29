@@ -210,7 +210,7 @@ class PlotCollection:
                 "rugby_field": RemoteFileMetadata(
                     name="rugby_field",
                     filename="rugby_field.nc",
-                    url="https://figshare.com/ndownloader/files/44667112",
+                    url="http://figshare.com/ndownloader/files/44667112",
                     checksum="53a99da7ac40d82cd01bb0b089263b9633ee016f975700e941b4c6ea289a1fb0",
                     description="Variant of the rugby model."
                 )
