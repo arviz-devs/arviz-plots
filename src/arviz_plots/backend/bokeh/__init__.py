@@ -183,6 +183,7 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     target.title = Title(text=string, **_filter_kwargs(kwargs, artist_kws))
     return target.title
 
+
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a label to the y axis."""
     kwargs = {"text_font_size": size, "text_color": color}
@@ -198,9 +199,11 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     for key, value in _filter_kwargs(kwargs, artist_kws):
         setattr(target.xaxis, f"axis_label_{key}", value)
 
+
 def ticks_size(value, target):  # pylint: disable=unused-argument
     """Interface to bokeh for setting ticks size."""
     warnings.warn("Setting ticks size not yet implemented in bokeh")
+
 
 def remove_ticks(target, axis="y"):  # pylint: disable=unused-argument
     """Interface to bokeh for removing ticks from a plot."""

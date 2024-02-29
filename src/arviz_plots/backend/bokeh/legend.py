@@ -1,8 +1,9 @@
 """Bokeh manual legend generation."""
 import warnings
-import numpy as np
 
+import numpy as np
 from bokeh.models import Legend
+
 
 def dealiase_line_kwargs(kwargs):
     """Convert arviz common interface properties to bokeh ones."""
@@ -10,17 +11,16 @@ def dealiase_line_kwargs(kwargs):
     return {prop_map.get(key, key): value for key, value in kwargs.items()}
 
 
-
 def legend(
     target,
     kwarg_list,
     label_list,
-    title=None, 
+    title=None,
     artist_type="line",
     artist_kwargs=None,
     legend_target=None,
     side="right",
-    **kwargs
+    **kwargs,
 ):
     """Generate a legend on a figure given lists of labels and property kwargs.
 
@@ -42,8 +42,9 @@ def legend(
     row_id = np.array([child[1] for child in children], dtype=int)
     col_id = np.array([child[1] for child in children], dtype=int)
     legend_id = np.argmax(
-        row_id == np.unique(row_id)[legend_target[0]] &
-        col_id == np.unique(col_id)[legend_target[1]]
+        row_id
+        == np.unique(row_id)[legend_target[0]] & col_id
+        == np.unique(col_id)[legend_target[1]]
     )
     target_plot = plots[legend_id]
     if target_plot.legend:
@@ -59,9 +60,9 @@ def legend(
         glyph = artist_fun(**{**artist_kwargs, **kws})
         glyph_list.append(glyph)
     leg = Legend(
-        items=[(label, [glyph])  for label, glyph in zip(label_list, glyph_list)],
+        items=[(label, [glyph]) for label, glyph in zip(label_list, glyph_list)],
         title=title,
-        **kwargs
+        **kwargs,
     )
     target_plot.add_layout(leg, side)
     return leg

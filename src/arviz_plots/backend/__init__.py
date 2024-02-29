@@ -175,6 +175,7 @@ def remove_axis(target, axis="y"):
     """Interface to removing axis from a plot."""
     raise error
 
+
 def legend(
     target,
     kwarg_list,
@@ -182,7 +183,7 @@ def legend(
     title=None,  # pylint: disable=redefined-outer-name
     artist_type="line",
     artist_kwargs=None,
-    **kwargs
+    **kwargs,
 ):
     """Interface to manually generated legends.
 

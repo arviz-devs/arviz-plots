@@ -31,6 +31,7 @@ __all__ = [
     "legend",
 ]
 
+
 class UnsetDefault:
     """Specific class to indicate an aesthetic hasn't been set."""
 
