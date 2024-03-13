@@ -644,6 +644,11 @@ class PlotCollection:
     def add_legend(self, dim, var_name=None, aes=None, artist_kwargs=None, title=None, **kwargs):
         """Add a legend for the given artist/aesthetic to the plot.
 
+        Warnings
+        --------
+        This method is still in early stages of experimentation and anything beyond
+        the basic usage ``add_legend("dim_name")`` will probably change in breaking ways.
+
         Parameters
         ----------
         dim : hashable
