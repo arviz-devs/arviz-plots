@@ -17,8 +17,8 @@ Plotting backends have to be added manually.
 :hidden:
 :caption: Example notebooks
 
+tutorials/plots_intro
 tutorials/intro_to_plotcollection
-tutorials/plot_dist_examples
 ```
 
 ```{toctree}

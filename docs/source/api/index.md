@@ -1,30 +1,16 @@
 # API reference
 
-## Batteries included plots
-
 ```{eval-rst}
-.. currentmodule:: arviz_plots
-
-.. autosummary::
-   :toctree: generated/
-
-   plot_dist
-   plot_trace
-   plot_trace_dist
+.. automodule:: arviz_plots
 ```
 
+`arviz_plots` is composed of 4 main modules:
 
-## Base facetting and aesthetics mapping class
+```{toctree}
+:maxdepth: 1
 
-```{eval-rst}
-.. currentmodule:: arviz_plots
-
-.. autosummary::
-   :toctree: generated/
-
-   PlotCollection
-   PlotCollection.grid
-   PlotCollection.map
-   PlotCollection.show
-   PlotCollection.wrap
+plots
+managers
+visuals
+backend/index
 ```

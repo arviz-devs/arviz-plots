@@ -1,6 +1,7 @@
 # pylint: disable=redefined-builtin,invalid-name
 import os
 from importlib.metadata import metadata
+from pathlib import Path
 
 # -- Project information
 
@@ -43,8 +44,20 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     ".ipynb_checkpoints",
+    "**/*.template.rst",
+    "**/*.part.rst",
 ]
 suppress_warnings = ["mystnb.unknown_mime_type"]
+
+backend_modules = ("index", "matplotlib", "bokeh")
+api_backend_dir = Path(__file__).parent.resolve() / "api" / "backend"
+with open(api_backend_dir / "interface.template.rst", "r", encoding="utf-8") as f:
+    interface_template = f.read()
+for file in backend_modules:
+    with open(api_backend_dir / f"{file}.part.rst", "r", encoding="utf-8") as f:
+        intro = f.read()
+    with open(api_backend_dir / f"{file}.rst", "w", encoding="utf-8") as f:
+        f.write(f"{intro}\n\n{interface_template}")
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 default_role = "autolink"

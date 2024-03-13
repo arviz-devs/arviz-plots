@@ -89,27 +89,51 @@ class PlotCollection:
 
         * ``chart`` (always on the home group): Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
-        * ``plot``: Plot objects in this *chart*. These are the {term}`target` where *artists*
-          are added.
+        * ``plot``: :term:`Plot` objects in this :term:`chart`.
+          Generally, these are the target where :term:`artists <artist>` are added,
+          although it is possible to have artists targetting the chart itself.
         * ``row``: Integer row indicator
         * ``col``: Integer column indicator
 
         Plus all the artists that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotCollection.map` for more details.
     aes : DataTree
-        DataTree containing the aesthetic mappings. A subset of the input dataset
-        ``ds[var_name].sel(**kwargs)`` has associated the aesthetics in
-        ``aes[var_name].sel(**kwargs)``. Note that here `aes` is a DataTree so
-        ``aes[var_name]`` is a Dataset. There can be as many aesthetic mappings as desired,
-        and they can map to any dimensions *independently from one another* and independently
-        between variables even.
+        DataTree containing the :term:`aesthetic mapping` information.
+        A subset of the input dataset ``ds[var_name].sel(**kwargs)``
+        is associated the aesthetics in ``aes[var_name].sel(**kwargs)``.
+        Note that here `aes` is a DataTree so ``aes[var_name]`` is a Dataset.
+        There can be as many aesthetic mappings as desired,
+        and they can map to any dimensions *independently from one another*
+        and also independently between variables (even if not recommended).
     """
 
     def __init__(self, data, viz_dt, aes_dt=None, aes=None, backend=None, **kwargs):
         """Initialize a PlotCollection.
 
         It is not recommeded to initialize ``PlotCollection`` objects directly.
-        Use its classmethods instead.
+        Use its classmethods :meth:`~arviz_plots.PlotCollection.wrap` and
+        :meth:`~arviz_plots.PlotCollection.grid` instead.
+
+        Parameters
+        ----------
+        data : Dataset
+            The data from which `viz_dt` was generated and
+            from which to generate the aesthetic mappings.
+        viz_dt : DataTree
+            DataTree object with which to populate the ``viz`` attribute.
+        aes_dt : DataTree, optional
+            DataTree object with which to populate the ``aes`` attribute.
+            If given, the `aes` argument and all `**kwargs` are ignored.
+        aes : mapping of {str : list of hashable}, optional
+            Dictionary with :term:`aesthetics` as keys and as values a list
+            of the dimensions it should be mapped to.
+            See :meth:`~arviz_plots.PlotCollection.generate_aes_dt` for more details.
+        backend : str, optional
+            Plotting backend. It will be stored and passed down to the plotting
+            functions when using methods like :meth:`~arviz_plots.PlotCollection.map`.
+        **kwargs : mapping, optional
+            Dictionary with :term:`aesthetics` as keys and as values a list
+            of the values that should be taken by that aesthetic.
 
         See Also
         --------
@@ -144,14 +168,87 @@ class PlotCollection:
         return set(self._aes.keys())
 
     def show(self):
-        """Call the backend function to show this *chart*."""
+        """Call the backend function to show this :term:`chart`."""
         if "chart" not in self.viz:
             raise ValueError("No plot found to be shown")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         plot_bknd.show(self.viz["chart"].item())
 
     def generate_aes_dt(self, aes, **kwargs):
-        """Generate the aesthetic mappings."""
+        """Generate the aesthetic mappings.
+
+        Parameters
+        ----------
+        aes : mapping of {str : list of hashable}, optional
+            Dictionary with :term:`aesthetics` as keys and as values a list
+            of the dimensions it should be mapped to.
+            See :meth:`~arviz_plots.PlotCollection.generate_aes_dt` for more details.
+        **kwargs : mapping, optional
+            Dictionary with :term:`aesthetics` as keys and as values a list
+            of the values that should be taken by that aesthetic.
+
+        Returns
+        -------
+        aes_dt : DataTree
+            DataTree object to be stored as ``.aes`` attribute of the PlotCollection.
+
+        Examples
+        --------
+        Initialize a `PlotCollection` with the rugby dataset as data.
+        Facetting and aesthetics mapping are independent. Thus, as
+        we are limiting ourselves to the use of this method, we can
+        provide an empty DataTree as ``viz_dt``.
+
+        .. jupyter-execute::
+
+            from datatree import DataTree
+            from arviz_base import load_arviz_data
+            from arviz_plots import PlotCollection
+            from arviz_base.datasets import REMOTE_DATASETS, RemoteFileMetadata
+            # TODO: remove this monkeypatching once the arviz_example_data repo has been updated
+            REMOTE_DATASETS.update({
+                "rugby_field": RemoteFileMetadata(
+                    name="rugby_field",
+                    filename="rugby_field.nc",
+                    url="http://figshare.com/ndownloader/files/44667112",
+                    checksum="53a99da7ac40d82cd01bb0b089263b9633ee016f975700e941b4c6ea289a1fb0",
+                    description="Variant of the rugby model."
+                )
+            })
+            idata = load_arviz_data("rugby_field")
+            pc = PlotCollection(idata.posterior, DataTree())
+            pc.generate_aes_dt(
+                aes={
+                    "color": ["team"],
+                    "y": ["field", "team"],
+                    "linestyle": ["field"],
+                },
+                color=[f"C{i}" for i in range(6)],
+                y=list(range(12)),
+                linestyle=["-", ":"],
+            )
+            pc.aes
+
+        The generated `aes_dt` has one group per variable in the posterior group
+        in the provided data. Each group in the `aes_dt` DataTree is a Dataset
+        with the aesthetics that apply to that variable and the required shape
+        for all values that aesthetic needs to take.
+
+        Thus, when we subset the data for plotting with
+        ``ds[var_name].sel(**kwargs)`` we can get its aesthetics with
+        ``aes_dt[var_name].sel(**kwargs)``.
+
+        Notes
+        -----
+        All values for the provided aesthetics to take need to be given
+        manually through the `**kwargs` arguments. To allow for any arbitrary
+        argument of the plotting functions called later and to ensure support
+        for all backends manual entry of values is a must.
+
+        In the future, it may be possible to skip the `**kwargs` corresponding
+        to aesthetics that are part of the common interface in :mod:`arviz_plots.backend`,
+        but it will always be possible to set their value manually.
+        """
         if aes is None:
             aes = {}
         self._aes = aes
@@ -161,7 +258,8 @@ class PlotCollection:
             ds = xr.Dataset()
             for aes_key, dims in aes.items():
                 aes_vals = kwargs.get(aes_key, [None])
-                aes_raw_shape = [da.sizes[dim] for dim in dims if dim in da.dims]
+                aes_dims = [dim for dim in dims if dim in da.dims]
+                aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
                 if not aes_raw_shape:
                     ds[aes_key] = aes_vals[0]
                     continue
@@ -173,7 +271,7 @@ class PlotCollection:
                     aes_vals = np.tile(aes_vals, (n_aes // n_aes_vals) + 1)[:n_aes]
                 ds[aes_key] = xr.DataArray(
                     np.array(aes_vals).reshape(aes_raw_shape),
-                    dims=dims,
+                    dims=aes_dims,
                     coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
                 )
             DataTree(name=var_name, parent=self.aes, data=ds)
@@ -205,10 +303,28 @@ class PlotCollection:
         ----------
         data : Dataset
         cols : iterable of hashable, optional
+            Dimensions of the dataset for which different coordinate values
+            should have different :term:`plots <plot>`. A special dimension
+            called ``__variable__`` is also available, to indicate that
+            each variable of the input Dataset should have their own plot;
+            it can also be combined with other dimensions.
         col_wrap : int, default 4
+            Number of columns in the generated grid. If more than `col_wrap`
+            plots are needed from :term:`facetting` according to `cols`,
+            new rows are created.
         backend : str, optional
+            Plotting backend.
         plot_grid_kws : mapping, optional
+            Passed to ``create_axis_grid`` of the chosen plotting backend.
         **kwargs : mapping, optional
+            Passed as is to the initializer of ``PlotCollection``. That is,
+            used for ``aes`` and ``**kwargs`` arguments.
+            See :meth:`~arviz_plots.PlotCollection.generate_aes_dt` for more
+            details about these arguments.
+
+        See Also
+        --------
+        arviz_plots.PlotCollection.grid
         """
         if cols is None:
             cols = []
@@ -288,15 +404,33 @@ class PlotCollection:
         plot_grid_kws=None,
         **kwargs,
     ):
-        """Instatiate a PlotCollection and generate a plot grid iterating over rows and cols.
+        """Instatiate a PlotCollection and generate a plot grid iterating over rows and columns.
 
         Parameters
         ----------
         data : Dataset
-        cols, rows : hashable, optional
+        cols, rows : iterable of hashable, optional
+            Dimensions of the dataset for which different coordinate values
+            should have different :term:`plots <plot>`. A special dimension
+            called ``__variable__`` is also available, to indicate that
+            each variable of the input Dataset should have their own plot;
+            it can also be combined with other dimensions.
+
+            The generated grid will have as many plots as unique combinations
+            of values within `cols` and `rows`.
         backend : str, optional
+            Plotting backend.
         plot_grid_kws : mapping, optional
+            Passed to ``create_axis_grid`` of the chosen plotting backend.
         **kwargs : mapping, optional
+            Passed as is to the initializer of ``PlotCollection``. That is,
+            used for ``aes`` and ``**kwargs`` arguments.
+            See :meth:`~arviz_plots.PlotCollection.generate_aes_dt` for more
+            details about these arguments.
+
+        See Also
+        --------
+        arviz_plots.PlotCollection.wrap
         """
         if cols is None:
             cols = []
@@ -438,7 +572,42 @@ class PlotCollection:
         artist_dims=None,
         **kwargs,
     ):
-        """Apply the given plotting function to all plots with the corresponding aesthetics."""
+        """Apply the given plotting function to all plots with the corresponding aesthetics.
+
+        Parameters
+        ----------
+        fun : callable
+            Function with signature ``fun(da, target, **fun_kwargs)`` which should
+            be applied for all combinations of :term:`plot` and :term:`aesthetic`.
+            The object returned by `fun` is assumed to be a scalar unless
+            `artist_dims` are provided. There is also the option of adding
+            extra required keyword arguments with the `subset_info` flag.
+        fun_label : str, optional
+            Variable name with which to store the object returned by `fun`.
+            Defaults to ``fun.__name__``.
+        data : Dataset, optional
+            Data over which to loop and subset. Defaults to the data used
+            to initialize the ``PlotCollection``.
+        coords : mapping, optional
+            Dictionary of {coordinate names : coordinate values} that should
+            be used to subset the aes, data and viz objects before any facetting
+            or aesthetics mapping is applied.
+        ignore_aes : set, optional
+            Set of aesthetics present in ``aes`` that should be ignore for this
+            ``map`` call.
+        subset_info : boolean, default False
+            Add the subset info from :func:`arviz_base.xarray_sel_iter` to
+            the keyword arguments passed to `fun`. If true, then `fun` must
+            accept the keyword arguments ``var_name``, ``sel`` and ``isel``.
+            Moreover, if those were to be keys present in `**kwargs` their
+            values in `**kwargs` would be ignored.
+        store_artist : boolean, default True
+        artist_dims : mapping of {hashable : int}, optional
+            Dictionary of sizes for proper allocation and storage when using
+            ``map`` with functions that return an array of :term:`artist`.
+        **kwargs : mapping, optional
+            Keyword arguments passed as is to `fun`.
+        """
         if coords is None:
             coords = {}
         if self.aes is None:
@@ -472,6 +641,67 @@ class PlotCollection:
             if store_artist:
                 self.viz[var_name][fun_label].loc[sel] = aux_artist
 
-    def add_legend(self, artist, **kwargs):
-        """Add a legend for the given artist/aesthetic to the plot."""
-        raise NotImplementedError()
+    def add_legend(self, dim, var_name=None, aes=None, artist_kwargs=None, title=None, **kwargs):
+        """Add a legend for the given artist/aesthetic to the plot.
+
+        Warnings
+        --------
+        This method is still in early stages of experimentation and anything beyond
+        the basic usage ``add_legend("dim_name")`` will probably change in breaking ways.
+
+        Parameters
+        ----------
+        dim : hashable
+            Dimension for which to generate the legend. It should have at least
+            one :term:`aesthetic mapped <aesthetic mapping>` to it.
+        var_name : hashable, optional
+            Variable name for which to generate the legend. Unless the ``aes``
+            DataTree has been modified manually, the legend will be independent
+            of the variable chosen. Defaults to the first variable with `dim` as
+            dimension.
+        aes : str or iterable of str, optional
+            Specific aesthetics to take into account when generating the legend.
+            They should all be mapped to `dim`.
+        artist_kwargs : mapping, optional
+            Keyword arguments passed to the backend artist function used to
+            generate the miniatures in the legend.
+        title : str, optional
+            Legend title. Defaults to `dim`.
+        **kwargs : mapping, optional
+            Keyword arguments passed to the backend function that generates the legend.
+
+        Returns
+        -------
+        legend : object
+            The corresponding legend object for the backend of the ``PlotCollection``.
+        """
+        if title is None:
+            title = dim
+        if var_name is None:
+            var_name = [name for name, ds in self.aes.children.items() if dim in ds.dims][0]
+        aes_ds = self.aes[var_name].to_dataset()
+        if dim not in aes_ds.dims:
+            raise ValueError(
+                f"Legend can't be generated. Found no aesthetics mapped to dimension {dim}"
+            )
+        aes_ds = aes_ds.drop_dims([d for d in aes_ds.dims if d != dim])
+        if aes is None:
+            dropped_vars = ["x", "y"] + [name for name, da in aes_ds.items() if dim not in da.dims]
+            aes_ds = aes_ds.drop_vars(dropped_vars, errors="ignore")
+        else:
+            if isinstance(aes, str):
+                aes = [aes]
+            aes_ds = aes_ds[aes]
+        label_list = aes_ds[dim].values
+        kwarg_list = [
+            {k: v.item() for k, v in aes_ds.sel({dim: coord}).items()} for coord in label_list
+        ]
+        plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
+        return plot_bknd.legend(
+            self.viz["chart"].item(),
+            kwarg_list,
+            label_list,
+            title=title,
+            artist_kwargs=artist_kwargs,
+            **kwargs,
+        )

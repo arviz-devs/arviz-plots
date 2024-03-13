@@ -1,5 +1,11 @@
 # pylint: disable=unused-argument
-"""ArviZ intermediate level visuals."""
+"""Intermediate level visuals elements.
+
+The visuals module provides backend-agnostic functionality.
+That is, the functions in this module take a set of arguments,
+take care of backend-agnostic processing of those arguments
+and eventually they call the requested plotting backend.
+"""
 from importlib import import_module
 
 import numpy as np
@@ -19,6 +25,8 @@ def line_x(da, target, backend, y=None, **kwargs):
     """Plot a line along the x axis (y constant)."""
     if y is None:
         y = xr.zeros_like(da)
+    if np.asarray(y).size == 1:
+        y = xr.zeros_like(da) + y
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.line(da, y, target, **kwargs)
 
@@ -48,19 +56,19 @@ def point_estimate_text(
     da, target, backend, *, point_estimate, x=None, y=None, point_label="x", **kwargs
 ):
     """Annotate a point estimate."""
-    if y is None and x is None:
-        x = da.sel(plot_axis="x")
-        y = da.sel(plot_axis="y")
-        point = x if point_label == "x" else y
-        text = f"{point.item():.3g} {point_estimate}"
-    elif x is None:
-        x = da if "plot_axis" not in da.dims else da.sel(plot_axis="x")
-        text = f"{x.item():.3g} {point_estimate}"
-    elif y is None:
-        y = da if "plot_axis" not in da.dims else da.sel(plot_axis="y")
-        text = f"{y.item():.3g} {point_estimate}"
-    else:
-        raise ValueError("Found both x and y arguments, only one of them or neither are allowed")
+    da_has_x = "plot_axis" in da.dims and "x" in da.plot_axis
+    da_has_y = "plot_axis" in da.dims and "y" in da.plot_axis
+    if da_has_x:
+        x = da.sel(plot_axis="x") if x is None else da.sel(plot_axis="x") + x
+    if da_has_y:
+        y = da.sel(plot_axis="y") if y is None else da.sel(plot_axis="y") + y
+    point = x if point_label == "x" else y
+    if point.size != 1:
+        raise ValueError(
+            "Found non-scalar point estimate. Check aes mapping and sample_dims. "
+            f"The dimensions still left to reduce/facet are {point.dims}."
+        )
+    text = f"{point.item():.3g} {point_estimate}"
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.text(
         x,

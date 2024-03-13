@@ -7,7 +7,21 @@ from bokeh.models import Title
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
-__all__ = ["create_plotting_grid", "line", "scatter", "text", "title", "remove_axis"]
+from .legend import legend
+
+__all__ = [
+    "create_plotting_grid",
+    "line",
+    "scatter",
+    "text",
+    "title",
+    "ylabel",
+    "xlabel",
+    "ticks_size",
+    "remove_ticks",
+    "remove_axis",
+    "legend",
+]
 
 
 class UnsetDefault:
@@ -109,7 +123,7 @@ def scatter(
     color=unset,
     facecolor=unset,
     edgecolor=unset,
-    edgewidth=unset,
+    width=unset,
     **artist_kws,
 ):
     """Interface to bokeh for a scatter plot."""
@@ -128,7 +142,7 @@ def scatter(
         "fill_alpha": alpha,
         "fill_color": facecolor,
         "line_color": edgecolor,
-        "line_width": edgewidth,
+        "line_width": width,
     }
     return target.scatter(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
@@ -168,6 +182,32 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     kwargs = {"text_font_size": size, "text_color": color}
     target.title = Title(text=string, **_filter_kwargs(kwargs, artist_kws))
     return target.title
+
+
+def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to bokeh for adding a label to the y axis."""
+    kwargs = {"text_font_size": size, "text_color": color}
+    target.yaxis.axis_label = string
+    for key, value in _filter_kwargs(kwargs, artist_kws):
+        setattr(target.yaxis, f"axis_label_{key}", value)
+
+
+def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to bokeh for adding a label to the x axis."""
+    kwargs = {"text_font_size": size, "text_color": color}
+    target.xaxis.axis_label = string
+    for key, value in _filter_kwargs(kwargs, artist_kws):
+        setattr(target.xaxis, f"axis_label_{key}", value)
+
+
+def ticks_size(value, target):  # pylint: disable=unused-argument
+    """Interface to bokeh for setting ticks size."""
+    warnings.warn("Setting ticks size not yet implemented in bokeh")
+
+
+def remove_ticks(target, axis="y"):  # pylint: disable=unused-argument
+    """Interface to bokeh for removing ticks from a plot."""
+    warnings.warn("Setting ticks size not yet implemented in bokeh")
 
 
 def remove_axis(target, axis="y"):
