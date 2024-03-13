@@ -38,6 +38,12 @@ def plot_dist(
 ):
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
 
+    Generate :term:`facetted` plots with: a graphical representation of 1D marginal densities
+    (as KDE, histogram, ECDF or dotplot), a credible interval and a point estimate.
+
+    For a general introduction to batteries included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
     Parameters
     ----------
     dt : DataTree
@@ -45,38 +51,49 @@ def plot_dist(
     var_names: str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars: {None, “like”, “regex”}, optional, default=None
-        If None (default), interpret var_names as the real variables names.
+    filter_vars: {None, “like”, “regex”}, default=None
+        If None, interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
-    group : str, optional
-        Group to be plotted. Defaults to ``posterior``
+    group : str, default "posterior"
+        Group to be plotted.
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
+        Defaults to ``rcParams["plot.density_kind"]``
     point_estimate : {"mean", "median", "mode"}, optional
-        Which point estimate to plot as a point
+        Which point estimate to plot. Defaults to ``rcParams["plot.point_estimate"]``
     ci_kind : {"eti", "hdi"}, optional
-        Which credible interval to use.
+        Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
     ci_prob : float, optional
+        Indicates the probability that should be contained within the plotted credible interval.
+        Defaults to ``rcParams["stats.ci_prob"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping, optional
+    aes_map : mapping of {str : iterable of str}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Defaults to only mapping properties to the density representation.
+        when plotted. Valid keys are the same as for `plot_kwargs`.
+
+        Defaults to only mapping properties to the density representation.
+        And when "point_estimate" key is provided but "point_estimate_text" isn't,
+        the values assigned to the first are also used for the second.
     plot_kwargs : mapping, optional
         Valid keys are:
 
-        * kde -> passed to visuals.line_xy
-        * credible_interval -> passed to visuals.line_x
-        * point_estimate -> passed to visuals.scatter_x
-        * point_estimate_text -> passed to visuals.point_estimate_text
-        * title -> passed to visuals.labelled_title
+        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
 
-    stats_kwargs : mapping
+          * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
+          * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
+        * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
+        * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
+        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+
+    stats_kwargs : mapping, optional
         Valid keys are:
 
         * density -> passed to kde
@@ -84,7 +101,7 @@ def plot_dist(
         * point_estimate -> passed to mean, median or mode
 
     pc_kwargs : mapping
-        Passed to :class:`arviz_plots.PlotCollection`
+        Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
     -------
@@ -150,7 +167,6 @@ def plot_dist(
 
     elif kind == "ecdf":
         density = distribution.azstats.ecdf(dims=density_dims, **stats_kwargs.get("density", {}))
-        print(density)
         plot_collection.map(
             ecdf_line,
             "ecdf",
