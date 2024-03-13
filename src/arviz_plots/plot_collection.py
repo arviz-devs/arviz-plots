@@ -681,7 +681,8 @@ class PlotCollection:
             )
         aes_ds = aes_ds.drop_dims([d for d in aes_ds.dims if d != dim])
         if aes is None:
-            aes_ds = aes_ds.drop_vars(("y", "x"), errors="ignore")
+            dropped_vars = ["x", "y"] + [name for name, da in aes_ds.items() if dim not in da.dims]
+            aes_ds = aes_ds.drop_vars(dropped_vars, errors="ignore")
         else:
             if isinstance(aes, str):
                 aes = [aes]

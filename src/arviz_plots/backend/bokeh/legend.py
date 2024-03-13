@@ -37,14 +37,16 @@ def legend(
         artist_kwargs = {}
     if legend_target is None:
         legend_target = (0, -1)
+    # TODO: improve selection of Figure object from what is stored as "chart"
     children = target.children
+    if not isinstance(children[0], tuple):
+        children = children[1].children
     plots = [child[0] for child in children]
     row_id = np.array([child[1] for child in children], dtype=int)
-    col_id = np.array([child[1] for child in children], dtype=int)
+    col_id = np.array([child[2] for child in children], dtype=int)
     legend_id = np.argmax(
-        row_id
-        == np.unique(row_id)[legend_target[0]] & col_id
-        == np.unique(col_id)[legend_target[1]]
+        (row_id == np.unique(row_id)[legend_target[0]])
+        & (col_id == np.unique(col_id)[legend_target[1]])
     )
     target_plot = plots[legend_id]
     if target_plot.legend:
@@ -60,7 +62,7 @@ def legend(
         glyph = artist_fun(**{**artist_kwargs, **kws})
         glyph_list.append(glyph)
     leg = Legend(
-        items=[(label, [glyph]) for label, glyph in zip(label_list, glyph_list)],
+        items=[(str(label), [glyph]) for label, glyph in zip(label_list, glyph_list)],
         title=title,
         **kwargs,
     )
