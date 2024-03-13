@@ -301,7 +301,9 @@ class PlotCollection:
 
         Parameters
         ----------
-        data : Dataset
+        data : Dataset or dict of {str: Dataset}
+            If `data` is a dictionary, the Datasets stored as its values will be concatenated,
+            creating a new dimension called ``model``.
         cols : iterable of hashable, optional
             Dimensions of the dataset for which different coordinate values
             should have different :term:`plots <plot>`. A special dimension
@@ -332,6 +334,8 @@ class PlotCollection:
             plot_grid_kws = {}
         if backend is None:
             backend = rcParams["plot.backend"]
+        if isinstance(data, dict):
+            data = xr.concat(data.values(), dim="model").assign_coords(model=list(data))
 
         n_plots, plots_per_var = _process_facet_dims(data, cols)
         if n_plots <= col_wrap:
@@ -389,7 +393,8 @@ class PlotCollection:
                             dims,
                             flat_col_id[col_slice].reshape(plots_raw_shape),
                         ),
-                    }
+                    },
+                    coords={dim: da[dim] for dim in dims},
                 )
         viz_dt = DataTree.from_dict(viz_dict)
         return cls(data, viz_dt, backend=backend, **kwargs)
@@ -408,7 +413,9 @@ class PlotCollection:
 
         Parameters
         ----------
-        data : Dataset
+        data : Dataset or dict of {str: Dataset}
+            If `data` is a dictionary, the Datasets stored as its values will be concatenated,
+            creating a new dimension called ``model``.
         cols, rows : iterable of hashable, optional
             Dimensions of the dataset for which different coordinate values
             should have different :term:`plots <plot>`. A special dimension
@@ -443,6 +450,8 @@ class PlotCollection:
         repeated_dims = [col for col in cols if col in rows]
         if repeated_dims:
             raise ValueError("The same dimension can't be used for both cols and rows.")
+        if isinstance(data, dict):
+            data = xr.concat(data.values(), dim="model").assign_coords(model=list(data))
 
         n_cols, cols_per_var = _process_facet_dims(data, cols)
         n_rows, rows_per_var = _process_facet_dims(data, rows)
@@ -501,7 +510,8 @@ class PlotCollection:
                             dims,
                             col_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                         ),
-                    }
+                    },
+                    coords={dim: da[dim] for dim in dims},
                 )
         viz_dt = DataTree.from_dict(viz_dict)
         return cls(data, viz_dt, backend=backend, **kwargs)
@@ -539,6 +549,8 @@ class PlotCollection:
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary."""
         aes_kwargs = {}
+        if var_name not in self.aes.data_vars:
+            return aes_kwargs
         for aes_key in aes:
             aes_kwargs[aes_key] = subset_ds(self.aes[var_name], aes_key, selection)
         return aes_kwargs
@@ -565,6 +577,7 @@ class PlotCollection:
         fun_label=None,
         *,
         data=None,
+        loop_data=None,
         coords=None,
         ignore_aes=frozenset(),
         subset_info=False,
@@ -586,8 +599,12 @@ class PlotCollection:
             Variable name with which to store the object returned by `fun`.
             Defaults to ``fun.__name__``.
         data : Dataset, optional
-            Data over which to loop and subset. Defaults to the data used
-            to initialize the ``PlotCollection``.
+            Data to be subsetted at each iteration and to pass to `fun` as first argument.
+            Defaults to the data used to initialize the ``PlotCollection``.
+        loop_data : Dataset or str, optional
+            Data which will be used to loop over and generate the information used to subset
+            `data`. It also accepts the value "plots" as a way to indicate `fun` should be
+            applied exactly once per :term:`plot`. Defaults to the value of `data`.
         coords : mapping, optional
             Dictionary of {coordinate names : coordinate values} that should
             be used to subset the aes, data and viz objects before any facetting
@@ -607,6 +624,10 @@ class PlotCollection:
             ``map`` with functions that return an array of :term:`artist`.
         **kwargs : mapping, optional
             Keyword arguments passed as is to `fun`.
+
+        See Also
+        --------
+        map_over_plots
         """
         if coords is None:
             coords = {}
@@ -616,18 +637,31 @@ class PlotCollection:
             fun_label = fun.__name__
 
         data = self.data if data is None else data
+        if isinstance(loop_data, str) and loop_data == "plots":
+            if "plot" in self.viz.data_vars:
+                loop_data = self.viz[["plot"]]
+            else:
+                loop_data = xr.Dataset(
+                    {var_name: ds["plot"] for var_name, ds in self.viz.children.items()}
+                )
+        loop_data = data if loop_data is None else loop_data
 
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
         plotters = xarray_sel_iter(
-            data, skip_dims={dim for dim in data.dims if dim not in all_loop_dims}
+            loop_data, skip_dims={dim for dim in loop_data.dims if dim not in all_loop_dims}
         )
         if store_artist:
             self.allocate_artist(
-                fun_label=fun_label, data=data, all_loop_dims=all_loop_dims, artist_dims=artist_dims
+                fun_label=fun_label,
+                data=loop_data,
+                all_loop_dims=all_loop_dims,
+                artist_dims=artist_dims,
             )
 
         for var_name, sel, isel in plotters:
             da = data[var_name].sel(sel)
+            if np.all(np.isnan(da)):
+                continue
             sel_plus = {**sel, **coords}
             target = self.get_target(var_name, sel_plus)
 
