@@ -92,9 +92,9 @@ def plot_trace(
         labeller = BaseLabeller()
 
     # trace
-    _, _, density_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
+    _, _, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
     plot_collection.map(
-        line, "trace", data=posterior, ignore_aes=density_ignore, **plot_kwargs.get("trace", {})
+        line, "trace", data=posterior, ignore_aes=trace_ignore, **plot_kwargs.get("trace", {})
     )
 
     # aesthetics

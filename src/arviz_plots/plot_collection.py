@@ -73,6 +73,35 @@ def _process_facet_dims(data, facet_dims):
     return n_facets, facets_per_var
 
 
+def _get_aes_dict_from_dt(aes_dt):
+    """Generate the aesthetic dictionary from a full DataTree.
+
+    PlotCollection uses an aesthetic dictionary with keys as asethetics
+    and values lists of dimensions as base mapping information.
+    :meth:`arviz_plots.PlotCollection.generate_aes_dt` combines this
+    aes dict and the Dataset in the `data` attribute to generate
+    the full DataTree with aesthetics mapping information that is
+    available in the `aes` attribute.
+
+    It is also possible however to skip the aes dictionary and provide
+    an aes DataTree directly when initializating a PlotCollection object.
+    This method is used to generate the more basic dictionary from the DataTree.
+    """
+    aes = {}
+    for ds in aes_dt.children.values():
+        for aes_key, values in ds.items():
+            if not values.dims:
+                continue
+            aes_dims = list(values.dims)
+            if aes_key not in aes:
+                aes[aes_key] = aes_dims
+            elif set(aes[aes_key]).issubset(aes_dims):
+                aes[aes_key] = aes_dims
+            elif set(aes[aes_key]).difference(aes_dims):
+                aes[aes_key] = set(aes[aes_key]).union(aes_dims)
+    return aes
+
+
 class PlotCollection:
     """Low level base class for plotting with xarray Datasets.
 
@@ -85,7 +114,7 @@ class PlotCollection:
     viz : DataTree
         DataTree containing all the visual elements in the plot. If relevant, the variable
         names in the input Dataset are set as groups, otherwise everything is stored in the
-        home group. The `viz` DataTree always contains the following variables:
+        home group. The `viz` DataTree always contains the following leaf variables:
 
         * ``chart`` (always on the home group): Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
@@ -141,16 +170,28 @@ class PlotCollection:
         """
         self._data = data
         self.viz = viz_dt
-        self.aes = aes_dt
+        self._aes_dt = aes_dt
 
         if backend is not None:
             self.backend = backend
 
-        if aes is None:
+        if aes is None and aes_dt is not None:
+            aes = _get_aes_dict_from_dt(aes_dt)
+        elif aes is None:
             aes = {}
 
         self._aes = aes
         self._kwargs = kwargs
+
+    @property
+    def aes(self):
+        """Information about :term:`aesthetic mapping` as a DataTree."""
+        return self._aes_dt
+
+    @aes.setter
+    def aes(self, value):
+        self._aes = _get_aes_dict_from_dt(value)
+        self._aes_dt = value
 
     @property
     def data(self):
@@ -174,7 +215,7 @@ class PlotCollection:
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         plot_bknd.show(self.viz["chart"].item())
 
-    def generate_aes_dt(self, aes, **kwargs):
+    def generate_aes_dt(self, aes=None, **kwargs):
         """Generate the aesthetic mappings.
 
         Parameters
@@ -253,7 +294,7 @@ class PlotCollection:
             aes = {}
         self._aes = aes
         self._kwargs = kwargs
-        self.aes = DataTree()
+        self._aes_dt = DataTree()
         for var_name, da in self.data.items():
             ds = xr.Dataset()
             for aes_key, dims in aes.items():
@@ -274,7 +315,7 @@ class PlotCollection:
                     dims=aes_dims,
                     coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
                 )
-            DataTree(name=var_name, parent=self.aes, data=ds)
+            DataTree(name=var_name, parent=self._aes_dt, data=ds)
 
     @property
     def base_loop_dims(self):
@@ -520,7 +561,7 @@ class PlotCollection:
         """Update list of aesthetics after indicating ignores and extra subsets."""
         if coords is None:
             coords = {}
-        aes = [aes_key for aes_key in self._aes.keys() if aes_key not in ignore_aes]
+        aes = [aes_key for aes_key in self.aes_set if aes_key not in ignore_aes]
         aes_dims = [dim for aes_key in aes for dim in self._aes[aes_key]]
         all_loop_dims = self.base_loop_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
@@ -549,7 +590,7 @@ class PlotCollection:
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary."""
         aes_kwargs = {}
-        if var_name not in self.aes.data_vars:
+        if f"/{var_name}" not in self.aes.groups:
             return aes_kwargs
         for aes_key in aes:
             aes_kwargs[aes_key] = subset_ds(self.aes[var_name], aes_key, selection)
