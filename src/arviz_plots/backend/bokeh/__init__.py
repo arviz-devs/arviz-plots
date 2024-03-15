@@ -144,7 +144,12 @@ def scatter(
         "line_color": edgecolor,
         "line_width": width,
     }
-    return target.scatter(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
+    kwargs = _filter_kwargs(kwargs, artist_kws)
+    if marker == "|":
+        kwargs["marker"] = "dash"
+        kwargs["angle"] = np.pi / 2
+
+    return target.scatter(np.atleast_1d(x), np.atleast_1d(y), **kwargs)
 
 
 def text(

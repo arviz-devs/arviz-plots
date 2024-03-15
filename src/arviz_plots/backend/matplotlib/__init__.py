@@ -137,7 +137,8 @@ def scatter(
                 UserWarning,
             )
         facecolor = color
-        edgecolor = color
+        if marker in Line2D.filled_markers:
+            edgecolor = color
     kwargs = {
         "s": size,
         "marker": marker,

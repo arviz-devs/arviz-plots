@@ -44,6 +44,14 @@ def subset_ds(ds, var_name, sel):
     return out.values
 
 
+def subset_da(da, sel):
+    """Subset a DataArray along present dimensions."""
+    subset_dict = sel_subset(sel, da.dims)
+    if subset_dict:
+        return da.sel(subset_dict)
+    return da
+
+
 def _process_facet_dims(data, facet_dims):
     """Process facetting dimensions.
 
@@ -619,6 +627,7 @@ class PlotCollection:
         *,
         data=None,
         loop_data=None,
+        extra_data=None,
         coords=None,
         ignore_aes=frozenset(),
         subset_info=False,
@@ -664,7 +673,9 @@ class PlotCollection:
             Dictionary of sizes for proper allocation and storage when using
             ``map`` with functions that return an array of :term:`artist`.
         **kwargs : mapping, optional
-            Keyword arguments passed as is to `fun`.
+            Keyword arguments passed as is to `fun`. Values within `**kwargs`
+            with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
+            will be subsetted on the current selection (if possible) before calling `fun`.
 
         See Also
         --------
@@ -676,6 +687,8 @@ class PlotCollection:
             self.generate_aes_dt(self._aes, **self._kwargs)
         if fun_label is None:
             fun_label = fun.__name__
+        if extra_data is None:
+            extra_data = {}
 
         data = self.data if data is None else data
         if isinstance(loop_data, str) and loop_data == "plots":
@@ -708,10 +721,21 @@ class PlotCollection:
 
             aes_kwargs = self.get_aes_kwargs(aes, var_name, sel_plus)
 
-            fun_kwargs = {**aes_kwargs, **kwargs}
+            fun_kwargs = {
+                **aes_kwargs,
+                **{
+                    key: subset_da(values, sel)
+                    if isinstance(values, xr.DataArray)
+                    else subset_ds(values, var_name, sel)
+                    if isinstance(values, xr.Dataset)
+                    else values
+                    for key, values in kwargs.items()
+                },
+            }
             fun_kwargs["backend"] = self.backend
             if subset_info:
                 fun_kwargs = {**fun_kwargs, "var_name": var_name, "sel": sel, "isel": isel}
+            fun_kwargs.pop("overlay", None)
             aux_artist = fun(da, target=target, **fun_kwargs)
             if store_artist:
                 self.viz[var_name][fun_label].loc[sel] = aux_artist

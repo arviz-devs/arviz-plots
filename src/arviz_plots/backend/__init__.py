@@ -114,6 +114,7 @@ def scatter(
     target : plot type
     size : float or array-like of float
     marker : any
+        The character ``|`` must be a valid marker as it is the default for rug plots.
     alpha : float
     color : any
         Set both facecolor and edgecolor simultaneously.

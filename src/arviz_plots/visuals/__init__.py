@@ -24,24 +24,39 @@ def line_xy(da, target, backend, **kwargs):
 def line_x(da, target, backend, y=None, **kwargs):
     """Plot a line along the x axis (y constant)."""
     if y is None:
-        y = xr.zeros_like(da)
+        y = np.zeros_like(da)
     if np.asarray(y).size == 1:
-        y = xr.zeros_like(da) + y
+        y = np.zeros_like(da) + (y.item() if hasattr(y, "items") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.line(da, y, target, **kwargs)
 
 
-def line(da, target, backend, **kwargs):
+def line(da, target, backend, coord=None, **kwargs):
     """Plot a line along the y axis with x being the range of len(y)."""
-    values = da.values.flatten()
+    if len(da.shape) != 1:
+        raise ValueError(f"Expected unidimensional data but got {da.sizes}")
+    yvalues = da.values
+    xvalues = np.arange(len(yvalues)) if coord is None else da.coords[coord]
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.line(np.arange(len(values)), values, target, **kwargs)
+    return plot_backend.line(xvalues, yvalues, target, **kwargs)
+
+
+def trace_rug(da, target, backend, mask, coord=None, y=None, **kwargs):
+    """Create a rug plot with the subset of `da` indicated by `mask`."""
+    if len(da.shape) != 1:
+        raise ValueError(f"Expected unidimensional data but got {da.sizes}")
+    xvalues = np.arange(len(da)) if coord is None else da.coords[coord]
+    if y is None:
+        y = da.min().item()
+    return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
 
 
 def scatter_x(da, target, backend, y=None, **kwargs):
     """Plot a dot/rug/scatter along the x axis (y constant)."""
     if y is None:
-        y = xr.zeros_like(da)
+        y = np.zeros_like(da)
+    if np.asarray(y).size == 1:
+        y = np.zeros_like(da) + (y.item() if hasattr(y, "items") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.scatter(da, y, target, **kwargs)
 
