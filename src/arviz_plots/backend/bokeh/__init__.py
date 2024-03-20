@@ -183,8 +183,8 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
-    vertical_align=unset,
-    horizontal_align=unset,
+    vertical_align="middle",
+    horizontal_align="center",
     **artist_kws,
 ):
     """Interface to bokeh for adding text to a plot."""

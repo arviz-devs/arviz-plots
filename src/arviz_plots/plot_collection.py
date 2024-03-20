@@ -773,7 +773,7 @@ class PlotCollection:
         data = self.data if data is None else data
         if isinstance(loop_data, str) and loop_data == "plots":
             if "plot" in self.viz.data_vars:
-                loop_data = self.viz[["plot"]]
+                loop_data = xr.Dataset({key: self.viz.ds["plot"] for key in data.data_vars})
             else:
                 loop_data = xr.Dataset(
                     {var_name: ds["plot"] for var_name, ds in self.viz.children.items()}

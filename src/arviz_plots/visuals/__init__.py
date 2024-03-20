@@ -10,6 +10,7 @@ from importlib import import_module
 
 import numpy as np
 import xarray as xr
+from arviz_base.labels import BaseLabeller
 
 
 def line_xy(da, target, backend, **kwargs):
@@ -94,6 +95,40 @@ def point_estimate_text(
     )
 
 
+def annotate_label(
+    da, target, backend, *, var_name, sel, isel, x=None, y=None, dim=None, labeller=None, **kwargs
+):
+    """Annotate a dimension or aesthetic property."""
+    da_has_x = "plot_axis" in da.dims and "x" in da.plot_axis
+    da_has_y = "plot_axis" in da.dims and "y" in da.plot_axis
+    if da_has_x:
+        x = da.sel(plot_axis="x") if x is None else da.sel(plot_axis="x") + x
+    if da_has_y:
+        y = da.sel(plot_axis="y") if y is None else da.sel(plot_axis="y") + y
+    if x is None and y is None:
+        raise ValueError("Unable to find values for x and y.")
+    if x is None:
+        x = da.item()
+    elif y is None:
+        y = da.item()
+    if labeller is None:
+        labeller = BaseLabeller()
+    if dim is None:
+        text = labeller.make_label_flat(var_name, sel, isel)
+    else:
+        sel = {key: value for key, value in sel.items() if key == dim}
+        isel = {key: value for key, value in isel.items() if key == dim}
+        text = labeller.sel_to_str(sel, isel)
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.text(
+        x,
+        y,
+        text,
+        target,
+        **kwargs,
+    )
+
+
 def labelled_title(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
     """Add a title label to a plot using an ArviZ labeller."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
@@ -110,6 +145,18 @@ def labelled_x(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
     """Add a x label to a plot using an ArviZ labeller."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.xlabel(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
+
+
+def xticks(da, target, backend, *, ticks, labels=None, **kwargs):
+    """Add x ticks and labels to a plot."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.xticks(ticks, labels, target, **kwargs)
+
+
+def yticks(da, target, backend, *, ticks, labels=None, **kwargs):
+    """Add y ticks and labels to a plot."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.yticks(ticks, labels, target, **kwargs)
 
 
 def ticks_size(da, target, backend, *, value, **kwargs):

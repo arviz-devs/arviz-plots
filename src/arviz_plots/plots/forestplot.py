@@ -7,7 +7,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import line_x, scatter_x
+from arviz_plots.visuals import annotate_label, line_x, remove_axis, scatter_x, xticks
 
 
 def plot_forest(
@@ -21,6 +21,7 @@ def plot_forest(
     point_estimate=None,
     ci_kind=None,
     ci_prob=None,
+    labels=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -60,6 +61,9 @@ def plot_forest(
     ci_prob : float, optional
         Indicates the probability that should be contained within the plotted credible interval.
         Defaults to ``rcParams["stats.ci_prob"]``
+    labels : iterable of str, optional
+        Iterable with the dimensions to be labelled in the plot. By default all dimensions.
+        It can include the special "__variable__" indicator, and does so by default.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
@@ -152,20 +156,25 @@ def plot_forest(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    labellable_dims = ["__variable__"] + [
+        dim for dim in distribution.dims if (dim not in sample_dims) and (dim != "model")
+    ]
+    if labels is None:
+        labels = labellable_dims
 
     if plot_collection is None:
         if backend is None:
             backend = rcParams["plot.backend"]
+        pc_kwargs.setdefault("cols", ["__column__"])
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["plot_grid_kws"].setdefault("sharey", True)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault(
-            "y",
-            ["__variable__"]
-            + [dim for dim in distribution.dims if (dim not in sample_dims) and (dim != "model")],
-        )
+        pc_kwargs["aes"].setdefault("y", labellable_dims)
+        pc_kwargs["aes"].setdefault("overlay", labellable_dims)
         if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
         plot_collection = PlotCollection.grid(
-            distribution,
+            distribution.expand_dims(__column__=2).assign_coords(__column__=["labels", "forest"]),
             backend=backend,
             **pc_kwargs,
         )
@@ -205,6 +214,9 @@ def plot_forest(
             "credible_interval": plot_collection.aes_set,
             "point_estimate": plot_collection.aes_set,
         }
+    else:
+        aes_map = aes_map.copy()
+    aes_map["labels"] = {"overlay"}.union(aes_map.get("labels", {}))
     if "point_estimate" in aes_map and "point_estimate_text" not in aes_map:
         aes_map["point_estimate_text"] = aes_map["point_estimate"]
     if labeller is None:
@@ -226,7 +238,14 @@ def plot_forest(
     ci_kwargs = plot_kwargs.get("credible_interval", {}).copy()
     if "color" not in ci_aes:
         ci_kwargs.setdefault("color", "gray")
-    plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
+    plot_collection.map(
+        line_x,
+        "credible_interval",
+        data=ci,
+        ignore_aes=ci_ignore,
+        coords={"__column__": "forest"},
+        **ci_kwargs,
+    )
 
     # point estimate
     pe_dims, pe_aes, pe_ignore = filter_aes(plot_collection, aes_map, "point_estimate", sample_dims)
@@ -245,7 +264,46 @@ def plot_forest(
         "point_estimate",
         data=point,
         ignore_aes=pe_ignore,
+        coords={"__column__": "forest"},
         **pe_kwargs,
+    )
+
+    _, lab_aes, lab_ignore = filter_aes(plot_collection, aes_map, "labels", sample_dims)
+    lab_kwargs = plot_kwargs.get("labels", {}).copy()
+    if "color" not in lab_aes:
+        lab_kwargs.setdefault("color", "black")
+    y_ds = xr.Dataset({key: values["y"] for key, values in plot_collection.aes.children.items()})
+    cumulative_label = ["__variable__"]
+    for x, label in enumerate(labels):
+        if label == "__variable__":
+            y = (y_ds.max() + y_ds.min()) / 2
+        else:
+            cumulative_label.append(label)
+            reduce_dims = [dim for dim in y_ds.dims if dim not in cumulative_label]
+            y = (y_ds.max(reduce_dims) + y_ds.min(reduce_dims)) / 2
+        plot_collection.map(
+            annotate_label,
+            f"{label.strip('_')}_label",
+            data=y,
+            x=x,
+            dim=None if label == "__variable__" else label,
+            subset_info=True,
+            coords={"__column__": "labels"},
+            ignore_aes=lab_ignore,
+            **lab_kwargs,
+        )
+    plot_collection.map(
+        xticks,
+        store_artist=False,
+        loop_data="plots",
+        ignore_aes=plot_collection.aes_set,
+        ticks=np.arange(len(labels)),
+        labels=[label.strip("_") for label in labels],
+        coords={"__column__": "labels"},
+    )
+
+    plot_collection.map(
+        remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
     )
 
     return plot_collection

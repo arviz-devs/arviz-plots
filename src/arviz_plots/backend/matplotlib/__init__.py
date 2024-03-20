@@ -188,8 +188,8 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
-    vertical_align=unset,
-    horizontal_align=unset,
+    vertical_align="center",
+    horizontal_align="center",
     **artist_kws,
 ):
     """Interface to matplotlib for adding text to a plot."""
@@ -220,6 +220,16 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a label to the x axis."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
+
+
+def xticks(ticks, labels, target, **artist_kws):
+    """Interface to matplotlib for adding x ticks and labels to a plot."""
+    return target.set_xticks(ticks, labels, **artist_kws)
+
+
+def yticks(ticks, labels, target, **artist_kws):
+    """Interface to matplotlib for adding y ticks and labels to a plot."""
+    return target.set_yticks(ticks, labels, **artist_kws)
 
 
 def ticks_size(value, target):
