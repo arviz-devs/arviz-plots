@@ -26,7 +26,7 @@ def line_x(da, target, backend, y=None, **kwargs):
     if y is None:
         y = np.zeros_like(da)
     if np.asarray(y).size == 1:
-        y = np.zeros_like(da) + (y.item() if hasattr(y, "items") else y)
+        y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.line(da, y, target, **kwargs)
 
@@ -56,7 +56,7 @@ def scatter_x(da, target, backend, y=None, **kwargs):
     if y is None:
         y = np.zeros_like(da)
     if np.asarray(y).size == 1:
-        y = np.zeros_like(da) + (y.item() if hasattr(y, "items") else y)
+        y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.scatter(da, y, target, **kwargs)
 

@@ -12,8 +12,15 @@ def datatree(seed=31):
     rng = np.random.default_rng(seed)
     mu = rng.normal(size=(4, 100))
     theta = rng.normal(size=(4, 100, 7))
+    diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
 
-    return from_dict({"posterior": {"mu": mu, "theta": theta}}, dims={"theta": ["hierarchy"]})
+    return from_dict(
+        {
+            "posterior": {"mu": mu, "theta": theta},
+            "sample_stats": {"diverging": diverging},
+        },
+        dims={"theta": ["hierarchy"]},
+    )
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh"])
