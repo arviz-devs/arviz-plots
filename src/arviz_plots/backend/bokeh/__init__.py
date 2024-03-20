@@ -7,6 +7,7 @@ from bokeh.models import Title
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
+from .. import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
 __all__ = [
@@ -29,6 +30,27 @@ class UnsetDefault:
 
 
 unset = UnsetDefault()
+
+
+# generation of default values for aesthetics
+def get_default_aes(aes_key, n, kwargs):
+    """Generate `n` *bokeh valid* default values for a given aesthetics keyword."""
+    if aes_key not in kwargs:
+        if "color" in aes_key:
+            # fmt: off
+            vals = [
+                '#3f90da', '#ffa90e', '#bd1f01', '#94a4a2', '#832db6',
+                '#a96b59', '#e76300', '#b9ac70', '#717581', '#92dadd'
+            ]
+            # fmt: on
+        elif aes_key in {"linestyle", "line_dash"}:
+            vals = ["solid", "dashed", "dotted", "dashdot"]
+        elif aes_key == "marker":
+            vals = ["circle", "cross", "triangle", "x", "diamond"]
+        else:
+            return get_agnostic_default_aes(aes_key, n, {})
+        return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
+    return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
 # object creation and i/o

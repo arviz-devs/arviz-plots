@@ -1,30 +1,23 @@
-"""dist plot code."""
+"""Forest plot code."""
 import arviz_stats  # pylint: disable=unused-import
+import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import (
-    ecdf_line,
-    labelled_title,
-    line_x,
-    line_xy,
-    point_estimate_text,
-    remove_axis,
-    scatter_x,
-)
+from arviz_plots.visuals import line_x, scatter_x
 
 
-def plot_dist(
+def plot_forest(
     dt,
     var_names=None,
     filter_vars=None,
     group="posterior",
     coords=None,
     sample_dims=None,
-    kind=None,
+    combined=False,
     point_estimate=None,
     ci_kind=None,
     ci_prob=None,
@@ -36,10 +29,7 @@ def plot_dist(
     stats_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot 1D marginal densities in the style of John K. Kruschke’s book.
-
-    Generate :term:`facetted` plots with: a graphical representation of 1D marginal densities
-    (as KDE, histogram, ECDF or dotplot), a credible interval and a point estimate.
+    """Plot 1D marginal credible intervals in a single plot.
 
     For a general introduction to batteries included functions like this one and common
     usage examples see :ref:`plots_intro`
@@ -62,9 +52,7 @@ def plot_dist(
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    kind : {"kde", "hist", "dot", "ecdf"}, optional
-        How to represent the marginal density.
-        Defaults to ``rcParams["plot.density_kind"]``
+    combined : bool, False
     point_estimate : {"mean", "median", "mode"}, optional
         Which point estimate to plot. Defaults to ``rcParams["plot.point_estimate"]``
     ci_kind : {"eti", "hdi"}, optional
@@ -85,42 +73,59 @@ def plot_dist(
     plot_kwargs : mapping, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
-
-          * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
-          * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
-        * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
-        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
     stats_kwargs : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 
     pc_kwargs : mapping
-        Passed to :class:`arviz_plots.PlotCollection.wrap`
+        Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns
     -------
     PlotCollection
 
+    Notes
+    -----
+    The separation between variables and all its coordinate values is set to 1.
+    The only two exceptions to this are the dimensions named "chain" and "model"
+    in case they are present, which get a smaller spacing to give a sense of
+    grouping among visual elements that only differ on their chain or model id.
+
     Examples
     --------
-    Default plot_dist for a single model:
+    Default forest plot for a single model:
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_dist
+        >>> from arviz_plots import plot_forest
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
         >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_dist(centered)
+        >>> pc = plot_forest(centered)
+
+    Default forest plot for multiple models:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_forest({"centered": centered, "non centered": non_centered})
+        >>> pc.add_legend("model")
+
+    Single model forest plot with color mapped to the variable:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_forest(
+        >>>     non_centered,
+        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}}
+        >>> )
 
     """
     if ci_kind not in ["hdi", "eti", None]:
@@ -134,8 +139,6 @@ def plot_dist(
         ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
     if point_estimate is None:
         point_estimate = rcParams["plot.point_estimate"]
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -153,56 +156,59 @@ def plot_dist(
     if plot_collection is None:
         if backend is None:
             backend = rcParams["plot.backend"]
-        pc_kwargs.setdefault("col_wrap", 5)
-        pc_kwargs.setdefault(
-            "cols",
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs["aes"].setdefault(
+            "y",
             ["__variable__"]
             + [dim for dim in distribution.dims if (dim not in sample_dims) and (dim != "model")],
         )
-        if "model" in distribution:
-            pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
-        plot_collection = PlotCollection.wrap(
+        plot_collection = PlotCollection.grid(
             distribution,
             backend=backend,
             **pc_kwargs,
         )
+    if plot_collection.aes is None:
+        plot_collection.generate_aes_dt()
+
+    # fine tune y position for model and chain
+    aes_dt = plot_collection.aes
+    if combined and "model" in distribution.dims:
+        for child in aes_dt.children.values():
+            child["y"] = child["y"] + xr.DataArray(
+                np.linspace(-0.2, 0.2, distribution.sizes["model"]),
+                coords={"model": distribution.model},
+            )
+    elif ("model" in distribution.dims) and ("chain" in distribution.dims):
+        for child in aes_dt.children.values():
+            model_spacing = xr.DataArray(
+                np.linspace(-0.2, 0.2, distribution.sizes["model"]),
+                coords={"model": distribution.model},
+            )
+            chain_lim = 0.4 * (model_spacing[1] - model_spacing[0])
+            chain_spacing = xr.DataArray(
+                np.linspace(-chain_lim, chain_lim, distribution.sizes["chain"]),
+                coords={"chain": distribution.chain},
+            )
+            child["y"] = child["y"] + model_spacing + chain_spacing
+    elif "chain" in distribution.dims:
+        for child in aes_dt.children.values():
+            child["y"] = child["y"] + xr.DataArray(
+                np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
+                coords={"chain": distribution.chain},
+            )
+    plot_collection.aes = aes_dt
 
     if aes_map is None:
-        if "model" in distribution:
-            aes_map = {
-                kind: plot_collection.aes_set,
-                "credible_interval": ["color"],
-                "point_estimate": ["color"],
-            }
-        else:
-            aes_map = {kind: plot_collection.aes_set}
+        aes_map = {
+            "credible_interval": plot_collection.aes_set,
+            "point_estimate": plot_collection.aes_set,
+        }
     if "point_estimate" in aes_map and "point_estimate_text" not in aes_map:
         aes_map["point_estimate_text"] = aes_map["point_estimate"]
     if labeller is None:
         labeller = BaseLabeller()
-
-    # density
-    density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
-
-    if kind == "kde":
-        density = distribution.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
-        plot_collection.map(
-            line_xy, "kde", data=density, ignore_aes=density_ignore, **plot_kwargs.get("kde", {})
-        )
-
-    elif kind == "ecdf":
-        density = distribution.azstats.ecdf(dims=density_dims, **stats_kwargs.get("density", {}))
-        plot_collection.map(
-            ecdf_line,
-            "ecdf",
-            data=density,
-            ignore_aes=density_ignore,
-            **plot_kwargs.get("ecdf", {}),
-        )
-
-    else:
-        raise NotImplementedError("coming soon")
 
     # credible interval
     ci_dims, ci_aes, ci_ignore = filter_aes(
@@ -231,58 +237,15 @@ def plot_dist(
     else:
         raise NotImplementedError("coming soon")
 
-    point_density_diff = [dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims]
-    if kind == "kde":
-        point_y = 0.03 * density.sel(plot_axis="y", drop=True).max(
-            dim=["kde_dim"] + point_density_diff
-        )
-    elif kind == "ecdf":
-        point_y = 0.03 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
-
-    point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
-
     pe_kwargs = plot_kwargs.get("point_estimate", {}).copy()
     if "color" not in pe_aes:
-        pe_kwargs.setdefault("color", "gray")
+        pe_kwargs.setdefault("color", "black")
     plot_collection.map(
         scatter_x,
         "point_estimate",
-        data=point.sel(plot_axis="x"),
+        data=point,
         ignore_aes=pe_ignore,
         **pe_kwargs,
-    )
-    _, pet_aes, pet_ignore = filter_aes(
-        plot_collection, aes_map, "point_estimate_text", sample_dims
-    )
-    pet_kwargs = plot_kwargs.get("point_estimate_text", {}).copy()
-    if "color" not in pet_aes:
-        pet_kwargs.setdefault("color", "gray")
-    pet_kwargs.setdefault("horizontal_align", "center")
-    pet_kwargs.setdefault("point_label", "x")
-    plot_collection.map(
-        point_estimate_text,
-        "point_estimate_text",
-        data=point,
-        point_estimate=point_estimate,
-        ignore_aes=pet_ignore,
-        **pet_kwargs,
-    )
-
-    # aesthetics
-    _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
-    title_kwargs = plot_kwargs.get("title", {}).copy()
-    if "color" not in title_aes:
-        title_kwargs.setdefault("color", "black")
-    plot_collection.map(
-        labelled_title,
-        "title",
-        ignore_aes=title_ignore,
-        subset_info=True,
-        labeller=labeller,
-        **title_kwargs,
-    )
-    plot_collection.map(
-        remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
     )
 
     return plot_collection

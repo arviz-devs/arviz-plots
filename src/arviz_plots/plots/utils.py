@@ -1,5 +1,32 @@
 """Utilities for batteries included plots."""
 
+from arviz_base.utils import _var_names
+
+from arviz_plots.plot_collection import concat_model_dict
+
+
+def process_group_variables_coords(dt, group, var_names, filter_vars, coords):
+    """Process main input arguments of batteries included plotting functions."""
+    if coords is None:
+        coords = {}
+    if isinstance(dt, dict):
+        distribution = {}
+        for key, value in dt.items():
+            var_names = _var_names(var_names, value[group].ds, filter_vars)
+            distribution[key] = (
+                value[group].ds.sel(coords)
+                if var_names is None
+                else value[group].ds[var_names].sel(coords)
+            )
+        distribution = concat_model_dict(distribution)
+    else:
+        distribution = dt[group].ds
+        var_names = _var_names(var_names, distribution, filter_vars)
+        if var_names is not None:
+            distribution = dt[group].ds[var_names]
+        distribution = distribution.sel(coords)
+    return distribution
+
 
 def filter_aes(pc, aes_map, artist, sample_dims):
     """Split aesthetics and get relevant dimensions.

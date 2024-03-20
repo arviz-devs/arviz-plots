@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from arviz_base import from_dict
 
-from arviz_plots import plot_dist, plot_trace
+from arviz_plots import plot_dist, plot_forest, plot_trace
 
 
 @pytest.fixture(scope="module")
@@ -39,3 +39,7 @@ class TestPlots:
         assert "/mu" in pc.aes.groups
         assert "/theta" not in pc.aes.groups
         assert pc.viz["mu"].trace.shape == (4,)
+
+    def test_plot_forest(self, datatree, backend):
+        pc = plot_forest(datatree, backend=backend)
+        assert "plot" in pc.viz.data_vars

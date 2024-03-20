@@ -11,10 +11,12 @@ from typing import Any, Dict
 from matplotlib.cbook import normalize_kwargs
 from matplotlib.collections import PathCollection
 from matplotlib.lines import Line2D
+from matplotlib.pyplot import rcParams
 from matplotlib.pyplot import show as _show
 from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
+from .. import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
 __all__ = [
@@ -37,6 +39,33 @@ class UnsetDefault:
 
 
 unset = UnsetDefault()
+
+
+# generation of default values for aesthetics
+def get_default_aes(aes_key, n, kwargs):
+    """Generate `n` *bokeh valid* default values for a given aesthetics keyword."""
+    if aes_key not in kwargs:
+        default_prop_cycle = rcParams["axes.prop_cycle"].by_key()
+        if ("color" in aes_key) or aes_key == "c":
+            # fmt: off
+            vals = [
+                '#3f90da', '#ffa90e', '#bd1f01', '#94a4a2', '#832db6',
+                '#a96b59', '#e76300', '#b9ac70', '#717581', '#92dadd'
+            ]
+            # fmt: on
+            vals = default_prop_cycle.get("color", vals)
+        elif aes_key in {"linestyle", "ls"}:
+            vals = ["-", "--", ":", "-."]
+            vals = default_prop_cycle.get("linestyle", vals)
+        elif aes_key in {"marker", "m"}:
+            vals = ["o", "+", "^", "x", "d"]
+            vals = default_prop_cycle.get("marker", vals)
+        elif aes_key in default_prop_cycle:
+            vals = default_prop_cycle[aes_key]
+        else:
+            return get_agnostic_default_aes(aes_key, n, {})
+        return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
+    return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
 # object creation and i/o

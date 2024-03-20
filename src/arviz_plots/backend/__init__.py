@@ -12,12 +12,29 @@ Throughout the documentation of this module, there are a few type placeholders i
 to any type of the plotting backend or even custom objects, but all instances
 of the same placeholder must use the same type (whatever that is).
 """
+import numpy as np
 
 error = NotImplementedError(
     "The `arviz_plots.backend` module itself is for reference only. "
     "A specific backend must be choosen, for example `arviz_plots.backend.bokeh` "
     "or `arviz_plots.backend.matplotlib`"
 )
+
+
+# generation of default values for aesthetics
+def get_default_aes(aes_key, n, kwargs):
+    """Generate `n` default values for a given aesthetics keyword."""
+    if aes_key not in kwargs:
+        if aes_key in {"x", "y"}:
+            return np.arange(n)
+        if aes_key == "alpha":
+            return np.linspace(0.2, 0.7, n)
+        return [None] * n
+    aes_vals = kwargs[aes_key]
+    n_aes_vals = len(aes_vals)
+    if n_aes_vals >= n:
+        return aes_vals[:n]
+    return np.tile(aes_vals, (n // n_aes_vals) + 1)[:n]
 
 
 # object creation and i/o

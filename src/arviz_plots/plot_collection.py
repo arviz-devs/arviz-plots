@@ -8,6 +8,16 @@ from arviz_base.sel_utils import xarray_sel_iter
 from datatree import DataTree
 
 
+def concat_model_dict(data):
+    """Merge multiple Datasets into a single one along a new model dimension."""
+    if isinstance(data, dict):
+        ds_list = data.values()
+        if not all(isinstance(ds, xr.Dataset) for ds in ds_list):
+            raise TypeError("Provided data must be a Dataset or dictionary of Datasets")
+        data = xr.concat(ds_list, dim="model").assign_coords(model=list(data))
+    return data
+
+
 def sel_subset(sel, present_dims):
     """Subset a dictionary of dim: coord values.
 
@@ -97,8 +107,15 @@ def _get_aes_dict_from_dt(aes_dt):
     an aes DataTree directly when initializating a PlotCollection object.
     This method is used to generate the more basic dictionary from the DataTree.
     """
+    child_list = list(aes_dt.children.values())
     aes = {}
-    for ds in aes_dt.children.values():
+    aes_in_all_vars = set.intersection(*[set(child.data_vars) for child in child_list])
+    aes = {
+        aes_key: ["__variable__"]
+        for aes_key in aes_in_all_vars
+        if any(child[aes_key].item(0) != child_list[0][aes_key].item(0) for child in child_list)
+    }
+    for ds in child_list:
         for aes_key, values in ds.items():
             if not values.dims:
                 continue
@@ -211,7 +228,7 @@ class PlotCollection:
     @data.setter
     def data(self, value):
         # might want/be possible to make some checks on the data before setting it
-        self._data = value
+        self._data = concat_model_dict(value)
 
     @property
     def aes_set(self):
@@ -301,31 +318,66 @@ class PlotCollection:
         but it will always be possible to set their value manually.
         """
         if aes is None:
-            aes = {}
+            aes = self._aes
+            kwargs = self._kwargs
         self._aes = aes
         self._kwargs = kwargs
-        self._aes_dt = DataTree()
-        for var_name, da in self.data.items():
-            ds = xr.Dataset()
-            for aes_key, dims in aes.items():
-                aes_vals = kwargs.get(aes_key, [None])
-                aes_dims = [dim for dim in dims if dim in da.dims]
-                aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
-                if not aes_raw_shape:
-                    ds[aes_key] = aes_vals[0]
-                    continue
-                n_aes = np.prod(aes_raw_shape)
-                n_aes_vals = len(aes_vals)
-                if n_aes_vals > n_aes:
-                    aes_vals = aes_vals[:n_aes]
-                elif n_aes_vals < n_aes:
-                    aes_vals = np.tile(aes_vals, (n_aes // n_aes_vals) + 1)[:n_aes]
-                ds[aes_key] = xr.DataArray(
-                    np.array(aes_vals).reshape(aes_raw_shape),
-                    dims=aes_dims,
-                    coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
+        if not hasattr(self, "backend"):
+            plot_bknd = import_module(".backend", package="arviz_plots")
+        else:
+            plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
+        get_default_aes = plot_bknd.get_default_aes
+        ds_dict = {var_name: xr.Dataset() for var_name in self.data.data_vars}
+        for aes_key, dims in aes.items():
+            if "__variable__" in dims:
+                total_aes_vals = int(
+                    np.sum(
+                        [
+                            np.prod([size for dim, size in da.sizes.items() if dim in dims])
+                            for da in self.data.values()
+                        ]
+                    )
                 )
-            DataTree(name=var_name, parent=self._aes_dt, data=ds)
+                aes_vals = get_default_aes(aes_key, total_aes_vals, kwargs)
+                aes_cumulative = 0
+                for var_name, da in self.data.items():
+                    ds = ds_dict[var_name]
+                    aes_dims = [dim for dim in dims if dim in da.dims]
+                    aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
+                    if not aes_raw_shape:
+                        ds[aes_key] = np.asarray(aes_vals)[
+                            aes_cumulative : aes_cumulative + 1
+                        ].squeeze()
+                        aes_cumulative += 1
+                        continue
+                    n_aes = np.prod(aes_raw_shape)
+                    ds[aes_key] = xr.DataArray(
+                        np.array(aes_vals[aes_cumulative : aes_cumulative + n_aes]).reshape(
+                            aes_raw_shape
+                        ),
+                        dims=aes_dims,
+                        coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
+                    )
+                    aes_cumulative += n_aes
+            else:
+                total_aes_vals = int(
+                    np.prod([self.data.sizes[dim] for dim in self.data.dims if dim in dims])
+                )
+                aes_vals = get_default_aes(aes_key, total_aes_vals, kwargs)
+                for var_name, da in self.data.items():
+                    ds = ds_dict[var_name]
+                    aes_dims = [dim for dim in dims if dim in da.dims]
+                    aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
+                    if not aes_raw_shape:
+                        ds[aes_key] = aes_vals[0]
+                        continue
+                    n_aes = np.prod(aes_raw_shape)
+                    ds[aes_key] = xr.DataArray(
+                        np.array(aes_vals[:n_aes]).reshape(aes_raw_shape),
+                        dims=aes_dims,
+                        coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
+                    )
+        self._aes_dt = DataTree.from_dict(ds_dict)
 
     @property
     def base_loop_dims(self):
@@ -385,8 +437,7 @@ class PlotCollection:
             plot_grid_kws = {}
         if backend is None:
             backend = rcParams["plot.backend"]
-        if isinstance(data, dict):
-            data = xr.concat(data.values(), dim="model").assign_coords(model=list(data))
+        data = concat_model_dict(data)
 
         n_plots, plots_per_var = _process_facet_dims(data, cols)
         if n_plots <= col_wrap:
@@ -501,8 +552,7 @@ class PlotCollection:
         repeated_dims = [col for col in cols if col in rows]
         if repeated_dims:
             raise ValueError("The same dimension can't be used for both cols and rows.")
-        if isinstance(data, dict):
-            data = xr.concat(data.values(), dim="model").assign_coords(model=list(data))
+        data = concat_model_dict(data)
 
         n_cols, cols_per_var = _process_facet_dims(data, cols)
         n_rows, rows_per_var = _process_facet_dims(data, rows)
