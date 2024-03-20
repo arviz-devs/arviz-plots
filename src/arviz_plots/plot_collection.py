@@ -18,8 +18,8 @@ def sel_subset(sel, present_dims):
     return {key: value for key, value in sel.items() if key in present_dims}
 
 
-def subset_ds(ds, var_name, sel):
-    """Subset a dataset in a non-idempotent way.
+def subset_ds(ds, var_name, sel, return_dataarray=False):
+    """Subset a dataset in a potentially non-idempotent way.
 
     Get a subset indicated by `sel` of the variable in the Dataset indicated by `var_names`
     and return a scalar or a numpy array. This helps with getting the proper matplotlib
@@ -39,6 +39,8 @@ def subset_ds(ds, var_name, sel):
         out = ds[var_name].sel(subset_dict)
     else:
         out = ds[var_name]
+    if return_dataarray:
+        return out
     if out.size == 1:
         return out.item()
     return out.values
@@ -586,7 +588,7 @@ class PlotCollection:
             all_artist_dims = inherited_dims + list(artist_dims.keys())
 
             self.viz[var_name][fun_label] = xr.DataArray(
-                np.empty(artist_shape, dtype=object),
+                np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
                 coords={dim: data[dim] for dim in inherited_dims},
             )
@@ -596,11 +598,34 @@ class PlotCollection:
         return subset_ds(self.get_viz(var_name), "plot", selection)
 
     def get_aes_kwargs(self, aes, var_name, selection):
-        """Get the aesthetic mappings for the given variable and selection as a dictionary."""
+        """Get the aesthetic mappings for the given variable and selection as a dictionary.
+
+        Parameters
+        ----------
+        aes : list
+            List of aesthetic keywords whose values should be retrieved. Values are taken
+            from the ``aes`` attribute: `var_name` group, variables as the elements
+            in `aes` argument and `selection` coordinate/dimension subset.
+
+            :class:`.PlotCollection` considers "overlay" a special aesthetic keyword to indicate
+            visual elements with potentially identical properties should be overlaid.
+            Thus, if "overlay" is an element of the `aes` argument, it is skipped, no value
+            is attempted to be retrieved and it isn't present as key in the returned output either.
+        var_name : str
+        selection : dict
+
+        Returns
+        -------
+        dict
+            Mapping of aesthetic keywords to the values corresponding to the provided
+            `var_name` and `selection`.
+        """
         aes_kwargs = {}
         if f"/{var_name}" not in self.aes.groups:
             return aes_kwargs
         for aes_key in aes:
+            if aes_key == "overlay":
+                continue
             aes_kwargs[aes_key] = subset_ds(self.aes[var_name], aes_key, selection)
         return aes_kwargs
 
@@ -649,8 +674,8 @@ class PlotCollection:
             Variable name with which to store the object returned by `fun`.
             Defaults to ``fun.__name__``.
         data : Dataset, optional
-            Data to be subsetted at each iteration and to pass to `fun` as first argument.
-            Defaults to the data used to initialize the ``PlotCollection``.
+            Data to be subsetted at each iteration and to pass to `fun` as first positional
+            argument. Defaults to the data used to initialize the ``PlotCollection``.
         loop_data : Dataset or str, optional
             Data which will be used to loop over and generate the information used to subset
             `data`. It also accepts the value "plots" as a way to indicate `fun` should be
@@ -676,6 +701,11 @@ class PlotCollection:
             Keyword arguments passed as is to `fun`. Values within `**kwargs`
             with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
             will be subsetted on the current selection (if possible) before calling `fun`.
+            Slicing with dims and coords is applied to the relevant subset present in the
+            xarray object so dimensions with mapped asethetics not being present is not an issue.
+            However, using Datasets that don't contain all the variable names in `data`
+            will raise an error.
+
 
         See Also
         --------
@@ -726,7 +756,7 @@ class PlotCollection:
                 **{
                     key: subset_da(values, sel)
                     if isinstance(values, xr.DataArray)
-                    else subset_ds(values, var_name, sel)
+                    else subset_ds(values, var_name, sel, return_dataarray=True)
                     if isinstance(values, xr.Dataset)
                     else values
                     for key, values in kwargs.items()
@@ -735,7 +765,6 @@ class PlotCollection:
             fun_kwargs["backend"] = self.backend
             if subset_info:
                 fun_kwargs = {**fun_kwargs, "var_name": var_name, "sel": sel, "isel": isel}
-            fun_kwargs.pop("overlay", None)
             aux_artist = fun(da, target=target, **fun_kwargs)
             if store_artist:
                 self.viz[var_name][fun_label].loc[sel] = aux_artist

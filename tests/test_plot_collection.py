@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 import xarray.testing as xrt
-from arviz_base import dict_to_dataset
+from arviz_base import dict_to_dataset, load_arviz_data
 from datatree import DataTree
-from xarray import Dataset
+from xarray import DataArray, Dataset, concat
 
 from arviz_plots import PlotCollection
 
@@ -208,6 +208,41 @@ def generate_plot_collection1(data):
     return PlotCollection(data, viz_dt=viz_dt, aes_dt=aes_dt, backend="backend")
 
 
+def generate_plot_collection2():
+    centered = load_arviz_data("centered_eight")
+    non_centered = load_arviz_data("non_centered_eight")
+    data = {"centered": centered.posterior.ds, "non_centered": non_centered.posterior.ds}
+    coords = {"model": list(data), "school": centered.posterior.school}
+    data = concat(data.values(), dim="model").assign_coords(coords)
+    theta_plot = [f"theta_plot{i}" for i in range(8)]
+    theta_t_plot = [f"theta_t_plot{i}" for i in range(8)]
+    viz_dt = DataTree.from_dict(
+        {
+            "/": Dataset({"chart": "chart"}),
+            "mu": Dataset({"plot": "mu_plot"}),
+            "tau": Dataset({"plot": "tau_plot"}),
+            "theta": Dataset({"plot": (("school",), theta_plot)}),
+            "theta_t": Dataset({"plot": (("school",), theta_t_plot)}),
+        }
+    )
+    theta_color = [f"theta_C{i}" for i in range(8)]
+    theta_t_color = [f"theta_t_C{i}" for i in range(8)]
+    model_aes_dict = {"y": (("model",), [0, 1])}
+    aes_dt = DataTree.from_dict(
+        {
+            "mu": Dataset({"color": "mu_C0", **model_aes_dict}, coords=coords),
+            "tau": Dataset({"color": "tau_C0", **model_aes_dict}, coords=coords),
+            "theta": Dataset(
+                {"color": (("school",), theta_color), **model_aes_dict}, coords=coords
+            ),
+            "theta_t": Dataset(
+                {"color": (("school",), theta_t_color), **model_aes_dict}, coords=coords
+            ),
+        }
+    )
+    return PlotCollection(data, viz_dt=viz_dt, aes_dt=aes_dt, backend="backend")
+
+
 class TestMap:
     def test_map(self, dataset):
         pc = generate_plot_collection1(dataset)
@@ -303,3 +338,53 @@ class TestMap:
         xrt.assert_equal(dataset["theta"], da_list[1])
         xrt.assert_equal(dataset["eta"], da_list[2])
         assert all("one_per_plot" in pc.viz[var_name] for var_name in dataset.data_vars)
+
+    def test_map_nan(self):
+        pc = generate_plot_collection2()
+        da_list = []
+        target_list = []
+        kwarg_list = []
+        pc.map(
+            map_auxiliar,
+            "mean",
+            da_list=da_list,
+            target_list=target_list,
+            kwarg_list=kwarg_list,
+        )
+        assert all(len(aux_list) == 28 for aux_list in (da_list, target_list, kwarg_list))
+        theta_t_line = pc.viz["theta_t"]["mean"]
+        assert "model" in theta_t_line.dims
+        assert "school" in theta_t_line.dims
+        assert all(value is None for value in theta_t_line.sel(model="centered").values.flatten())
+
+    def test_map_xarray_kwargs(self, dataset):
+        pc = generate_plot_collection1(dataset)
+        ds = dataset.copy()
+        da_scalar = dataset["mu"].copy()
+        da_hierarchy = dataset["eta"].copy()
+        assert "color" in pc.aes_set
+        da_list = []
+        target_list = []
+        kwarg_list = []
+        pc.map(
+            map_auxiliar,
+            "mean",
+            da_list=da_list,
+            target_list=target_list,
+            kwarg_list=kwarg_list,
+            ds=ds,
+            da_scalar=da_scalar,
+            da_hierarchy=da_hierarchy,
+        )
+        assert all(len(aux_list) == 15 for aux_list in (da_list, target_list, kwarg_list))
+        assert all(
+            all(key in kwargs for key in ("da_scalar", "da_hierarchy", "ds"))
+            for kwargs in kwarg_list
+        )
+        xrt.assert_equal(kwarg_list[0]["ds"], ds["mu"])
+        xrt.assert_equal(kwarg_list[-1]["ds"], ds["eta"].isel(hierarchy=-1))
+        for kwargs in kwarg_list:
+            xrt.assert_equal(kwargs["da_scalar"], da_scalar)
+            assert isinstance(kwargs["ds"], DataArray)
+            assert "school" not in kwargs["ds"].dims
+            assert "school" not in kwargs["da_hierarchy"].dims

@@ -45,7 +45,8 @@ test = [
     "pytest",
     "pytest-cov",
     "matplotlib",
-    "bokeh"
+    "bokeh",
+    "h5netcdf",
 ]
 doc = [
     "furo",
