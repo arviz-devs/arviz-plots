@@ -68,16 +68,45 @@ def ecdf_line(values, target, backend, **kwargs):
     return plot_backend.line(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
 
 
-def point_estimate_text(
-    da, target, backend, *, point_estimate, x=None, y=None, point_label="x", **kwargs
-):
-    """Annotate a point estimate."""
+def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y_top=None, **kwargs):
+    """Fill the region between to given y values."""
+    if "kwarg" in da.dims:
+        if "x" in da.kwarg:
+            x = da.sel(kwarg="x") if x is None else da.sel(kwarg="x") + x
+        if "y_bottom" in da.kwarg:
+            y_bottom = (
+                da.sel(kwarg="y_bottom")
+                if y_bottom is None
+                else da.sel(kwarg="y_bottom") + y_bottom
+            )
+        if "y_top" in da.kwarg:
+            y_top = da.sel(kwarg="y_top") if y_top is None else da.sel(kwarg="y_top") + y_top
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.fill_between_y(x, y_bottom, y_top, target, **kwargs)
+
+
+def _process_da_x_y(da, x, y):
+    """Process da, x and y arguments into x and y values."""
     da_has_x = "plot_axis" in da.dims and "x" in da.plot_axis
     da_has_y = "plot_axis" in da.dims and "y" in da.plot_axis
     if da_has_x:
         x = da.sel(plot_axis="x") if x is None else da.sel(plot_axis="x") + x
     if da_has_y:
         y = da.sel(plot_axis="y") if y is None else da.sel(plot_axis="y") + y
+    if x is None and y is None:
+        raise ValueError("Unable to find values for x and y.")
+    if x is None:
+        x = da.item()
+    elif y is None:
+        y = da.item()
+    return x, y
+
+
+def point_estimate_text(
+    da, target, backend, *, point_estimate, x=None, y=None, point_label="x", **kwargs
+):
+    """Annotate a point estimate."""
+    x, y = _process_da_x_y(da, x, y)
     point = x if point_label == "x" else y
     if point.size != 1:
         raise ValueError(
@@ -99,18 +128,7 @@ def annotate_label(
     da, target, backend, *, var_name, sel, isel, x=None, y=None, dim=None, labeller=None, **kwargs
 ):
     """Annotate a dimension or aesthetic property."""
-    da_has_x = "plot_axis" in da.dims and "x" in da.plot_axis
-    da_has_y = "plot_axis" in da.dims and "y" in da.plot_axis
-    if da_has_x:
-        x = da.sel(plot_axis="x") if x is None else da.sel(plot_axis="x") + x
-    if da_has_y:
-        y = da.sel(plot_axis="y") if y is None else da.sel(plot_axis="y") + y
-    if x is None and y is None:
-        raise ValueError("Unable to find values for x and y.")
-    if x is None:
-        x = da.item()
-    elif y is None:
-        y = da.item()
+    x, y = _process_da_x_y(da, x, y)
     if labeller is None:
         labeller = BaseLabeller()
     if dim is None:

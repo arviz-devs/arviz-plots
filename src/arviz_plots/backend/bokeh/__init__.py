@@ -18,6 +18,8 @@ __all__ = [
     "title",
     "ylabel",
     "xlabel",
+    "xticks",
+    "yticks",
     "ticks_size",
     "remove_ticks",
     "remove_axis",
@@ -67,6 +69,7 @@ def create_plotting_grid(
     sharex=False,
     sharey=False,
     polar=False,
+    width_ratios=None,
     subplot_kws=None,
     **kwargs,
 ):
@@ -101,8 +104,20 @@ def create_plotting_grid(
         subplot_kws.setdefault("x_axis_type", None)
         subplot_kws.setdefault("y_axis_type", None)
 
+    plot_widths = None
+    if width_ratios is not None:
+        if len(width_ratios) != cols:
+            raise ValueError("width_ratios must be an iterable of length cols")
+        plot_width = subplot_kws.get("width", 600)
+        chart_width = plot_width * cols
+        width_ratios = np.array(width_ratios, dtype=float)
+        width_ratios /= width_ratios.sum()
+        plot_widths = np.ceil(chart_width * width_ratios).astype(int)
+
     for row in range(rows):
         for col in range(cols):
+            if width_ratios is not None:
+                subplot_kws["width"] = plot_widths[col]
             if (row == 0) and (col == 0) and (sharex or sharey):
                 p = figure(**subplot_kws)  # pylint: disable=invalid-name
                 figures[row, col] = p
@@ -150,13 +165,13 @@ def scatter(
 ):
     """Interface to bokeh for a scatter plot."""
     if color is not unset:
-        if facecolor is not unset or edgecolor is not unset:
-            warnings.warn(
-                "color overrides facecolor and edgecolor. Their values will be ignored.",
-                UserWarning,
-            )
-        facecolor = color
-        edgecolor = color
+        if facecolor is unset and edgecolor is unset:
+            facecolor = color
+            edgecolor = color
+        elif facecolor is unset:
+            facecolor = color
+        elif edgecolor is unset:
+            edgecolor = color
     kwargs = {
         "size": size,
         "marker": marker,
@@ -203,6 +218,18 @@ def text(
     )
 
 
+def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
+    """Fill the area between y_bottom and y_top."""
+    x = np.atleast_1d(x)
+    y1 = np.atleast_1d(y_bottom)
+    if y1.size == 1:
+        y1 = y1.item()
+    y2 = np.atleast_1d(y_top)
+    if y2.size == 1:
+        y2 = y2.item()
+    return target.varea(x=x, y1=y1, y2=y2, **artist_kws)
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a title to a plot."""
@@ -225,6 +252,28 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     target.xaxis.axis_label = string
     for key, value in _filter_kwargs(kwargs, artist_kws):
         setattr(target.xaxis, f"axis_label_{key}", value)
+
+
+def xticks(ticks, labels, target, **artist_kws):
+    """Interface to bokeh for setting ticks and labels of the x axis."""
+    target.xaxis.ticker = ticks
+    if labels is not None:
+        target.xaxis.major_label_overrides = {
+            key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
+        }
+    for key, value in _filter_kwargs({}, artist_kws):
+        setattr(target.xaxis, f"major_label_{key}", value)
+
+
+def yticks(ticks, labels, target, **artist_kws):
+    """Interface to bokeh for setting ticks and labels of the y axis."""
+    target.yaxis.ticker = ticks
+    if labels is not None:
+        target.yaxis.major_label_overrides = {
+            key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
+        }
+    for key, value in _filter_kwargs({}, artist_kws):
+        setattr(target.yaxis, f"major_label_{key}", value)
 
 
 def ticks_size(value, target):  # pylint: disable=unused-argument

@@ -27,6 +27,8 @@ __all__ = [
     "title",
     "ylabel",
     "xlabel",
+    "xticks",
+    "yticks",
     "ticks_size",
     "remove_ticks",
     "remove_axis",
@@ -82,6 +84,7 @@ def create_plotting_grid(
     sharex=False,
     sharey=False,
     polar=False,
+    width_ratios=None,
     subplot_kws=None,
     **kwargs,
 ):
@@ -112,7 +115,14 @@ def create_plotting_grid(
     if polar:
         subplot_kws["projection"] = "polar"
     fig, axes = subplots(
-        rows, cols, sharex=sharex, sharey=sharey, squeeze=squeeze, subplot_kw=subplot_kws, **kwargs
+        rows,
+        cols,
+        sharex=sharex,
+        sharey=sharey,
+        squeeze=squeeze,
+        width_ratios=width_ratios,
+        subplot_kw=subplot_kws,
+        **kwargs,
     )
     extra = (rows * cols) - number
     if extra > 0:
@@ -159,14 +169,15 @@ def scatter(
 ):
     """Interface to matplotlib for a scatter plot."""
     artist_kws.setdefault("zorder", 2)
+    fillable_marker = (marker is unset) or (marker in Line2D.filled_markers)
     if color is not unset:
-        if facecolor is not unset or edgecolor is not unset:
-            warnings.warn(
-                "color overrides facecolor and edgecolor. Their values will be ignored.",
-                UserWarning,
-            )
-        facecolor = color
-        if marker in Line2D.filled_markers:
+        if facecolor is unset and edgecolor is unset:
+            facecolor = color
+            if fillable_marker:
+                edgecolor = color
+        elif facecolor is unset:
+            facecolor = color
+        elif edgecolor is unset and fillable_marker:
             edgecolor = color
     kwargs = {
         "s": size,
@@ -201,6 +212,11 @@ def text(
         "verticalalignment": vertical_align,
     }
     return target.text(x, y, string, **_filter_kwargs(kwargs, Text, artist_kws))
+
+
+def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
+    """Fill the area between y_bottom and y_top."""
+    return target.fill_between(x, y_bottom, y_top, **artist_kws)
 
 
 # general plot appeareance

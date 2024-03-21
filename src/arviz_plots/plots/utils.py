@@ -1,8 +1,17 @@
 """Utilities for batteries included plots."""
-
 from arviz_base.utils import _var_names
+from xarray import Dataset
 
 from arviz_plots.plot_collection import concat_model_dict
+
+
+def get_group(dt_or_ds, group):
+    """Get a group from a Datatree or dataset if possible and return a Dataset."""
+    if isinstance(dt_or_ds, Dataset):
+        return dt_or_ds
+    if hasattr(dt_or_ds, "name") and dt_or_ds.name == group:
+        return dt_or_ds.ds
+    return dt_or_ds[group].ds
 
 
 def process_group_variables_coords(dt, group, var_names, filter_vars, coords):
@@ -12,18 +21,18 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords):
     if isinstance(dt, dict):
         distribution = {}
         for key, value in dt.items():
-            var_names = _var_names(var_names, value[group].ds, filter_vars)
+            var_names = _var_names(var_names, get_group(value, group), filter_vars)
             distribution[key] = (
-                value[group].ds.sel(coords)
+                get_group(value, group).sel(coords)
                 if var_names is None
-                else value[group].ds[var_names].sel(coords)
+                else get_group(value, group)[var_names].sel(coords)
             )
         distribution = concat_model_dict(distribution)
     else:
-        distribution = dt[group].ds
+        distribution = get_group(dt, group)
         var_names = _var_names(var_names, distribution, filter_vars)
         if var_names is not None:
-            distribution = dt[group].ds[var_names]
+            distribution = distribution[var_names]
         distribution = distribution.sel(coords)
     return distribution
 

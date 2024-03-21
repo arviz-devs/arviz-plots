@@ -134,7 +134,7 @@ def scatter(
         The character ``|`` must be a valid marker as it is the default for rug plots.
     alpha : float
     color : any
-        Set both facecolor and edgecolor simultaneously.
+        Set both facecolor and edgecolor simultaneously but without overriding them if present.
     facecolor : any
         Color of the marker filling.
     edgecolor : any
@@ -163,6 +163,11 @@ def text(
     raise error
 
 
+def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
+    """Fill the region between y_bottom and y_top."""
+    raise error
+
+
 # general plot appeareance
 def title(string, target, *, size=None, color=None, **artist_kws):
     """Interface to adding a title to a plot."""
@@ -176,6 +181,32 @@ def ylabel(string, target, *, size=None, color=None, **artist_kws):
 
 def xlabel(string, target, *, size=None, color=None, **artist_kws):
     """Interface to adding a label to a plot's x axis."""
+    raise error
+
+
+def xticks(ticks, labels, traget, **artist_kws):
+    """Interface to setting ticks and tick labels of the x axis.
+
+    Parameters
+    ----------
+    ticks : array_like
+    labels : array_like or None
+        Labels for the provided `ticks`. Must accept ``None`` as a way
+        to set only ticks and leave their default labels.
+    """
+    raise error
+
+
+def yticks(ticks, labels, traget, **artist_kws):
+    """Interface to setting ticks and tick labels of the y axis.
+
+    Parameters
+    ----------
+    ticks : array_like
+    labels : array_like or None
+        Labels for the provided `ticks`. Must accept ``None`` as a way
+        to set only ticks and leave their default labels.
+    """
     raise error
 
 

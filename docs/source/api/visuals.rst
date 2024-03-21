@@ -22,6 +22,7 @@ Data and axis annotating elements
 .. autosummary::
    :toctree: generated/
 
+   annotate_label
    point_estimate_text
    labelled_title
    labelled_y
@@ -33,6 +34,8 @@ Plot customization elements
 .. autosummary::
    :toctree: generated/
 
+   xticks
+   yticks
    ticks_size
    remove_axis
    remove_ticks

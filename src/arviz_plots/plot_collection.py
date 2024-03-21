@@ -874,6 +874,8 @@ class PlotCollection:
         kwarg_list = [
             {k: v.item() for k, v in aes_ds.sel({dim: coord}).items()} for coord in label_list
         ]
+        for d in kwarg_list:
+            d.pop("overlay", None)
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         return plot_bknd.legend(
             self.viz["chart"].item(),

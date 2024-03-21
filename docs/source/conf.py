@@ -68,10 +68,18 @@ add_function_parentheses = False
 
 # -- Options for extensions
 
+plot_include_source = True
+plot_formats = [("png", 90)]
+plot_html_show_formats = False
+plot_html_show_source_link = False
+
 extlinks = {
     "issue": ("https://github.com/arviz-devs/arviz-base/issues/%s", "GH#%s"),
     "pull": ("https://github.com/arviz-devs/arviz-base/pull/%s", "PR#%s"),
 }
+
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 nb_execution_mode = "auto"
 nb_execution_excludepatterns = ["*.ipynb"]

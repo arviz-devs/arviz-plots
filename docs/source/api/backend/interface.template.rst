@@ -26,6 +26,8 @@ Plot appeareance
    title
    ylabel
    xlabel
+   xticks
+   yticks
    ticks_size
    remove_ticks
    remove_axis
