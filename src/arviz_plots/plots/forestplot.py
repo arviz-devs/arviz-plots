@@ -271,6 +271,10 @@ def plot_forest(
                 np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
                 coords={"chain": distribution.chain},
             )
+    y_ds = xr.Dataset({key: values["y"] for key, values in aes_dt.children.items()})
+    y_ds = y_ds.max().to_array().max() - y_ds
+    for var_name, child in aes_dt.children.items():
+        child["y"] = y_ds[var_name]
     plot_collection.aes = aes_dt
 
     if aes_map is None:
@@ -302,7 +306,6 @@ def plot_forest(
 
     # add labels and shading first, so forest plot is rendered on top
     _, lab_aes, lab_ignore = filter_aes(plot_collection, aes_map, "labels", sample_dims)
-    y_ds = xr.Dataset({key: values["y"] for key, values in plot_collection.aes.children.items()})
     cumulative_label = []
     x = 0
     for label in labellable_dims:
