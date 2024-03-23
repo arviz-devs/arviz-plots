@@ -5,13 +5,19 @@ from xarray import Dataset
 from arviz_plots.plot_collection import concat_model_dict
 
 
-def get_group(dt_or_ds, group):
-    """Get a group from a Datatree or dataset if possible and return a Dataset."""
-    if isinstance(dt_or_ds, Dataset):
-        return dt_or_ds
-    if hasattr(dt_or_ds, "name") and dt_or_ds.name == group:
-        return dt_or_ds.ds
-    return dt_or_ds[group].ds
+def get_group(data, group):
+    """Get a group from a Datatree or Dataset if possible and return a Dataset.
+
+    Also supports InferenceData or dictionaries of Datasets.
+    """
+    if isinstance(data, Dataset):
+        return data
+    if hasattr(data, "name") and data.name == group:
+        return data.ds
+    data = data[group]
+    if isinstance(data, Dataset):
+        return data
+    return data.ds
 
 
 def process_group_variables_coords(dt, group, var_names, filter_vars, coords):
