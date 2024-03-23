@@ -165,18 +165,6 @@ def labelled_x(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
     return plot_backend.xlabel(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
 
 
-def xticks(da, target, backend, *, ticks, labels=None, **kwargs):
-    """Add x ticks and labels to a plot."""
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.xticks(ticks, labels, target, **kwargs)
-
-
-def yticks(da, target, backend, *, ticks, labels=None, **kwargs):
-    """Add y ticks and labels to a plot."""
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.yticks(ticks, labels, target, **kwargs)
-
-
 def ticks_size(da, target, backend, *, value, **kwargs):
     """Set the size of ticks."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")

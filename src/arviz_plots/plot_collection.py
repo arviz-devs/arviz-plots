@@ -779,6 +779,8 @@ class PlotCollection:
                     {var_name: ds["plot"] for var_name, ds in self.viz.children.items()}
                 )
         loop_data = data if loop_data is None else loop_data
+        if not isinstance(data, xr.Dataset):
+            raise TypeError("data argument must be an xarray.Dataset")
 
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
         plotters = xarray_sel_iter(

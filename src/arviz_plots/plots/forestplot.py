@@ -9,14 +9,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import (
-    annotate_label,
-    fill_between_y,
-    line_x,
-    remove_axis,
-    scatter_x,
-    xticks,
-)
+from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x
 
 
 def plot_forest(
@@ -81,16 +74,25 @@ def plot_forest(
         It can include the special "__variable__" indicator, and does so by default.
     shade_label : str, default None
         Element of `labels` that should be used to add shading horizontal strips to the plot.
+        Note that labels and credible intervals are plotted in different :term:`plots`.
+        The shading is applied to both plots, and the spacing between them is set to 0
+        *if possible*, which is not always the case (one notable example being matplotlib's
+        constrained layout).
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
     aes_map : mapping of {str : iterable of str}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+        when plotted. Valid keys are the same as for `plot_kwargs` except "ticklabels".
 
-        Defaults to only mapping properties to the density representation.
-        And when "point_estimate" key is provided but "point_estimate_text" isn't,
-        the values assigned to the first are also used for the second.
+        By default, aesthetic mappings are generated for: y, alpha, overlay and color
+        (if multiple models are present). All aesthetic mappings but alpha are applied
+        to both the credible interval and the point estimate; overlay is applied
+        to labels; and both overlay and alpha are applied to the shade.
+
+        "overlay" is a dummy aesthetic to trigger looping over variables and/or
+        dimensions using all aesthetics in every iteration. "alpha" gets two
+        values (0, 0.3) in order to trigger the alternate shading effect.
     plot_kwargs : mapping, optional
         Valid keys are:
 
@@ -98,6 +100,7 @@ def plot_forest(
         * point_estimate -> passed to :func:`~.visuals.scatter_x`
         * labels -> passed to :func:`~.visuals.annotate_label`
         * shade -> passed to :func:`~.visuals.fill_between_y`
+        * ticklabels -> passed to :func:`~.backend.xticks`
 
     stats_kwargs : mapping, optional
         Valid keys are:
@@ -141,8 +144,11 @@ def plot_forest(
         >>> pc = plot_forest({"centered": centered, "non centered": non_centered})
         >>> pc.add_legend("model")
 
-    Single model forest plot with color mapped to the variable and alternate shading per school.
-    Moreover, to avoid having the labels too squished we'll set the ``width_ratios`` for
+    Single model forest plot with color mapped to the variable (mapping which is also applied
+    to the labels) and alternate shading per school.
+    Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
+    constrained layout (set by the "arviz-clean" theme) and to avoid having the labels
+    too squished we'll set the ``width_ratios`` for
     :func:`~arviz_plots.backend.create_plotting_grid` via ``pc_kwargs``.
 
     .. plot::
@@ -150,11 +156,13 @@ def plot_forest(
 
         >>> pc = plot_forest(
         >>>     non_centered,
+        >>>     var_names=["theta", "mu", "theta_t", "tau"],
         >>>     pc_kwargs={
-        >>>         "aes": {"color": ["school"]},
-        >>>         "plot_grid_kws": {"width_ratios": [1, 2]}
+        >>>         "aes": {"color": ["__variable__"]},
+        >>>         "plot_grid_kws": {"width_ratios": [1, 2], "layout": "none"}
         >>>     },
-        >>>     shade_label="__variable__",
+        >>>     aes_map={"labels": ["color"]},
+        >>>     shade_label="school",
         >>> )
 
     Extend the forest plot with an extra :term:`plot` with ess estimates.
@@ -213,6 +221,9 @@ def plot_forest(
     if labels is None:
         labels = labellable_dims
 
+    if shade_label is not None and shade_label not in labels:
+        raise ValueError("shade_label must be one of the elements in labels argument")
+
     if plot_collection is None:
         pc_data = distribution
         if "column" not in pc_data:
@@ -230,6 +241,8 @@ def plot_forest(
         width_ratios = xr.ones_like(pc_data.column, dtype=float)
         width_ratios.loc[{"column": "forest"}] = 3 if len(labels) < 3 else 2
         pc_kwargs["plot_grid_kws"].setdefault("width_ratios", width_ratios.values)
+        if shade_label is not None:
+            pc_kwargs["plot_grid_kws"].setdefault("plot_hspace", 0)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs["aes"].setdefault("y", labellable_dims)
         pc_kwargs["aes"].setdefault("overlay", labellable_dims)
@@ -245,15 +258,21 @@ def plot_forest(
     if plot_collection.aes is None:
         plot_collection.generate_aes_dt()
 
+    if "column" in distribution.dims:
+        distribution = distribution.sel(column="forest")
+
     # fine tune y position for model and chain
     aes_dt = plot_collection.aes
+    add_factor = 0
     if combined and "model" in distribution.dims:
+        add_factor = 0.2
         for child in aes_dt.children.values():
             child["y"] = child["y"] + xr.DataArray(
                 np.linspace(-0.2, 0.2, distribution.sizes["model"]),
                 coords={"model": distribution.model},
             )
     elif ("model" in distribution.dims) and ("chain" in distribution.dims):
+        add_factor = 0.2
         for child in aes_dt.children.values():
             model_spacing = xr.DataArray(
                 np.linspace(-0.2, 0.2, distribution.sizes["model"]),
@@ -266,28 +285,26 @@ def plot_forest(
             )
             child["y"] = child["y"] + model_spacing + chain_spacing
     elif "chain" in distribution.dims and not combined:
+        add_factor = 0.2
         for child in aes_dt.children.values():
             child["y"] = child["y"] + xr.DataArray(
                 np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
                 coords={"chain": distribution.chain},
             )
     y_ds = xr.Dataset({key: values["y"] for key, values in aes_dt.children.items()})
-    y_ds = y_ds.max().to_array().max() - y_ds
+    y_ds = y_ds.max().to_array().max() - add_factor - y_ds
     for var_name, child in aes_dt.children.items():
         child["y"] = y_ds[var_name]
     plot_collection.aes = aes_dt
 
     if aes_map is None:
-        aes_map = {
-            "credible_interval": plot_collection.aes_set.difference({"alpha"}),
-            "point_estimate": plot_collection.aes_set.difference({"alpha"}),
-        }
+        aes_map = {}
     else:
         aes_map = aes_map.copy()
+    aes_map.setdefault("credible_interval", plot_collection.aes_set.difference({"alpha"}))
+    aes_map.setdefault("point_estimate", plot_collection.aes_set.difference({"alpha"}))
     aes_map["labels"] = {"overlay"}.union(aes_map.get("labels", {}))
     aes_map["shade"] = {"overlay", "alpha"}.union(aes_map.get("shade", {}))
-    if "point_estimate" in aes_map and "point_estimate_text" not in aes_map:
-        aes_map["point_estimate_text"] = aes_map["point_estimate"]
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -310,6 +327,12 @@ def plot_forest(
     x = 0
     for label in labellable_dims:
         cumulative_label.append(label)
+        # each variable+coord combination has the space between i.5 and (i+1).5 "reserved"
+        # if there multiple models/combined all lines are plotted in the central region
+        # of .4 width, if single model+combined, the line is at the center
+        # shade extend is the value to add to the max/substract to the min to shade the
+        # whole unit regions reserved to variables/coords
+        shade_extend = 0.5 if add_factor == 0 else 0.3
         if label not in labels:
             continue
         lab_kwargs = plot_kwargs.get("labels", {}).copy()
@@ -320,12 +343,12 @@ def plot_forest(
         if x == len(labels) - 1:
             lab_kwargs.setdefault("horizontal_align", "right")
         if label == "__variable__":
-            y_max = y_ds.max()
-            y_min = y_ds.min()
+            y_max = y_ds.max() + shade_extend
+            y_min = y_ds.min() - shade_extend
         else:
             reduce_dims = [dim for dim in y_ds.dims if dim not in cumulative_label]
-            y_max = y_ds.max(reduce_dims)
-            y_min = y_ds.min(reduce_dims)
+            y_max = y_ds.max(reduce_dims) + shade_extend
+            y_min = y_ds.min(reduce_dims) - shade_extend
         y = (y_max + y_min) / 2
         if shade_label == label:
             _, shade_aes, shade_ignore = filter_aes(plot_collection, aes_map, "shade", sample_dims)
@@ -335,21 +358,26 @@ def plot_forest(
             shade_data = xr.concat((y_min, y_max), "kwarg").assign_coords(
                 kwarg=["y_bottom", "y_top"]
             )
-            shade_start = 0 if x == 0 else x - 0.5
+            shade_start = -0.1 if x == 0 else x - 0.6
+            xlim_labels = [-0.1, len(labels) - 0.9]
             plot_collection.map(
                 fill_between_y,
                 "shade",
                 data=shade_data,
-                x=[shade_start, len(labels) - 1],
+                x=[shade_start, xlim_labels[1]],
                 coords={"column": "labels"},
                 ignore_aes=shade_ignore,
                 **shade_kwargs,
             )
+            ci_global_min = ci.min().to_array().min().item()
+            ci_global_max = ci.max().to_array().max().item()
+            ci_range_extend = 0.1 * (ci_global_max - ci_global_min)
+            xlim_forest = [ci_global_min - ci_range_extend, ci_global_max + ci_range_extend]
             plot_collection.map(
                 fill_between_y,
                 "shade",
                 data=shade_data,
-                x=[ci.min().to_array().min(), ci.max().to_array().max()],
+                x=xlim_forest,
                 coords={"column": "forest"},
                 ignore_aes=shade_ignore,
                 **shade_kwargs,
@@ -366,18 +394,15 @@ def plot_forest(
             **lab_kwargs,
         )
         x += 1
-    plot_collection.map(
-        xticks,
-        store_artist=False,
-        loop_data="plots",
-        ignore_aes=plot_collection.aes_set,
-        ticks=np.arange(len(labels)),
-        labels=[label.strip("_") for label in labels],
-        coords={"column": "labels"},
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    plot_bknd.xticks(
+        np.arange(len(labels)),
+        [label.strip("_") for label in labels],
+        plot_collection.get_target(None, {"column": "labels"}),
+        **plot_kwargs.get("ticklabels", {}),
     )
 
     # plot credible interval
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     default_color = plot_bknd.get_default_aes("color", 1, {})[0]
     ci_kwargs = plot_kwargs.get("credible_interval", {}).copy()
     if "color" not in ci_aes:
@@ -413,6 +438,9 @@ def plot_forest(
         coords={"column": "forest"},
         **pe_kwargs,
     )
+    if shade_label is not None:
+        plot_bknd.xlim(xlim_labels, plot_collection.get_target(None, {"column": "labels"}))
+        plot_bknd.xlim(xlim_forest, plot_collection.get_target(None, {"column": "forest"}))
 
     plot_collection.map(
         remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set

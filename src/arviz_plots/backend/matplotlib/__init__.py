@@ -33,6 +33,7 @@ __all__ = [
     "remove_ticks",
     "remove_axis",
     "legend",
+    "xlim",
 ]
 
 
@@ -85,6 +86,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     width_ratios=None,
+    plot_hspace=None,
     subplot_kws=None,
     **kwargs,
 ):
@@ -114,6 +116,9 @@ def create_plotting_grid(
     subplot_kws = subplot_kws.copy()
     if polar:
         subplot_kws["projection"] = "polar"
+    if plot_hspace is not None:
+        kwargs["gridspec_kw"] = kwargs.get("gridspec_kw", {}).copy()
+        kwargs["gridspec_kw"].setdefault("wspace", plot_hspace)
     fig, axes = subplots(
         rows,
         cols,
@@ -216,6 +221,7 @@ def text(
 
 def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     """Fill the area between y_bottom and y_top."""
+    artist_kws.setdefault("linewidth", 0)
     return target.fill_between(x, y_bottom, y_top, **artist_kws)
 
 
@@ -246,6 +252,11 @@ def xticks(ticks, labels, target, **artist_kws):
 def yticks(ticks, labels, target, **artist_kws):
     """Interface to matplotlib for adding y ticks and labels to a plot."""
     return target.set_yticks(ticks, labels, **artist_kws)
+
+
+def xlim(lims, target, **artist_kws):
+    """Interface to matplotlib for setting limits for the x axis."""
+    target.set_xlim(lims, **artist_kws)
 
 
 def ticks_size(value, target):

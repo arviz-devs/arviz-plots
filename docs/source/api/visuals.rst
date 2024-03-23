@@ -34,8 +34,6 @@ Plot customization elements
 .. autosummary::
    :toctree: generated/
 
-   xticks
-   yticks
    ticks_size
    remove_axis
    remove_ticks

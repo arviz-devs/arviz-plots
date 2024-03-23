@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 from bokeh.layouts import gridplot
-from bokeh.models import Title
+from bokeh.models import Range1d, Title
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
@@ -70,6 +70,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     width_ratios=None,
+    plot_hspace=None,
     subplot_kws=None,
     **kwargs,
 ):
@@ -103,6 +104,10 @@ def create_plotting_grid(
     if polar:
         subplot_kws.setdefault("x_axis_type", None)
         subplot_kws.setdefault("y_axis_type", None)
+
+    if plot_hspace is not None:
+        subplot_kws.setdefault("min_border_left", plot_hspace)
+        subplot_kws.setdefault("min_border_right", plot_hspace)
 
     plot_widths = None
     if width_ratios is not None:
@@ -274,6 +279,11 @@ def yticks(ticks, labels, target, **artist_kws):
         }
     for key, value in _filter_kwargs({}, artist_kws):
         setattr(target.yaxis, f"major_label_{key}", value)
+
+
+def xlim(lims, target, **artist_kws):
+    """Interface to bokeh for setting limits for the x axis."""
+    target.x_range = Range1d(*lims, **artist_kws)
 
 
 def ticks_size(value, target):  # pylint: disable=unused-argument

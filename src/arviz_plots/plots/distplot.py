@@ -169,14 +169,13 @@ def plot_dist(
         )
 
     if aes_map is None:
-        if "model" in distribution:
-            aes_map = {
-                kind: plot_collection.aes_set,
-                "credible_interval": ["color"],
-                "point_estimate": ["color"],
-            }
-        else:
-            aes_map = {kind: plot_collection.aes_set}
+        aes_map = {}
+    else:
+        aes_map = aes_map.copy()
+    aes_map.setdefault(kind, plot_collection.aes_set)
+    if "model" in distribution:
+        aes_map.setdefault("credible_interval", ["color"])
+        aes_map.setdefault("point_estimate", ["color"])
     if "point_estimate" in aes_map and "point_estimate_text" not in aes_map:
         aes_map["point_estimate_text"] = aes_map["point_estimate"]
     if labeller is None:

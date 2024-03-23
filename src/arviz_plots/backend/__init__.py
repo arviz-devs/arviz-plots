@@ -56,6 +56,8 @@ def create_plotting_grid(
     sharex=False,
     sharey=False,
     polar=False,
+    width_ratios=None,
+    plot_hspace=None,
     subplot_kws=None,
     **kwargs,
 ):
@@ -73,6 +75,8 @@ def create_plotting_grid(
         Flags that indicate the axis limits between the different plots should
         be shared.
     polar : bool, default False
+    width_ratios : array_like of shape (cols,), optional
+    plot_hspace : float, optional
     subplot_kws, **kwargs : mapping, optional
         Arguments passed downstream to the plotting backend.
 
