@@ -94,12 +94,13 @@ autodoc_default_options = {
 
 numpydoc_show_class_members = False
 numpydoc_xref_param_type = True
-numpydoc_xref_ignore = {"of", "or", "optional", "scalar"}
+numpydoc_xref_ignore = {"of", "or", "optional", "scalar", "default"}
 singulars = ("int", "list", "dict", "float")
 numpydoc_xref_aliases = {
     "DataArray": ":class:`xarray.DataArray`",
     "Dataset": ":class:`xarray.Dataset`",
     "DataTree": ":class:`datatree.DataTree`",
+    "mapping": ":term:`python:mapping`",
     **{f"{singular}s": f":any:`{singular}s <{singular}>`" for singular in singulars},
 }
 

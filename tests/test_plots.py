@@ -53,6 +53,14 @@ class TestPlots:
         assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
         assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
 
+    def test_plot_dist_models(self, datatree, datatree2, backend):
+        pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend)
+        assert "/mu" in pc.aes.groups
+        assert "/mu" in pc.viz.groups
+        assert "kde" in pc.viz["mu"].data_vars
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "model" in pc.viz["mu"].dims
+
     def test_plot_trace(self, datatree, backend):
         pc = plot_trace(datatree, var_names=["mu"], backend=backend)
         assert "/mu" in pc.aes.groups

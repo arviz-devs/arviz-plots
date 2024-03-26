@@ -22,7 +22,7 @@ def plot_forest(
     combined=False,
     point_estimate=None,
     ci_kind=None,
-    ci_prob=None,
+    ci_probs=None,
     labels=None,
     shade_label=None,
     plot_collection=None,
@@ -48,10 +48,10 @@ def plot_forest(
         then adds the intervals+point estimates to its "forest" coordinate
         and labels to its "labels" coordinates. The data used to plot is then the subset
         ``column="forest"``.
-    var_names: str or list of str, optional
+    var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars: {None, “like”, “regex”}, default=None
+    filter_vars : {None, “like”, “regex”}, default None
         If None, interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
@@ -66,9 +66,10 @@ def plot_forest(
         Which point estimate to plot. Defaults to ``rcParams["plot.point_estimate"]``
     ci_kind : {"eti", "hdi"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
-    ci_prob : float, optional
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to ``rcParams["stats.ci_prob"]``
+    ci_probs : (float, float), optional
+        Indicates the probabilities that should be contained within the plotted credible intervals.
+        It should be sorted as the elements refer to the probabilities of the "trunk" and "twig"
+        elements. Defaults to ``(0.5, rcParams["stats.ci_prob"])``
     labels : iterable of str, optional
         Iterable with the dimensions to be labelled in the plot. By default all dimensions.
         It can include the special "__variable__" indicator, and does so by default.
@@ -83,11 +84,13 @@ def plot_forest(
     labeller : labeller, optional
     aes_map : mapping of {str : iterable of str}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs` except "ticklabels".
+        when plotted. Valid keys are the same as for `plot_kwargs` except "ticklabels"
+        which doesn't apply and "twig" and "trunk" which, similarly to `stats_kwargs`
+        take the same aesthetics through the "credible_interval" key.
 
         By default, aesthetic mappings are generated for: y, alpha, overlay and color
         (if multiple models are present). All aesthetic mappings but alpha are applied
-        to both the credible interval and the point estimate; overlay is applied
+        to both the credible intervals and the point estimate; overlay is applied
         to labels; and both overlay and alpha are applied to the shade.
 
         "overlay" is a dummy aesthetic to trigger looping over variables and/or
@@ -96,7 +99,7 @@ def plot_forest(
     plot_kwargs : mapping, optional
         Valid keys are:
 
-        * credible_interval -> passed to :func:`~.visuals.line_x`
+        * trunk, twig -> passed to :func:`~.visuals.line_x`
         * point_estimate -> passed to :func:`~.visuals.scatter_x`
         * labels -> passed to :func:`~.visuals.annotate_label`
         * shade -> passed to :func:`~.visuals.fill_between_y`
@@ -177,7 +180,7 @@ def plot_forest(
 
         >>> from arviz_plots import visuals
         >>> from arviz_stats.base import ess
-
+        >>>
         >>> c_aux = centered["posterior"].expand_dims(
         >>>     column=3
         >>> ).assign_coords(column=["labels", "forest", "ess"])
@@ -191,13 +194,16 @@ def plot_forest(
     ``map`` all the same aesthetic mappings used by ``plot_forest`` are used.
 
     """
-    if ci_kind not in ["hdi", "eti", None]:
+    if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
 
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
-    if ci_prob is None:
-        ci_prob = rcParams["stats.ci_prob"]
+    if ci_probs is None:
+        rc_ci_prob = rcParams["stats.ci_prob"]
+        ci_probs = (0.5, rc_ci_prob) if rc_ci_prob > 0.5 else (0.5 * rc_ci_prob, rc_ci_prob)
+    if ci_probs[0] > ci_probs[1]:
+        raise ValueError("First element of ci_probs must be smaller than the second")
     if ci_kind is None:
         ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
     if point_estimate is None:
@@ -262,40 +268,35 @@ def plot_forest(
         distribution = distribution.sel(column="forest")
 
     # fine tune y position for model and chain
-    aes_dt = plot_collection.aes
+    y_ds = plot_collection.get_aes_as_dataset("y")
     add_factor = 0
+    shift = 0
     if combined and "model" in distribution.dims:
         add_factor = 0.2
-        for child in aes_dt.children.values():
-            child["y"] = child["y"] + xr.DataArray(
-                np.linspace(-0.2, 0.2, distribution.sizes["model"]),
-                coords={"model": distribution.model},
-            )
+        shift = xr.DataArray(
+            np.linspace(-0.2, 0.2, distribution.sizes["model"]),
+            coords={"model": distribution.model},
+        )
     elif ("model" in distribution.dims) and ("chain" in distribution.dims):
         add_factor = 0.2
-        for child in aes_dt.children.values():
-            model_spacing = xr.DataArray(
-                np.linspace(-0.2, 0.2, distribution.sizes["model"]),
-                coords={"model": distribution.model},
-            )
-            chain_lim = 0.4 * (model_spacing[1] - model_spacing[0])
-            chain_spacing = xr.DataArray(
-                np.linspace(-chain_lim, chain_lim, distribution.sizes["chain"]),
-                coords={"chain": distribution.chain},
-            )
-            child["y"] = child["y"] + model_spacing + chain_spacing
+        model_spacing = xr.DataArray(
+            np.linspace(-0.2, 0.2, distribution.sizes["model"]),
+            coords={"model": distribution.model},
+        )
+        chain_lim = 0.4 * (model_spacing[1] - model_spacing[0])
+        chain_spacing = xr.DataArray(
+            np.linspace(-chain_lim, chain_lim, distribution.sizes["chain"]),
+            coords={"chain": distribution.chain},
+        )
+        shift = model_spacing + chain_spacing
     elif "chain" in distribution.dims and not combined:
         add_factor = 0.2
-        for child in aes_dt.children.values():
-            child["y"] = child["y"] + xr.DataArray(
-                np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
-                coords={"chain": distribution.chain},
-            )
-    y_ds = xr.Dataset({key: values["y"] for key, values in aes_dt.children.items()})
-    y_ds = y_ds.max().to_array().max() - add_factor - y_ds
-    for var_name, child in aes_dt.children.items():
-        child["y"] = y_ds[var_name]
-    plot_collection.aes = aes_dt
+        shift = xr.DataArray(
+            np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
+            coords={"chain": distribution.chain},
+        )
+    y_ds = y_ds.max().to_array().max() - add_factor - y_ds - shift
+    plot_collection.update_aes_from_dataset("y", y_ds)
 
     if aes_map is None:
         aes_map = {}
@@ -313,12 +314,18 @@ def plot_forest(
         plot_collection, aes_map, "credible_interval", sample_dims
     )
     if ci_kind == "eti":
-        ci = distribution.azstats.eti(
-            prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+        ci_trunk = distribution.azstats.eti(
+            prob=ci_probs[0], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+        )
+        ci_twig = distribution.azstats.eti(
+            prob=ci_probs[1], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
         )
     elif ci_kind == "hdi":
-        ci = distribution.azstats.hdi(
-            prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+        ci_trunk = distribution.azstats.hdi(
+            prob=ci_probs[0], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+        )
+        ci_twig = distribution.azstats.hdi(
+            prob=ci_probs[1], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
         )
 
     # add labels and shading first, so forest plot is rendered on top
@@ -369,8 +376,8 @@ def plot_forest(
                 ignore_aes=shade_ignore,
                 **shade_kwargs,
             )
-            ci_global_min = ci.min().to_array().min().item()
-            ci_global_max = ci.max().to_array().max().item()
+            ci_global_min = ci_twig.min().to_array().min().item()
+            ci_global_max = ci_twig.max().to_array().max().item()
             ci_range_extend = 0.1 * (ci_global_max - ci_global_min)
             xlim_forest = [ci_global_min - ci_range_extend, ci_global_max + ci_range_extend]
             plot_collection.map(
@@ -404,16 +411,29 @@ def plot_forest(
 
     # plot credible interval
     default_color = plot_bknd.get_default_aes("color", 1, {})[0]
-    ci_kwargs = plot_kwargs.get("credible_interval", {}).copy()
+    twig_kwargs = plot_kwargs.get("twig", {}).copy()
+    twig_kwargs.setdefault("width", 0.7)
     if "color" not in ci_aes:
-        ci_kwargs.setdefault("color", default_color)
+        twig_kwargs.setdefault("color", default_color)
     plot_collection.map(
         line_x,
-        "credible_interval",
-        data=ci,
+        "twig",
+        data=ci_twig,
         ignore_aes=ci_ignore,
         coords={"column": "forest"},
-        **ci_kwargs,
+        **twig_kwargs,
+    )
+    trunk_kwargs = plot_kwargs.get("trunk", {}).copy()
+    trunk_kwargs.setdefault("width", 2)
+    if "color" not in ci_aes:
+        trunk_kwargs.setdefault("color", default_color)
+    plot_collection.map(
+        line_x,
+        "trunk",
+        data=ci_trunk,
+        ignore_aes=ci_ignore,
+        coords={"column": "forest"},
+        **trunk_kwargs,
     )
 
     # point estimate

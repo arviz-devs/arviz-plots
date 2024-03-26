@@ -379,6 +379,19 @@ class PlotCollection:
                     )
         self._aes_dt = DataTree.from_dict(ds_dict)
 
+    def get_aes_as_dataset(self, aes_key):
+        """Get the values of the provided aes_key for all variables as a Dataset."""
+        return xr.Dataset(
+            {var_name: values[aes_key] for var_name, values in self.aes.children.items()}
+        )
+
+    def update_aes_from_dataset(self, aes_key, dataset):
+        """Update the values of aes_key with those in the provided Dataset."""
+        aes_dt = self.aes
+        for var_name, child in aes_dt.children.items():
+            child[aes_key] = dataset[var_name]
+        self.aes = aes_dt
+
     @property
     def base_loop_dims(self):
         """Dimensions over which one should always loop over when using this PlotCollection."""
