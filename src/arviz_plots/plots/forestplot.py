@@ -238,7 +238,14 @@ def plot_forest(
     if shade_label is not None and shade_label not in labels:
         raise ValueError("shade_label must be one of the elements in labels argument")
 
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+    given_plotcollection = True
     if plot_collection is None:
+        given_plotcollection = False
         pc_data = distribution
         if "column" not in pc_data:
             pc_data = pc_data.expand_dims(column=2).assign_coords(column=["labels", "forest"])
@@ -247,8 +254,6 @@ def plot_forest(
                 "Found colum dimension in input data but required coordinates "
                 "'labels' and 'forest' are missing."
             )
-        if backend is None:
-            backend = rcParams["plot.backend"]
         pc_kwargs.setdefault("cols", ["column"])
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         pc_kwargs["plot_grid_kws"].setdefault("sharey", True)
@@ -275,36 +280,47 @@ def plot_forest(
     if "column" in distribution.dims:
         distribution = distribution.sel(column="forest")
 
+    if combined:
+        chain_mapped_to_aes = set(
+            aes_key
+            for var_name, child in plot_collection.aes.children.items()
+            for aes_key, aes_vals in child.items()
+            if "chain" in aes_vals.dims
+        )
+        if chain_mapped_to_aes:
+            raise ValueError(
+                f"Found properties {chain_mapped_to_aes} mapped to the chain dimension, "
+                "but combined=True. Set combined=False or modify the aesthetic mappings"
+            )
+
     # fine tune y position for model and chain
+    add_factor = 0.2 if (not combined) or ("model" in distribution.dims) else 0
     y_ds = plot_collection.get_aes_as_dataset("y")
-    add_factor = 0
-    shift = 0
-    if combined and "model" in distribution.dims:
-        add_factor = 0.2
-        shift = xr.DataArray(
-            np.linspace(-0.2, 0.2, distribution.sizes["model"]),
-            coords={"model": distribution.model},
-        )
-    elif (not combined) and ("model" in distribution.dims):
-        add_factor = 0.2
-        model_spacing = xr.DataArray(
-            np.linspace(-0.2, 0.2, distribution.sizes["model"]),
-            coords={"model": distribution.model},
-        )
-        chain_lim = 0.4 * (model_spacing[1] - model_spacing[0])
-        chain_spacing = xr.DataArray(
-            np.linspace(-chain_lim, chain_lim, distribution.sizes["chain"]),
-            coords={"chain": distribution.chain},
-        )
-        shift = model_spacing + chain_spacing
-    elif not combined:
-        add_factor = 0.2
-        shift = xr.DataArray(
-            np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
-            coords={"chain": distribution.chain},
-        )
-    y_ds = y_ds.max().to_array().max() - add_factor - y_ds - shift
-    plot_collection.update_aes_from_dataset("y", y_ds)
+    if not given_plotcollection:
+        shift = 0
+        if combined and "model" in distribution.dims:
+            shift = xr.DataArray(
+                np.linspace(-0.2, 0.2, distribution.sizes["model"]),
+                coords={"model": distribution.model},
+            )
+        elif (not combined) and ("model" in distribution.dims):
+            model_spacing = xr.DataArray(
+                np.linspace(-0.2, 0.2, distribution.sizes["model"]),
+                coords={"model": distribution.model},
+            )
+            chain_lim = 0.4 * (model_spacing[1] - model_spacing[0])
+            chain_spacing = xr.DataArray(
+                np.linspace(-chain_lim, chain_lim, distribution.sizes["chain"]),
+                coords={"chain": distribution.chain},
+            )
+            shift = model_spacing + chain_spacing
+        elif not combined:
+            shift = xr.DataArray(
+                np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
+                coords={"chain": distribution.chain},
+            )
+        y_ds = y_ds.max().to_array().max() - add_factor - y_ds - shift
+        plot_collection.update_aes_from_dataset("y", y_ds)
 
     if aes_map is None:
         aes_map = {}
