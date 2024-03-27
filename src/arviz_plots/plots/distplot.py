@@ -61,7 +61,7 @@ def plot_dist(
     group : str, default "posterior"
         Group to be plotted.
     coords : dict, optional
-    sample_dims : iterable, optional
+    sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
     kind : {"kde", "hist", "dot", "ecdf"}, optional
@@ -77,7 +77,7 @@ def plot_dist(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : iterable of str}, optional
+    aes_map : mapping of {str : sequence of str}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs`.
 
@@ -163,6 +163,8 @@ def plot_dist(
 
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
     if ci_kind is None:

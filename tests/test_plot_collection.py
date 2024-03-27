@@ -5,7 +5,7 @@ import pytest
 import xarray.testing as xrt
 from arviz_base import dict_to_dataset, load_arviz_data
 from datatree import DataTree
-from xarray import DataArray, Dataset, concat
+from xarray import DataArray, Dataset, concat, full_like
 
 from arviz_plots import PlotCollection
 
@@ -241,6 +241,26 @@ def generate_plot_collection2():
         }
     )
     return PlotCollection(data, viz_dt=viz_dt, aes_dt=aes_dt, backend="backend")
+
+
+def test_aes_dataset_manipulation(dataset):
+    pc = generate_plot_collection1(dataset)
+    color_ds = pc.get_aes_as_dataset("color")
+    assert isinstance(color_ds, Dataset)
+    assert list(color_ds.data_vars) == ["mu", "theta", "eta"]
+    color_ds["mu"] = "C0"
+    color_ds["theta"] = "C1"
+    color_ds["eta"] = full_like(color_ds["eta"], "C2")
+    pc.update_aes_from_dataset("color", color_ds)
+    aes_dt = pc.aes
+    assert isinstance(aes_dt, DataTree)
+    assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+    assert all("color" in child.data_vars for child in aes_dt.children.values())
+    assert aes_dt["mu"]["color"].item() == "C0"
+    assert "hierarchy" not in aes_dt["theta"]["color"].dims
+    assert aes_dt["theta"]["color"].item() == "C1"
+    assert "hierarchy" in aes_dt["eta"]["color"].dims
+    assert np.all(aes_dt["eta"]["color"] == "C2")
 
 
 class TestMap:

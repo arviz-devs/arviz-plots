@@ -42,10 +42,37 @@ def datatree2(seed=17):
     )
 
 
+@pytest.fixture(scope="module")
+def datatree_sample(seed=31):
+    rng = np.random.default_rng(seed)
+    mu = rng.normal(size=100)
+    tau = rng.normal(size=100)
+    theta = rng.normal(size=(100, 7))
+    diverging = rng.choice([True, False], size=100, p=[0.1, 0.9])
+
+    return from_dict(
+        {
+            "posterior": {"mu": mu, "theta": theta, "tau": tau},
+            "sample_stats": {"diverging": diverging},
+        },
+        dims={"theta": ["hierarchy"]},
+        sample_dims=["sample"],
+    )
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh"])
 class TestPlots:
     def test_plot_dist(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
+        assert not pc.aes["mu"]
+        assert "kde" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
+        assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+
+    def test_plot_dist_sample(self, datatree_sample, backend):
+        pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample")
         assert not pc.aes["mu"]
         assert "kde" in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
@@ -70,6 +97,11 @@ class TestPlots:
     def test_plot_forest(self, datatree, backend):
         pc = plot_forest(datatree, backend=backend)
         assert "plot" in pc.viz.data_vars
+        assert all("y" in child.data_vars for child in pc.aes.children.values())
+
+    def test_plot_forest_sample(self, datatree_sample, backend):
+        pc = plot_forest(datatree_sample, backend=backend, sample_dims="sample")
+        assert "plot" in pc.viz.data_vars
 
     def test_plot_forest_models(self, datatree, datatree2, backend):
         pc = plot_forest({"c": datatree, "n": datatree2}, backend=backend)
@@ -86,6 +118,7 @@ class TestPlots:
         pc.map(visuals.scatter_x, "ess", data=mock_ess, coords={"column": "ess"}, color="blue")
         assert "plot" in pc.viz.data_vars
         assert pc.viz["plot"].sizes["column"] == 3
+        assert all("ess" in child.data_vars for child in pc.viz.children.values())
 
     def test_plot_forest_color_shading(self, datatree2, backend):
         pc = plot_forest(
@@ -96,3 +129,4 @@ class TestPlots:
             backend=backend,
         )
         assert "plot" in pc.viz.data_vars
+        assert all("shade" in child.data_vars for child in pc.viz.children.values())

@@ -58,10 +58,12 @@ def plot_forest(
     group : str, default "posterior"
         Group to be plotted.
     coords : dict, optional
-    sample_dims : iterable, optional
+    sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    combined : bool, False
+    combined : bool, default False
+        Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
+        is not present.
     point_estimate : {"mean", "median", "mode"}, optional
         Which point estimate to plot. Defaults to ``rcParams["plot.point_estimate"]``
     ci_kind : {"eti", "hdi"}, optional
@@ -70,8 +72,10 @@ def plot_forest(
         Indicates the probabilities that should be contained within the plotted credible intervals.
         It should be sorted as the elements refer to the probabilities of the "trunk" and "twig"
         elements. Defaults to ``(0.5, rcParams["stats.ci_prob"])``
-    labels : iterable of str, optional
-        Iterable with the dimensions to be labelled in the plot. By default all dimensions.
+    labels : sequence of str, optional
+        Sequence with the dimensions to be labelled in the plot. By default all dimensions
+        except "chain" and "model" (if present). The order of `labels` is ignored,
+        only elements being present in it matters.
         It can include the special "__variable__" indicator, and does so by default.
     shade_label : str, default None
         Element of `labels` that should be used to add shading horizontal strips to the plot.
@@ -82,7 +86,7 @@ def plot_forest(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : iterable of str}, optional
+    aes_map : mapping of {str : sequence of str}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs` except "ticklabels"
         which doesn't apply and "twig" and "trunk" which, similarly to `stats_kwargs`
@@ -199,6 +203,8 @@ def plot_forest(
 
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
     if ci_probs is None:
         rc_ci_prob = rcParams["stats.ci_prob"]
         ci_probs = (0.5, rc_ci_prob) if rc_ci_prob > 0.5 else (0.5 * rc_ci_prob, rc_ci_prob)
@@ -226,6 +232,8 @@ def plot_forest(
     ]
     if labels is None:
         labels = labellable_dims
+    if not combined and "chain" not in distribution.dims:
+        combined = True
 
     if shade_label is not None and shade_label not in labels:
         raise ValueError("shade_label must be one of the elements in labels argument")
@@ -277,7 +285,7 @@ def plot_forest(
             np.linspace(-0.2, 0.2, distribution.sizes["model"]),
             coords={"model": distribution.model},
         )
-    elif ("model" in distribution.dims) and ("chain" in distribution.dims):
+    elif (not combined) and ("model" in distribution.dims):
         add_factor = 0.2
         model_spacing = xr.DataArray(
             np.linspace(-0.2, 0.2, distribution.sizes["model"]),
@@ -289,7 +297,7 @@ def plot_forest(
             coords={"chain": distribution.chain},
         )
         shift = model_spacing + chain_spacing
-    elif "chain" in distribution.dims and not combined:
+    elif not combined:
         add_factor = 0.2
         shift = xr.DataArray(
             np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
@@ -404,7 +412,7 @@ def plot_forest(
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     plot_bknd.xticks(
         np.arange(len(labels)),
-        [label.strip("_") for label in labels],
+        [label.strip("_") for label in labellable_dims if label in labels],
         plot_collection.get_target(None, {"column": "labels"}),
         **plot_kwargs.get("ticklabels", {}),
     )
