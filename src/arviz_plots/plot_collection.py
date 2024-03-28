@@ -361,22 +361,24 @@ class PlotCollection:
                     aes_cumulative += n_aes
             else:
                 total_aes_vals = int(
-                    np.prod([self.data.sizes[dim] for dim in self.data.dims if dim in dims])
+                    np.prod([self.data.sizes[dim] for dim in dims])
                 )
-                aes_vals = get_default_aes(aes_key, total_aes_vals, kwargs)
+                neutral_element_needed = not all(set(dims) <= set(da.dims) for da in self.data.values())
+                aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
+                if neutral_element_needed:
+                    neutral_element = aes_vals[0]
+                    aes_vals = aes_vals[1:]
+                aes_da = xr.DataArray(
+                        np.array(aes_vals).reshape([da.sizes[dim] for dim in dims]),
+                        dims=dims,
+                        coords={dim: da.coords[dim] for dim in dims if dim da.coords},
+                )
                 for var_name, da in self.data.items():
                     ds = ds_dict[var_name]
-                    aes_dims = [dim for dim in dims if dim in da.dims]
-                    aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
-                    if not aes_raw_shape:
-                        ds[aes_key] = aes_vals[0]
-                        continue
-                    n_aes = np.prod(aes_raw_shape)
-                    ds[aes_key] = xr.DataArray(
-                        np.array(aes_vals[:n_aes]).reshape(aes_raw_shape),
-                        dims=aes_dims,
-                        coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
-                    )
+                    if set(dims) <= set(da.dims):
+                        ds[aes_key] = aes_da
+                    else:
+                        ds[aes_key] = neutral_element
         self._aes_dt = DataTree.from_dict(ds_dict)
 
     def get_aes_as_dataset(self, aes_key):
