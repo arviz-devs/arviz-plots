@@ -371,7 +371,7 @@ class PlotCollection:
                 aes_da = xr.DataArray(
                         np.array(aes_vals).reshape([da.sizes[dim] for dim in dims]),
                         dims=dims,
-                        coords={dim: da.coords[dim] for dim in dims if dim da.coords},
+                        coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
                 )
                 for var_name, da in self.data.items():
                     ds = ds_dict[var_name]
