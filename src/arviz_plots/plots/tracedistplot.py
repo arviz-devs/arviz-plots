@@ -1,10 +1,14 @@
 """TraceDist plot code."""
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
-from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_size_of_var, scale_fig_size
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_size_of_var,
+    process_group_variables_coords,
+    scale_fig_size,
+)
 from arviz_plots.visuals import (
     ecdf_line,
     labelled_x,
@@ -20,8 +24,11 @@ def plot_trace_dist(
     dt,
     var_names=None,
     filter_vars=None,
+    group="posterior",
+    coords=None,
     sample_dims=None,
     compact=True,
+    combined=False,
     kind=None,
     plot_collection=None,
     backend=None,
@@ -83,20 +90,24 @@ def plot_trace_dist(
     else:
         pc_kwargs = pc_kwargs.copy()
 
-    var_names = _var_names(var_names, dt.posterior.ds, filter_vars)
+    distribution = process_group_variables_coords(
+        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
+    )
+    aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
+    if not combined and "chain" not in distribution.dims:
+        combined = True
 
-    if var_names is None:
-        posterior = dt.posterior.ds
-    else:
-        posterior = dt.posterior.ds[var_names]
-
-    pc_kwargs.setdefault("aes", {"color": ["chain"]})
-
-    aux_dim_list = [dim for dim in posterior.dims if dim not in sample_dims]
+    pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+    if compact:
+        pc_kwargs["aes"].setdefault("color", ["__variable__"] + aux_dim_list)
+        if not combined:
+            pc_kwargs["aes"].setdefault("linestyle", ["chain"])
+    elif not combined:
+        pc_kwargs["aes"].setdefault("color", ["chain"])
 
     figsize, textsize, linewidth = scale_fig_size(
         pc_kwargs.get("plot_grid_kws", {}).get("figsize", None),
-        rows=get_size_of_var(posterior, compact=compact, sample_dims=sample_dims),
+        rows=get_size_of_var(distribution, compact=compact, sample_dims=sample_dims),
         cols=2,
     )
 
@@ -115,7 +126,7 @@ def plot_trace_dist(
             pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
 
         plot_collection = PlotCollection.grid(
-            posterior.expand_dims(__column__=2),
+            distribution.expand_dims(column=2),
             backend=backend,
             **pc_kwargs,
         )
@@ -133,7 +144,7 @@ def plot_trace_dist(
 
     # dens
     if kind == "kde":
-        density = posterior.azstats.kde(dims=density_dims, **dist_kwargs.get("density", {}))
+        density = distribution.azstats.kde(dims=density_dims, **dist_kwargs.get("density", {}))
         plot_collection.map(
             line_xy,
             "dist",
@@ -144,7 +155,7 @@ def plot_trace_dist(
         )
 
     elif kind == "ecdf":
-        density = posterior.azstats.ecdf(dims=density_dims, **dist_kwargs.get("density", {}))
+        density = distribution.azstats.ecdf(dims=density_dims, **dist_kwargs.get("density", {}))
         plot_collection.map(
             ecdf_line,
             "dist",
@@ -158,7 +169,7 @@ def plot_trace_dist(
     plot_collection.map(
         line,
         "trace",
-        data=posterior,
+        data=distribution,
         ignore_aes=density_ignore,
         coords={"__column__": 1},
         **plot_kwargs.get("trace", {}),
