@@ -353,7 +353,6 @@ def plot_forest(
         )
 
     # add labels and shading first, so forest plot is rendered on top
-    _, lab_aes, lab_ignore = filter_aes(plot_collection, aes_map, "labels", sample_dims)
     cumulative_label = []
     x = 0
     for label in labellable_dims:
@@ -366,13 +365,6 @@ def plot_forest(
         shade_extend = 0.5 if add_factor == 0 else 0.3
         if label not in labels:
             continue
-        lab_kwargs = plot_kwargs.get("labels", {}).copy()
-        if "color" not in lab_aes:
-            lab_kwargs.setdefault("color", "black")
-        if x == 0:
-            lab_kwargs.setdefault("horizontal_align", "left")
-        if x == len(labels) - 1:
-            lab_kwargs.setdefault("horizontal_align", "right")
         if label == "__variable__":
             y_max = y_ds.max() + shade_extend
             y_min = y_ds.min() - shade_extend
@@ -413,6 +405,23 @@ def plot_forest(
                 ignore_aes=shade_ignore,
                 **shade_kwargs,
             )
+        _, lab_aes, lab_ignore = filter_aes(plot_collection, aes_map, "labels", sample_dims)
+        extra_ignore_aes = []
+        for aes_key in lab_aes:
+            if aes_key == "overlay":
+                continue
+            aes_ds = plot_collection.get_aes_as_dataset(aes_key)
+            if set(aes_ds.dims).difference(cumulative_label):
+                extra_ignore_aes.append(aes_key)
+        lab_aes = set(lab_aes).difference(extra_ignore_aes)
+        lab_ignore = set(lab_ignore).union(extra_ignore_aes)
+        lab_kwargs = plot_kwargs.get("labels", {}).copy()
+        if "color" not in lab_aes:
+            lab_kwargs.setdefault("color", "black")
+        if x == 0:
+            lab_kwargs.setdefault("horizontal_align", "left")
+        if x == len(labels) - 1:
+            lab_kwargs.setdefault("horizontal_align", "right")
         plot_collection.map(
             annotate_label,
             f"{label.strip('_')}_label",

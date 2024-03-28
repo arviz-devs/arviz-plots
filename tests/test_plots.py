@@ -2,7 +2,7 @@
 """Test batteries-included plots."""
 import numpy as np
 import pytest
-from arviz_base import from_dict
+from arviz_base import from_dict, load_arviz_data
 
 from arviz_plots import plot_dist, plot_forest, plot_trace, visuals
 
@@ -120,13 +120,15 @@ class TestPlots:
         assert pc.viz["plot"].sizes["column"] == 3
         assert all("ess" in child.data_vars for child in pc.viz.children.values())
 
-    def test_plot_forest_color_shading(self, datatree2, backend):
-        pc = plot_forest(
-            datatree2,
-            pc_kwargs={"aes": {"color": ["__variable__"]}},
-            aes_map={"labels": ["color"]},
-            shade_label="hierarchy",
-            backend=backend,
-        )
-        assert "plot" in pc.viz.data_vars
-        assert all("shade" in child.data_vars for child in pc.viz.children.values())
+    def test_plot_forest_aes_labels_shading(self, backend):
+        post = load_arviz_data("rugby_field").posterior.ds.sel(draw=slice(None, 100))
+        for pseudo_dim in ("__variable__", "field", "team"):
+            pc = plot_forest(
+                post,
+                pc_kwargs={"aes": {"color": [pseudo_dim]}},
+                aes_map={"labels": ["color"]},
+                shade_label=pseudo_dim,
+                backend=backend,
+            )
+            assert "plot" in pc.viz.data_vars
+            assert all("shade" in child.data_vars for child in pc.viz.children.values())
