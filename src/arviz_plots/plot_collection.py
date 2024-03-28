@@ -360,22 +360,26 @@ class PlotCollection:
                     )
                     aes_cumulative += n_aes
             else:
+                aes_shape = [self.data.sizes[dim] for dim in dims]
+                aes_dims_in_var = {var_name: set(dims) <= set(da.dims) for var_name, da in self.data.items()}
+                if not any(aes_dims_in_var.values()):
+                    warnings.warning("Provided mapping for {aes_key} will only use the neutral element")
                 total_aes_vals = int(
-                    np.prod([self.data.sizes[dim] for dim in dims])
+                    np.prod(aes_shape)
                 )
-                neutral_element_needed = not all(set(dims) <= set(da.dims) for da in self.data.values())
+                neutral_element_needed = not all(aes_dims_in_var.values())
                 aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
                 if neutral_element_needed:
                     neutral_element = aes_vals[0]
                     aes_vals = aes_vals[1:]
                 aes_da = xr.DataArray(
-                        np.array(aes_vals).reshape([da.sizes[dim] for dim in dims]),
+                        np.array(aes_vals).reshape(aes_shape),
                         dims=dims,
-                        coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
+                        coords={dim: self.data.coords[dim] for dim in dims if dim in self.data.coords},
                 )
-                for var_name, da in self.data.items():
+                for var_name in self.data.data_vars:
                     ds = ds_dict[var_name]
-                    if set(dims) <= set(da.dims):
+                    if aes_dims_in_var[var_name]:
                         ds[aes_key] = aes_da
                     else:
                         ds[aes_key] = neutral_element
