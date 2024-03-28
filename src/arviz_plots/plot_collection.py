@@ -1,4 +1,5 @@
 """Plot collection classes."""
+import warnings
 from importlib import import_module
 
 import numpy as np
@@ -360,23 +361,35 @@ class PlotCollection:
                     )
                     aes_cumulative += n_aes
             else:
-                total_aes_vals = int(
-                    np.prod([self.data.sizes[dim] for dim in self.data.dims if dim in dims])
-                )
-                aes_vals = get_default_aes(aes_key, total_aes_vals, kwargs)
-                for var_name, da in self.data.items():
-                    ds = ds_dict[var_name]
-                    aes_dims = [dim for dim in dims if dim in da.dims]
-                    aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
-                    if not aes_raw_shape:
-                        ds[aes_key] = aes_vals[0]
-                        continue
-                    n_aes = np.prod(aes_raw_shape)
-                    ds[aes_key] = xr.DataArray(
-                        np.array(aes_vals[:n_aes]).reshape(aes_raw_shape),
-                        dims=aes_dims,
-                        coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
+                aes_dims_in_var = {
+                    var_name: set(dims) <= set(da.dims) for var_name, da in self.data.items()
+                }
+                if not any(aes_dims_in_var.values()):
+                    warnings.warning(
+                        "Provided mapping for {aes_key} will only use the neutral element"
                     )
+                aes_shape = [self.data.sizes[dim] for dim in dims]
+                total_aes_vals = int(np.prod(aes_shape))
+                neutral_element_needed = not all(aes_dims_in_var.values())
+                aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
+                if neutral_element_needed:
+                    neutral_element = aes_vals[0]
+                    aes_vals = get_default_aes(
+                        aes_key,
+                        total_aes_vals,
+                        {aes_key: [val for val in aes_vals if val != neutral_element]},
+                    )
+                aes_da = xr.DataArray(
+                    np.array(aes_vals).reshape(aes_shape),
+                    dims=dims,
+                    coords={dim: self.data.coords[dim] for dim in dims if dim in self.data.coords},
+                )
+                for var_name in self.data.data_vars:
+                    ds = ds_dict[var_name]
+                    if aes_dims_in_var[var_name]:
+                        ds[aes_key] = aes_da
+                    else:
+                        ds[aes_key] = neutral_element
         self._aes_dt = DataTree.from_dict(ds_dict)
 
     def get_aes_as_dataset(self, aes_key):
@@ -889,8 +902,8 @@ class PlotCollection:
         kwarg_list = [
             {k: v.item() for k, v in aes_ds.sel({dim: coord}).items()} for coord in label_list
         ]
-        for d in kwarg_list:
-            d.pop("overlay", None)
+        for kwarg_dict in kwarg_list:
+            kwarg_dict.pop("overlay", None)
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         return plot_bknd.legend(
             self.viz["chart"].item(),

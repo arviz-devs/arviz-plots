@@ -260,12 +260,12 @@ def plot_forest(
         width_ratios = xr.ones_like(pc_data.column, dtype=float)
         width_ratios.loc[{"column": "forest"}] = 3 if len(labels) < 3 else 2
         pc_kwargs["plot_grid_kws"].setdefault("width_ratios", width_ratios.values)
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if shade_label is not None:
             pc_kwargs["plot_grid_kws"].setdefault("plot_hspace", 0)
-        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+            pc_kwargs["aes"].setdefault("alpha", [shade_label])
         pc_kwargs["aes"].setdefault("y", labellable_dims)
         pc_kwargs["aes"].setdefault("overlay", labellable_dims)
-        pc_kwargs["aes"].setdefault("alpha", [shade_label])
         pc_kwargs.setdefault("alpha", [0, 0.3])
         if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
