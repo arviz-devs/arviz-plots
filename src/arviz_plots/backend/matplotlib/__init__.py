@@ -11,10 +11,12 @@ from typing import Any, Dict
 from matplotlib.cbook import normalize_kwargs
 from matplotlib.collections import PathCollection
 from matplotlib.lines import Line2D
+from matplotlib.pyplot import rcParams
 from matplotlib.pyplot import show as _show
 from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
+from .. import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
 __all__ = [
@@ -25,10 +27,13 @@ __all__ = [
     "title",
     "ylabel",
     "xlabel",
+    "xticks",
+    "yticks",
     "ticks_size",
     "remove_ticks",
     "remove_axis",
     "legend",
+    "xlim",
 ]
 
 
@@ -37,6 +42,33 @@ class UnsetDefault:
 
 
 unset = UnsetDefault()
+
+
+# generation of default values for aesthetics
+def get_default_aes(aes_key, n, kwargs):
+    """Generate `n` *bokeh valid* default values for a given aesthetics keyword."""
+    if aes_key not in kwargs:
+        default_prop_cycle = rcParams["axes.prop_cycle"].by_key()
+        if ("color" in aes_key) or aes_key == "c":
+            # fmt: off
+            vals = [
+                '#3f90da', '#ffa90e', '#bd1f01', '#94a4a2', '#832db6',
+                '#a96b59', '#e76300', '#b9ac70', '#717581', '#92dadd'
+            ]
+            # fmt: on
+            vals = default_prop_cycle.get("color", vals)
+        elif aes_key in {"linestyle", "ls"}:
+            vals = ["-", "--", ":", "-."]
+            vals = default_prop_cycle.get("linestyle", vals)
+        elif aes_key in {"marker", "m"}:
+            vals = ["o", "+", "^", "x", "d"]
+            vals = default_prop_cycle.get("marker", vals)
+        elif aes_key in default_prop_cycle:
+            vals = default_prop_cycle[aes_key]
+        else:
+            return get_agnostic_default_aes(aes_key, n, {})
+        return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
+    return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
 # object creation and i/o
@@ -53,6 +85,8 @@ def create_plotting_grid(
     sharex=False,
     sharey=False,
     polar=False,
+    width_ratios=None,
+    plot_hspace=None,
     subplot_kws=None,
     **kwargs,
 ):
@@ -82,8 +116,18 @@ def create_plotting_grid(
     subplot_kws = subplot_kws.copy()
     if polar:
         subplot_kws["projection"] = "polar"
+    if plot_hspace is not None:
+        kwargs["gridspec_kw"] = kwargs.get("gridspec_kw", {}).copy()
+        kwargs["gridspec_kw"].setdefault("wspace", plot_hspace)
     fig, axes = subplots(
-        rows, cols, sharex=sharex, sharey=sharey, squeeze=squeeze, subplot_kw=subplot_kws, **kwargs
+        rows,
+        cols,
+        sharex=sharex,
+        sharey=sharey,
+        squeeze=squeeze,
+        width_ratios=width_ratios,
+        subplot_kw=subplot_kws,
+        **kwargs,
     )
     extra = (rows * cols) - number
     if extra > 0:
@@ -130,14 +174,16 @@ def scatter(
 ):
     """Interface to matplotlib for a scatter plot."""
     artist_kws.setdefault("zorder", 2)
+    fillable_marker = (marker is unset) or (marker in Line2D.filled_markers)
     if color is not unset:
-        if facecolor is not unset or edgecolor is not unset:
-            warnings.warn(
-                "color overrides facecolor and edgecolor. Their values will be ignored.",
-                UserWarning,
-            )
-        facecolor = color
-        edgecolor = color
+        if facecolor is unset and edgecolor is unset:
+            facecolor = color
+            if fillable_marker:
+                edgecolor = color
+        elif facecolor is unset:
+            facecolor = color
+        elif edgecolor is unset and fillable_marker:
+            edgecolor = color
     kwargs = {
         "s": size,
         "marker": marker,
@@ -158,8 +204,8 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
-    vertical_align=unset,
-    horizontal_align=unset,
+    vertical_align="center",
+    horizontal_align="center",
     **artist_kws,
 ):
     """Interface to matplotlib for adding text to a plot."""
@@ -171,6 +217,12 @@ def text(
         "verticalalignment": vertical_align,
     }
     return target.text(x, y, string, **_filter_kwargs(kwargs, Text, artist_kws))
+
+
+def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
+    """Fill the area between y_bottom and y_top."""
+    artist_kws.setdefault("linewidth", 0)
+    return target.fill_between(x, y_bottom, y_top, **artist_kws)
 
 
 # general plot appeareance
@@ -190,6 +242,21 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a label to the x axis."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
+
+
+def xticks(ticks, labels, target, **artist_kws):
+    """Interface to matplotlib for adding x ticks and labels to a plot."""
+    return target.set_xticks(ticks, labels, **artist_kws)
+
+
+def yticks(ticks, labels, target, **artist_kws):
+    """Interface to matplotlib for adding y ticks and labels to a plot."""
+    return target.set_yticks(ticks, labels, **artist_kws)
+
+
+def xlim(lims, target, **artist_kws):
+    """Interface to matplotlib for setting limits for the x axis."""
+    target.set_xlim(lims, **artist_kws)
 
 
 def ticks_size(value, target):

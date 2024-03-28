@@ -36,6 +36,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "jupyter_sphinx",
+    "matplotlib.sphinxext.plot_directive",
 ]
 
 templates_path = ["_templates"]
@@ -67,10 +68,18 @@ add_function_parentheses = False
 
 # -- Options for extensions
 
+plot_include_source = True
+plot_formats = [("png", 90)]
+plot_html_show_formats = False
+plot_html_show_source_link = False
+
 extlinks = {
     "issue": ("https://github.com/arviz-devs/arviz-base/issues/%s", "GH#%s"),
     "pull": ("https://github.com/arviz-devs/arviz-base/pull/%s", "PR#%s"),
 }
+
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 nb_execution_mode = "auto"
 nb_execution_excludepatterns = ["*.ipynb"]
@@ -85,12 +94,13 @@ autodoc_default_options = {
 
 numpydoc_show_class_members = False
 numpydoc_xref_param_type = True
-numpydoc_xref_ignore = {"of", "or", "optional", "scalar"}
+numpydoc_xref_ignore = {"of", "or", "optional", "scalar", "default"}
 singulars = ("int", "list", "dict", "float")
 numpydoc_xref_aliases = {
     "DataArray": ":class:`xarray.DataArray`",
     "Dataset": ":class:`xarray.Dataset`",
     "DataTree": ":class:`datatree.DataTree`",
+    "mapping": ":term:`python:mapping`",
     **{f"{singular}s": f":any:`{singular}s <{singular}>`" for singular in singulars},
 }
 

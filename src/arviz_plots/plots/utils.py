@@ -1,4 +1,46 @@
 """Utilities for batteries included plots."""
+from arviz_base.utils import _var_names
+from xarray import Dataset
+
+from arviz_plots.plot_collection import concat_model_dict
+
+
+def get_group(data, group):
+    """Get a group from a Datatree or Dataset if possible and return a Dataset.
+
+    Also supports InferenceData or dictionaries of Datasets.
+    """
+    if isinstance(data, Dataset):
+        return data
+    if hasattr(data, "name") and data.name == group:
+        return data.ds
+    data = data[group]
+    if isinstance(data, Dataset):
+        return data
+    return data.ds
+
+
+def process_group_variables_coords(dt, group, var_names, filter_vars, coords):
+    """Process main input arguments of batteries included plotting functions."""
+    if coords is None:
+        coords = {}
+    if isinstance(dt, dict):
+        distribution = {}
+        for key, value in dt.items():
+            var_names = _var_names(var_names, get_group(value, group), filter_vars)
+            distribution[key] = (
+                get_group(value, group).sel(coords)
+                if var_names is None
+                else get_group(value, group)[var_names].sel(coords)
+            )
+        distribution = concat_model_dict(distribution)
+    else:
+        distribution = get_group(dt, group)
+        var_names = _var_names(var_names, distribution, filter_vars)
+        if var_names is not None:
+            distribution = distribution[var_names]
+        distribution = distribution.sel(coords)
+    return distribution
 
 
 def filter_aes(pc, aes_map, artist, sample_dims):

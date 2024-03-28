@@ -5,7 +5,7 @@ from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes
-from arviz_plots.visuals import labelled_title, line
+from arviz_plots.visuals import labelled_title, line, trace_rug
 
 
 def plot_trace(
@@ -41,7 +41,7 @@ def plot_trace(
     labeller : labeller, optional
     aes_map : mapping, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Defaults to only mapping properties to the density representation.
+        when plotted. Defaults to only mapping properties to the trace lines.
     plot_kwargs : mapping, optional
         Valid keys are:
 
@@ -72,6 +72,8 @@ def plot_trace(
         posterior = dt.posterior.ds[var_names]
 
     pc_kwargs.setdefault("aes", {"color": ["chain"]})
+    pc_kwargs["aes"] = pc_kwargs["aes"].copy()
+    pc_kwargs["aes"].setdefault("overlay", ["chain"])
 
     if plot_collection is None:
         if backend is None:
@@ -87,15 +89,46 @@ def plot_trace(
         )
 
     if aes_map is None:
-        aes_map = {"trace": plot_collection.aes_set}
+        aes_map = {"trace": plot_collection.aes_set, "divergence": {"overlay"}}
     if labeller is None:
         labeller = BaseLabeller()
 
     # trace
-    _, _, density_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
+    coord = "draw" if "draw" in posterior.dims else None
+    _, _, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
     plot_collection.map(
-        line, "trace", data=posterior, ignore_aes=density_ignore, **plot_kwargs.get("trace", {})
+        line,
+        "trace",
+        data=posterior,
+        ignore_aes=trace_ignore,
+        coord=coord,
+        **plot_kwargs.get("trace", {}),
     )
+
+    # divergences
+    if "/sample_stats" in dt.groups and "diverging" in dt.sample_stats.data_vars:
+        divergence_mask = dt.sample_stats.diverging
+        _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
+        divergence_kwargs = plot_kwargs.get("divergence", {}).copy()
+        if "color" not in div_aes:
+            divergence_kwargs.setdefault("color", "black")
+        if "marker" not in div_aes:
+            divergence_kwargs.setdefault("marker", "|")
+        if "width" not in div_aes:
+            divergence_kwargs.setdefault("width", 1.5)
+        if "size" not in div_aes:
+            divergence_kwargs.setdefault("size", 30)
+
+        plot_collection.map(
+            trace_rug,
+            "divergence",
+            data=posterior,
+            ignore_aes=div_ignore,
+            coord=coord,
+            y=posterior.min(sample_dims),
+            mask=divergence_mask,
+            **divergence_kwargs,
+        )
 
     # aesthetics
     _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)

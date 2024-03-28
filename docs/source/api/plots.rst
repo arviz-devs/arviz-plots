@@ -16,5 +16,6 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    :toctree: generated/
 
    plot_dist
+   plot_forest
    plot_trace
    plot_trace_dist

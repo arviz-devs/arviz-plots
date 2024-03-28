@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "arviz-plots"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
     {name = "ArviZ team", email = "arvizdevs@gmail.com"}
@@ -20,9 +20,9 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 dynamic = ["version", "description"]
 dependencies = [
@@ -45,7 +45,8 @@ test = [
     "pytest",
     "pytest-cov",
     "matplotlib",
-    "bokeh"
+    "bokeh",
+    "h5netcdf",
 ]
 doc = [
     "furo",
@@ -110,6 +111,7 @@ disallow_untyped_defs = true
 # ignore_missing_imports = true
 
 [tool.pytest.ini_options]
+filterwarnings = ["error"]
 testpaths = [
     "tests",
 ]

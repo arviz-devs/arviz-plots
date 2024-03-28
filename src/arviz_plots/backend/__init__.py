@@ -12,12 +12,29 @@ Throughout the documentation of this module, there are a few type placeholders i
 to any type of the plotting backend or even custom objects, but all instances
 of the same placeholder must use the same type (whatever that is).
 """
+import numpy as np
 
 error = NotImplementedError(
     "The `arviz_plots.backend` module itself is for reference only. "
     "A specific backend must be choosen, for example `arviz_plots.backend.bokeh` "
     "or `arviz_plots.backend.matplotlib`"
 )
+
+
+# generation of default values for aesthetics
+def get_default_aes(aes_key, n, kwargs):
+    """Generate `n` default values for a given aesthetics keyword."""
+    if aes_key not in kwargs:
+        if aes_key in {"x", "y"}:
+            return np.arange(n)
+        if aes_key == "alpha":
+            return np.linspace(0.2, 0.7, n)
+        return [None] * n
+    aes_vals = kwargs[aes_key]
+    n_aes_vals = len(aes_vals)
+    if n_aes_vals >= n:
+        return aes_vals[:n]
+    return np.tile(aes_vals, (n // n_aes_vals) + 1)[:n]
 
 
 # object creation and i/o
@@ -39,6 +56,8 @@ def create_plotting_grid(
     sharex=False,
     sharey=False,
     polar=False,
+    width_ratios=None,
+    plot_hspace=None,
     subplot_kws=None,
     **kwargs,
 ):
@@ -56,6 +75,8 @@ def create_plotting_grid(
         Flags that indicate the axis limits between the different plots should
         be shared.
     polar : bool, default False
+    width_ratios : array_like of shape (cols,), optional
+    plot_hspace : float, optional
     subplot_kws, **kwargs : mapping, optional
         Arguments passed downstream to the plotting backend.
 
@@ -114,9 +135,10 @@ def scatter(
     target : plot type
     size : float or array-like of float
     marker : any
+        The character ``|`` must be a valid marker as it is the default for rug plots.
     alpha : float
     color : any
-        Set both facecolor and edgecolor simultaneously.
+        Set both facecolor and edgecolor simultaneously but without overriding them if present.
     facecolor : any
         Color of the marker filling.
     edgecolor : any
@@ -145,6 +167,11 @@ def text(
     raise error
 
 
+def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
+    """Fill the region between y_bottom and y_top."""
+    raise error
+
+
 # general plot appeareance
 def title(string, target, *, size=None, color=None, **artist_kws):
     """Interface to adding a title to a plot."""
@@ -158,6 +185,32 @@ def ylabel(string, target, *, size=None, color=None, **artist_kws):
 
 def xlabel(string, target, *, size=None, color=None, **artist_kws):
     """Interface to adding a label to a plot's x axis."""
+    raise error
+
+
+def xticks(ticks, labels, traget, **artist_kws):
+    """Interface to setting ticks and tick labels of the x axis.
+
+    Parameters
+    ----------
+    ticks : array_like
+    labels : array_like or None
+        Labels for the provided `ticks`. Must accept ``None`` as a way
+        to set only ticks and leave their default labels.
+    """
+    raise error
+
+
+def yticks(ticks, labels, traget, **artist_kws):
+    """Interface to setting ticks and tick labels of the y axis.
+
+    Parameters
+    ----------
+    ticks : array_like
+    labels : array_like or None
+        Labels for the provided `ticks`. Must accept ``None`` as a way
+        to set only ticks and leave their default labels.
+    """
     raise error
 
 

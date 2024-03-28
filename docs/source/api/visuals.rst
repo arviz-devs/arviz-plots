@@ -22,6 +22,7 @@ Data and axis annotating elements
 .. autosummary::
    :toctree: generated/
 
+   annotate_label
    point_estimate_text
    labelled_title
    labelled_y
