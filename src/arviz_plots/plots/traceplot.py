@@ -1,10 +1,10 @@
 """Trace plot code."""
+import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
-from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes
+from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import labelled_title, line, trace_rug
 
 
@@ -12,6 +12,8 @@ def plot_trace(
     dt,
     var_names=None,
     filter_vars=None,
+    group="posterior",
+    coords=None,
     sample_dims=None,
     plot_collection=None,
     backend=None,
@@ -57,6 +59,8 @@ def plot_trace(
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -64,49 +68,62 @@ def plot_trace(
     else:
         pc_kwargs = pc_kwargs.copy()
 
-    var_names = _var_names(var_names, dt.posterior.ds, filter_vars)
-
-    if var_names is None:
-        posterior = dt.posterior.ds
-    else:
-        posterior = dt.posterior.ds[var_names]
-
-    pc_kwargs.setdefault("aes", {"color": ["chain"]})
-    pc_kwargs["aes"] = pc_kwargs["aes"].copy()
-    pc_kwargs["aes"].setdefault("overlay", ["chain"])
+    distribution = process_group_variables_coords(
+        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
+    )
 
     if plot_collection is None:
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        if "chain" in distribution:
+            pc_kwargs["aes"].setdefault("color", ["chain"])
+            pc_kwargs["aes"].setdefault("overlay", ["chain"])
         if backend is None:
             backend = rcParams["plot.backend"]
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
-            "cols", ["__variable__"] + [dim for dim in posterior.dims if dim not in sample_dims]
+            "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
         )
         plot_collection = PlotCollection.wrap(
-            posterior,
+            distribution,
             backend=backend,
             **pc_kwargs,
         )
 
     if aes_map is None:
-        aes_map = {"trace": plot_collection.aes_set, "divergence": {"overlay"}}
+        aes_map = {}
+    else:
+        aes_map = aes_map.copy()
+    aes_map.setdefault("trace", plot_collection.aes_set)
+    aes_map.setdefault("divergence", {"overlay"})
+
     if labeller is None:
         labeller = BaseLabeller()
 
     # trace
-    coord = "draw" if "draw" in posterior.dims else None
+    trace_kwargs = plot_kwargs.get("trace", {}).copy()
+    default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
+    if (default_xname not in distribution.dims) or (
+        not np.issubdtype(distribution[default_xname].dtype, np.number)
+    ):
+        default_xname = None
+    xname = trace_kwargs.get("xname", default_xname)
+    trace_kwargs["xname"] = xname
     _, _, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
     plot_collection.map(
         line,
         "trace",
-        data=posterior,
+        data=distribution,
         ignore_aes=trace_ignore,
-        coord=coord,
-        **plot_kwargs.get("trace", {}),
+        **trace_kwargs,
     )
 
     # divergences
-    if "/sample_stats" in dt.groups and "diverging" in dt.sample_stats.data_vars:
+    sample_stats = get_group(dt, "sample_stats", allow_missing=True)
+    if (
+        sample_stats is not None
+        and "diverging" in sample_stats.data_vars
+        and np.any(sample_stats.diverging)
+    ):
         divergence_mask = dt.sample_stats.diverging
         _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
         divergence_kwargs = plot_kwargs.get("divergence", {}).copy()
@@ -122,10 +139,10 @@ def plot_trace(
         plot_collection.map(
             trace_rug,
             "divergence",
-            data=posterior,
+            data=distribution,
             ignore_aes=div_ignore,
-            coord=coord,
-            y=posterior.min(sample_dims),
+            xname=xname,
+            y=distribution.min(sample_dims),
             mask=divergence_mask,
             **divergence_kwargs,
         )

@@ -32,23 +32,32 @@ def line_x(da, target, backend, y=None, **kwargs):
     return plot_backend.line(da, y, target, **kwargs)
 
 
-def line(da, target, backend, coord=None, **kwargs):
+def line(da, target, backend, xname=None, **kwargs):
     """Plot a line along the y axis with x being the range of len(y)."""
     if len(da.shape) != 1:
         raise ValueError(f"Expected unidimensional data but got {da.sizes}")
     yvalues = da.values
-    xvalues = np.arange(len(yvalues)) if coord is None else da.coords[coord]
+    xvalues = np.arange(len(yvalues)) if xname is None else da[xname]
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
-def trace_rug(da, target, backend, mask, coord=None, y=None, **kwargs):
+def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
-    if len(da.shape) != 1:
-        raise ValueError(f"Expected unidimensional data but got {da.sizes}")
-    xvalues = np.arange(len(da)) if coord is None else da.coords[coord]
-    if y is None:
-        y = da.min().item()
+    xname = xname.item() if hasattr(xname, "item") else xname
+    if xname is False:
+        xvalues = da
+    else:
+        if xname is None:
+            if len(da.shape) != 1:
+                raise ValueError(f"Expected unidimensional data but got {da.sizes}")
+            xvalues = np.arange(len(da))
+        else:
+            xvalues = da[xname]
+        if y is None:
+            y = da.min().item()
+    if len(xvalues.shape) != 1:
+        raise ValueError(f"Expected unidimensional data but got {xvalues.sizes}")
     return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
 
 
@@ -153,22 +162,38 @@ def labelled_title(da, target, backend, *, labeller, var_name, sel, isel, **kwar
     return plot_backend.title(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
 
 
-def labelled_y(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
+def labelled_y(
+    da, target, backend, *, text=None, labeller=None, var_name=None, sel=None, isel=None, **kwargs
+):
     """Add a y label to a plot using an ArviZ labeller."""
+    if text is None and labeller is None:
+        raise ValueError("Either text or labeller must be provided")
+    if text is not None and labeller is not None:
+        raise ValueError("Only text or labeller can be provided")
+    if labeller is not None:
+        text = labeller.make_label_vert(var_name, sel, isel)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.ylabel(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
+    return plot_backend.ylabel(text, target, **kwargs)
 
 
-def labelled_x(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
+def labelled_x(
+    da, target, backend, *, text=None, labeller=None, var_name=None, sel=None, isel=None, **kwargs
+):
     """Add a x label to a plot using an ArviZ labeller."""
+    if text is None and labeller is None:
+        raise ValueError("Either text or labeller must be provided")
+    if text is not None and labeller is not None:
+        raise ValueError("Only text or labeller can be provided")
+    if labeller is not None:
+        text = labeller.make_label_vert(var_name, sel, isel)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.xlabel(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
+    return plot_backend.xlabel(text, target, **kwargs)
 
 
-def ticks_size(da, target, backend, *, value, **kwargs):
+def ticklabel_props(da, target, backend, **kwargs):
     """Set the size of ticks."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.ticks_size(value, target)
+    return plot_backend.ticklabel_props(target, **kwargs)
 
 
 def remove_axis(da, target, backend, **kwargs):

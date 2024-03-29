@@ -1,10 +1,13 @@
 """TraceDist plot code."""
+import numpy as np
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_group,
     get_size_of_var,
     process_group_variables_coords,
     scale_fig_size,
@@ -16,7 +19,8 @@ from arviz_plots.visuals import (
     line,
     line_xy,
     remove_ticks,
-    ticks_size,
+    ticklabel_props,
+    trace_rug,
 )
 
 
@@ -34,8 +38,8 @@ def plot_trace_dist(
     backend=None,
     labeller=None,
     aes_map=None,
-    dist_kwargs=None,
     plot_kwargs=None,
+    stats_kwargs=None,
     pc_kwargs=None,
 ):
     """Plot 1D marginal distributions and iteration versus sampled values.
@@ -44,31 +48,47 @@ def plot_trace_dist(
     ----------
     dt : DataTree
         Input data
-    var_names: str or list of str, optional
+    var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars: {None, “like”, “regex”}, optional, default=None
+    filter_vars : {None, “like”, “regex”}, optional, default=None
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
-    sample_dims : iterable, optional
+    group : str, default "posterior"
+        Group to be plotted.
+    sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    compact: bool, optional
-        Plot multidimensional variables in a single plot. Defaults to True
+    compact : bool, default True
+        Plot multidimensional variables in a single :term:`plot`.
+    combined : bool, default False
+        Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
+        is not present.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal distribution.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
     aes_map : mapping, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Defaults to only mapping properties to the distribution representation.
+        Mapping of artists to aesthetics that should use their mapping in `plot_collection` when
+        plotted. The defaults depend on the combination of `compact` and `combined`.
+        Valid keys are the same as for `plot_kwargs`.
     plot_kwargs : mapping, optional
         Valid keys are:
 
-        * trace -> passed to visuals.line
-        * divergence -> passed to visuals.line_x
+        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+
+          * "kde" ->
+          * "ecdf" ->
+
+        * "trace" -> passed to visuals.line
+        * "divergence" -> passed to visuals.trace_rug
+
+    stats_kwargs : mapping, optional
+        Valid keys are:
+
+        * density -> passed to kde, ecdf, ...
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection`
@@ -79,10 +99,12 @@ def plot_trace_dist(
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if dist_kwargs is None:
-        dist_kwargs = {}
+    if stats_kwargs is None:
+        stats_kwargs = {}
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -93,17 +115,8 @@ def plot_trace_dist(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
-    aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
     if not combined and "chain" not in distribution.dims:
         combined = True
-
-    pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-    if compact:
-        pc_kwargs["aes"].setdefault("color", ["__variable__"] + aux_dim_list)
-        if not combined:
-            pc_kwargs["aes"].setdefault("linestyle", ["chain"])
-    elif not combined:
-        pc_kwargs["aes"].setdefault("color", ["chain"])
 
     figsize, textsize, linewidth = scale_fig_size(
         pc_kwargs.get("plot_grid_kws", {}).get("figsize", None),
@@ -111,69 +124,189 @@ def plot_trace_dist(
         cols=2,
     )
 
-    plot_kwargs.setdefault("dist", {}).setdefault("lw", linewidth)
-    plot_kwargs.setdefault("trace", {}).setdefault("lw", linewidth)
-
     if plot_collection is None:
-        if backend is None:
-            backend = rcParams["plot.backend"]
-        pc_kwargs.setdefault("cols", ["__column__"])
-        pc_kwargs.setdefault("plot_grid_kws", {"figsize": figsize})
-
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
         if compact:
-            pc_kwargs.setdefault("rows", ["__variable__"])
+            pc_kwargs["rows"] = ["__variable__"]
         else:
             pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
+            aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
+        if backend is None:
+            backend = rcParams["plot.backend"]
+        pc_kwargs.setdefault("cols", ["column"])
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        if "figsize" not in pc_kwargs["plot_grid_kws"]:
+            pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+            pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
+
+        if compact:
+            pc_kwargs["aes"].setdefault("color", ["__variable__"] + aux_dim_list)
+            if "chain" in distribution.dims:
+                pc_kwargs["aes"].setdefault("overlay", ["__variable__", "chain"] + aux_dim_list)
+                pc_kwargs["aes"].setdefault("linestyle", ["chain"])
+            else:
+                pc_kwargs["aes"].setdefault("overlay", ["__variable__"] + aux_dim_list)
+        elif "chain" in distribution.dims:
+            pc_kwargs["aes"].setdefault("color", ["chain"])
+            pc_kwargs["aes"].setdefault("overlay", ["chain"])
 
         plot_collection = PlotCollection.grid(
-            distribution.expand_dims(column=2),
+            distribution.expand_dims(column=2).assign_coords(column=["dist", "trace"]),
             backend=backend,
             **pc_kwargs,
         )
+    else:
+        aux_dim_list = list(
+            set(
+                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
+            ).difference({"column"})
+        )
 
     if aes_map is None:
-        aes_map = {"trace": plot_collection.aes_set}
+        aes_map = {}
+    else:
+        aes_map = aes_map.copy()
+    if combined and "chain" in distribution.dims:
+        if compact:
+            aes_map[kind] = aes_map.get(
+                kind, plot_collection.aes_set.difference({"overlay", "linestyle"})
+            )
+        else:
+            aes_map[kind] = aes_map.get(
+                kind, plot_collection.aes_set.difference({"overlay", "color"})
+            )
+    else:
+        aes_map[kind] = {"overlay"}.union(aes_map.get(kind, plot_collection.aes_set))
+    aes_map["trace"] = {"overlay"}.union(aes_map.get("trace", plot_collection.aes_set))
+    aes_map["divergence"] = {"overlay"}.union(aes_map.get("divergence", {}))
+
+    if combined and "chain" in distribution.dims:
+        chain_mapped_to_aes = set(
+            aes_key for aes_key, aes_dims in pc_kwargs["aes"].items() if "chain" in aes_dims
+        ).intersection(aes_map[kind])
+        if chain_mapped_to_aes:
+            raise ValueError(
+                f"Found properties {chain_mapped_to_aes} mapped to the chain dimension, "
+                "but combined=True. Set combined=False or modify the aesthetic mappings"
+            )
 
     if labeller is None:
         labeller = BaseLabeller()
 
-    density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
-
-    if compact:
-        density_dims += aux_dim_list
+    dist_dims, dist_aes, dist_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
 
     # dens
+    dist_kwargs = plot_kwargs.get(kind, {}).copy()
+    if "linewidth" not in dist_aes:
+        dist_kwargs.setdefault("width", linewidth)
     if kind == "kde":
-        density = distribution.azstats.kde(dims=density_dims, **dist_kwargs.get("density", {}))
+        density = distribution.azstats.kde(dims=dist_dims, **stats_kwargs.get("density", {}))
         plot_collection.map(
             line_xy,
             "dist",
             data=density,
-            ignore_aes=density_ignore,
-            coords={"__column__": 0},
-            **plot_kwargs.get("dist", {}),
+            ignore_aes=dist_ignore,
+            coords={"column": "dist"},
+            **dist_kwargs,
         )
 
     elif kind == "ecdf":
-        density = distribution.azstats.ecdf(dims=density_dims, **dist_kwargs.get("density", {}))
+        density = distribution.azstats.ecdf(dims=dist_dims, **stats_kwargs.get("density", {}))
         plot_collection.map(
             ecdf_line,
             "dist",
             data=density,
-            ignore_aes=density_ignore,
-            coords={"__column__": 0},
-            **plot_kwargs.get("dist", {}),
+            ignore_aes=dist_ignore,
+            coords={"column": "dist"},
+            **dist_kwargs,
         )
 
+    _, trace_aes, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
+    trace_kwargs = plot_kwargs.get("trace", {}).copy()
+    if "linewidth" not in trace_aes:
+        trace_kwargs.setdefault("width", linewidth)
+
     # trace
+    default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
+    if (default_xname not in distribution.dims) or (
+        not np.issubdtype(distribution[default_xname].dtype, np.number)
+    ):
+        default_xname = None
+    xname = trace_kwargs.get("xname", default_xname)
+    trace_kwargs["xname"] = xname
     plot_collection.map(
         line,
         "trace",
         data=distribution,
-        ignore_aes=density_ignore,
-        coords={"__column__": 1},
-        **plot_kwargs.get("trace", {}),
+        ignore_aes=trace_ignore,
+        coords={"column": "trace"},
+        **trace_kwargs,
     )
+    # divergences
+    sample_stats = get_group(dt, "sample_stats", allow_missing=True)
+    if (
+        sample_stats is not None
+        and "diverging" in sample_stats.data_vars
+        and np.any(sample_stats.diverging)
+    ):
+        divergence_mask = dt.sample_stats.diverging
+        _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
+        divergence_kwargs = plot_kwargs.get("divergence", {}).copy()
+        if "color" not in div_aes:
+            divergence_kwargs.setdefault("color", "black")
+        if "marker" not in div_aes:
+            divergence_kwargs.setdefault("marker", "|")
+        if "width" not in div_aes:
+            divergence_kwargs.setdefault("width", linewidth)
+        if "size" not in div_aes:
+            divergence_kwargs.setdefault("size", 30)
+
+        if compact:
+            trace_min = distribution.min()
+            plot_collection.map(
+                trace_rug,
+                "divergence_dist",
+                data=distribution,
+                ignore_aes=div_ignore,
+                xname=False,
+                y=0,
+                coords={"column": "dist"},
+                mask=divergence_mask,
+                **divergence_kwargs,
+            )
+            plot_collection.map(
+                trace_rug,
+                "divergence_trace",
+                data=distribution.isel(
+                    {dim: 0 for dim in distribution.dims if dim not in sample_dims}
+                ),
+                ignore_aes=div_ignore,
+                xname=xname,
+                y=trace_min,
+                coords={"column": "trace"},
+                mask=divergence_mask,
+                **divergence_kwargs,
+            )
+        else:
+            div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
+            if "chain" in distribution.dims:
+                div_reduce_dims.append("chain")
+            trace_min = distribution.min(div_reduce_dims)
+            y = xr.concat((xr.zeros_like(trace_min), trace_min), dim="column").assign_coords(
+                column=["dist", "trace"]
+            )
+            plot_collection.map(
+                trace_rug,
+                "divergence",
+                ignore_aes=div_ignore,
+                xname=xr.DataArray(
+                    np.array([False, xname], dtype=object), coords={"column": ["dist", "trace"]}
+                ),
+                y=y,
+                mask=divergence_mask,
+                **divergence_kwargs,
+            )
 
     ## aesthetics
     # Remove yticks, only for KDEs
@@ -184,7 +317,7 @@ def plot_trace_dist(
             remove_ticks,
             "yticks_dist",
             ignore_aes=yticks_dist_ignore,
-            coords={"__column__": 0},
+            coords={"column": "dist"},
             store_artist=False,
             axis="y",  # maybe also be explicit here?
         )
@@ -198,13 +331,13 @@ def plot_trace_dist(
     if "color" not in labels_dist_aes:
         labels_dist_kwargs.setdefault("color", "black")
 
-    labels_dist_kwargs.setdefault("fontsize", textsize)
+    labels_dist_kwargs.setdefault("size", textsize)
 
     plot_collection.map(
         labelled_x,
         "label_x_dist",
         ignore_aes=labels_dist_ignore,
-        coords={"__column__": 0},
+        coords={"column": "dist"},
         subset_info=True,
         labeller=labeller,
         store_artist=False,
@@ -213,9 +346,9 @@ def plot_trace_dist(
 
     plot_collection.map(
         labelled_y,
-        "label_y_dist",
+        "label_y_trace",
         ignore_aes=labels_dist_ignore,
-        coords={"__column__": 1},
+        coords={"column": "trace"},
         subset_info=True,
         labeller=labeller,
         store_artist=False,
@@ -224,11 +357,9 @@ def plot_trace_dist(
 
     # Adjust ticks size
     plot_collection.map(
-        ticks_size,
-        "ticks_size",
+        ticklabel_props,
         ignore_aes=labels_dist_ignore,
-        subset_info=True,
-        value=textsize,
+        axis="both",
         store_artist=False,
         **labels_dist_kwargs,
     )
@@ -241,16 +372,15 @@ def plot_trace_dist(
 
     if "color" not in xlabel_trace_aes:
         xlabel_plot_kwargs.setdefault("color", "black")
-        xlabel_plot_kwargs.setdefault("fontsize", textsize)
+    xlabel_plot_kwargs.setdefault("size", textsize)
 
     plot_collection.map(
         labelled_x,
-        "xlabel_trace",
+        "label_x_trace",
         ignore_aes=xlabel_trace_ignore,
-        coords={"__column__": 1},
-        subset_info=True,
-        labeller=labeller,
-        text="Steps",
+        coords={"column": "trace"},
+        store_artist=False,
+        text="Steps" if xname is None else xname.capitalize(),
         **xlabel_plot_kwargs,
     )
 

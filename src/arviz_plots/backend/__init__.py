@@ -52,6 +52,8 @@ def create_plotting_grid(
     number,
     rows=1,
     cols=1,
+    figsize=None,
+    figsize_units="inches",
     squeeze=True,
     sharex=False,
     sharey=False,
@@ -69,6 +71,10 @@ def create_plotting_grid(
         Number of plots required
     rows, cols : int, default 1
         Number of rows and columns.
+    figsize : (float, float), optional
+        Size of the figure in `figsize_units`.
+    figsize_units : {"inches", "dots"}, default "inches"
+        Units in which `figsize` is given.
     squeeze : bool, default True
         Delete dimensions of size 1 in the resulting array of :term:`plots`
     sharex, sharey : bool, default False
@@ -214,12 +220,12 @@ def yticks(ticks, labels, traget, **artist_kws):
     raise error
 
 
-def ticks_size(value, target):
-    """Interface to setting ticks size."""
+def ticklabel_props(target, *, axis="both", size=None, color=None, **artist_kws):
+    """Interface to setting size of tick labels."""
     raise error
 
 
-def remove_ticks(target, axis="y"):
+def remove_ticks(target, *, axis="y"):
     """Interface to removing ticks from a plot."""
     raise error
 

@@ -19,23 +19,6 @@ from matplotlib.text import Text
 from .. import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
-__all__ = [
-    "create_plotting_grid",
-    "line",
-    "scatter",
-    "text",
-    "title",
-    "ylabel",
-    "xlabel",
-    "xticks",
-    "yticks",
-    "ticks_size",
-    "remove_ticks",
-    "remove_axis",
-    "legend",
-    "xlim",
-]
-
 
 class UnsetDefault:
     """Specific class to indicate an aesthetic hasn't been set."""
@@ -81,6 +64,8 @@ def create_plotting_grid(
     number,
     rows=1,
     cols=1,
+    figsize=None,
+    figsize_units="inches",
     squeeze=True,
     sharex=False,
     sharey=False,
@@ -96,8 +81,12 @@ def create_plotting_grid(
     ----------
     number : int
         Number of axes required
-    rows, cols : int
+    rows, cols : int, default 1
         Number of rows and columns.
+    figsize : (float, float), optional
+        Size of the figure in `figsize_units`.
+    figsize_units : {"inches", "dots"}, default "inches"
+        Units in which `figsize` is given.
     squeeze : bool, default True
     sharex, sharey : bool, default False
     polar : bool
@@ -119,6 +108,13 @@ def create_plotting_grid(
     if plot_hspace is not None:
         kwargs["gridspec_kw"] = kwargs.get("gridspec_kw", {}).copy()
         kwargs["gridspec_kw"].setdefault("wspace", plot_hspace)
+
+    if figsize is not None:
+        if figsize_units == "dots":
+            dpi = rcParams["figure.dpi"]
+            figsize = (figsize[0] / dpi, figsize[1] / dpi)
+        elif figsize_units != "inches":
+            raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
     fig, axes = subplots(
         rows,
         cols,
@@ -259,12 +255,13 @@ def xlim(lims, target, **artist_kws):
     target.set_xlim(lims, **artist_kws)
 
 
-def ticks_size(value, target):
+def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for setting ticks size."""
-    target.tick_params(axis="both", labelsize=value)
+    kwargs = {"labelsize": size, "labelcolor": color}
+    target.tick_params(axis=axis, **_filter_kwargs(kwargs, None, artist_kws))
 
 
-def remove_ticks(target, axis="y"):
+def remove_ticks(target, *, axis="y"):
     """Interface to matplotlib for removing ticks from a plot."""
     if axis == "y":
         target.yaxis.set_ticks([])
