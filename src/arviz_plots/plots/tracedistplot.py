@@ -1,4 +1,6 @@
 """TraceDist plot code."""
+from importlib import import_module
+
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams
@@ -72,18 +74,22 @@ def plot_trace_dist(
     labeller : labeller, optional
     aes_map : mapping, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection` when
-        plotted. The defaults depend on the combination of `compact` and `combined`.
+        plotted. The defaults depend on the combination of `compact` and `combined`,
+        see the examples section for an illustrated description.
         Valid keys are the same as for `plot_kwargs`.
     plot_kwargs : mapping, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
 
-          * "kde" ->
-          * "ecdf" ->
+          * "kde" -> :func:`~.visuals.line_xy`
+          * "ecdf" -> :func:`~.visuals.ecdf_line`
 
-        * "trace" -> passed to visuals.line
-        * "divergence" -> passed to visuals.trace_rug
+        * "trace" -> passed to :func:`~.visuals.line`
+        * "divergence" -> passed to :func:`~.visuals.trace_rug`
+        * "label" -> :func:`~.visuals.labelled_x` and :func:`~.visuals.labelled_y`
+        * "ticklabels" -> :func:`~.visuals.ticklabel_props`
+        * "xlabel_trace" -> :func:`~.visuals.labelled_x`
 
     stats_kwargs : mapping, optional
         Valid keys are:
@@ -96,6 +102,65 @@ def plot_trace_dist(
     Returns
     -------
     PlotCollection
+
+    Examples
+    --------
+    Default plot_trace_dist (``compact=True`` and ``combined=False``). In this case,
+    the multiple coordinate values are overlaid on the same plot for multidimensional values;
+    by default, the color is mapped to all dimensions of each variable (but `sample_dims`)
+    to allow distinguising the different coordinate values.
+
+    As ``combined=False`` each chain is also being plotted, overlaying them on their
+    corresponding plots; as the color property is already taken, the chain information
+    is encoded in the linestyle as default.
+
+    Both mappings are applied to the trace and dist elements.
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_trace_dist, style
+        >>> style.use("arviz-clean")
+        >>> from arviz_base import load_arviz_data
+        >>> centered = load_arviz_data('centered_eight')
+        >>> coords = {"school": ["Choate", "Deerfield", "Hotchkiss"]}
+        >>> pc = plot_trace_dist(centered, coords=coords, compact=True, combined=False)
+        >>> pc.add_legend("school")
+
+    plot_trace_dist with ``compact=True`` and ``combined=True``. The aesthetic mappings
+    stay the same as in the previous case, but now the linestyle property mapping
+    is only taken into account for the trace as in the left column, we use
+    the data from all chains to generate a single distribution representation
+    for each variable+coordinate value combination.
+
+    Similarly to the first case, this default and now only mapping is applied to both
+    the trace and the dist elements.
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_trace_dist(centered, coords=coords, compact=True, combined=True)
+        >>> pc.add_legend("school")
+
+    When ``compact=False``, each variable and coordinate value gets its own plot,
+    and so the color property is no longer used to encode this information.
+    Instead, it is now used to encode the chain information.
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_trace_dist(centered, coords=coords, compact=False, combined=False)
+
+    Similarly to the other ``combined=True`` case, the aesthetics stay the same
+    as with ``combined=False``, but they are ignored by default when plotting
+    on the left column.
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_trace_dist(centered, coords=coords, compact=False, combined=True)
+        >>> pc.add_legend("chain")
+
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
@@ -123,6 +188,36 @@ def plot_trace_dist(
         rows=get_size_of_var(distribution, compact=compact, sample_dims=sample_dims),
         cols=2,
     )
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
+    if len(color_cycle) <= 2:
+        raise ValueError(
+            f"Not enough values provided for color cycle, got {color_cycle} "
+            "but at least 3 are needed"
+        )
+    linestyle_cycle = pc_kwargs.get("linestyle", plot_bknd.get_default_aes("linestyle", 4, {}))
+    if len(linestyle_cycle) <= 2:
+        raise ValueError(
+            f"Not enough values provided for linestyle cycle, got {linestyle_cycle} "
+            "but at least 3 are needed"
+        )
+    if not compact and combined:
+        neutral_color = color_cycle[0]
+        pc_kwargs["color"] = color_cycle[1:]
+    else:
+        neutral_color = False
+
+    if compact and combined:
+        neutral_linestyle = linestyle_cycle[0]
+        pc_kwargs["linestyle"] = linestyle_cycle[1:]
+    else:
+        neutral_linestyle = False
 
     if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
@@ -132,8 +227,6 @@ def plot_trace_dist(
         else:
             pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
             aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
-        if backend is None:
-            backend = rcParams["plot.backend"]
         pc_kwargs.setdefault("cols", ["column"])
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         if "figsize" not in pc_kwargs["plot_grid_kws"]:
@@ -200,6 +293,10 @@ def plot_trace_dist(
     dist_kwargs = plot_kwargs.get(kind, {}).copy()
     if "linewidth" not in dist_aes:
         dist_kwargs.setdefault("width", linewidth)
+    if neutral_color and "color" not in dist_aes:
+        dist_kwargs.setdefault("color", neutral_color)
+    if neutral_linestyle and "linestyle" not in dist_aes:
+        dist_kwargs.setdefault("linestyle", neutral_linestyle)
     if kind == "kde":
         density = distribution.azstats.kde(dims=dist_dims, **stats_kwargs.get("density", {}))
         plot_collection.map(
@@ -319,19 +416,19 @@ def plot_trace_dist(
             ignore_aes=yticks_dist_ignore,
             coords={"column": "dist"},
             store_artist=False,
-            axis="y",  # maybe also be explicit here?
+            axis="y",
         )
 
     # Add varnames as x and y labels
     _, labels_dist_aes, labels_dist_ignore = filter_aes(
-        plot_collection, aes_map, "labels_dist", sample_dims
+        plot_collection, aes_map, "label", sample_dims
     )
-    labels_dist_kwargs = dist_kwargs.get("labels_dist", {}).copy()
+    label_kwargs = plot_kwargs.get("label", {}).copy()
 
     if "color" not in labels_dist_aes:
-        labels_dist_kwargs.setdefault("color", "black")
+        label_kwargs.setdefault("color", "black")
 
-    labels_dist_kwargs.setdefault("size", textsize)
+    label_kwargs.setdefault("size", textsize)
 
     plot_collection.map(
         labelled_x,
@@ -341,7 +438,7 @@ def plot_trace_dist(
         subset_info=True,
         labeller=labeller,
         store_artist=False,
-        **labels_dist_kwargs,
+        **label_kwargs,
     )
 
     plot_collection.map(
@@ -352,27 +449,29 @@ def plot_trace_dist(
         subset_info=True,
         labeller=labeller,
         store_artist=False,
-        **labels_dist_kwargs,
+        **label_kwargs,
     )
 
-    # Adjust ticks size
+    # Adjust tick labels
+    ticklabels_kwargs = plot_kwargs.get("ticklabels", {}).copy()
+    ticklabels_kwargs.setdefault("size", textsize)
     plot_collection.map(
         ticklabel_props,
         ignore_aes=labels_dist_ignore,
         axis="both",
         store_artist=False,
-        **labels_dist_kwargs,
+        **ticklabels_kwargs,
     )
 
     # Add "Steps" as x_label for trace
     _, xlabel_trace_aes, xlabel_trace_ignore = filter_aes(
         plot_collection, aes_map, "xlabel_trace", sample_dims
     )
-    xlabel_plot_kwargs = dist_kwargs.get("xlabel_trace", {}).copy()
+    xlabel_trace_kwargs = plot_kwargs.get("xlabel_trace", {}).copy()
 
     if "color" not in xlabel_trace_aes:
-        xlabel_plot_kwargs.setdefault("color", "black")
-    xlabel_plot_kwargs.setdefault("size", textsize)
+        xlabel_trace_kwargs.setdefault("color", "black")
+    xlabel_trace_kwargs.setdefault("size", textsize)
 
     plot_collection.map(
         labelled_x,
@@ -381,7 +480,7 @@ def plot_trace_dist(
         coords={"column": "trace"},
         store_artist=False,
         text="Steps" if xname is None else xname.capitalize(),
-        **xlabel_plot_kwargs,
+        **xlabel_trace_kwargs,
     )
 
     return plot_collection
