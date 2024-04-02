@@ -25,6 +25,8 @@ def dataset(seed=31):
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh"])
+@pytest.mark.usefixtures("clean_plots")
+@pytest.mark.usefixtures("check_skips")
 class TestFacetting:
     def test_wrap(self, dataset, backend):
         pc = PlotCollection.wrap(

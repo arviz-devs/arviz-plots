@@ -10,22 +10,6 @@ from bokeh.plotting import show as _show
 from .. import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
-__all__ = [
-    "create_plotting_grid",
-    "line",
-    "scatter",
-    "text",
-    "title",
-    "ylabel",
-    "xlabel",
-    "xticks",
-    "yticks",
-    "ticks_size",
-    "remove_ticks",
-    "remove_axis",
-    "legend",
-]
-
 
 class UnsetDefault:
     """Specific class to indicate an aesthetic hasn't been set."""
@@ -65,6 +49,8 @@ def create_plotting_grid(
     number,
     rows=1,
     cols=1,
+    figsize=None,
+    figsize_units="inches",
     squeeze=True,
     sharex=False,
     sharey=False,
@@ -80,8 +66,13 @@ def create_plotting_grid(
     ----------
     number : int
         Number of axes required
-    rows, cols : int
+    rows, cols : int, default 1
         Number of rows and columns.
+    figsize : (float, float), optional
+        Size of the figure in `figsize_units`. It overwrites the values for "width" and "height"
+        in `subplot_kws` if any.
+    figsize_units : {"inches", "dots"}, default "inches"
+        Units in which `figsize` is given.
     squeeze : bool, default True
     sharex, sharey : bool, default False
     polar : bool
@@ -108,6 +99,18 @@ def create_plotting_grid(
     if plot_hspace is not None:
         subplot_kws.setdefault("min_border_left", plot_hspace)
         subplot_kws.setdefault("min_border_right", plot_hspace)
+
+    if figsize is not None:
+        if figsize_units == "inches":
+            figsize = (figsize[0] * 100, figsize[1] * 100)
+            warnings.warn(
+                f"Assuming dpi=100. Use figsize_units='' and figsize={figsize} "
+                "to stop seeing this warning"
+            )
+        elif figsize_units != "dots":
+            raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
+        subplot_kws["width"] = int(np.ceil(figsize[0] / cols))
+        subplot_kws["height"] = int(np.ceil(figsize[1] / rows))
 
     plot_widths = None
     if width_ratios is not None:
@@ -145,6 +148,18 @@ def _filter_kwargs(kwargs, artist_kws):
     """Filter a dictionary to remove all keys whose values are ``unset``."""
     kwargs = {key: value for key, value in kwargs.items() if value is not unset}
     return {**artist_kws, **kwargs}
+
+
+def _float_or_str_size(size):
+    """Bokeh only accepts string sizes with units.
+
+    Convert float sizes to string ones in px units.
+    """
+    if size is unset:
+        return size
+    if isinstance(size, str):
+        return size
+    return f"{size:.0f}px"
 
 
 # "geoms"
@@ -209,7 +224,7 @@ def text(
 ):
     """Interface to bokeh for adding text to a plot."""
     kwargs = {
-        "text_font_size": size,
+        "text_font_size": _float_or_str_size(size),
         "alpha": alpha,
         "color": color,
         "text_align": horizontal_align,
@@ -226,36 +241,36 @@ def text(
 def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     """Fill the area between y_bottom and y_top."""
     x = np.atleast_1d(x)
-    y1 = np.atleast_1d(y_bottom)
-    if y1.size == 1:
-        y1 = y1.item()
-    y2 = np.atleast_1d(y_top)
-    if y2.size == 1:
-        y2 = y2.item()
-    return target.varea(x=x, y1=y1, y2=y2, **artist_kws)
+    y_bottom = np.atleast_1d(y_bottom)
+    if y_bottom.size == 1:
+        y_bottom = y_bottom.item()
+    y_top = np.atleast_1d(y_top)
+    if y_top.size == 1:
+        y_top = y_top.item()
+    return target.varea(x=x, y1=y_bottom, y2=y_top, **artist_kws)
 
 
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a title to a plot."""
-    kwargs = {"text_font_size": size, "text_color": color}
+    kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
     target.title = Title(text=string, **_filter_kwargs(kwargs, artist_kws))
     return target.title
 
 
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a label to the y axis."""
-    kwargs = {"text_font_size": size, "text_color": color}
+    kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
     target.yaxis.axis_label = string
-    for key, value in _filter_kwargs(kwargs, artist_kws):
+    for key, value in _filter_kwargs(kwargs, artist_kws).items():
         setattr(target.yaxis, f"axis_label_{key}", value)
 
 
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a label to the x axis."""
-    kwargs = {"text_font_size": size, "text_color": color}
+    kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
     target.xaxis.axis_label = string
-    for key, value in _filter_kwargs(kwargs, artist_kws):
+    for key, value in _filter_kwargs(kwargs, artist_kws).items():
         setattr(target.xaxis, f"axis_label_{key}", value)
 
 
@@ -266,7 +281,7 @@ def xticks(ticks, labels, target, **artist_kws):
         target.xaxis.major_label_overrides = {
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
-    for key, value in _filter_kwargs({}, artist_kws):
+    for key, value in _filter_kwargs({}, artist_kws).items():
         setattr(target.xaxis, f"major_label_{key}", value)
 
 
@@ -277,7 +292,7 @@ def yticks(ticks, labels, target, **artist_kws):
         target.yaxis.major_label_overrides = {
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
-    for key, value in _filter_kwargs({}, artist_kws):
+    for key, value in _filter_kwargs({}, artist_kws).items():
         setattr(target.yaxis, f"major_label_{key}", value)
 
 
@@ -286,14 +301,26 @@ def xlim(lims, target, **artist_kws):
     target.x_range = Range1d(*lims, **artist_kws)
 
 
-def ticks_size(value, target):  # pylint: disable=unused-argument
+def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to bokeh for setting ticks size."""
-    warnings.warn("Setting ticks size not yet implemented in bokeh")
+    kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
+    for key, value in _filter_kwargs(kwargs, artist_kws).items():
+        if axis in {"y", "both"}:
+            setattr(target.yaxis, f"major_label_{key}", value)
+        if axis in {"x", "both"}:
+            setattr(target.xaxis, f"major_label_{key}", value)
 
 
-def remove_ticks(target, axis="y"):  # pylint: disable=unused-argument
+def remove_ticks(target, *, axis="y"):  # pylint: disable=unused-argument
     """Interface to bokeh for removing ticks from a plot."""
-    warnings.warn("Setting ticks size not yet implemented in bokeh")
+    if axis in {"y", "both"}:
+        target.yaxis.major_tick_out = 0
+        target.yaxis.major_tick_in = 0
+        target.yaxis.major_label_text_font_size = "0pt"
+    if axis in {"y", "both"}:
+        target.yaxis.major_tick_out = 0
+        target.yaxis.major_tick_in = 0
+        target.xaxis.major_label_text_font_size = "0pt"
 
 
 def remove_axis(target, axis="y"):

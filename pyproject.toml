@@ -112,6 +112,7 @@ disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
 filterwarnings = ["error"]
+addopts = "--durations=10"
 testpaths = [
     "tests",
 ]

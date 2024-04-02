@@ -108,7 +108,7 @@ def plot_dist(
     stats_kwargs : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde
+        * density -> passed to kde, ecdf, ...
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 

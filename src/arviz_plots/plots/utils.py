@@ -5,25 +5,51 @@ from xarray import Dataset
 from arviz_plots.plot_collection import concat_model_dict
 
 
-def get_group(data, group):
+def get_group(data, group, allow_missing=False):
     """Get a group from a Datatree or Dataset if possible and return a Dataset.
 
     Also supports InferenceData or dictionaries of Datasets.
+
+    Parameters
+    ----------
+    data : DataTree, Dataset, InferenceData or mapping of {str : Dataset}
+        Object from which to extract `group`
+    group : hashable
+        Id to be extracted. It is checked against the ``name`` attribute
+        and attempted to use as key to get the `group` item from `data`
+    allow_missing : bool, default False
+        Return ``None`` if `group` can't be extracted instead of raising an error.
+
+    Returns
+    -------
+    Dataset
+
+    Raises
+    ------
+    KeyError
+        If unable to access `group` from `data` and ``allow_missing=False``.
     """
     if isinstance(data, Dataset):
         return data
     if hasattr(data, "name") and data.name == group:
         return data.ds
-    data = data[group]
+    try:
+        data = data[group]
+    except KeyError:
+        if allow_missing:
+            raise
+        return None
     if isinstance(data, Dataset):
         return data
     return data.ds
 
 
-def process_group_variables_coords(dt, group, var_names, filter_vars, coords):
+def process_group_variables_coords(dt, group, var_names, filter_vars, coords, allow_dict=True):
     """Process main input arguments of batteries included plotting functions."""
     if coords is None:
         coords = {}
+    if isinstance(dt, dict) and not allow_dict:
+        raise ValueError("Input data as dictionary not supported")
     if isinstance(dt, dict):
         distribution = {}
         for key, value in dt.items():
@@ -86,7 +112,7 @@ def scale_fig_size(figsize, rows=1, cols=1):
     Parameters
     ----------
     figsize : float or None
-        Size of figure in inches
+        Size of figure in dots
     textsize : float or None
         fontsize
     rows : int
@@ -97,7 +123,7 @@ def scale_fig_size(figsize, rows=1, cols=1):
     Returns
     -------
     figsize : float or None
-        Size of figure in inches
+        Size of figure in dots
     labelsize : int
         fontsize for labels
     linewidth : int
@@ -105,14 +131,14 @@ def scale_fig_size(figsize, rows=1, cols=1):
     """
     # we should read figsize from rcParams or bokeh theme
     if figsize is None:
-        width = 8
-        height = (rows + 1) ** 1.1
+        width = 800
+        height = (100 * rows + 100) ** 1.1
     else:
         width, height = figsize
 
     # we should read textsize from rcParams or bokeh theme
     textsize = 14
-    val = (width * height) ** 0.5
+    val = (width / 100 * height / 100) ** 0.5
     val2 = (cols * rows) ** 0.5
     labelsize = textsize * (val / 4) / val2
     linewidth = labelsize / 10

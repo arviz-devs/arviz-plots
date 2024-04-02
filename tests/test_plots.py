@@ -4,7 +4,10 @@ import numpy as np
 import pytest
 from arviz_base import from_dict, load_arviz_data
 
-from arviz_plots import plot_dist, plot_forest, plot_trace, visuals
+from arviz_plots import plot_dist, plot_forest, plot_trace, plot_trace_dist, visuals
+
+pytestmark = pytest.mark.usefixtures("clean_plots")
+pytestmark = pytest.mark.usefixtures("check_skips")
 
 
 @pytest.fixture(scope="module")
@@ -89,13 +92,48 @@ class TestPlots:
         assert "model" in pc.viz["mu"].dims
 
     def test_plot_trace(self, datatree, backend):
-        pc = plot_trace(datatree, var_names=["mu"], backend=backend)
-        assert "/mu" in pc.aes.groups
-        assert "/theta" not in pc.aes.groups
+        pc = plot_trace(datatree, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
         assert pc.viz["mu"].trace.shape == (4,)
 
-    def test_plot_forest(self, datatree, backend):
-        pc = plot_forest(datatree, backend=backend)
+    def test_plot_trace_sample(self, datatree_sample, backend):
+        pc = plot_trace(datatree_sample, sample_dims="sample", backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert pc.viz["mu"].trace.shape == ()
+
+    @pytest.mark.parametrize("compact", (True, False))
+    @pytest.mark.parametrize("combined", (True, False))
+    def test_plot_trace_dist(self, datatree, backend, compact, combined):
+        pc = plot_trace_dist(datatree, backend=backend, compact=compact, combined=combined)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "chain" in pc.viz["theta"]["trace"].dims
+        if combined:
+            assert "chain" not in pc.viz["theta"]["dist"].dims
+        else:
+            assert "chain" in pc.viz["theta"]["dist"].dims
+        if compact:
+            assert "hierarchy" not in pc.viz["theta"]["plot"].dims
+        else:
+            assert "hierarchy" in pc.viz["theta"]["plot"].dims
+
+    @pytest.mark.parametrize("compact", (True, False))
+    def test_plot_trace_dist_sample(self, datatree_sample, backend, compact):
+        pc = plot_trace_dist(
+            datatree_sample, backend=backend, sample_dims="sample", compact=compact
+        )
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        if compact:
+            assert "hierarchy" not in pc.viz["theta"]["plot"].dims
+        else:
+            assert "hierarchy" in pc.viz["theta"]["plot"].dims
+
+    @pytest.mark.parametrize("combined", (True, False))
+    def test_plot_forest(self, datatree, backend, combined):
+        pc = plot_forest(datatree, backend=backend, combined=combined)
         assert "plot" in pc.viz.data_vars
         assert all("y" in child.data_vars for child in pc.aes.children.values())
 

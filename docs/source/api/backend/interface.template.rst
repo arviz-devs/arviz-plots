@@ -28,7 +28,7 @@ Plot appeareance
    xlabel
    xticks
    yticks
-   ticks_size
+   ticklabel_props
    remove_ticks
    remove_axis
 
