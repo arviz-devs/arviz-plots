@@ -47,8 +47,9 @@ def plot_trace(
     plot_kwargs : mapping, optional
         Valid keys are:
 
-        * trace -> passed to visuals.line
-        * divergence -> passed to visuals.line_x
+        * trace -> passed to :func:`~.visuals.line`
+        * divergence -> passed to :func:`~.visuals.trace_rug`
+        * title -> :func:`~.visuals.labelled_title`
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection`
@@ -56,6 +57,20 @@ def plot_trace(
     Returns
     -------
     PlotCollection
+
+    Examples
+    --------
+    Default plot_trace
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_trace, style
+        >>> style.use("arviz-clean")
+        >>> from arviz_base import load_arviz_data
+        >>> centered = load_arviz_data('centered_eight')
+        >>> plot_trace(centered)
+
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
