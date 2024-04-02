@@ -8,6 +8,7 @@ from datatree import DataTree
 from xarray import DataArray, Dataset, concat, full_like
 
 from arviz_plots import PlotCollection
+from arviz_plots.plot_collection import _get_aes_dict_from_dt
 
 
 @pytest.fixture(scope="module")
@@ -331,6 +332,84 @@ def generate_plot_collection2():
         }
     )
     return PlotCollection(data, viz_dt=viz_dt, aes_dt=aes_dt, backend="backend")
+
+
+def test_aes_dict_from_dt_dim_neutral():
+    color = [f"C{i+1}" for i in range(8)]
+    aes_dt = DataTree.from_dict(
+        {
+            "mu": Dataset({"color": "C0"}),
+            "theta": Dataset({"color": (("hierarchy",), color)}),
+            "eta": Dataset({"color": (("hierarchy",), color)}),
+        }
+    )
+    aes_dict = _get_aes_dict_from_dt(aes_dt)
+    assert aes_dict == {"color": ["hierarchy"]}
+
+
+def test_aes_dict_from_dt_dim_no_neutral():
+    color = [f"C{i+1}" for i in range(8)]
+    aes_dt = DataTree.from_dict(
+        {
+            "theta": Dataset({"color": (("hierarchy",), color)}),
+            "eta": Dataset({"color": (("hierarchy",), color)}),
+        }
+    )
+    aes_dict = _get_aes_dict_from_dt(aes_dt)
+    assert aes_dict == {"color": ["hierarchy"]}
+
+
+def test_aes_dict_from_dt_variable_dim():
+    theta_color = [f"C{i+1}" for i in range(8)]
+    eta_color = [f"C{i+8}" for i in range(8)]
+    aes_dt = DataTree.from_dict(
+        {
+            "mu": Dataset({"color": "C0"}),
+            "theta": Dataset({"color": (("hierarchy",), theta_color)}),
+            "eta": Dataset({"color": (("hierarchy",), eta_color)}),
+        }
+    )
+    aes_dict = _get_aes_dict_from_dt(aes_dt)
+    assert aes_dict == {"color": ["__variable__", "hierarchy"]}
+
+
+def test_aes_dict_from_dt_variable_dims():
+    rng = np.random.default_rng(31)
+    theta_y = rng.normal(size=(4, 8))
+    eta_y = rng.normal(size=8)
+    aes_dt = DataTree.from_dict(
+        {
+            "mu": Dataset({"y": 0}),
+            "theta": Dataset(
+                {
+                    "y": (
+                        (
+                            "group",
+                            "hierarchy",
+                        ),
+                        theta_y,
+                    )
+                }
+            ),
+            "eta": Dataset({"y": (("hierarchy",), eta_y)}),
+        }
+    )
+    aes_dict = _get_aes_dict_from_dt(aes_dt)
+    assert len(aes_dict) == 1
+    assert "y" in aes_dict
+    assert set(aes_dict["y"]) == {"__variable__", "group", "hierarchy"}
+
+
+def test_aes_dict_from_dt_variable():
+    aes_dt = DataTree.from_dict(
+        {
+            "mu": Dataset({"color": "C0"}),
+            "theta": Dataset({"color": "C1"}),
+            "eta": Dataset({"color": "C2"}),
+        }
+    )
+    aes_dict = _get_aes_dict_from_dt(aes_dt)
+    assert aes_dict == {"color": ["__variable__"]}
 
 
 def test_aes_dataset_manipulation(dataset):

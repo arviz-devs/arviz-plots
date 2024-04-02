@@ -111,22 +111,36 @@ def _get_aes_dict_from_dt(aes_dt):
     child_list = list(aes_dt.children.values())
     aes = {}
     aes_in_all_vars = set.intersection(*[set(child.data_vars) for child in child_list])
-    aes = {
-        aes_key: ["__variable__"]
-        for aes_key in aes_in_all_vars
-        if any(child[aes_key].item(0) != child_list[0][aes_key].item(0) for child in child_list)
-    }
-    for ds in child_list:
-        for aes_key, values in ds.items():
-            if not values.dims:
-                continue
-            aes_dims = list(values.dims)
-            if aes_key not in aes:
-                aes[aes_key] = aes_dims
-            elif set(aes[aes_key]).issubset(aes_dims):
-                aes[aes_key] = aes_dims
-            elif set(aes[aes_key]).difference(aes_dims):
-                aes[aes_key] = set(aes[aes_key]).union(aes_dims)
+    for aes_key in aes_in_all_vars:
+        dims = [child[aes_key].dims for child in child_list]
+        dims_set = set(dims)
+        scalar_values = [
+            child[aes_key].item() for dims, child in zip(dims, child_list) if dims == ()
+        ]
+        array_values = [
+            child[aes_key].values for dims, child in zip(dims, child_list) if dims != ()
+        ]
+        if (len(dims_set) == 2) and (() in dims):
+            neutral_element = scalar_values[0]
+            all_scalar_is_neutral = all(neutral_element == vals for vals in scalar_values)
+            all_array_equal = all(all(array_values[0] == vals) for vals in array_values)
+            no_neutral_in_array = all(neutral_element not in vals for vals in array_values)
+            dims_list = list(dims_set)
+            dims_list.remove(())
+            if all_scalar_is_neutral and all_array_equal and no_neutral_in_array:
+                aes[aes_key] = list(dims_list[0])
+            else:
+                aes[aes_key] = ["__variable__"] + list(dims_list[0])
+            continue
+        if (len(dims_set) == 1) and (() not in dims):
+            all_array_equal = all(all(array_values[0] == vals) for vals in array_values)
+            if all_array_equal:
+                aes[aes_key] = list(list(dims_set)[0])
+            else:
+                aes[aes_key] = ["__variable__"] + list(list(dims_set)[0])
+            continue
+        all_dims_in_aes = set((elem for da_dims in dims_set for elem in da_dims))
+        aes[aes_key] = ["__variable__"] + list(all_dims_in_aes)
     return aes
 
 
