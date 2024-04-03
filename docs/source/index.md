@@ -19,6 +19,7 @@ Plotting backends have to be added manually.
 
 tutorials/plots_intro
 tutorials/intro_to_plotcollection
+tutorials/compose_own_plot
 ```
 
 ```{toctree}
