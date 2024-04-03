@@ -5,7 +5,7 @@ from pathlib import Path
 
 # -- Project information
 
-_metadata = metadata("arviz-base")
+_metadata = metadata("arviz-plots")
 
 project = _metadata["Name"]
 author = _metadata["Author-email"].split("<", 1)[0].strip()
@@ -74,8 +74,8 @@ plot_html_show_formats = False
 plot_html_show_source_link = False
 
 extlinks = {
-    "issue": ("https://github.com/arviz-devs/arviz-base/issues/%s", "GH#%s"),
-    "pull": ("https://github.com/arviz-devs/arviz-base/pull/%s", "PR#%s"),
+    "issue": ("https://github.com/arviz-devs/arviz-plots/issues/%s", "GH#%s"),
+    "pull": ("https://github.com/arviz-devs/arviz-plots/pull/%s", "PR#%s"),
 }
 
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
