@@ -5,7 +5,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
-from arviz_plots.visuals import labelled_title, line, trace_rug
+from arviz_plots.visuals import labelled_title, labelled_x, line, trace_rug
 
 
 def plot_trace(
@@ -50,6 +50,7 @@ def plot_trace(
         * trace -> passed to :func:`~.visuals.line`
         * divergence -> passed to :func:`~.visuals.trace_rug`
         * title -> :func:`~.visuals.labelled_title`
+        * xlabel -> :func:`~.visuals.labelled_x`
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection`
@@ -174,6 +175,22 @@ def plot_trace(
         subset_info=True,
         labeller=labeller,
         **title_kwargs,
+    )
+
+    # Add "Steps" as x_label for trace
+    _, xlabel_aes, xlabel_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
+    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+
+    if "color" not in xlabel_aes:
+        xlabel_kwargs.setdefault("color", "black")
+
+    plot_collection.map(
+        labelled_x,
+        "xlabel",
+        ignore_aes=xlabel_ignore,
+        store_artist=False,
+        text="Steps" if xname is None else xname.capitalize(),
+        **xlabel_kwargs,
     )
 
     return plot_collection
