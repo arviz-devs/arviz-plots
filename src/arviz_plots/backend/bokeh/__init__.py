@@ -46,26 +46,26 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     ----------
     figsize : (float, float) or None
         Size of figure in `figsize_units`
-    textsize : float or None
-        fontsize
     rows : int
         Number of rows
     cols : int
         Number of columns
+    figsize_units : {"inches", "dots"}
+        Ignored if `figsize` is ``None``
 
     Returns
     -------
     figsize : (float, float) or None
         Size of figure in dots
-    labelsize : int
+    labelsize : float
         fontsize for labels
-    linewidth : int
+    linewidth : float
         linewidth
     """
     if figsize is None:
         width = 800
         height = (100 * rows + 100) ** 1.1
-        figsize_units = "inches"
+        figsize_units = "dots"
     else:
         width, height = figsize
     cols *= 100
