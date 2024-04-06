@@ -115,6 +115,12 @@ intersphinx_mapping = {
 }
 
 # -- Options for HTML output
-
-html_theme = "furo"
-# html_static_path = ["_static"]
+html_theme = "sphinx_book_theme"
+html_context = {"default_mode": "light"}
+html_theme_options = {
+    "logo": {
+        "image_light": "_static/ArviZ.png",
+        "image_dark": "_static/ArviZ_white.png",
+    }
+}
+html_static_path = ["_static"]
