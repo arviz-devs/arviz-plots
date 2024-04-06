@@ -154,28 +154,7 @@ class PlotCollection:
     Attributes
     ----------
     viz : DataTree
-        DataTree containing all the visual elements in the plot. If relevant, the variable
-        names in the input Dataset are set as groups, otherwise everything is stored in the
-        home group. The `viz` DataTree always contains the following leaf variables:
-
-        * ``chart`` (always on the home group): Scalar object containing the highest level
-          plotting structure. i.e. the matplotlib figure or the bokeh layout
-        * ``plot``: :term:`Plot` objects in this :term:`chart`.
-          Generally, these are the target where :term:`artists <artist>` are added,
-          although it is possible to have artists targetting the chart itself.
-        * ``row``: Integer row indicator
-        * ``col``: Integer column indicator
-
-        Plus all the artists that have been added to the plot and stored.
-        See :meth:`arviz_plots.PlotCollection.map` for more details.
     aes : DataTree
-        DataTree containing the :term:`aesthetic mapping` information.
-        A subset of the input dataset ``ds[var_name].sel(**kwargs)``
-        is associated the aesthetics in ``aes[var_name].sel(**kwargs)``.
-        Note that here `aes` is a DataTree so ``aes[var_name]`` is a Dataset.
-        There can be as many aesthetic mappings as desired,
-        and they can map to any dimensions *independently from one another*
-        and also independently between variables (even if not recommended).
     """
 
     def __init__(self, data, viz_dt, aes_dt=None, aes=None, backend=None, **kwargs):
@@ -225,15 +204,51 @@ class PlotCollection:
         self._aes = aes
         self._kwargs = kwargs
 
+        if self._aes_dt is None:
+            self.generate_aes_dt()
+
     @property
     def aes(self):
-        """Information about :term:`aesthetic mapping` as a DataTree."""
+        """Information about :term:`aesthetic mapping` as a DataTree.
+
+        A subset of the input dataset ``ds[var_name].sel(**kwargs)``
+        is associated the aesthetics in ``aes[var_name].sel(**kwargs)``.
+        Note that here `aes` is a DataTree so ``aes[var_name]`` is a Dataset.
+        There can be as many aesthetic mappings as desired,
+        and they can map to any dimensions *independently from one another*
+        and also independently between variables (even if not recommended).
+        """
         return self._aes_dt
 
     @aes.setter
     def aes(self, value):
         self._aes = _get_aes_dict_from_dt(value)
         self._aes_dt = value
+
+    @property
+    def viz(self):
+        """Information about the visual elements in the plot as a DataTree.
+
+        If relevant, the variable names in the input Dataset are set as groups,
+        otherwise everything is stored in the home group.
+        The `viz` DataTree always contains the following leaf variables:
+
+        * ``chart`` (always on the home group): Scalar object containing the highest level
+          plotting structure. i.e. the matplotlib figure or the bokeh layout
+        * ``plot``: :term:`Plot` objects in this :term:`chart`.
+          Generally, these are the target where :term:`artists <artist>` are added,
+          although it is possible to have artists targetting the chart itself.
+        * ``row``: Integer row indicator
+        * ``col``: Integer column indicator
+
+        Plus all the artists that have been added to the plot and stored.
+        See :meth:`arviz_plots.PlotCollection.map` for more details.
+        """
+        return self._viz
+
+    @viz.setter
+    def viz(self, value):
+        self._viz = value
 
     @property
     def data(self):
@@ -260,20 +275,18 @@ class PlotCollection:
     def generate_aes_dt(self, aes=None, **kwargs):
         """Generate the aesthetic mappings.
 
+        Populate and store the ``DataTree`` attribute ``.aes`` of the ``PlotCollection``.
+
         Parameters
         ----------
-        aes : mapping of {str : list of hashable}, optional
+        aes : mapping of {str : list of hashable or False}, optional
             Dictionary with :term:`aesthetics` as keys and as values a list
             of the dimensions it should be mapped to.
-            See :meth:`~arviz_plots.PlotCollection.generate_aes_dt` for more details.
+            It can also take ``False`` as value to indicate that no mapping
+            should be considered for that aesthetic key.
         **kwargs : mapping, optional
             Dictionary with :term:`aesthetics` as keys and as values a list
             of the values that should be taken by that aesthetic.
-
-        Returns
-        -------
-        aes_dt : DataTree
-            DataTree object to be stored as ``.aes`` attribute of the PlotCollection.
 
         Examples
         --------
@@ -320,21 +333,11 @@ class PlotCollection:
         Thus, when we subset the data for plotting with
         ``ds[var_name].sel(**kwargs)`` we can get its aesthetics with
         ``aes_dt[var_name].sel(**kwargs)``.
-
-        Notes
-        -----
-        All values for the provided aesthetics to take need to be given
-        manually through the `**kwargs` arguments. To allow for any arbitrary
-        argument of the plotting functions called later and to ensure support
-        for all backends manual entry of values is a must.
-
-        In the future, it may be possible to skip the `**kwargs` corresponding
-        to aesthetics that are part of the common interface in :mod:`arviz_plots.backend`,
-        but it will always be possible to set their value manually.
         """
         if aes is None:
             aes = self._aes
             kwargs = self._kwargs
+        aes = {key: value for key, value in aes.items() if value is not False}
         self._aes = aes
         self._kwargs = kwargs
         if not hasattr(self, "backend"):
@@ -407,13 +410,44 @@ class PlotCollection:
         self._aes_dt = DataTree.from_dict(ds_dict)
 
     def get_aes_as_dataset(self, aes_key):
-        """Get the values of the provided aes_key for all variables as a Dataset."""
+        """Get the values of the provided aes_key for all variables as a Dataset.
+
+        Parameters
+        ----------
+        aes_key : str
+            Aesthetic mapping whose values should be returned as a Dataset.
+            Must be a leaf node of all groups in :attr:`~.PlotCollection.aes`
+
+        Returns
+        -------
+        Dataset
+
+        See Also
+        --------
+        arviz_plots.PlotCollection.update_aes_from_dataset
+        """
         return xr.Dataset(
             {var_name: values[aes_key] for var_name, values in self.aes.children.items()}
         )
 
     def update_aes_from_dataset(self, aes_key, dataset):
-        """Update the values of aes_key with those in the provided Dataset."""
+        """Update the values of aes_key with those in the provided Dataset.
+
+        Parameters
+        ----------
+        aes_key : str
+            Aesthetic mapping whose values should be updated or added.
+            :attr:`~.PlotCollection.aes` will contain `aes_key` as a leaf
+            for all its groups, with the values provided.
+        dataset : Dataset
+            Dataset containing the `aes_key` values for each data variable.
+            The data variables of the Dataset must match the groups of
+            :attr:`~.PlotCollection.aes`
+
+        See Also
+        --------
+        arviz_plots.PlotCollection.get_aes_as_dataset
+        """
         aes_dt = self.aes
         for var_name, child in aes_dt.children.items():
             child[aes_key] = dataset[var_name]
@@ -723,8 +757,6 @@ class PlotCollection:
         """Build a generator to loop over all plots in the PlotCollection."""
         if coords is None:
             coords = {}
-        if self.aes is None:
-            self.generate_aes_dt(self._aes, **self._kwargs)
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
         plotters = xarray_sel_iter(
             self.data, skip_dims={dim for dim in self.data.dims if dim not in all_loop_dims}
@@ -803,8 +835,6 @@ class PlotCollection:
         """
         if coords is None:
             coords = {}
-        if self.aes is None:
-            self.generate_aes_dt(self._aes, **self._kwargs)
         if fun_label is None:
             fun_label = fun.__name__
         if extra_data is None:

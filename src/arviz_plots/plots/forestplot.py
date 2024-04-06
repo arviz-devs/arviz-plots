@@ -35,9 +35,6 @@ def plot_forest(
 ):
     """Plot 1D marginal credible intervals in a single plot.
 
-    For a general introduction to batteries included functions like this one and common
-    usage examples see :ref:`plots_intro`
-
     Parameters
     ----------
     dt : DataTree or dict of {str : DataTree}
@@ -131,6 +128,10 @@ def plot_forest(
 
     Examples
     --------
+    The following examples focus on behaviour specific to ``plot_forest``.
+    For a general introduction to batteries-included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
     Default forest plot for a single model:
 
     .. plot::
@@ -274,8 +275,6 @@ def plot_forest(
             backend=backend,
             **pc_kwargs,
         )
-    if plot_collection.aes is None:
-        plot_collection.generate_aes_dt()
 
     if "column" in distribution.dims:
         distribution = distribution.sel(column="forest")

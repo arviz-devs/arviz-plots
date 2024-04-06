@@ -13,11 +13,13 @@ Available backends
         :link: matplotlib
         :link-type: doc
         :img-background: ../../_static/matplotlib-logo-dark.svg
+        :class-img-bottom: dark-light
 
     .. grid-item-card::
         :link: bokeh
         :link-type: doc
         :img-background: ../../_static/bokeh-logo-dark.svg
+        :class-img-bottom: dark-light
 
 .. grid:: 2
     :class-container: only-light

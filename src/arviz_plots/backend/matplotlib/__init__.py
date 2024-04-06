@@ -54,6 +54,53 @@ def get_default_aes(aes_key, n, kwargs):
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
+def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
+    """Scale figure properties according to figsize, rows and cols.
+
+    Parameters
+    ----------
+    figsize : (float, float) or None
+        Size of figure in `figsize_units`
+    rows : int
+        Number of rows
+    cols : int
+        Number of columns
+    figsize_units : {"inches", "dots"}
+        Ignored if `figsize` is ``None``
+
+    Returns
+    -------
+    figsize : (float, float) or None
+        Size of figure in dots
+    labelsize : float
+        fontsize for labels
+    linewidth : float
+        linewidth
+    """
+    if figsize is None:
+        width = rcParams["figure.figsize"][0]
+        height = (rows + 1) ** 1.1
+        figsize_units = "inches"
+    else:
+        width, height = figsize
+    dpi = rcParams["figure.dpi"]
+    cols *= dpi
+    rows *= dpi
+    if figsize_units == "inches":
+        width *= dpi
+        height *= dpi
+    elif figsize_units != "dots":
+        raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
+
+    val = (width * height) ** 0.5
+    val2 = (cols * rows) ** 0.5
+    scale_factor = val / (4 * val2)
+    labelsize = rcParams["font.size"] * scale_factor
+    linewidth = rcParams["lines.linewidth"] * scale_factor
+
+    return (width, height), labelsize, linewidth
+
+
 # object creation and i/o
 def show(chart):  # pylint: disable=unused-argument
     """Show all existing matplotlib figures."""
@@ -122,6 +169,7 @@ def create_plotting_grid(
         sharey=sharey,
         squeeze=squeeze,
         width_ratios=width_ratios,
+        figsize=figsize,
         subplot_kw=subplot_kws,
         **kwargs,
     )

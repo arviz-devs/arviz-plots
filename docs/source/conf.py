@@ -5,7 +5,7 @@ from pathlib import Path
 
 # -- Project information
 
-_metadata = metadata("arviz-base")
+_metadata = metadata("arviz-plots")
 
 project = _metadata["Name"]
 author = _metadata["Author-email"].split("<", 1)[0].strip()
@@ -74,8 +74,8 @@ plot_html_show_formats = False
 plot_html_show_source_link = False
 
 extlinks = {
-    "issue": ("https://github.com/arviz-devs/arviz-base/issues/%s", "GH#%s"),
-    "pull": ("https://github.com/arviz-devs/arviz-base/pull/%s", "PR#%s"),
+    "issue": ("https://github.com/arviz-devs/arviz-plots/issues/%s", "GH#%s"),
+    "pull": ("https://github.com/arviz-devs/arviz-plots/pull/%s", "PR#%s"),
 }
 
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
@@ -106,14 +106,21 @@ numpydoc_xref_aliases = {
 
 intersphinx_mapping = {
     "arviz_org": ("https://www.arviz.org/en/latest/", None),
-    "dask": ("https://docs.dask.org/en/latest/", None),
     "datatree": ("https://xarray-datatree.readthedocs.io/en/latest/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "bokeh": ("https://docs.bokeh.org/en/2.4.3", None),
 }
 
 # -- Options for HTML output
-
-html_theme = "furo"
-# html_static_path = ["_static"]
+html_theme = "sphinx_book_theme"
+html_context = {"default_mode": "light"}
+html_theme_options = {
+    "logo": {
+        "image_light": "_static/ArviZ.png",
+        "image_dark": "_static/ArviZ_white.png",
+    }
+}
+html_static_path = ["_static"]
