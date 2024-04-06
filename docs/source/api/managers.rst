@@ -31,6 +31,18 @@ Plotting
    PlotCollection.plot_iterator
    PlotCollection.show
 
+Attributes
+..........
+
+.. autosummary::
+   :toctree: generated/
+
+   PlotCollection.aes
+   PlotCollection.viz
+   PlotCollection.aes_set
+   PlotCollection.base_loop_dims
+   PlotCollection.data
+
 Facetting and aesthetics mapping
 ................................
 
@@ -38,8 +50,10 @@ Facetting and aesthetics mapping
    :toctree: generated/
 
    PlotCollection.generate_aes_dt
+   PlotCollection.get_aes_as_dataset
    PlotCollection.get_aes_kwargs
    PlotCollection.update_aes
+   PlotCollection.update_aes_from_dataset
 
 Other
 .....

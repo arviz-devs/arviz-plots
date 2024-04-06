@@ -43,9 +43,6 @@ def plot_dist(
     Generate :term:`facetted` :term:`plots` with: a graphical representation of 1D marginal
     densities (as KDE, histogram, ECDF or dotplot), a credible interval and a point estimate.
 
-    For a general introduction to batteries included functions like this one and common
-    usage examples see :ref:`plots_intro`
-
     Parameters
     ----------
     dt : DataTree or dict of {str : DataTree}
@@ -121,6 +118,10 @@ def plot_dist(
 
     Examples
     --------
+    The following examples focus on behaviour specific to ``plot_dist``.
+    For a general introduction to batteries-included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
     Default plot_dist for a single model:
 
     .. plot::

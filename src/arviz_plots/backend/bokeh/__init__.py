@@ -39,6 +39,58 @@ def get_default_aes(aes_key, n, kwargs):
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
+def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
+    """Scale figure properties according to figsize, rows and cols.
+
+    Parameters
+    ----------
+    figsize : (float, float) or None
+        Size of figure in `figsize_units`
+    textsize : float or None
+        fontsize
+    rows : int
+        Number of rows
+    cols : int
+        Number of columns
+
+    Returns
+    -------
+    figsize : (float, float) or None
+        Size of figure in dots
+    labelsize : int
+        fontsize for labels
+    linewidth : int
+        linewidth
+    """
+    if figsize is None:
+        width = 800
+        height = (100 * rows + 100) ** 1.1
+        figsize_units = "inches"
+    else:
+        width, height = figsize
+    cols *= 100
+    rows *= 100
+    if figsize_units == "inches":
+        warnings.warn(
+            f"Assuming dpi=100. Use figsize_units='dots' and figsize={figsize} "
+            "to stop seeing this warning"
+        )
+        width *= 100
+        height *= 100
+    elif figsize_units != "dots":
+        raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
+
+    val = (width * height) ** 0.5
+    val2 = (cols * rows) ** 0.5
+    scale_factor = val / (4 * val2)
+    # I didn't find any Bokeh equivalent to theme/rcParams,
+    # so they are hardcoded for now
+    labelsize = 14 * scale_factor
+    linewidth = 1 * scale_factor
+
+    return (width, height), labelsize, linewidth
+
+
 # object creation and i/o
 def show(chart):
     """Show the provided bokeh layout."""
@@ -104,7 +156,7 @@ def create_plotting_grid(
         if figsize_units == "inches":
             figsize = (figsize[0] * 100, figsize[1] * 100)
             warnings.warn(
-                f"Assuming dpi=100. Use figsize_units='' and figsize={figsize} "
+                f"Assuming dpi=100. Use figsize_units='dots' and figsize={figsize} "
                 "to stop seeing this warning"
             )
         elif figsize_units != "dots":

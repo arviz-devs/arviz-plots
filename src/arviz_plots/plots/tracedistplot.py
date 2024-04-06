@@ -12,7 +12,6 @@ from arviz_plots.plots.utils import (
     get_group,
     get_size_of_var,
     process_group_variables_coords,
-    scale_fig_size,
 )
 from arviz_plots.visuals import (
     ecdf_line,
@@ -105,6 +104,10 @@ def plot_trace_dist(
 
     Examples
     --------
+    The following examples focus on behaviour specific to ``plot_trace_dist``.
+    For a general introduction to batteries-included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
     Default plot_trace_dist (``compact=True`` and ``combined=False``). In this case,
     the multiple coordinate values are overlaid on the same plot for multidimensional values;
     by default, the color is mapped to all dimensions of each variable (but `sample_dims`)
@@ -183,11 +186,6 @@ def plot_trace_dist(
     if not combined and "chain" not in distribution.dims:
         combined = True
 
-    figsize, textsize, linewidth = scale_fig_size(
-        pc_kwargs.get("plot_grid_kws", {}).get("figsize", None),
-        rows=get_size_of_var(distribution, compact=compact, sample_dims=sample_dims),
-        cols=2,
-    )
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
@@ -195,6 +193,14 @@ def plot_trace_dist(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+
+    figsize, textsize, linewidth = plot_bknd.scale_fig_size(
+        pc_kwargs.get("plot_grid_kws", {}).get("figsize", None),
+        rows=get_size_of_var(distribution, compact=compact, sample_dims=sample_dims),
+        cols=2,
+        figsize_units=pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches"),
+    )
+
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
     if len(color_cycle) <= 2:
         raise ValueError(

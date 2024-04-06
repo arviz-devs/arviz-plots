@@ -106,11 +106,12 @@ numpydoc_xref_aliases = {
 
 intersphinx_mapping = {
     "arviz_org": ("https://www.arviz.org/en/latest/", None),
-    "dask": ("https://docs.dask.org/en/latest/", None),
     "datatree": ("https://xarray-datatree.readthedocs.io/en/latest/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "bokeh": ("https://docs.bokeh.org/en/2.4.3", None),
 }
 
 # -- Options for HTML output

@@ -61,6 +61,10 @@ def plot_trace(
 
     Examples
     --------
+    The following examples focus on behaviour specific to ``plot_trace``.
+    For a general introduction to batteries-included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
     Default plot_trace
 
     .. plot::
