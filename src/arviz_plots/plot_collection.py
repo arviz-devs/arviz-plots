@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines, too-many-public-methods
 """Plot collection classes."""
 import warnings
 from importlib import import_module
@@ -515,6 +515,19 @@ class PlotCollection:
     def get_viz(self, var_name):
         """Get the ``viz`` Dataset that corresponds to the provided variable."""
         return self.viz if "plot" in self.viz.data_vars else self.viz[var_name]
+
+    def rename_artists(self, name_dict=None, **names):
+        """Rename artist data variables in the :attr:`~.PlotCollection.viz` DataTree.
+
+        Parameters
+        ----------
+        name_dict, **names : mapping
+            At least one of these must be provided.
+        """
+        viz_dt = self.viz
+        for group, child in viz_dt.children.items():
+            viz_dt[group] = child.rename_vars(name_dict, **names)
+        self.viz = viz_dt
 
     @classmethod
     def wrap(

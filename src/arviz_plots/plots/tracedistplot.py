@@ -2,17 +2,16 @@
 from importlib import import_module
 
 import numpy as np
-import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
+from arviz_plots.plots.traceplot import plot_trace
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import (
     ecdf_line,
     labelled_x,
     labelled_y,
-    line,
     line_xy,
     remove_ticks,
     ticklabel_props,
@@ -326,27 +325,34 @@ def plot_trace_dist(
             **dist_kwargs,
         )
 
-    _, trace_aes, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
-    trace_kwargs = plot_kwargs.get("trace", {}).copy()
-    if "width" not in trace_aes:
-        trace_kwargs.setdefault("width", linewidth)
-
     # trace
-    default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
-    if (default_xname not in distribution.dims) or (
-        not np.issubdtype(distribution[default_xname].dtype, np.number)
-    ):
-        default_xname = None
-    xname = trace_kwargs.get("xname", default_xname)
-    trace_kwargs["xname"] = xname
-    plot_collection.map(
-        line,
-        "trace",
-        data=distribution,
-        ignore_aes=trace_ignore,
-        coords={"column": "trace"},
-        **trace_kwargs,
+    plot_kwargs_trace = {
+        key.replace("_trace", ""): value
+        for key, value in plot_kwargs.items()
+        if key in {"trace", "divergence", "xlabel_trace"}
+    }
+    plot_kwargs_trace["title"] = False
+    plot_kwargs_trace["ticklabels"] = False
+    aes_map_trace = {
+        key.replace("_trace", ""): value
+        for key, value in plot_kwargs.items()
+        if key in {"trace", "divergence", "xlabel_trace"}
+    }
+    plot_collection.coords = {"column": "trace"}
+    plot_trace(
+        dt,
+        var_names=var_names,
+        filter_vars=filter_vars,
+        group=group,
+        coords=coords,
+        sample_dims=sample_dims,
+        plot_collection=plot_collection,
+        labeller=labeller,
+        aes_map=aes_map_trace,
+        plot_kwargs=plot_kwargs_trace,
     )
+    plot_collection.coords = None
+    plot_collection.rename_artists(xlabel="xlabel_trace", divergence="divergence_trace")
     # divergences
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
     if (
@@ -366,49 +372,17 @@ def plot_trace_dist(
         if "size" not in div_aes:
             divergence_kwargs.setdefault("size", 30)
 
-        if compact:
-            trace_min = distribution.min()
-            plot_collection.map(
-                trace_rug,
-                "divergence_dist",
-                data=distribution,
-                ignore_aes=div_ignore,
-                xname=False,
-                y=0,
-                coords={"column": "dist"},
-                mask=divergence_mask,
-                **divergence_kwargs,
-            )
-            plot_collection.map(
-                trace_rug,
-                "divergence_trace",
-                data=distribution.isel(
-                    {dim: 0 for dim in distribution.dims if dim not in sample_dims}
-                ),
-                ignore_aes=div_ignore,
-                xname=xname,
-                y=trace_min,
-                coords={"column": "trace"},
-                mask=divergence_mask,
-                **divergence_kwargs,
-            )
-        else:
-            div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
-            trace_min = distribution.min(div_reduce_dims)
-            y = xr.concat((xr.zeros_like(trace_min), trace_min), dim="column").assign_coords(
-                column=["dist", "trace"]
-            )
-            plot_collection.map(
-                trace_rug,
-                "divergence",
-                ignore_aes=div_ignore,
-                xname=xr.DataArray(
-                    np.array([False, xname], dtype=object), coords={"column": ["dist", "trace"]}
-                ),
-                y=y,
-                mask=divergence_mask,
-                **divergence_kwargs,
-            )
+        plot_collection.map(
+            trace_rug,
+            "divergence_dist",
+            data=distribution,
+            ignore_aes=div_ignore,
+            xname=False,
+            y=0,
+            coords={"column": "dist"},
+            mask=divergence_mask,
+            **divergence_kwargs,
+        )
 
     ## aesthetics
     # Remove yticks, only for KDEs
@@ -465,26 +439,6 @@ def plot_trace_dist(
         axis="both",
         store_artist=False,
         **ticklabels_kwargs,
-    )
-
-    # Add "Steps" as x_label for trace
-    _, xlabel_trace_aes, xlabel_trace_ignore = filter_aes(
-        plot_collection, aes_map, "xlabel_trace", sample_dims
-    )
-    xlabel_trace_kwargs = plot_kwargs.get("xlabel_trace", {}).copy()
-
-    if "color" not in xlabel_trace_aes:
-        xlabel_trace_kwargs.setdefault("color", "black")
-    xlabel_trace_kwargs.setdefault("size", textsize)
-
-    plot_collection.map(
-        labelled_x,
-        "xlabel_trace",
-        ignore_aes=xlabel_trace_ignore,
-        coords={"column": "trace"},
-        store_artist=False,
-        text="Steps" if xname is None else xname.capitalize(),
-        **xlabel_trace_kwargs,
     )
 
     return plot_collection

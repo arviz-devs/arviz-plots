@@ -84,8 +84,8 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     else:
         width, height = figsize
     dpi = rcParams["figure.dpi"]
-    cols *= dpi
-    rows *= dpi
+    cols = cols * dpi
+    rows = rows * dpi
     if figsize_units == "inches":
         width *= dpi
         height *= dpi

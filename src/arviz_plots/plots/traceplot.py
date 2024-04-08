@@ -54,6 +54,7 @@ def plot_trace(
         * divergence -> passed to :func:`~.visuals.trace_rug`
         * title -> :func:`~.visuals.labelled_title`
         * xlabel -> :func:`~.visuals.labelled_x`
+        * ticklabels -> :func:`~.visuals.ticklabel_props`
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection`
@@ -120,8 +121,8 @@ def plot_trace(
             n_cols = col_wrap
     else:
         figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
-        n_rows = leaf_dataset(plot_collection.viz, "row").max().to_array().max()
-        n_cols = leaf_dataset(plot_collection.viz, "col").max().to_array().max()
+        n_rows = leaf_dataset(plot_collection.viz, "row").max().to_array().max().item()
+        n_cols = leaf_dataset(plot_collection.viz, "col").max().to_array().max().item()
 
     figsize, textsize, linewidth = plot_bknd.scale_fig_size(
         figsize,
@@ -246,7 +247,6 @@ def plot_trace(
             labelled_x,
             "xlabel",
             ignore_aes=xlabel_ignore,
-            store_artist=False,
             text="Steps" if xname is None else xname.capitalize(),
             **xlabel_kwargs,
         )

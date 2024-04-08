@@ -63,7 +63,7 @@ def check_skips(request):
     skip_bokeh = request.config.getoption("--skip-bokeh")
 
     if "backend" in request.fixturenames:
-        if skip_mpl and "matplotlib" in request.keywords:
+        if skip_mpl and any("matplotlib" in key for key in request.keywords.keys()):
             pytest.skip(reason="Requested skipping matplolib tests via command line argument")
-        if skip_bokeh and "bokeh" in request.keywords:
+        if skip_bokeh and any("bokeh" in key for key in request.keywords.keys()):
             pytest.skip(reason="Requested skipping bokeh tests via command line argument")
