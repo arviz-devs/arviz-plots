@@ -107,6 +107,11 @@ def show(chart):  # pylint: disable=unused-argument
     _show()
 
 
+def get_figsize(plot_collection):
+    """Get the size of the :term:`chart` element and its units."""
+    return plot_collection.viz["chart"].item().get_size_inches(), "inches"
+
+
 def create_plotting_grid(
     number,
     rows=1,

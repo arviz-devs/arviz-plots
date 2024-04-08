@@ -6,13 +6,8 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_group,
-    get_size_of_var,
-    process_group_variables_coords,
-)
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
+from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import (
     ecdf_line,
     labelled_x,
@@ -194,11 +189,30 @@ def plot_trace_dist(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
+    if plot_collection is None:
+        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
+        if compact:
+            pc_kwargs["rows"] = ["__variable__"]
+        else:
+            pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
+            aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
+        row_dims = pc_kwargs["rows"]
+    else:
+        figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
+        aux_dim_list = list(
+            set(
+                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
+            ).difference({"column"})
+        )
+        row_dims = ["__variable__"] + aux_dim_list
+
     figsize, textsize, linewidth = plot_bknd.scale_fig_size(
-        pc_kwargs.get("plot_grid_kws", {}).get("figsize", None),
-        rows=get_size_of_var(distribution, compact=compact, sample_dims=sample_dims),
+        figsize,
+        rows=process_facet_dims(distribution, row_dims)[0],
         cols=2,
-        figsize_units=pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches"),
+        figsize_units=figsize_units,
     )
 
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
@@ -227,18 +241,11 @@ def plot_trace_dist(
 
     if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
-        if compact:
-            pc_kwargs["rows"] = ["__variable__"]
-        else:
-            pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
-            aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
         pc_kwargs.setdefault("cols", ["column"])
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         if "figsize" not in pc_kwargs["plot_grid_kws"]:
             pc_kwargs["plot_grid_kws"]["figsize"] = figsize
             pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
-
         if compact:
             pc_kwargs["aes"].setdefault("color", ["__variable__"] + aux_dim_list)
             if "chain" in distribution.dims:
@@ -254,12 +261,6 @@ def plot_trace_dist(
             distribution.expand_dims(column=2).assign_coords(column=["dist", "trace"]),
             backend=backend,
             **pc_kwargs,
-        )
-    else:
-        aux_dim_list = list(
-            set(
-                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
-            ).difference({"column"})
         )
 
     if aes_map is None:
@@ -327,7 +328,7 @@ def plot_trace_dist(
 
     _, trace_aes, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
     trace_kwargs = plot_kwargs.get("trace", {}).copy()
-    if "linewidth" not in trace_aes:
+    if "width" not in trace_aes:
         trace_kwargs.setdefault("width", linewidth)
 
     # trace
@@ -393,8 +394,6 @@ def plot_trace_dist(
             )
         else:
             div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
-            if "chain" in distribution.dims:
-                div_reduce_dims.append("chain")
             trace_min = distribution.min(div_reduce_dims)
             y = xr.concat((xr.zeros_like(trace_min), trace_min), dim="column").assign_coords(
                 column=["dist", "trace"]
@@ -426,20 +425,18 @@ def plot_trace_dist(
         )
 
     # Add varnames as x and y labels
-    _, labels_dist_aes, labels_dist_ignore = filter_aes(
-        plot_collection, aes_map, "label", sample_dims
-    )
+    _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "label", sample_dims)
     label_kwargs = plot_kwargs.get("label", {}).copy()
 
-    if "color" not in labels_dist_aes:
+    if "color" not in labels_aes:
         label_kwargs.setdefault("color", "black")
 
     label_kwargs.setdefault("size", textsize)
 
     plot_collection.map(
         labelled_x,
-        "label_x_dist",
-        ignore_aes=labels_dist_ignore,
+        "xlabel_dist",
+        ignore_aes=labels_ignore,
         coords={"column": "dist"},
         subset_info=True,
         labeller=labeller,
@@ -449,8 +446,8 @@ def plot_trace_dist(
 
     plot_collection.map(
         labelled_y,
-        "label_y_trace",
-        ignore_aes=labels_dist_ignore,
+        "ylabel_trace",
+        ignore_aes=labels_ignore,
         coords={"column": "trace"},
         subset_info=True,
         labeller=labeller,
@@ -461,9 +458,10 @@ def plot_trace_dist(
     # Adjust tick labels
     ticklabels_kwargs = plot_kwargs.get("ticklabels", {}).copy()
     ticklabels_kwargs.setdefault("size", textsize)
+    _, _, ticklabels_ignore = filter_aes(plot_collection, aes_map, "ticklabels", sample_dims)
     plot_collection.map(
         ticklabel_props,
-        ignore_aes=labels_dist_ignore,
+        ignore_aes=ticklabels_ignore,
         axis="both",
         store_artist=False,
         **ticklabels_kwargs,
@@ -481,7 +479,7 @@ def plot_trace_dist(
 
     plot_collection.map(
         labelled_x,
-        "label_x_trace",
+        "xlabel_trace",
         ignore_aes=xlabel_trace_ignore,
         coords={"column": "trace"},
         store_artist=False,

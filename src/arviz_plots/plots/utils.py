@@ -87,20 +87,3 @@ def filter_aes(pc, aes_map, artist, sample_dims):
     _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)
     artist_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
     return artist_dims, artist_aes, ignore_aes
-
-
-def get_size_of_var(group, compact=False, sample_dims=None):
-    """Get the size of the variables in a group."""
-    coords = set(group.sizes) - set(sample_dims)
-    var_size = 0
-    for var in group.data_vars:
-        dims_size = group[var].sizes
-        partial_sum = 1
-        if not compact:
-            for key in coords:
-                if key in dims_size:
-                    partial_sum *= dims_size[key]
-
-        var_size += partial_sum
-
-    return var_size

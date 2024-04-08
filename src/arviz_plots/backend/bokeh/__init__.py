@@ -97,6 +97,19 @@ def show(chart):
     _show(chart)
 
 
+def get_fig_size(plot_collection):
+    """Get the size of the :term:`chart` element and its units."""
+    gridbox = plot_collection.viz["chart"].item().children[1]
+    row_ids = [child[1] for child in gridbox.children]
+    col_ids = [child[2] for child in gridbox.children]
+    row_heights = np.zeros(max(row_ids), max(col_ids))
+    col_widths = np.zeros_like(row_heights)
+    for plot, row, col in gridbox.children:
+        row_heights[row, col] = plot.height
+        col_widths[row, col] = plot.width
+    return (row_heights.mean(-1).sum(), col_widths.mean(0).sum()), "dots"
+
+
 def create_plotting_grid(
     number,
     rows=1,

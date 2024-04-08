@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 """Plot collection classes."""
 import warnings
 from importlib import import_module
@@ -65,7 +66,7 @@ def subset_da(da, sel):
     return da
 
 
-def _process_facet_dims(data, facet_dims):
+def process_facet_dims(data, facet_dims):
     """Process facetting dimensions.
 
     It takes into account the ``__variable__`` "special dimension name" and helps find out
@@ -92,6 +93,21 @@ def _process_facet_dims(data, facet_dims):
             )
         n_facets = np.prod([data.sizes[dim] for dim in facet_dims])
     return n_facets, facets_per_var
+
+
+def leaf_dataset(dt, leaf_name):
+    """Get leaf nodes named `leaf_name` from `dt`.
+
+    Parameters
+    ----------
+    dt : DataTree
+    leaf_name : hashable
+
+    Returns
+    -------
+    Dataset
+    """
+    return xr.Dataset({var_name: values[leaf_name] for var_name, values in dt.children.items()})
 
 
 def _get_aes_dict_from_dt(aes_dt):
@@ -190,11 +206,14 @@ class PlotCollection:
         arviz_plots.PlotCollection.grid, arviz_plots.PlotCollection.wrap
         """
         self._data = data
-        self.viz = viz_dt
+        self._coords = None
+        self._viz_dt = viz_dt
         self._aes_dt = aes_dt
 
         if backend is not None:
             self.backend = backend
+        elif "chart" in viz_dt:
+            self.backend = viz_dt["chart"].item().__module__.split(".")[0]
 
         if aes is None and aes_dt is not None:
             aes = _get_aes_dict_from_dt(aes_dt)
@@ -218,10 +237,19 @@ class PlotCollection:
         and they can map to any dimensions *independently from one another*
         and also independently between variables (even if not recommended).
         """
-        return self._aes_dt
+        if self.coords is None:
+            return self._aes_dt
+        return DataTree.from_dict(
+            {
+                group: ds.to_dataset().sel(sel_subset(self.coords, ds.dims))
+                for group, ds in self._aes_dt.children.items()
+            }
+        )
 
     @aes.setter
     def aes(self, value):
+        if self.coords is not None:
+            raise ValueError("Can't modify `aes` DataTree while `coords` is set")
         self._aes = _get_aes_dict_from_dt(value)
         self._aes_dt = value
 
@@ -244,11 +272,37 @@ class PlotCollection:
         Plus all the artists that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotCollection.map` for more details.
         """
-        return self._viz
+        if self.coords is None:
+            return self._viz_dt
+        # TODO: use .loc on DataTree directly (once available), otherwise, changes to
+        # .viz aren't stored in the PlotCollection class, same in `aes`
+        sliced_viz_dict = {
+            group: ds.to_dataset().sel(sel_subset(self.coords, ds.dims))
+            for group, ds in self._viz_dt.children.items()
+        }
+        home_ds = self._viz_dt.to_dataset()
+        sliced_viz_dict["/"] = home_ds.sel(sel_subset(self.coords, home_ds.dims))
+        return DataTree.from_dict(sliced_viz_dict)
 
     @viz.setter
     def viz(self, value):
-        self._viz = value
+        if self.coords is not None:
+            raise ValueError("Can't modify `viz` DataTree while `coords` is set")
+        self._viz_dt = value
+
+    @property
+    def coords(self):
+        """Information about slicing operation to always be applied on the PlotCollection.
+
+        It is similar to the ``coords`` argument in :meth:`~.PlotCollection.map` but
+        these coordinates are always taken into account when interfacing with `PlotCollection`,
+        even when accessing :attr:`~.PlotCollection.viz` or :attr:`~.PlotCollection.aes`.
+        """
+        return self._coords
+
+    @coords.setter
+    def coords(self, value):
+        self._coords = value
 
     @property
     def data(self):
@@ -426,9 +480,7 @@ class PlotCollection:
         --------
         arviz_plots.PlotCollection.update_aes_from_dataset
         """
-        return xr.Dataset(
-            {var_name: values[aes_key] for var_name, values in self.aes.children.items()}
-        )
+        return leaf_dataset(self.aes, aes_key)
 
     def update_aes_from_dataset(self, aes_key, dataset):
         """Update the values of aes_key with those in the provided Dataset.
@@ -513,7 +565,7 @@ class PlotCollection:
             backend = rcParams["plot.backend"]
         data = concat_model_dict(data)
 
-        n_plots, plots_per_var = _process_facet_dims(data, cols)
+        n_plots, plots_per_var = process_facet_dims(data, cols)
         if n_plots <= col_wrap:
             n_rows, n_cols = 1, n_plots
         else:
@@ -628,8 +680,8 @@ class PlotCollection:
             raise ValueError("The same dimension can't be used for both cols and rows.")
         data = concat_model_dict(data)
 
-        n_cols, cols_per_var = _process_facet_dims(data, cols)
-        n_rows, rows_per_var = _process_facet_dims(data, rows)
+        n_cols, cols_per_var = process_facet_dims(data, cols)
+        n_rows, rows_per_var = process_facet_dims(data, rows)
 
         n_plots = n_cols * n_rows
         plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
@@ -711,7 +763,8 @@ class PlotCollection:
             artist_shape = [da.sizes[dim] for dim in inherited_dims] + list(artist_dims.values())
             all_artist_dims = inherited_dims + list(artist_dims.keys())
 
-            self.viz[var_name][fun_label] = xr.DataArray(
+            # TODO: once DataTree has a .loc attribute, this should work on .viz instead
+            self._viz_dt[var_name][fun_label] = xr.DataArray(
                 np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
                 coords={dim: data[dim] for dim in inherited_dims},
