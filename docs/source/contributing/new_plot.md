@@ -10,13 +10,20 @@ In fact, there are cases where getting the function to work is easier than
 managing to generate sensible defaults for the different parameter combinations.
 :::
 
-### Initial defaults
+## Initial defaults
+WIP: setting initial defaults independent of plot_collection, call process_data_var_names_coords,
+get relavant rcParams...
 
 
-### PlotCollection dependent defaults
+## PlotCollection dependent defaults
+WIP: generate PlotCollection dependent defaults, aes_map dictionary,
+custom aes value modification, 
 
 
-### Computation
+## Computation
+WIP: call functions from arviz-stats to compute summaries and diagnostics
 
 
-### `.map` usage pattern
+## `.map` usage pattern
+WIP: use map once per artist, only if the artist key in plot_kwargs is not False,
+add defaults checking against active aes_keys

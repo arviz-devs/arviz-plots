@@ -16,7 +16,7 @@ The `-e` flag stands for "execute" we want to execute a previously defined job t
 takes care of the steps above. The job name is "py" followed by your local python
 version without decimal point.
 
-:::{info}
+:::{note}
 It is also possible to run `pytest tests/` directly instead of `tox -e py311`,
 and all commands covered in this page work either way. However, it is recommended
 to use tox to isolate the testing environment and have local testing be as similar
