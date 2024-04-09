@@ -6,8 +6,7 @@ from arviz_base import from_dict, load_arviz_data
 
 from arviz_plots import plot_dist, plot_forest, plot_trace, plot_trace_dist, visuals
 
-pytestmark = pytest.mark.usefixtures("clean_plots")
-pytestmark = pytest.mark.usefixtures("check_skips")
+pytestmark = [pytest.mark.usefixtures("clean_plots"), pytest.mark.usefixtures("check_skips")]
 
 
 @pytest.fixture(scope="module")

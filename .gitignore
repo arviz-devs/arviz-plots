@@ -72,6 +72,9 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# default test image folder
+test_images/
+
 # Translations
 *.mo
 *.pot

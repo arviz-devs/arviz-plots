@@ -31,6 +31,15 @@ glossary
 ```
 
 ```{toctree}
+:hidden:
+:caption: Contributing
+
+contributing/testing
+contributing/new_plot
+contributing/docs
+```
+
+```{toctree}
 :caption: About
 :hidden:
 

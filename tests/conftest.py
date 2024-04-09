@@ -46,7 +46,9 @@ def clean_plots(request, save_figs):
     """Close plots after each test, saving too if --save is specified during test invocation."""
 
     def fin():
-        if "backend" in request.fixturenames and "matplotlib" in request.keywords:
+        if ("backend" in request.fixturenames) and any(
+            "matplotlib" in key for key in request.keywords.keys()
+        ):
             import matplotlib.pyplot as plt
 
             if save_figs is not None:
