@@ -47,7 +47,7 @@ def plot_trace(
     aes_map : mapping, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Defaults to only mapping properties to the trace lines.
-    plot_kwargs : mapping, optional
+    plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * trace -> passed to :func:`~.visuals.line`

@@ -106,14 +106,15 @@ class TestPlots:
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_trace_dist(self, datatree, backend, compact, combined):
+        kind = "kde"
         pc = plot_trace_dist(datatree, backend=backend, compact=compact, combined=combined)
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "chain" in pc.viz["theta"]["trace"].dims
         if combined:
-            assert "chain" not in pc.viz["theta"]["dist"].dims
+            assert "chain" not in pc.viz["theta"][kind].dims
         else:
-            assert "chain" in pc.viz["theta"]["dist"].dims
+            assert "chain" in pc.viz["theta"][kind].dims
         if compact:
             assert "hierarchy" not in pc.viz["theta"]["plot"].dims
         else:
