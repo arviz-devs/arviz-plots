@@ -2,12 +2,11 @@
 """Test batteries-included plots."""
 import numpy as np
 import pytest
-from arviz_base import from_dict, load_arviz_data
+from arviz_base import from_dict
 
 from arviz_plots import plot_dist, plot_forest, plot_trace, plot_trace_dist, visuals
 
-pytestmark = pytest.mark.usefixtures("clean_plots")
-pytestmark = pytest.mark.usefixtures("check_skips")
+pytestmark = [pytest.mark.usefixtures("clean_plots"), pytest.mark.usefixtures("check_skips")]
 
 
 @pytest.fixture(scope="module")
@@ -42,6 +41,23 @@ def datatree2(seed=17):
             "sample_stats": {"diverging": diverging},
         },
         dims={"theta": ["hierarchy"], "theta_t": ["hierarchy"]},
+    )
+
+
+@pytest.fixture(scope="module")
+def datatree_4d(seed=31):
+    rng = np.random.default_rng(seed)
+    mu = rng.normal(size=(4, 100))
+    theta = rng.normal(size=(4, 100, 5))
+    eta = rng.normal(size=(4, 100, 5, 3))
+    diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
+
+    return from_dict(
+        {
+            "posterior": {"mu": mu, "theta": theta, "eta": eta},
+            "sample_stats": {"diverging": diverging},
+        },
+        dims={"theta": ["hierarchy"], "eta": ["hierarchy", "group"]},
     )
 
 
@@ -106,14 +122,15 @@ class TestPlots:
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_trace_dist(self, datatree, backend, compact, combined):
+        kind = "kde"
         pc = plot_trace_dist(datatree, backend=backend, compact=compact, combined=combined)
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "chain" in pc.viz["theta"]["trace"].dims
         if combined:
-            assert "chain" not in pc.viz["theta"]["dist"].dims
+            assert "chain" not in pc.viz["theta"][kind].dims
         else:
-            assert "chain" in pc.viz["theta"]["dist"].dims
+            assert "chain" in pc.viz["theta"][kind].dims
         if compact:
             assert "hierarchy" not in pc.viz["theta"]["plot"].dims
         else:
@@ -158,15 +175,17 @@ class TestPlots:
         assert pc.viz["plot"].sizes["column"] == 3
         assert all("ess" in child.data_vars for child in pc.viz.children.values())
 
-    def test_plot_forest_aes_labels_shading(self, backend):
-        post = load_arviz_data("rugby_field").posterior.ds.sel(draw=slice(None, 100))
-        for pseudo_dim in ("__variable__", "field", "team"):
-            pc = plot_forest(
-                post,
-                pc_kwargs={"aes": {"color": [pseudo_dim]}},
-                aes_map={"labels": ["color"]},
-                shade_label=pseudo_dim,
-                backend=backend,
-            )
-            assert "plot" in pc.viz.data_vars
-            assert all("shade" in child.data_vars for child in pc.viz.children.values())
+    @pytest.mark.parametrize("pseudo_dim", ("__variable__", "hierarchy", "group"))
+    def test_plot_forest_aes_labels_shading(self, backend, datatree_4d, pseudo_dim):
+        pc = plot_forest(
+            datatree_4d,
+            pc_kwargs={"aes": {"color": [pseudo_dim]}},
+            aes_map={"labels": ["color"]},
+            shade_label=pseudo_dim,
+            backend=backend,
+        )
+        assert "plot" in pc.viz.data_vars
+        assert all("shade" in child.data_vars for child in pc.viz.children.values())
+        if pseudo_dim != "__variable__":
+            assert all(0 in child["alpha"] for child in pc.aes.children.values())
+            assert any(pseudo_dim in child["shade"].dims for child in pc.viz.children.values())

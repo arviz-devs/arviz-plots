@@ -7,32 +7,20 @@ Available backends
 ------------------
 
 .. grid:: 2
-    :class-container: only-dark
 
     .. grid-item-card::
         :link: matplotlib
         :link-type: doc
-        :img-background: ../../_static/matplotlib-logo-dark.svg
-        :class-img-bottom: dark-light
-
-    .. grid-item-card::
-        :link: bokeh
-        :link-type: doc
-        :img-background: ../../_static/bokeh-logo-dark.svg
-        :class-img-bottom: dark-light
-
-.. grid:: 2
-    :class-container: only-light
-
-    .. grid-item-card::
-        :link: matplotlib
-        :link-type: doc
+        :link-alt: matplotlib
         :img-background: ../../_static/matplotlib-logo-light.svg
+        :class-img-bottom: dark-light
 
     .. grid-item-card::
         :link: bokeh
         :link-type: doc
+        :link-alt: bokeh
         :img-background: ../../_static/bokeh-logo-light.svg
+        :class-img-bottom: dark-light
 
 .. toctree::
    :maxdepth: 1
@@ -48,6 +36,7 @@ Common interface definition
 .. automodule:: arviz_plots.backend
 
 .. dropdown:: Keyword arguments
+    :name: backend_interface_arguments
     :open:
 
     The argument names are defined here to have a comprehensive list of all possibilities.

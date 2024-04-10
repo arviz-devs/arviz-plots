@@ -1,4 +1,5 @@
 """Forest plot code."""
+from copy import copy
 from importlib import import_module
 
 import arviz_stats  # pylint: disable=unused-import
@@ -83,7 +84,7 @@ def plot_forest(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
+    aes_map : mapping of {str : sequence of str or False}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs` except "ticklabels"
         which doesn't apply and "twig" and "trunk" which, similarly to `stats_kwargs`
@@ -97,7 +98,7 @@ def plot_forest(
         "overlay" is a dummy aesthetic to trigger looping over variables and/or
         dimensions using all aesthetics in every iteration. "alpha" gets two
         values (0, 0.3) in order to trigger the alternate shading effect.
-    plot_kwargs : mapping, optional
+    plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * trunk, twig -> passed to :func:`~.visuals.line_x`
@@ -105,6 +106,8 @@ def plot_forest(
         * labels -> passed to :func:`~.visuals.annotate_label`
         * shade -> passed to :func:`~.visuals.fill_between_y`
         * ticklabels -> passed to :func:`~.backend.xticks`
+        * remove_axis -> not passed anywhere, can only take ``False`` as value to skip calling
+          :func:`~.visuals.remove_axis`
 
     stats_kwargs : mapping, optional
         Valid keys are:
@@ -262,12 +265,21 @@ def plot_forest(
         width_ratios.loc[{"column": "forest"}] = 3 if len(labels) < 3 else 2
         pc_kwargs["plot_grid_kws"].setdefault("width_ratios", width_ratios.values)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        alpha_aes_dims = False
         if shade_label is not None:
             pc_kwargs["plot_grid_kws"].setdefault("plot_hspace", 0)
-            pc_kwargs["aes"].setdefault("alpha", [shade_label])
+            alpha_aes_dims = pc_kwargs["aes"].get("alpha", [shade_label])
+            pc_kwargs["aes"]["alpha"] = alpha_aes_dims
         pc_kwargs["aes"].setdefault("y", labellable_dims)
         pc_kwargs["aes"].setdefault("overlay", labellable_dims)
-        pc_kwargs.setdefault("alpha", [0, 0.3])
+        if alpha_aes_dims is not False:
+            if ("__variable__" in pc_kwargs["aes"]["alpha"]) or all(
+                shade_label in da.dims for da in distribution.values()
+            ):
+                pc_kwargs.setdefault("alpha", [0, 0.3])
+            else:
+                # trigger inclusion of neutral element in aes cycle
+                pc_kwargs.setdefault("alpha", [0, 0, 0.3])
         if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
         plot_collection = PlotCollection.grid(
@@ -336,20 +348,42 @@ def plot_forest(
     ci_dims, ci_aes, ci_ignore = filter_aes(
         plot_collection, aes_map, "credible_interval", sample_dims
     )
+    twig_kwargs = copy(plot_kwargs.get("twig", {}))
+    trunk_kwargs = copy(plot_kwargs.get("trunk", {}))
     if ci_kind == "eti":
-        ci_trunk = distribution.azstats.eti(
-            prob=ci_probs[0], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
-        ci_twig = distribution.azstats.eti(
-            prob=ci_probs[1], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
+        ci_fun = distribution.azstats.eti
     elif ci_kind == "hdi":
-        ci_trunk = distribution.azstats.hdi(
-            prob=ci_probs[0], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
-        ci_twig = distribution.azstats.hdi(
+        ci_fun = distribution.azstats.hdi
+    if twig_kwargs is not False:
+        ci_twig = ci_fun(
             prob=ci_probs[1], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
         )
+    if trunk_kwargs is not False:
+        ci_trunk = ci_fun(
+            prob=ci_probs[0], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+        )
+
+    # compute point estimate
+    pe_kwargs = copy(plot_kwargs.get("point_estimate", {}))
+    if pe_kwargs is not None:
+        pe_dims, pe_aes, pe_ignore = filter_aes(
+            plot_collection, aes_map, "point_estimate", sample_dims
+        )
+        if point_estimate == "median":
+            point = distribution.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        elif point_estimate == "mean":
+            point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        else:
+            raise NotImplementedError("coming soon")
+
+    if twig_kwargs is not False:
+        x_range = ci_twig
+    elif trunk_kwargs is not False:
+        x_range = ci_trunk
+    elif pe_kwargs is not False:
+        x_range = point
+    else:
+        x_range = xr.ones_like(distribution)
 
     # add labels and shading first, so forest plot is rendered on top
     cumulative_label = []
@@ -391,8 +425,8 @@ def plot_forest(
                 ignore_aes=shade_ignore,
                 **shade_kwargs,
             )
-            ci_global_min = ci_twig.min().to_array().min().item()
-            ci_global_max = ci_twig.max().to_array().max().item()
+            ci_global_min = x_range.min().to_array().min().item()
+            ci_global_max = x_range.max().to_array().max().item()
             ci_range_extend = 0.1 * (ci_global_max - ci_global_min)
             xlim_forest = [ci_global_min - ci_range_extend, ci_global_max + ci_range_extend]
             plot_collection.map(
@@ -434,68 +468,63 @@ def plot_forest(
         )
         x += 1
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    plot_bknd.xticks(
-        np.arange(len(labels)),
-        [label.strip("_") for label in labellable_dims if label in labels],
-        plot_collection.get_target(None, {"column": "labels"}),
-        **plot_kwargs.get("ticklabels", {}),
-    )
+    ticklabel_kwargs = copy(plot_kwargs.get("ticklabels", {}))
+    if ticklabel_kwargs is not False:
+        plot_bknd.xticks(
+            np.arange(len(labels)),
+            [label.strip("_") for label in labellable_dims if label in labels],
+            plot_collection.get_target(None, {"column": "labels"}),
+            **ticklabel_kwargs,
+        )
 
     # plot credible interval
     default_color = plot_bknd.get_default_aes("color", 1, {})[0]
-    twig_kwargs = plot_kwargs.get("twig", {}).copy()
-    twig_kwargs.setdefault("width", 0.7)
-    if "color" not in ci_aes:
-        twig_kwargs.setdefault("color", default_color)
-    plot_collection.map(
-        line_x,
-        "twig",
-        data=ci_twig,
-        ignore_aes=ci_ignore,
-        coords={"column": "forest"},
-        **twig_kwargs,
-    )
-    trunk_kwargs = plot_kwargs.get("trunk", {}).copy()
-    trunk_kwargs.setdefault("width", 2)
-    if "color" not in ci_aes:
-        trunk_kwargs.setdefault("color", default_color)
-    plot_collection.map(
-        line_x,
-        "trunk",
-        data=ci_trunk,
-        ignore_aes=ci_ignore,
-        coords={"column": "forest"},
-        **trunk_kwargs,
-    )
+    if twig_kwargs is not False:
+        twig_kwargs.setdefault("width", 0.7)
+        if "color" not in ci_aes:
+            twig_kwargs.setdefault("color", default_color)
+        plot_collection.map(
+            line_x,
+            "twig",
+            data=ci_twig,
+            ignore_aes=ci_ignore,
+            coords={"column": "forest"},
+            **twig_kwargs,
+        )
+    if trunk_kwargs is not False:
+        trunk_kwargs.setdefault("width", 2)
+        if "color" not in ci_aes:
+            trunk_kwargs.setdefault("color", default_color)
+        plot_collection.map(
+            line_x,
+            "trunk",
+            data=ci_trunk,
+            ignore_aes=ci_ignore,
+            coords={"column": "forest"},
+            **trunk_kwargs,
+        )
 
     # point estimate
-    pe_dims, pe_aes, pe_ignore = filter_aes(plot_collection, aes_map, "point_estimate", sample_dims)
-    if point_estimate == "median":
-        point = distribution.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
-    elif point_estimate == "mean":
-        point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
-    else:
-        raise NotImplementedError("coming soon")
-
-    pe_kwargs = plot_kwargs.get("point_estimate", {}).copy()
-    if "color" not in pe_aes:
-        pe_kwargs.setdefault("color", default_color)
-    if "facecolor" not in pe_aes:
-        pe_kwargs.setdefault("facecolor", "white")
-    plot_collection.map(
-        scatter_x,
-        "point_estimate",
-        data=point,
-        ignore_aes=pe_ignore,
-        coords={"column": "forest"},
-        **pe_kwargs,
-    )
+    if pe_kwargs is not False:
+        if "color" not in pe_aes:
+            pe_kwargs.setdefault("color", default_color)
+        if "facecolor" not in pe_aes:
+            pe_kwargs.setdefault("facecolor", "white")
+        plot_collection.map(
+            scatter_x,
+            "point_estimate",
+            data=point,
+            ignore_aes=pe_ignore,
+            coords={"column": "forest"},
+            **pe_kwargs,
+        )
     if shade_label is not None:
         plot_bknd.xlim(xlim_labels, plot_collection.get_target(None, {"column": "labels"}))
         plot_bknd.xlim(xlim_forest, plot_collection.get_target(None, {"column": "forest"}))
 
-    plot_collection.map(
-        remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
-    )
+    if plot_kwargs.get("remove_axis", True) is not False:
+        plot_collection.map(
+            remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
+        )
 
     return plot_collection

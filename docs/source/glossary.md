@@ -11,6 +11,7 @@ aesthetics
   keyword argument accepted by the plotting function being used.
 
 aesthetic mapping
+aesthetic mappings
   We use _aesthetic mapping_ to indicate the relation between the {term}`aesthetics`
   in our plot and properties in our dataset.
 

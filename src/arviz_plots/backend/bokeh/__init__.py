@@ -68,8 +68,8 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
         figsize_units = "dots"
     else:
         width, height = figsize
-    cols *= 100
-    rows *= 100
+    cols = cols * 100
+    rows = rows * 100
     if figsize_units == "inches":
         warnings.warn(
             f"Assuming dpi=100. Use figsize_units='dots' and figsize={figsize} "
@@ -95,6 +95,26 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
 def show(chart):
     """Show the provided bokeh layout."""
     _show(chart)
+
+
+def get_figsize(plot_collection):
+    """Get the size of the :term:`chart` element and its units."""
+    chart = plot_collection.viz["chart"].item()
+    if chart is None:
+        plot = plot_collection.viz["plot"].item()
+        return (plot.width, plot.height), "dots"
+    if isinstance(chart, tuple):
+        gridbox = chart.children[1]
+    else:
+        gridbox = chart
+    row_ids = [int(child[1]) for child in gridbox.children]
+    col_ids = [int(child[2]) for child in gridbox.children]
+    row_heights = np.zeros((max(row_ids) + 1, max(col_ids) + 1))
+    col_widths = np.zeros_like(row_heights)
+    for plot, row, col in gridbox.children:
+        row_heights[row, col] = plot.height
+        col_widths[row, col] = plot.width
+    return (col_widths.mean(0).sum(), row_heights.mean(-1).sum()), "dots"
 
 
 def create_plotting_grid(

@@ -84,8 +84,8 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     else:
         width, height = figsize
     dpi = rcParams["figure.dpi"]
-    cols *= dpi
-    rows *= dpi
+    cols = cols * dpi
+    rows = rows * dpi
     if figsize_units == "inches":
         width *= dpi
         height *= dpi
@@ -105,6 +105,11 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
 def show(chart):  # pylint: disable=unused-argument
     """Show all existing matplotlib figures."""
     _show()
+
+
+def get_figsize(plot_collection):
+    """Get the size of the :term:`chart` element and its units."""
+    return plot_collection.viz["chart"].item().get_size_inches(), "inches"
 
 
 def create_plotting_grid(

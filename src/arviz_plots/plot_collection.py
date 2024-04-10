@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines, too-many-public-methods
 """Plot collection classes."""
 import warnings
 from importlib import import_module
@@ -65,7 +66,7 @@ def subset_da(da, sel):
     return da
 
 
-def _process_facet_dims(data, facet_dims):
+def process_facet_dims(data, facet_dims):
     """Process facetting dimensions.
 
     It takes into account the ``__variable__`` "special dimension name" and helps find out
@@ -92,6 +93,21 @@ def _process_facet_dims(data, facet_dims):
             )
         n_facets = np.prod([data.sizes[dim] for dim in facet_dims])
     return n_facets, facets_per_var
+
+
+def leaf_dataset(dt, leaf_name):
+    """Get leaf nodes named `leaf_name` from `dt`.
+
+    Parameters
+    ----------
+    dt : DataTree
+    leaf_name : hashable
+
+    Returns
+    -------
+    Dataset
+    """
+    return xr.Dataset({var_name: values[leaf_name] for var_name, values in dt.children.items()})
 
 
 def _get_aes_dict_from_dt(aes_dt):
@@ -190,11 +206,14 @@ class PlotCollection:
         arviz_plots.PlotCollection.grid, arviz_plots.PlotCollection.wrap
         """
         self._data = data
-        self.viz = viz_dt
+        self._coords = None
+        self._viz_dt = viz_dt
         self._aes_dt = aes_dt
 
         if backend is not None:
             self.backend = backend
+        elif "chart" in viz_dt:
+            self.backend = viz_dt["chart"].item().__module__.split(".")[0]
 
         if aes is None and aes_dt is not None:
             aes = _get_aes_dict_from_dt(aes_dt)
@@ -217,11 +236,24 @@ class PlotCollection:
         There can be as many aesthetic mappings as desired,
         and they can map to any dimensions *independently from one another*
         and also independently between variables (even if not recommended).
+
+        See Also
+        --------
+        .PlotCollection.generate_aes_dt
         """
-        return self._aes_dt
+        if self.coords is None:
+            return self._aes_dt
+        return DataTree.from_dict(
+            {
+                group: ds.to_dataset().sel(sel_subset(self.coords, ds.dims))
+                for group, ds in self._aes_dt.children.items()
+            }
+        )
 
     @aes.setter
     def aes(self, value):
+        if self.coords is not None:
+            raise ValueError("Can't modify `aes` DataTree while `coords` is set")
         self._aes = _get_aes_dict_from_dt(value)
         self._aes_dt = value
 
@@ -244,11 +276,37 @@ class PlotCollection:
         Plus all the artists that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotCollection.map` for more details.
         """
-        return self._viz
+        if self.coords is None:
+            return self._viz_dt
+        # TODO: use .loc on DataTree directly (once available), otherwise, changes to
+        # .viz aren't stored in the PlotCollection class, same in `aes`
+        sliced_viz_dict = {
+            group: ds.to_dataset().sel(sel_subset(self.coords, ds.dims))
+            for group, ds in self._viz_dt.children.items()
+        }
+        home_ds = self._viz_dt.to_dataset()
+        sliced_viz_dict["/"] = home_ds.sel(sel_subset(self.coords, home_ds.dims))
+        return DataTree.from_dict(sliced_viz_dict)
 
     @viz.setter
     def viz(self, value):
-        self._viz = value
+        if self.coords is not None:
+            raise ValueError("Can't modify `viz` DataTree while `coords` is set")
+        self._viz_dt = value
+
+    @property
+    def coords(self):
+        """Information about slicing operation to always be applied on the PlotCollection.
+
+        It is similar to the ``coords`` argument in :meth:`~.PlotCollection.map` but
+        these coordinates are always taken into account when interfacing with `PlotCollection`,
+        even when accessing :attr:`~.PlotCollection.viz` or :attr:`~.PlotCollection.aes`.
+        """
+        return self._coords
+
+    @coords.setter
+    def coords(self, value):
+        self._coords = value
 
     @property
     def data(self):
@@ -288,6 +346,23 @@ class PlotCollection:
             Dictionary with :term:`aesthetics` as keys and as values a list
             of the values that should be taken by that aesthetic.
 
+        Notes
+        -----
+        Mappings are applied only when all variables defined in the mapping are found.
+        Thus, a mapping for ``["chain", "hierarchy"]`` would be applied if both
+        dimensions are present in the variable, otherwise it is completely ignored.
+
+        It can be the case that a mapping is ignored for a specific variable
+        because it has none of the dimensions that define the mapping or because
+        it doesn't have all of them. In such cases, out of the values in the property
+        cycle, the first one is taken out and reserved as *neutral_element*.
+        Then, the cycle excluding the first element is used when applying the mapping,
+        and the neutral element is used when the mapping can't be applied.
+
+        It is possible to force the inclusion of the neutral element from the
+        property value cycle by providing the same value in both the first and second
+        positions in the cycle, but this is generally not recommended.
+
         Examples
         --------
         Initialize a `PlotCollection` with the rugby dataset as data.
@@ -312,16 +387,17 @@ class PlotCollection:
                 )
             })
             idata = load_arviz_data("rugby_field")
-            pc = PlotCollection(idata.posterior, DataTree())
+            pc = PlotCollection(idata.posterior, DataTree(), backend="matplotlib")
             pc.generate_aes_dt(
                 aes={
                     "color": ["team"],
                     "y": ["field", "team"],
-                    "linestyle": ["field"],
+                    "marker": ["field"],
+                    "linestyle": ["chain"],
                 },
                 color=[f"C{i}" for i in range(6)],
-                y=list(range(12)),
-                linestyle=["-", ":"],
+                y=list(range(13)),
+                linestyle=["-", ":", "--", "-."],
             )
             pc.aes
 
@@ -333,6 +409,71 @@ class PlotCollection:
         Thus, when we subset the data for plotting with
         ``ds[var_name].sel(**kwargs)`` we can get its aesthetics with
         ``aes_dt[var_name].sel(**kwargs)``.
+
+        Let's inspect its contents for some variables. We'll start with the intercept,
+        which has dimensions ``chain, draw, field``.
+
+        .. jupyter-execute::
+
+            pc.aes["intercept"]
+
+        In this case, only the marker and linestyle mappings can be applied, so these
+        two get arrays storing the values for the different coordinate values whereas
+        the other two properties color and y get a scalar that corresponds to the neutral
+        element.
+
+        We didn't provide any defaults for the marker, but as we specified the backend,
+        some default values were generated for us. We did provide 4 values for the linestyle
+        and we get these for values in the mapped values storage.
+
+        Let's move on to the sd_att variable, which in this case had dimensions ``chain, draw``:
+
+        .. jupyter-execute::
+
+            pc.aes["sd_att"]
+
+        Now only the linestyle mapping can be applied, so we get an array of values for them,
+        scalar values for the others. It is worth noting that the value of the marker is
+        different from the 2 we saw before for the intercept.
+
+        This is the neutral element. As we didn't provide any values for the marker,
+        3 default values were set, one for each coordinate value of the team dimension
+        and an extra one to act as neutral element, for those variables where the mapping
+        does not apply. In fact, the values we have seen so far for color and y are also
+        the ones corresponding to the neutral element.
+
+        The only mapping without neutral element is the linestyle one because the
+        chain dimension is present in all variables, and so all variables will have
+        an array with its 4 values.
+
+        Next let's check atts_team variable, now with shape ``chain, draw, team``:
+
+        .. jupyter-execute::
+
+            pc.aes["atts_team"]
+
+        This case is similar to the intercept, changing linestyle and color. However,
+        we manually provided values for the color cycle and we only gave 6 values.
+        Thus, when the 1st one was taken as neutral element and excluded we end up having
+        the same color (the 2nd in the cycle) for both the 1st and last teams (according
+        the order defined in the team coordinate values).
+
+        Note however that if we had sliced the posterior to keep only variables with the
+        ``team`` dimension there would be no need for the neutral element (like it currently
+        happens with linestyle) and there wouldn't be any repeated elements in the color cycle.
+
+        To finish, let's check the atts variable where all mappings can be applied because
+        it has ``chain, draw, field, team`` dimensions.
+
+        .. jupyter-execute::
+
+            pc.aes["atts"]
+
+        Consequently, you can see all aesthetics have arrays storing their values,
+        and that all values differ from the neutral element in case there is one.
+        Moreover, we gave 13 values for y which is one more than the unique combinations
+        of field and team so there aren't repeated values in the y cycle either even
+        after excluding the neutral element.
         """
         if aes is None:
             aes = self._aes
@@ -391,10 +532,18 @@ class PlotCollection:
                 aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
                 if neutral_element_needed:
                     neutral_element = aes_vals[0]
+                    aes_vals_no_neutral = [val for val in aes_vals if val != neutral_element]
+                    if aes_vals_no_neutral[0] in aes_vals_no_neutral[1:]:
+                        cycle_repeat_index = aes_vals_no_neutral[1:].index(aes_vals_no_neutral[0])
+                        aes_vals_no_neutral = aes_vals_no_neutral[: cycle_repeat_index + 1]
+                    if aes_vals[1] == neutral_element:
+                        aes_vals = [neutral_element] + aes_vals_no_neutral
+                    else:
+                        aes_vals = aes_vals_no_neutral
                     aes_vals = get_default_aes(
                         aes_key,
                         total_aes_vals,
-                        {aes_key: [val for val in aes_vals if val != neutral_element]},
+                        {aes_key: aes_vals},
                     )
                 aes_da = xr.DataArray(
                     np.array(aes_vals).reshape(aes_shape),
@@ -426,9 +575,7 @@ class PlotCollection:
         --------
         arviz_plots.PlotCollection.update_aes_from_dataset
         """
-        return xr.Dataset(
-            {var_name: values[aes_key] for var_name, values in self.aes.children.items()}
-        )
+        return leaf_dataset(self.aes, aes_key)
 
     def update_aes_from_dataset(self, aes_key, dataset):
         """Update the values of aes_key with those in the provided Dataset.
@@ -464,6 +611,19 @@ class PlotCollection:
         """Get the ``viz`` Dataset that corresponds to the provided variable."""
         return self.viz if "plot" in self.viz.data_vars else self.viz[var_name]
 
+    def rename_artists(self, name_dict=None, **names):
+        """Rename artist data variables in the :attr:`~.PlotCollection.viz` DataTree.
+
+        Parameters
+        ----------
+        name_dict, **names : mapping
+            At least one of these must be provided.
+        """
+        viz_dt = self.viz
+        for group, child in viz_dt.children.items():
+            viz_dt[group] = child.rename_vars(name_dict, **names)
+        self.viz = viz_dt
+
     @classmethod
     def wrap(
         cls,
@@ -494,7 +654,7 @@ class PlotCollection:
         backend : str, optional
             Plotting backend.
         plot_grid_kws : mapping, optional
-            Passed to ``create_axis_grid`` of the chosen plotting backend.
+            Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.
@@ -513,7 +673,7 @@ class PlotCollection:
             backend = rcParams["plot.backend"]
         data = concat_model_dict(data)
 
-        n_plots, plots_per_var = _process_facet_dims(data, cols)
+        n_plots, plots_per_var = process_facet_dims(data, cols)
         if n_plots <= col_wrap:
             n_rows, n_cols = 1, n_plots
         else:
@@ -604,7 +764,7 @@ class PlotCollection:
         backend : str, optional
             Plotting backend.
         plot_grid_kws : mapping, optional
-            Passed to ``create_axis_grid`` of the chosen plotting backend.
+            Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.
@@ -628,8 +788,8 @@ class PlotCollection:
             raise ValueError("The same dimension can't be used for both cols and rows.")
         data = concat_model_dict(data)
 
-        n_cols, cols_per_var = _process_facet_dims(data, cols)
-        n_rows, rows_per_var = _process_facet_dims(data, rows)
+        n_cols, cols_per_var = process_facet_dims(data, cols)
+        n_rows, rows_per_var = process_facet_dims(data, rows)
 
         n_plots = n_cols * n_rows
         plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
@@ -711,7 +871,8 @@ class PlotCollection:
             artist_shape = [da.sizes[dim] for dim in inherited_dims] + list(artist_dims.values())
             all_artist_dims = inherited_dims + list(artist_dims.keys())
 
-            self.viz[var_name][fun_label] = xr.DataArray(
+            # TODO: once DataTree has a .loc attribute, this should work on .viz instead
+            self._viz_dt[var_name][fun_label] = xr.DataArray(
                 np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
                 coords={dim: data[dim] for dim in inherited_dims},

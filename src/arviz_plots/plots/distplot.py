@@ -1,5 +1,6 @@
 """dist plot code."""
 import warnings
+from copy import copy
 
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
@@ -89,7 +90,7 @@ def plot_dist(
 
         When "point_estimate" key is provided but "point_estimate_text" isn't,
         the values assigned to the first are also used for the second.
-    plot_kwargs : mapping, optional
+    plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
@@ -101,6 +102,7 @@ def plot_dist(
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats_kwargs : mapping, optional
         Valid keys are:
@@ -159,7 +161,7 @@ def plot_dist(
         >>> )
 
     """
-    if ci_kind not in ["hdi", "eti", None]:
+    if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
 
     if sample_dims is None:
@@ -221,31 +223,41 @@ def plot_dist(
         labeller = BaseLabeller()
 
     # density
-    density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
+    density_kwargs = copy(plot_kwargs.get(kind, {}))
 
-    if kind == "kde":
-        with warnings.catch_warnings():
-            if "model" in distribution:
-                warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            density = distribution.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
-        plot_collection.map(
-            line_xy, "kde", data=density, ignore_aes=density_ignore, **plot_kwargs.get("kde", {})
-        )
+    if density_kwargs is not False:
+        density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
+        if kind == "kde":
+            with warnings.catch_warnings():
+                if "model" in distribution:
+                    warnings.filterwarnings("ignore", message="Your data appears to have a single")
+                density = distribution.azstats.kde(
+                    dims=density_dims, **stats_kwargs.get("density", {})
+                )
+            plot_collection.map(
+                line_xy, "kde", data=density, ignore_aes=density_ignore, **density_kwargs
+            )
 
-    elif kind == "ecdf":
-        density = distribution.azstats.ecdf(dims=density_dims, **stats_kwargs.get("density", {}))
-        plot_collection.map(
-            ecdf_line,
-            "ecdf",
-            data=density,
-            ignore_aes=density_ignore,
-            **plot_kwargs.get("ecdf", {}),
-        )
+        elif kind == "ecdf":
+            density = distribution.azstats.ecdf(
+                dims=density_dims, **stats_kwargs.get("density", {})
+            )
+            plot_collection.map(
+                ecdf_line,
+                "ecdf",
+                data=density,
+                ignore_aes=density_ignore,
+                **density_kwargs,
+            )
 
     else:
         raise NotImplementedError("coming soon")
 
-    if "model" in distribution:
+    if (
+        (density_kwargs is not None)
+        and ("model" in distribution)
+        and (plot_collection.coords is None)
+    ):
         reduce_dim_map = {"kde": "kde_dim", "ecdf": "quantile"}
         y_ds = plot_collection.get_aes_as_dataset("y")
         y_ds = (
@@ -254,84 +266,95 @@ def plot_dist(
         plot_collection.update_aes_from_dataset("y", y_ds)
 
     # credible interval
-    ci_dims, ci_aes, ci_ignore = filter_aes(
-        plot_collection, aes_map, "credible_interval", sample_dims
-    )
-    if ci_kind == "eti":
-        ci = distribution.azstats.eti(
-            prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+    ci_kwargs = copy(plot_kwargs.get("credible_interval", {}))
+    if ci_kwargs is not False:
+        ci_dims, ci_aes, ci_ignore = filter_aes(
+            plot_collection, aes_map, "credible_interval", sample_dims
         )
-    elif ci_kind == "hdi":
-        ci = distribution.azstats.hdi(
-            prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
+        if ci_kind == "eti":
+            ci = distribution.azstats.eti(
+                prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+            )
+        elif ci_kind == "hdi":
+            ci = distribution.azstats.hdi(
+                prob=ci_prob, dims=ci_dims, **stats_kwargs.get("credible_interval", {})
+            )
 
-    ci_kwargs = plot_kwargs.get("credible_interval", {}).copy()
-    if "color" not in ci_aes:
-        ci_kwargs.setdefault("color", "gray")
-    plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
+        if "color" not in ci_aes:
+            ci_kwargs.setdefault("color", "gray")
+        plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
 
     # point estimate
-    pe_dims, pe_aes, pe_ignore = filter_aes(plot_collection, aes_map, "point_estimate", sample_dims)
-    if point_estimate == "median":
-        point = distribution.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
-    elif point_estimate == "mean":
-        point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
-    else:
-        raise NotImplementedError("coming soon")
-
-    point_density_diff = [dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims]
-    if kind == "kde":
-        point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(
-            dim=["kde_dim"] + point_density_diff
+    pe_kwargs = copy(plot_kwargs.get("point_estimate", {}))
+    pet_kwargs = copy(plot_kwargs.get("point_estimate_text", {}))
+    if (pe_kwargs is not False) or (pet_kwargs is not False):
+        pe_dims, pe_aes, pe_ignore = filter_aes(
+            plot_collection, aes_map, "point_estimate", sample_dims
         )
-    elif kind == "ecdf":
-        point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
+        if point_estimate == "median":
+            point = distribution.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        elif point_estimate == "mean":
+            point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        else:
+            raise NotImplementedError("coming soon")
 
-    point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
+    if pe_kwargs is not False:
+        if "color" not in pe_aes:
+            pe_kwargs.setdefault("color", "gray")
+        plot_collection.map(
+            scatter_x,
+            "point_estimate",
+            data=point,
+            ignore_aes=pe_ignore,
+            **pe_kwargs,
+        )
+    if pet_kwargs is not False:
+        if density_kwargs is False:
+            point_y = xr.ones_like(point)
+        elif kind == "kde":
+            point_density_diff = [
+                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
+            ]
+            point_density_diff = ["kde_dim"] + point_density_diff
+            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
+        elif kind == "ecdf":
+            # ecdf max is always 1
+            point_y = xr.full_like(0.04, point)
 
-    pe_kwargs = plot_kwargs.get("point_estimate", {}).copy()
-    if "color" not in pe_aes:
-        pe_kwargs.setdefault("color", "gray")
-    plot_collection.map(
-        scatter_x,
-        "point_estimate",
-        data=point.sel(plot_axis="x"),
-        ignore_aes=pe_ignore,
-        **pe_kwargs,
-    )
-    _, pet_aes, pet_ignore = filter_aes(
-        plot_collection, aes_map, "point_estimate_text", sample_dims
-    )
-    pet_kwargs = plot_kwargs.get("point_estimate_text", {}).copy()
-    if "color" not in pet_aes:
-        pet_kwargs.setdefault("color", "gray")
-    pet_kwargs.setdefault("horizontal_align", "center")
-    pet_kwargs.setdefault("point_label", "x")
-    plot_collection.map(
-        point_estimate_text,
-        "point_estimate_text",
-        data=point,
-        point_estimate=point_estimate,
-        ignore_aes=pet_ignore,
-        **pet_kwargs,
-    )
+        point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
+        _, pet_aes, pet_ignore = filter_aes(
+            plot_collection, aes_map, "point_estimate_text", sample_dims
+        )
+        if "color" not in pet_aes:
+            pet_kwargs.setdefault("color", "gray")
+        pet_kwargs.setdefault("horizontal_align", "center")
+        pet_kwargs.setdefault("point_label", "x")
+        plot_collection.map(
+            point_estimate_text,
+            "point_estimate_text",
+            data=point,
+            point_estimate=point_estimate,
+            ignore_aes=pet_ignore,
+            **pet_kwargs,
+        )
 
     # aesthetics
-    _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
-    title_kwargs = plot_kwargs.get("title", {}).copy()
-    if "color" not in title_aes:
-        title_kwargs.setdefault("color", "black")
-    plot_collection.map(
-        labelled_title,
-        "title",
-        ignore_aes=title_ignore,
-        subset_info=True,
-        labeller=labeller,
-        **title_kwargs,
-    )
-    plot_collection.map(
-        remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
-    )
+    title_kwargs = copy(plot_kwargs.get("title", {}))
+    if title_kwargs is not False:
+        _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+        if "color" not in title_aes:
+            title_kwargs.setdefault("color", "black")
+        plot_collection.map(
+            labelled_title,
+            "title",
+            ignore_aes=title_ignore,
+            subset_info=True,
+            labeller=labeller,
+            **title_kwargs,
+        )
+    if (kind == "kde") and (plot_kwargs.get("remove_axis", True) is not False):
+        plot_collection.map(
+            remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
+        )
 
     return plot_collection
