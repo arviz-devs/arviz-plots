@@ -185,15 +185,6 @@ and "annotation" will use only the mapping for color (if set, that is checked la
 We might also want to tweak some aesthetic values, in which case
 {meth}`~.PlotCollection.get_aes_as_dataset` and {meth}`~.PlotCollection.update_aes_from_dataset` can be helpful. See {func}`~arviz_plots.plot_forest` source code for an example.
 
-## Computation
-:::{warning}
-Computation relies on `arviz-stats` library, which is still in earlier development stages
-than arviz-plots. So at this point there aren't many recommendations on the functions themselves
-:::
-
-
-
-
 ## Adding {term}`artists` to the {term}`plot`
 
 :::{important}
@@ -264,3 +255,14 @@ one to {func}`~.visuals.labelled_x` and {func}`~.visuals.labelled_y` but they ca
 be considered the same element, so they both get `plot_kwargs` and `aes_map` from
 the `label` kwarg.
 :::
+
+(new_plot/computation)=
+## Computation
+:::{warning}
+Computation relies on `arviz-stats` library, which is still in earlier development stages
+than arviz-plots. So at this point there aren't many recommendations on the functions themselves
+:::
+
+Functions should reduce the dimensions returned by `filter_aes` (`artist_dims` above).
+Moreover, in order for the result to be valid `data` argument when calling `.map` it must
+be a `Dataset` with the same variables in `var_names` (or all variables in input data if not given).
