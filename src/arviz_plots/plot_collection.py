@@ -654,7 +654,7 @@ class PlotCollection:
         backend : str, optional
             Plotting backend.
         plot_grid_kws : mapping, optional
-            Passed to :func:`~.backend.create_axis_grid` of the chosen plotting backend.
+            Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.
@@ -764,7 +764,7 @@ class PlotCollection:
         backend : str, optional
             Plotting backend.
         plot_grid_kws : mapping, optional
-            Passed to :func:`~.backend.create_axis_grid` of the chosen plotting backend.
+            Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.

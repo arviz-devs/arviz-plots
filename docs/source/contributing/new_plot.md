@@ -66,9 +66,9 @@ def plot_xyz(
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
     filter_vars : {None, “like”, “regex”}, default None
-        If None, interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
+        If None, interpret `var_names` as the real variables names.
+        If “like”, interpret `var_names` as substrings of the real variables names.
+        If “regex”, interpret `var_names` as regular expressions on the real variables names.
     group : str, default "posterior"
         Group to be plotted.
     coords : dict, optional
