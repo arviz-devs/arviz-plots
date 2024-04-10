@@ -1,3 +1,5 @@
+.. _plots_api:
+
 ========================
 Batteries-included plots
 ========================

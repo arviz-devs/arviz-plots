@@ -36,6 +36,7 @@ Common interface definition
 .. automodule:: arviz_plots.backend
 
 .. dropdown:: Keyword arguments
+    :name: backend_interface_arguments
     :open:
 
     The argument names are defined here to have a comprehensive list of all possibilities.

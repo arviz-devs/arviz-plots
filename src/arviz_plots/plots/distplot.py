@@ -161,7 +161,7 @@ def plot_dist(
         >>> )
 
     """
-    if ci_kind not in ["hdi", "eti", None]:
+    if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
 
     if sample_dims is None:
@@ -223,22 +223,25 @@ def plot_dist(
         labeller = BaseLabeller()
 
     # density
-    density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
     density_kwargs = copy(plot_kwargs.get(kind, {}))
 
-    if kind == "kde":
-        with warnings.catch_warnings():
-            if "model" in distribution:
-                warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            density = distribution.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
-        if density_kwargs is not False:
+    if density_kwargs is not False:
+        density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
+        if kind == "kde":
+            with warnings.catch_warnings():
+                if "model" in distribution:
+                    warnings.filterwarnings("ignore", message="Your data appears to have a single")
+                density = distribution.azstats.kde(
+                    dims=density_dims, **stats_kwargs.get("density", {})
+                )
             plot_collection.map(
                 line_xy, "kde", data=density, ignore_aes=density_ignore, **density_kwargs
             )
 
-    elif kind == "ecdf":
-        density = distribution.azstats.ecdf(dims=density_dims, **stats_kwargs.get("density", {}))
-        if density_kwargs is not False:
+        elif kind == "ecdf":
+            density = distribution.azstats.ecdf(
+                dims=density_dims, **stats_kwargs.get("density", {})
+            )
             plot_collection.map(
                 ecdf_line,
                 "ecdf",
@@ -250,7 +253,11 @@ def plot_dist(
     else:
         raise NotImplementedError("coming soon")
 
-    if "model" in distribution and plot_collection.coords is None:
+    if (
+        (density_kwargs is not None)
+        and ("model" in distribution)
+        and (plot_collection.coords is None)
+    ):
         reduce_dim_map = {"kde": "kde_dim", "ecdf": "quantile"}
         y_ds = plot_collection.get_aes_as_dataset("y")
         y_ds = (
@@ -291,29 +298,30 @@ def plot_dist(
         else:
             raise NotImplementedError("coming soon")
 
-        point_density_diff = [
-            dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
-        ]
-        if kind == "kde":
-            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(
-                dim=["kde_dim"] + point_density_diff
-            )
-        elif kind == "ecdf":
-            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
-
-        point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
-
     if pe_kwargs is not False:
         if "color" not in pe_aes:
             pe_kwargs.setdefault("color", "gray")
         plot_collection.map(
             scatter_x,
             "point_estimate",
-            data=point.sel(plot_axis="x"),
+            data=point,
             ignore_aes=pe_ignore,
             **pe_kwargs,
         )
     if pet_kwargs is not False:
+        if density_kwargs is False:
+            point_y = xr.ones_like(point)
+        elif kind == "kde":
+            point_density_diff = [
+                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
+            ]
+            point_density_diff = ["kde_dim"] + point_density_diff
+            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
+        elif kind == "ecdf":
+            # ecdf max is always 1
+            point_y = xr.full_like(0.04, point)
+
+        point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(
             plot_collection, aes_map, "point_estimate_text", sample_dims
         )
