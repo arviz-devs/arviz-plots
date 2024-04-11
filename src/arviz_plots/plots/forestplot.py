@@ -239,6 +239,15 @@ def plot_forest(
     if not combined and "chain" not in distribution.dims:
         combined = True
 
+    labels_kwargs = copy(plot_kwargs.get("labels", {}))
+    if labels_kwargs is False:
+        raise ValueError("plot_kwargs['labels'] can't be False, use labels=[] to remove all labels")
+    shade_kwargs = copy(plot_kwargs.get("shade", {}))
+    if shade_kwargs is False:
+        raise ValueError(
+            "plot_kwargs['shade'] can't be False, use shade_label=None to remove shading"
+        )
+
     if shade_label is not None and shade_label not in labels:
         raise ValueError("shade_label must be one of the elements in labels argument")
 
@@ -408,7 +417,6 @@ def plot_forest(
         y = (y_max + y_min) / 2
         if shade_label == label:
             _, shade_aes, shade_ignore = filter_aes(plot_collection, aes_map, "shade", sample_dims)
-            shade_kwargs = plot_kwargs.get("shade", {}).copy()
             if "color" not in shade_aes:
                 shade_kwargs.setdefault("color", "gray")
             shade_data = xr.concat((y_min, y_max), "kwarg").assign_coords(
@@ -448,7 +456,7 @@ def plot_forest(
                 extra_ignore_aes.append(aes_key)
         lab_aes = set(lab_aes).difference(extra_ignore_aes)
         lab_ignore = set(lab_ignore).union(extra_ignore_aes)
-        lab_kwargs = plot_kwargs.get("labels", {}).copy()
+        lab_kwargs = labels_kwargs.copy()
         if "color" not in lab_aes:
             lab_kwargs.setdefault("color", "black")
         if x == 0:
