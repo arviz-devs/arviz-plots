@@ -6,7 +6,11 @@ from arviz_base import from_dict
 
 from arviz_plots import plot_dist, plot_forest, plot_trace, plot_trace_dist, visuals
 
-pytestmark = [pytest.mark.usefixtures("clean_plots"), pytest.mark.usefixtures("check_skips")]
+pytestmark = [
+    pytest.mark.usefixtures("clean_plots"),
+    pytest.mark.usefixtures("check_skips"),
+    pytest.mark.usefixtures("no_artist_kwargs"),
+]
 
 
 @pytest.fixture(scope="module")
@@ -79,7 +83,7 @@ def datatree_sample(seed=31):
     )
 
 
-@pytest.mark.parametrize("backend", ["matplotlib", "bokeh"])
+@pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "none"])
 class TestPlots:
     def test_plot_dist(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)

@@ -69,3 +69,9 @@ def check_skips(request):
             pytest.skip(reason="Requested skipping matplolib tests via command line argument")
         if skip_bokeh and any("bokeh" in key for key in request.keywords.keys()):
             pytest.skip(reason="Requested skipping bokeh tests via command line argument")
+
+
+@pytest.fixture(scope="function")
+def no_artist_kwargs(monkeypatch):
+    """Raise an error if artist kwargs are present when using 'none' backend."""
+    monkeypatch.setattr("arviz_plots.backend.none.ALLOW_KWARGS", False)
