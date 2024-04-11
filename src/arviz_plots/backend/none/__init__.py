@@ -174,7 +174,7 @@ def _filter_kwargs(kwargs, artist_kws):
 
 
 # "geoms"
-def line(x, y, target, *, color=None, alpha=None, width=None, linestyle=None, **artist_kws):
+def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to a line plot."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
@@ -194,13 +194,13 @@ def scatter(
     y,
     target,
     *,
-    size=None,
-    marker=None,
-    alpha=None,
-    color=None,
-    facecolor=None,
-    edgecolor=None,
-    width=None,
+    size=unset,
+    marker=unset,
+    alpha=unset,
+    color=unset,
+    facecolor=unset,
+    edgecolor=unset,
+    width=unset,
     **artist_kws,
 ):
     """Interface to a scatter plot."""
@@ -238,11 +238,11 @@ def text(
     string,
     target,
     *,
-    size=None,
-    alpha=None,
-    color=None,
-    vertical_align=None,
-    horizontal_align=None,
+    size=unset,
+    alpha=unset,
+    color=unset,
+    vertical_align=unset,
+    horizontal_align=unset,
     **artist_kws,
 ):
     """Interface to text annotation inside a plot."""
@@ -290,7 +290,7 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
 
 
 # general plot appeareance
-def title(string, target, *, size=None, color=None, **artist_kws):
+def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a title to a plot."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
@@ -300,7 +300,7 @@ def title(string, target, *, size=None, color=None, **artist_kws):
     return artist_element
 
 
-def ylabel(string, target, *, size=None, color=None, **artist_kws):
+def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a label to a plot's y axis."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
@@ -310,7 +310,7 @@ def ylabel(string, target, *, size=None, color=None, **artist_kws):
     return artist_element
 
 
-def xlabel(string, target, *, size=None, color=None, **artist_kws):
+def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a label to a plot's x axis."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
@@ -347,7 +347,7 @@ def xlim(lims, target, **artist_kws):
     return artist_element
 
 
-def ticklabel_props(target, *, axis="both", size=None, color=None, **artist_kws):
+def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to setting size of tick labels."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError("artist_kws not empty")
