@@ -24,6 +24,7 @@ jobs:
           echo "DATE=$(date +'%Y-%m-%d %H:%M %z')" >> ${GITHUB_ENV}
           pytest --hypothesis-profile chron -k hypothesis
       - name: Comment on issue if failed
+        if: failure()
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: 43
