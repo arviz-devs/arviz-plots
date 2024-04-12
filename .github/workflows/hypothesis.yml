@@ -34,4 +34,4 @@ jobs:
             * Branch: ${{ github.ref_name }}
             * Date: ${{ env.DATE }}
 
-            See [workflow logs](https://github.com/arviz-devs/arviz-plots/actions/workflows/hypothesis.yml) for details on which tests failed and why.
+            See [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details on which tests failed and why.
