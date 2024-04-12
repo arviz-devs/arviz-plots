@@ -4,6 +4,9 @@ on:
     - cron: '17 5 * * 1'
   workflow_dispatch:
 
+permissions:
+  issues: write
+
 jobs:
   hypothesis_testing:
     runs-on: ubuntu-latest
@@ -18,13 +21,16 @@ jobs:
           python -m pip install ".[test]"
       - name: Execute tests
         run: |
+          echo "DATE=$(date +'%Y-%m-%d %H:%M %z')" >> ${GITHUB_ENV}
           pytest --hypothesis-profile chron -k hypothesis
-      - name: Open issue if failed
-        if: failure()
-        uses: JasonEtco/create-an-issue@v2
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Comment on issue if failed
+        uses: peter-evans/create-or-update-comment@v4
         with:
-          filename: .github/hypothesis.md
-          update_existing: true
-          search_existing: all
+          issue-number: 43
+          body: |
+            The extended tests with hypothesis failed.
+
+            * Branch: ${{ env.GITHUB_REF }}
+            * Date: ${{ env.DATE }}
+
+            See [workflow logs](https://github.com/arviz-devs/arviz-plots/actions/workflows/hypothesis.yml) for details on which tests failed and why.
