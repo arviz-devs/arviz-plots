@@ -250,8 +250,8 @@ def plot_dist(
                 **density_kwargs,
             )
 
-    else:
-        raise NotImplementedError("coming soon")
+        else:
+            raise NotImplementedError("coming soon")
 
     if (
         (density_kwargs is not None)
@@ -319,7 +319,7 @@ def plot_dist(
             point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
         elif kind == "ecdf":
             # ecdf max is always 1
-            point_y = xr.full_like(0.04, point)
+            point_y = xr.full_like(point, 0.04)
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(
