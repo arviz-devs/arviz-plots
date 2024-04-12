@@ -127,3 +127,5 @@ def test_plot_forest(datatree, combined, ci_kind, point_estimate, plot_kwargs, l
                 assert all(key in child for child in pc.viz.children.values())
         elif key not in ("remove_axis", "ticklabels"):
             assert all(key in child for child in pc.viz.children.values())
+    if (ci_kind == "hdi") and (point_estimate == "mean"):
+        assert False
