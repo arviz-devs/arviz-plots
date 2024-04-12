@@ -21,16 +21,17 @@ jobs:
           python -m pip install ".[test]"
       - name: Execute tests
         run: |
-          echo "DATE=$(date +'%Y-%m-%d %H:%M %z')" >> ${GITHUB_ENV}
           pytest --hypothesis-profile chron -k hypothesis
+          echo "DATE=$(date +'%Y-%m-%d %H:%M %z')" >> ${GITHUB_ENV}
       - name: Comment on issue if failed
+        if: failure()
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: 43
           body: |
             The extended tests with hypothesis failed.
 
-            * Branch: ${{ env.GITHUB_REF }}
+            * Branch: ${{ github.ref_name }}
             * Date: ${{ env.DATE }}
 
-            See [workflow logs](https://github.com/arviz-devs/arviz-plots/actions/workflows/hypothesis.yml) for details on which tests failed and why.
+            See [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details on which tests failed and why.
