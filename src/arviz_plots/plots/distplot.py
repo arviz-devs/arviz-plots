@@ -97,6 +97,7 @@ def plot_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~WIP`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -249,6 +250,9 @@ def plot_dist(
                 ignore_aes=density_ignore,
                 **density_kwargs,
             )
+
+        # elif kind == "hist":
+        # WIP
 
         else:
             raise NotImplementedError("coming soon")
