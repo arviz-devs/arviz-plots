@@ -6,6 +6,7 @@ import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from xarray_einstats.numba import histogram
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
@@ -251,8 +252,21 @@ def plot_dist(
                 **density_kwargs,
             )
 
-        # elif kind == "hist":
-        # WIP
+        elif kind == "hist":
+            # WIP
+            print("----------")
+            # loops through the data variables in distribution and calls histogram() for each
+            for var_name in distribution.data_vars:
+                print(f"Var name: {var_name!r}")
+                var_data = distribution[var_name]
+                print(f"Var data: {var_data!r}")
+                # number of bins is set to 20 by default
+                hist = histogram(
+                    da=var_data, dims=density_dims, bins=20, **stats_kwargs.get("density", {})
+                )
+                print(f"Hist: {hist!r}")
+            print("----------")
+            # combine dataarrays and call plot_collection.map() with new visual element
 
         else:
             raise NotImplementedError("coming soon")
