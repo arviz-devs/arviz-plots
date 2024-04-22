@@ -95,8 +95,8 @@ def restructure_hist_data(hist_dict):
 
     Dataset returned resembles the KDE Dataset returned by azstats.kde(). The 'bin' dimension is
     renamed to 'hist_dim', coordinates 'left_edge' and 'right_edge' are dropped. Bin midpoints are
-    calculated from bin edges, broadcasted to histogram DataArray shape, and concatenated
-    along a new dimension 'plot_axis' with coords 'bin_height' and 'bin_midpoint'.
+    calculated from bin edges, broadcasted to histogram DataArray shape, and concatenated along
+    a new dimension 'plot_axis' with bin_heights along coord 'x' and bin_midpoints along coord 'y'.
 
     Parameters
     ----------
@@ -113,36 +113,29 @@ def restructure_hist_data(hist_dict):
     """
     restructured_hist_dict = {}
     for var_name, hist in hist_dict.items():
-        print(f"    Hist: {hist!r}\n")
         left_edges = hist.coords["left_edges"].values.tolist()
         right_edges = hist.coords["right_edges"].values.tolist()
         bin_midpoints = [(left_edges[i] + right_edges[i]) / 2 for i in range(len(left_edges))]
-        print(f"    Bin midpoints: {bin_midpoints!r}\n")
 
         # restructuring hist to a DataArray by renaming bin dimension and dropping left_edge and
         # right_edge coords
         bin_heights_darr = hist.rename({"bin": "hist_dim"}).drop_vars(["left_edges", "right_edges"])
-        print(f"    Bin heights DataArray: {bin_heights_darr!r}\n")
 
         bin_midpoints_darr = xr.DataArray(bin_midpoints, dims="hist_dim")
-        print(f"    Bin midpoints DataArray: {bin_midpoints_darr!r}\n")
 
         # broadcasting bin_midpoints_darr to fit bin_heights_darr shape (along the extra dimensions
         # of bin_heights)
         bin_heights_darr, bin_midpoints_darr = xr.broadcast(bin_heights_darr, bin_midpoints_darr)
-        print(f"    Fitted Bin midpoints DataArray: {bin_midpoints_darr!r}\n")
 
         # concatenating bin_heights and bin_midpoints_repeated along the new plot-axis dimension
-        hist_darr = xr.concat([bin_heights_darr, bin_midpoints_darr], dim="plot_axis")
-        print(f"    Hist DataArray: {hist_darr!r}\n")
+        hist_darr = xr.concat([bin_midpoints_darr, bin_heights_darr], dim="plot_axis")
 
         # assigning plot_axis coords to the concatenated final DataArray
-        hist_darr = hist_darr.assign_coords(plot_axis=["bin_height", "bin_midpoint"])
-        print(f"    Hist DataArray (with assigned plot_axis coords): {hist_darr!r}\n+++++++++\n")
+        hist_darr = hist_darr.assign_coords(plot_axis=["x", "y"])
 
         restructured_hist_dict[var_name] = hist_darr
 
     # converting to Dataset
     restructured_hist_ds = xr.Dataset(restructured_hist_dict)
-    print(f"    Restructured hist Dataset: {restructured_hist_ds!r}\n")
+    # print(f"    Restructured hist Dataset: {restructured_hist_ds!r}\n")
     return restructured_hist_ds

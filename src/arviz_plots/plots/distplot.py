@@ -19,6 +19,7 @@ from arviz_plots.visuals import (
     labelled_title,
     line_x,
     line_xy,
+    plot_hist,
     point_estimate_text,
     remove_axis,
     scatter_x,
@@ -264,7 +265,8 @@ def plot_dist(
             for var_name in distribution.data_vars:
                 # print(f"    Var name: {var_name!r}\n")
                 var_data = distribution[var_name]
-                print(f"    Var data: {var_data!r}\n")
+                # print(f"    Var data: {var_data!r}\n")
+
                 # number of bins is set to 20 by default
                 hist = histogram(
                     da=var_data, dims=density_dims, bins=20, **stats_kwargs.get("density", {})
@@ -274,10 +276,13 @@ def plot_dist(
 
             # getting restructured kde-style dataset from hist dataarrays
             hist_ds = restructure_hist_data(hist_dict)
-
+            density = hist_ds
             print(f"Final hist dataset: {hist_ds!r}\n")
             print("\n\n----------")
-            # combining dataarrays and call plot_collection.map() with new visual element
+            # call plot_collection.map() with new visual element
+            plot_collection.map(
+                plot_hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
+            )
 
         else:
             raise NotImplementedError("coming soon")
@@ -349,6 +354,12 @@ def plot_dist(
         elif kind == "ecdf":
             # ecdf max is always 1
             point_y = xr.full_like(point, 0.04)
+        elif kind == "hist":
+            point_density_diff = [
+                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
+            ]
+            point_density_diff = ["hist_dim"] + point_density_diff
+            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(

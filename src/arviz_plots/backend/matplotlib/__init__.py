@@ -197,6 +197,12 @@ def _filter_kwargs(kwargs, artist, artist_kws):
 
 
 # "geoms"
+def hist(x, height, target, *, width=1.6, bottom=None, align="center", **kwargs):
+    """Interface to matplotlib for a histogram bar plot."""
+    kwargs.setdefault("zorder", 2)
+    return target.bar(x, height, width=width, bottom=bottom, align=align, **kwargs)
+
+
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to matplotlib for a line plot."""
     artist_kws.setdefault("zorder", 2)
