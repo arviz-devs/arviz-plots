@@ -13,6 +13,15 @@ import xarray as xr
 from arviz_base.labels import BaseLabeller
 
 
+def plot_hist(da, target, backend, **kwargs):
+    """Plot a histogram bar bin_midpoint('x') vs bin_height('y').
+
+    The input argument `da` is split into x and y using the dimension ``plot_axis``.
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.hist(da.sel(plot_axis="x"), da.sel(plot_axis="y"), target, **kwargs)
+
+
 def line_xy(da, target, backend, x=None, y=None, **kwargs):
     """Plot a line x vs y.
 

@@ -99,6 +99,29 @@ def create_plotting_grid(
 
 
 # "geoms"
+def hist(x, height, target, *, width=1.6, bottom=None, align="center", color=None):
+    """Interface for a hist plot.
+
+    Parameters
+    ----------
+    x : float or array-like
+        The x coordinates of the bars.
+    height : float or array-like
+        The height(s) of the bars.
+    target : matplotlib.axes._axes.Axes
+        The target Axes object where the plot will be drawn.
+    width : float or array-like, default 0.8
+        The width(s) of the bars.
+    bottom : float or array-like, optional
+        The y coordinate(s) of the bottom side(s) of the bars.
+    align : {'center', 'edge'}, default 'center'
+        Alignment of the bars to the x coordinates.
+    color : color or array-like, optional
+        The colors of the bar faces.
+    """
+    raise error
+
+
 def line(x, y, target, *, color=None, alpha=None, width=None, linestyle=None, **artist_kws):
     """Interface to a line plot.
 
