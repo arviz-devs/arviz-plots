@@ -9,7 +9,11 @@ from arviz_base.labels import BaseLabeller
 from xarray_einstats.numba import histogram
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    process_group_variables_coords,
+    restructure_hist_data,
+)
 from arviz_plots.visuals import (
     ecdf_line,
     labelled_title,
@@ -254,19 +258,26 @@ def plot_dist(
 
         elif kind == "hist":
             # WIP
-            print("----------")
+            print("----------\n\n")
+            hist_dict = {}
             # loops through the data variables in distribution and calls histogram() for each
             for var_name in distribution.data_vars:
-                print(f"Var name: {var_name!r}")
+                # print(f"    Var name: {var_name!r}\n")
                 var_data = distribution[var_name]
-                print(f"Var data: {var_data!r}")
+                print(f"    Var data: {var_data!r}\n")
                 # number of bins is set to 20 by default
                 hist = histogram(
                     da=var_data, dims=density_dims, bins=20, **stats_kwargs.get("density", {})
                 )
-                print(f"Hist: {hist!r}")
-            print("----------")
-            # combine dataarrays and call plot_collection.map() with new visual element
+                # Appending the new DataArray to hist_dict
+                hist_dict[var_name] = hist
+
+            # getting restructured kde-style dataset from hist dataarrays
+            hist_ds = restructure_hist_data(hist_dict)
+
+            print(f"Final hist dataset: {hist_ds!r}\n")
+            print("\n\n----------")
+            # combining dataarrays and call plot_collection.map() with new visual element
 
         else:
             raise NotImplementedError("coming soon")
