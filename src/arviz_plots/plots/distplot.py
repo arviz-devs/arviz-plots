@@ -267,10 +267,8 @@ def plot_dist(
                 var_data = distribution[var_name]
                 # print(f"    Var data: {var_data!r}\n")
 
-                # number of bins is set to 20 by default
-                hist = histogram(
-                    da=var_data, dims=density_dims, bins=20, **stats_kwargs.get("density", {})
-                )
+                # number of bins is provided by the user (via stats_kwargs) or set by histogram()
+                hist = histogram(da=var_data, dims=density_dims, **stats_kwargs.get("density", {}))
                 # Appending the new DataArray to hist_dict
                 hist_dict[var_name] = hist
 
