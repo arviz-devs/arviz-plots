@@ -90,6 +90,7 @@ def filter_aes(pc, aes_map, artist, sample_dims):
     return artist_dims, artist_aes, ignore_aes
 
 
+# WIP: dropping bin_midpoints calculation and keeping bin_edges
 def restructure_hist_data(hist_dict):
     """Restructure histogram DataArrays from xarray-einstats.numba.histogram() into a Dataset.
 
@@ -113,29 +114,47 @@ def restructure_hist_data(hist_dict):
     """
     restructured_hist_dict = {}
     for var_name, hist in hist_dict.items():
-        left_edges = hist.coords["left_edges"].values.tolist()
-        right_edges = hist.coords["right_edges"].values.tolist()
-        bin_midpoints = [(left_edges[i] + right_edges[i]) / 2 for i in range(len(left_edges))]
+        print(f"((((( Var_name = {var_name} )))))")
+        # left_edges = hist.coords["left_edges"].values.tolist()
+        # ight_edges = hist.coords["right_edges"].values.tolist()
+        # bin_midpoints = [(left_edges[i] + right_edges[i]) / 2 for i in range(len(left_edges))]
 
-        # restructuring hist to a DataArray by renaming bin dimension and dropping left_edge and
-        # right_edge coords
+        # restructuring hist to a DataArray by renaming bin dimension
         bin_heights_darr = hist.rename({"bin": "hist_dim"}).drop_vars(["left_edges", "right_edges"])
 
-        bin_midpoints_darr = xr.DataArray(bin_midpoints, dims="hist_dim")
+        left_edges_darr = hist.rename({"bin": "hist_dim"}).coords["left_edges"]
+        left_edges_darr = left_edges_darr.drop_vars(["left_edges", "right_edges"])
+        right_edges_darr = hist.rename({"bin": "hist_dim"}).coords["right_edges"]
+        right_edges_darr = right_edges_darr.drop_vars(["left_edges", "right_edges"])
+        print("\n|||||||||||||||||||||||||||||||||||\nPrinting left and right edges darrs:\n")
+        print(left_edges_darr)
+        print(right_edges_darr)
 
-        # broadcasting bin_midpoints_darr to fit bin_heights_darr shape (along the extra dimensions
-        # of bin_heights)
-        bin_heights_darr, bin_midpoints_darr = xr.broadcast(bin_heights_darr, bin_midpoints_darr)
+        # broadcasting left_edges_darr and right_edges_darr to fit bin_heights_darr shape
+        bin_heights_darr, left_edges_darr, right_edges_darr = xr.broadcast(
+            bin_heights_darr, left_edges_darr, right_edges_darr
+        )
 
-        # concatenating bin_heights and bin_midpoints_repeated along the new plot-axis dimension
-        hist_darr = xr.concat([bin_midpoints_darr, bin_heights_darr], dim="plot_axis")
+        print("\n------------------------------\nAfter broadcasting:\n")
+        print(bin_heights_darr)
+        print(left_edges_darr)
+        print(right_edges_darr)
+
+        print("\n------------------------       \nAfter concatenating...\n")
+        # concatenating bin_heights, left_edges, and right_edges along the new plot-axis dimension
+        hist_darr = xr.concat(
+            [left_edges_darr, right_edges_darr, bin_heights_darr], dim="plot_axis"
+        )
+
+        print(hist_darr)
 
         # assigning plot_axis coords to the concatenated final DataArray
-        hist_darr = hist_darr.assign_coords(plot_axis=["x", "y"])
+        hist_darr = hist_darr.assign_coords(plot_axis=["l_e", "r_e", "y"])
+        print(hist_darr)
 
         restructured_hist_dict[var_name] = hist_darr
 
     # converting to Dataset
     restructured_hist_ds = xr.Dataset(restructured_hist_dict)
-    # print(f"    Restructured hist Dataset: {restructured_hist_ds!r}\n")
+    print(f"\n\n    Restructured hist Dataset: {restructured_hist_ds!r}\n")
     return restructured_hist_ds
