@@ -99,25 +99,29 @@ def create_plotting_grid(
 
 
 # "geoms"
-def hist(x, height, target, *, width=1.6, bottom=None, align="center", color=None):
+def hist(y, l_e, r_e, target, *, bottom=None, color=None, facecolor=None, edgecolor=None):
     """Interface for a hist plot.
+
+    Add a hist plot to the given `target`.
 
     Parameters
     ----------
-    x : float or array-like
-        The x coordinates of the bars.
-    height : float or array-like
-        The height(s) of the bars.
+    y : array-like
+        The count for each bin/heights of the bars.
+    l_e : array-like
+        The left edges of the bins.
+    r_e : array-like
+        The right edges of the bins.
     target : matplotlib.axes._axes.Axes
         The target Axes object where the plot will be drawn.
-    width : float or array-like, default 0.8
-        The width(s) of the bars.
-    bottom : float or array-like, optional
+    bottom : array-like, optional
         The y coordinate(s) of the bottom side(s) of the bars.
-    align : {'center', 'edge'}, default 'center'
-        Alignment of the bars to the x coordinates.
-    color : color or array-like, optional
-        The colors of the bar faces.
+    color : any
+        Color of the visual element (sets both facecolor and edgecolor simultaneously).
+    facecolor : any
+        Color for filling the visual element.
+    edgecolor : any
+        Color for the edges of the visual element.
     """
     raise error
 
