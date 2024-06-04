@@ -85,29 +85,32 @@ def datatree_sample(seed=31):
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
 class TestPlots:
-    def test_plot_dist(self, datatree, backend):
-        pc = plot_dist(datatree, backend=backend)
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist(self, datatree, backend, kind):
+        pc = plot_dist(datatree, backend=backend, kind=kind)
         assert not pc.aes["mu"]
-        assert "kde" in pc.viz["mu"]
+        assert kind in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
         assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
         assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
 
-    def test_plot_dist_sample(self, datatree_sample, backend):
-        pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample")
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist_sample(self, datatree_sample, backend, kind):
+        pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", kind=kind)
         assert not pc.aes["mu"]
-        assert "kde" in pc.viz["mu"]
+        assert kind in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
         assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
         assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
 
-    def test_plot_dist_models(self, datatree, datatree2, backend):
-        pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend)
+    @pytest.mark.parametrize("kind", ["kde", "ecdf"])
+    def test_plot_dist_models(self, datatree, datatree2, backend, kind):
+        pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
         assert "/mu" in pc.aes.groups
         assert "/mu" in pc.viz.groups
-        assert "kde" in pc.viz["mu"].data_vars
+        assert kind in pc.viz["mu"].data_vars
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "model" in pc.viz["mu"].dims
 

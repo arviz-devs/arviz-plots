@@ -197,17 +197,20 @@ def _filter_kwargs(kwargs, artist, artist_kws):
 
 
 # "geoms"
-def hist(y, l_e, r_e, target, *, bottom=None, color=None, facecolor=None, edgecolor=None, **kwargs):
+def hist(
+    y, l_e, r_e, target, *, bottom=None, color=unset, facecolor=unset, edgecolor=unset, **artist_kws
+):
     """Interface to matplotlib for a histogram bar plot."""
-    kwargs.setdefault("zorder", 2)
+    artist_kws.setdefault("zorder", 2)
     bins = list(l_e) + [r_e[-1]]
     midpoints = [(bins[i] + bins[i + 1]) / 2 for i in range(len(bins) - 1)]
-    if color is not None:
-        if facecolor is None:
+    if color is not unset:
+        if facecolor is unset:
             facecolor = color
-        if edgecolor is None:
+        if edgecolor is unset:
             edgecolor = color
-    return target.bar(midpoints, y, bottom=bottom, color=facecolor, edgecolor=edgecolor, **kwargs)
+    kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor}
+    return target.bar(midpoints, y, **_filter_kwargs(kwargs, None, artist_kws))
 
 
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):

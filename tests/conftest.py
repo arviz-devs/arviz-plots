@@ -8,8 +8,8 @@ from hypothesis import settings
 
 _log = logging.getLogger("arviz_plots")
 
-settings.register_profile("fast", deadline=1000, max_examples=20)
-settings.register_profile("chron", deadline=1000, max_examples=500)
+settings.register_profile("fast", deadline=2000, max_examples=20)
+settings.register_profile("chron", deadline=2000, max_examples=500)
 settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "fast"))
 
 

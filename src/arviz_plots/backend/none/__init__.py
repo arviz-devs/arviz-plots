@@ -189,6 +189,29 @@ def _filter_kwargs(kwargs, artist_kws):
     return {**artist_kws, **kwargs}
 
 
+def hist(
+    y, l_e, r_e, target, *, bottom=None, color=unset, facecolor=unset, edgecolor=unset, **artist_kws
+):
+    """Interface to matplotlib for a histogram bar plot."""
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    if color is not unset:
+        if facecolor is unset:
+            facecolor = color
+        if edgecolor is unset:
+            edgecolor = color
+    kwargs = {"bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
+    artist_element = {
+        "function": "hist",
+        "l_e": np.atleast_1d(l_e),
+        "r_e": np.atleast_1d(r_e),
+        "y": np.atleast_1d(y),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 # "geoms"
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to a line plot."""
