@@ -66,7 +66,7 @@ def plot_dist(
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     point_estimate : {"mean", "median", "mode"}, optional
-        Which point estimate to plot. Defaults to ``rcParams["plot.point_estimate"]``
+        Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
     ci_kind : {"eti", "hdi"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
     ci_prob : float, optional
@@ -173,7 +173,7 @@ def plot_dist(
     if ci_kind is None:
         ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
     if point_estimate is None:
-        point_estimate = rcParams["plot.point_estimate"]
+        point_estimate = rcParams["stats.point_estimate"]
     if kind is None:
         kind = rcParams["plot.density_kind"]
     if plot_kwargs is None:

@@ -63,7 +63,7 @@ def plot_forest(
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
     point_estimate : {"mean", "median", "mode"}, optional
-        Which point estimate to plot. Defaults to ``rcParams["plot.point_estimate"]``
+        Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
     ci_kind : {"eti", "hdi"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
     ci_probs : (float, float), optional
@@ -217,7 +217,7 @@ def plot_forest(
     if ci_kind is None:
         ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
     if point_estimate is None:
-        point_estimate = rcParams["plot.point_estimate"]
+        point_estimate = rcParams["stats.point_estimate"]
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -328,7 +328,7 @@ def plot_forest(
                 np.linspace(-0.2, 0.2, distribution.sizes["model"]),
                 coords={"model": distribution.model},
             )
-            chain_lim = 0.4 * (model_spacing[1] - model_spacing[0])
+            chain_lim = 0.4 * (model_spacing[1] - model_spacing[0]).item()
             chain_spacing = xr.DataArray(
                 np.linspace(-chain_lim, chain_lim, distribution.sizes["chain"]),
                 coords={"chain": distribution.chain},
