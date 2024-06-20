@@ -187,14 +187,14 @@ def plot_forest(
         :context: close-figs
 
         >>> from arviz_plots import visuals
-        >>> from arviz_stats.base import ess
+        >>> import arviz_stats  # make accessor available
         >>>
         >>> c_aux = centered["posterior"].expand_dims(
         >>>     column=3
         >>> ).assign_coords(column=["labels", "forest", "ess"])
         >>> pc = plot_forest(c_aux, combined=True)
         >>> pc.map(
-        >>>     visuals.scatter_x, "ess", data=ess(centered),
+        >>>     visuals.scatter_x, "ess", data=centered.azstats.ess().ds,
         >>>     coords={"column": "ess"}, color="C0"
         >>> )
 
