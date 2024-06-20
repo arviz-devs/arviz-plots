@@ -124,4 +124,15 @@ html_theme_options = {
         "image_dark": "_static/ArviZ_white.png",
     }
 }
+html_favicon = "_static/favicon.ico"
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
+html_sidebars = {
+    "**": [
+        "navbar-logo.html",
+        "name.html",
+        "icon-links.html",
+        "search-button-field.html",
+        "sbt-sidebar-nav.html",
+    ]
+}
