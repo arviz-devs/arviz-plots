@@ -1,4 +1,5 @@
 """dist plot code."""
+
 import warnings
 from copy import copy
 
@@ -6,14 +7,20 @@ import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from xarray_einstats.numba import histogram
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    process_group_variables_coords,
+    restructure_hist_data,
+)
 from arviz_plots.visuals import (
     ecdf_line,
     labelled_title,
     line_x,
     line_xy,
+    plot_hist,
     point_estimate_text,
     remove_axis,
     scatter_x,
@@ -97,6 +104,7 @@ def plot_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~WIP`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -250,6 +258,27 @@ def plot_dist(
                 **density_kwargs,
             )
 
+        elif kind == "hist":
+            hist_dict = {}
+            # loops through the data variables in distribution and calls histogram() for each
+            for var_name in distribution.data_vars:
+                var_data = distribution[var_name]
+
+                # number of bins is provided by the user (via stats_kwargs) or set by histogram()
+                hist = histogram(da=var_data, dims=density_dims, **stats_kwargs.get("density", {}))
+                # Appending the new DataArray to hist_dict
+                hist_dict[var_name] = hist
+
+            # getting restructured kde-style dataset from hist dataarrays
+            hist_ds = restructure_hist_data(hist_dict)
+            density = hist_ds
+            print(f"Final hist dataset: {hist_ds!r}\n")
+            print("\n\n----------")
+            # call plot_collection.map() with new visual element
+            plot_collection.map(
+                plot_hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
+            )
+
         else:
             raise NotImplementedError("coming soon")
 
@@ -320,6 +349,12 @@ def plot_dist(
         elif kind == "ecdf":
             # ecdf max is always 1
             point_y = xr.full_like(point, 0.04)
+        elif kind == "hist":
+            point_density_diff = [
+                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
+            ]
+            point_density_diff = ["hist_dim"] + point_density_diff
+            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(
