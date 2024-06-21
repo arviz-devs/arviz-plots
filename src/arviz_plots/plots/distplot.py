@@ -1,4 +1,5 @@
 """dist plot code."""
+
 import warnings
 from copy import copy
 
@@ -258,14 +259,10 @@ def plot_dist(
             )
 
         elif kind == "hist":
-            # WIP
-            print("----------\n\n")
             hist_dict = {}
             # loops through the data variables in distribution and calls histogram() for each
             for var_name in distribution.data_vars:
-                # print(f"    Var name: {var_name!r}\n")
                 var_data = distribution[var_name]
-                # print(f"    Var data: {var_data!r}\n")
 
                 # number of bins is provided by the user (via stats_kwargs) or set by histogram()
                 hist = histogram(da=var_data, dims=density_dims, **stats_kwargs.get("density", {}))

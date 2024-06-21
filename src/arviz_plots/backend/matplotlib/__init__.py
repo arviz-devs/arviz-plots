@@ -5,9 +5,11 @@ Notes
 Sets ``zorder`` of all non-text "geoms" to ``2`` so that elements plotted later
 on are on top of previous ones.
 """
+
 import warnings
 from typing import Any, Dict
 
+import numpy as np
 from matplotlib.cbook import normalize_kwargs
 from matplotlib.collections import PathCollection
 from matplotlib.lines import Line2D
@@ -202,15 +204,14 @@ def hist(
 ):
     """Interface to matplotlib for a histogram bar plot."""
     artist_kws.setdefault("zorder", 2)
-    bins = list(l_e) + [r_e[-1]]
-    midpoints = [(bins[i] + bins[i + 1]) / 2 for i in range(len(bins) - 1)]
+    widths = np.asarray(r_e) - np.asarray(l_e)
     if color is not unset:
         if facecolor is unset:
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
     kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor}
-    return target.bar(midpoints, y, **_filter_kwargs(kwargs, None, artist_kws))
+    return target.bar(l_e, y, width=widths ** _filter_kwargs(kwargs, None, artist_kws))
 
 
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
