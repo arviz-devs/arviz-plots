@@ -1,4 +1,5 @@
 """Utilities for batteries included plots."""
+
 import xarray as xr
 from arviz_base.utils import _var_names
 from xarray import Dataset
@@ -95,9 +96,10 @@ def restructure_hist_data(hist_dict):
     """Restructure histogram DataArrays from xarray-einstats.numba.histogram() into a Dataset.
 
     Dataset returned resembles the KDE Dataset returned by azstats.kde(). The 'bin' dimension is
-    renamed to 'hist_dim', coordinates 'left_edge' and 'right_edge' are dropped. Bin midpoints are
-    calculated from bin edges, broadcasted to histogram DataArray shape, and concatenated along
-    a new dimension 'plot_axis' with bin_heights along coord 'x' and bin_midpoints along coord 'y'.
+    renamed to 'hist_dim', coordinates 'left_edge' and 'right_edge' are dropped. Bin left and right
+    edges are broadcasted to histogram DataArray shape, and concatenated along a new dimension
+    'plot_axis' with bin_heights along coord 'y' and left and right edges along coords 'l_e' and
+    'r_e'.
 
     Parameters
     ----------
@@ -114,11 +116,6 @@ def restructure_hist_data(hist_dict):
     """
     restructured_hist_dict = {}
     for var_name, hist in hist_dict.items():
-        print(f"((((( Var_name = {var_name} )))))")
-        # left_edges = hist.coords["left_edges"].values.tolist()
-        # ight_edges = hist.coords["right_edges"].values.tolist()
-        # bin_midpoints = [(left_edges[i] + right_edges[i]) / 2 for i in range(len(left_edges))]
-
         # restructuring hist to a DataArray by renaming bin dimension
         bin_heights_darr = hist.rename({"bin": "hist_dim"}).drop_vars(["left_edges", "right_edges"])
 
@@ -126,35 +123,22 @@ def restructure_hist_data(hist_dict):
         left_edges_darr = left_edges_darr.drop_vars(["left_edges", "right_edges"])
         right_edges_darr = hist.rename({"bin": "hist_dim"}).coords["right_edges"]
         right_edges_darr = right_edges_darr.drop_vars(["left_edges", "right_edges"])
-        print("\n|||||||||||||||||||||||||||||||||||\nPrinting left and right edges darrs:\n")
-        print(left_edges_darr)
-        print(right_edges_darr)
 
         # broadcasting left_edges_darr and right_edges_darr to fit bin_heights_darr shape
         bin_heights_darr, left_edges_darr, right_edges_darr = xr.broadcast(
             bin_heights_darr, left_edges_darr, right_edges_darr
         )
 
-        print("\n------------------------------\nAfter broadcasting:\n")
-        print(bin_heights_darr)
-        print(left_edges_darr)
-        print(right_edges_darr)
-
-        print("\n------------------------       \nAfter concatenating...\n")
         # concatenating bin_heights, left_edges, and right_edges along the new plot-axis dimension
         hist_darr = xr.concat(
             [left_edges_darr, right_edges_darr, bin_heights_darr], dim="plot_axis"
         )
 
-        print(hist_darr)
-
         # assigning plot_axis coords to the concatenated final DataArray
         hist_darr = hist_darr.assign_coords(plot_axis=["l_e", "r_e", "y"])
-        print(hist_darr)
 
         restructured_hist_dict[var_name] = hist_darr
 
     # converting to Dataset
     restructured_hist_ds = xr.Dataset(restructured_hist_dict)
-    print(f"\n\n    Restructured hist Dataset: {restructured_hist_ds!r}\n")
     return restructured_hist_ds
