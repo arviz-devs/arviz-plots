@@ -1,34 +1,35 @@
 """ppc plot code."""
 
-# import warnings
+import warnings
 from copy import copy
+from importlib import import_module
 from numbers import Integral
 
 import arviz_stats  # pylint: disable=unused-import
 import numpy as np
-import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
-from arviz_base.sel_utils import xarray_sel_iter
+from datatree import DataTree
 
 from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.distplot import plot_dist
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import labelled_title, line_xy
+from arviz_plots.visuals import labelled_title
 
 
 # define function
 def plot_ppc(
     dt,
-    kind=None,
     var_names=None,
     filter_vars=None,
     group="posterior",
     observed=None,
     coords=None,
     sample_dims=None,
+    kind=None,
     facet_dims=None,
     data_pairs=None,
-    mean=True,
+    aggregate=True,
     num_pp_samples=None,
     random_seed=None,
     # jitter=None,
@@ -47,8 +48,6 @@ def plot_ppc(
     ----------
     dt : DataTree
         Input data with observed_data and prior/posterior predictive data.
-    kind : {"kde", "cumulative", "scatter"}, optional
-        How to represent the marginal density. Defaults to ``rcParams["plot.density_kind"]``.
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -70,9 +69,12 @@ def plot_ppc(
         Dimensions to loop over in plotting posterior/prior predictive.
         Note: Dims not in sample_dims or facet_dims (below) will be reduced by default.
         Defaults to ``rcParams["data.sample_dims"]``
+    kind : {"kde", "cumulative", "scatter"}, optional
+        How to represent the marginal density. Defaults to ``rcParams["plot.density_kind"]``.
     facet_dims : list, optional
         Dimensions to facet over (for which multiple plots will be generated).
-        Defaults to empty list.
+        Defaults to empty list. A warning is raised if `pc_kwargs` is also used to define
+        dims to facet over with the `cols` key and `pc_kwargs` takes precedence.
     data_pairs : dict, optional
         Dictionary containing relations between observed data and posterior/prior predictive data.
         Dictionary structure:
@@ -81,6 +83,8 @@ def plot_ppc(
         For example, data_pairs = {'y' : 'y_hat'}.
         If None, it will assume that the observed data and the posterior/prior predictive data
         have the same variable name
+    aggregate: bool, optional
+        If True, predictive data will be aggregated over both sample_dims and reduce_dims
     num_pp_samples : int, optional
         Number of prior/posterior predictive samples to plot.
     random_seed : int, optional
@@ -146,83 +150,85 @@ def plot_ppc(
     if facet_dims is None:
         facet_dims = []
 
-    # making sure both posterior/prior predictive group and observed_data group exists in
-    # datatree provided
+    # check for duplication of facet_dims in top level arg input and pc_kwargs
+    if "cols" in pc_kwargs and len(facet_dims) > 0:
+        duplicated_dims = set(facet_dims).intersection(pc_kwargs["cols"])
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=f"""Facet dimensions have been defined twice.
+                Both in the the top level function arguments and in `pc_kwargs`. 
+                The `cols` key in `pc_kwargs` will take precedence.
+                                        
+                facet_dims = {facet_dims}
+                pc_kwargs["cols"] = {pc_kwargs["cols"]}
+                Duplicated dimensions: {duplicated_dims}.""",
+            )
+        # setting facet_dims to pc_kwargs defined values since it is used
+        # later to calculate dims to reduce
+        facet_dims = list(set(pc_kwargs["col"]).difference({"__variable__"}))
+
     if group not in ("posterior", "prior"):
         raise TypeError("`group` argument must be either `posterior` or `prior`")
-
-    for groups in (f"{group}_predictive", "observed_data"):
-        if groups not in dt.children:
-            raise TypeError(f'`data` argument must have the groups "{groups}" for ppcplot')
-
-    # making sure kde type is one of these three
-    if kind.lower() not in ("kde", "cumulative", "scatter"):
-        raise TypeError("`kind` argument must be either `kde`, `cumulative`, or `scatter`")
-
-    # initializaing data_pairs as empty dict in case pp and observed data var names are same
-    if data_pairs is None:
-        data_pairs = {}
 
     predictive_data_group = f"{group}_predictive"
     if observed is None:
         observed = group == "posterior"  # by default true if posterior, false if prior
 
-    # process data to plot (select specified groups/variables/coords)
-    # two distributions are created, one to hold pp observed data and one to hold actual
-    # observed data
+    # checking if plot_kwargs["observed"] or plot_kwargs["aggregate"] is not inconsistent with
+    # top level bool arguments `observed`` and `aggregate`
+    if "observed" in plot_kwargs:
+        if plot_kwargs["observed"] != observed:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message="""`plot_kwargs['observed']` inconsistency detected.
+                    It is not the same as with the top level `observed` argument. 
+                    `plot_kwargs['observed']` will take precedence.""",
+                )
+            observed = plot_kwargs["observed"]
+
+    # making sure both posterior/prior predictive group and observed_data group exists in
+    # datatree provided
+    if observed:
+        for group_name in (f"{predictive_data_group}", "observed_data"):
+            if group_name not in dt.children:
+                raise TypeError(f'`data` argument must have the group "{group_name}" for ppcplot')
+    else:
+        if f"{predictive_data_group}" not in dt.children:
+            raise TypeError(f'`data` argument must have the group "{group}_predictive" for ppcplot')
+
+    # making sure kde type is one of these three
+    if kind.lower() not in ("kde", "ecdf", "scatter"):
+        raise TypeError("`kind` argument must be either `kde`, `ecdf`, or `scatter`")
+
+    # initializaing data_pairs as empty dict in case pp and observed data var names are same
+    if data_pairs is None:
+        data_pairs = {}
+
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+    # getting plot backend to get default colors to put in default kwargs for visual elements
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     # pp distribution group plotting logic
     pp_distribution = process_group_variables_coords(
         dt, group=predictive_data_group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
-    # wrap plot collection with pp distribution
-    if plot_collection is None:
-        if backend is None:
-            backend = rcParams["plot.backend"]
-        pc_kwargs.setdefault("col_wrap", 5)
-        pc_kwargs.setdefault(
-            "cols",
-            ["__variable__"]  # special variable to create one plot per variable
-            + list(facet_dims),  # making sure multiple plots are created for each facet dim
-        )
-        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("overlay", ["chain", "draw"])  # setting overlay dims
-        plot_collection = PlotCollection.wrap(
-            pp_distribution,
-            backend=backend,
-            **pc_kwargs,
-        )
-    reduce_dims = []
-    reduce_dims.append(
-        str(
-            dim for dim in pp_distribution.dims if dim not in facet_dims.union(sample_dims)
-        )  # set by elimination
-    )
-    reduce_dims = ["school"]
-
-    if aes_map is None:
-        aes_map = {}
-    else:
-        aes_map = aes_map.copy()
-    aes_map.setdefault("predictive", plot_collection.aes_set)
-    if labeller is None:
-        labeller = BaseLabeller()
-
+    # creating random number generator
     if random_seed is not None:
         rng = np.random.default_rng(random_seed)
     else:
         rng = np.random.default_rng()
 
-    # checking plot_collection wrapped dataset and viz/aes datatrees
-    print(f"\nplot_collection.data = {plot_collection.data}")
-    print(f"\nplot_collection.aes = {plot_collection.aes}")
-    print(f"\nplot_collection.viz = {plot_collection.viz}")
-
-    # picking random pp dataset sample indexes
+    # picking random pp dataset sample indexes and subsetting pp_distribution accordingly
     # total_pp_samples = plot_collection.data.sizes["chain"] * plot_collection.data.sizes["draw"]
     total_pp_samples = np.prod(
-        [plot_collection.data.sizes[dim] for dim in sample_dims if dim in plot_collection.data.dims]
+        [pp_distribution.sizes[dim] for dim in sample_dims if dim in pp_distribution.dims]
     )
     if num_pp_samples is None:
         if kind == "scatter" and not animated:
@@ -241,51 +247,154 @@ def plot_ppc(
 
     print(f"\npp_sample_ix: {pp_sample_ix!r}")
 
-    # Convert 1D indices to ND indices (where N=number of sample dims)
-    sample_sizes = [pp_distribution.sizes[dim] for dim in sample_dims]
-    sample_indices = np.unravel_index(pp_sample_ix, sample_sizes)
-    print(f"\nUnravelled sample_indices = {sample_indices}")
+    # stacking sample dims into a new 'ppc_dim' dimension
+    pp_distribution = pp_distribution.stack(ppc_dim=sample_dims)
 
-    # Create an ND boolean mask
-    mask = np.zeros(sample_sizes, dtype=bool)
-    mask[sample_indices] = True
+    # Select the desired samples
+    pp_distribution = pp_distribution.isel(ppc_dim=pp_sample_ix)
 
-    # Convert the mask to an xarray DataArray
-    mask = xr.DataArray(mask, dims=sample_dims)
-    print(f"\nmask = {mask}")
+    # renaming sample_dims so that rest of plot will consider this as sample_dims
+    sample_dims = ["ppc_dim"]
 
-    # Use the mask to subset pp_distribution
-    pp_distribution = pp_distribution.where(mask, drop=True)
+    # wrap plot collection with pp distribution
+    if plot_collection is None:
+        if backend is None:
+            backend = rcParams["plot.backend"]
+        pc_kwargs.setdefault("col_wrap", 5)
+        pc_kwargs.setdefault(
+            "cols",
+            ["__variable__"]  # special variable to create one plot per variable
+            + list(facet_dims),  # making sure multiple plots are created for each facet dim
+        )
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs["aes"].setdefault("overlay", sample_dims)  # setting overlay dim
+        plot_collection = PlotCollection.wrap(
+            pp_distribution,
+            backend=backend,
+            **pc_kwargs,
+        )
+    # set reduce_dims by elimination
+    reduce_dims = [
+        dim for dim in pp_distribution.dims if dim not in set(facet_dims).union(set(sample_dims))
+    ]
+    print(f"\nreduce_dims={reduce_dims}")
+
+    if aes_map is None:
+        aes_map = {}
+    else:
+        aes_map = aes_map.copy()
+    aes_map.setdefault("predictive", plot_collection.aes_set)
+    if labeller is None:
+        labeller = BaseLabeller()
+
+    # checking plot_collection wrapped dataset and viz/aes datatrees
+    print(f"\nplot_collection.data = {plot_collection.data}")
+    print(f"\nplot_collection.aes = {plot_collection.aes}")
+    print(f"\nplot_collection.viz = {plot_collection.viz}")
 
     # ---------STEP 1 (PPC data)-------------
-    print(f"\nposterior predictive distri = {pp_distribution.obs!r}")
+    print(f"\nposterior predictive distri = {pp_distribution!r}")
 
     # density calculation for observed variables
     pp_kwargs = copy(plot_kwargs.get("predictive", {}))
     print(f"\nreduce_dims = {reduce_dims!r}")
 
     if pp_kwargs is not False:
-        pp_density_dims, pp_density_aes, pp_density_ignore = filter_aes(
+        _, pp_density_aes, pp_density_ignore = filter_aes(
             plot_collection, aes_map, "predictive", reduce_dims
         )
-        print(f"\npp_density_dims = {pp_density_dims}\npp_density_aes= {pp_density_aes}")
+        print(f"\npp_density_aes = {pp_density_aes}\npp_density_ignore= {pp_density_ignore}")
 
-        pp_density = pp_distribution.azstats.kde(
-            dims=pp_density_dims, **stats_kwargs.get("predictive", {})
-        )
-
+        # getting first default color from color cycle and picking it
+        pp_default_color = plot_bknd.get_default_aes("color", 1, {})[0]
         if "color" not in pp_density_aes:
-            pp_kwargs.setdefault("color", "C0")
+            pp_kwargs.setdefault("color", pp_default_color)
 
         if "alpha" not in pp_density_aes:
             pp_kwargs.setdefault("alpha", 0.2)
 
-        print(f"\npp_density = {pp_density!r}")
-        plot_collection.map(
-            line_xy, "predictive", data=pp_density, ignore_aes=pp_density_ignore, **pp_kwargs
+        plot_dist_artists = ("credible_interval", "point_estimate", "point_estimate_text", "title")
+
+        print(f"\npp_kwargs = {pp_kwargs}")
+
+        # calling plot_dist with plot_collection and customized args
+        pp_dt = DataTree(name="pp_dt", data=pp_distribution)  # has to be converted from a
+        # dataarray to a datatree first before passing to plot_dist
+        plot_dist(
+            pp_dt,
+            var_names=var_names,
+            filter_vars=filter_vars,
+            group="pp_dt",
+            coords=coords,
+            sample_dims=reduce_dims,
+            kind=kind,
+            plot_collection=plot_collection,
+            labeller=labeller,
+            aes_map={
+                kind: value
+                for key, value in aes_map.items()
+                if key == "predictive" and key not in pp_density_ignore
+            },
+            plot_kwargs={
+                **{key: False for key in plot_dist_artists},
+                kind: dict(pp_kwargs.items()),
+            },
+            stats_kwargs={key: value for key, value in stats_kwargs.items() if key == "predictive"},
         )
 
-    # ---------STEP 2 (observed data)-----------
+    # ---------STEP 2 (PPC AGGREGATE)-------------
+
+    aggregate_kwargs = copy(plot_kwargs.get("aggregate", {}))
+    if aggregate and pp_kwargs is not False and aggregate_kwargs is not False:
+        _, aggregate_density_aes, aggregate_density_ignore = filter_aes(
+            plot_collection, aes_map, "aggregate", reduce_dims
+        )
+
+        print(
+            f"\agg_dens_aes = {aggregate_density_aes}\nagg_dens_ignore= {aggregate_density_ignore}"
+        )
+
+        if "linestyle" not in aggregate_density_aes:
+            aggregate_kwargs.setdefault("linestyle", "--")
+
+        # getting first two default colors from color cycle and picking the second
+        aggregate_default_color = plot_bknd.get_default_aes("color", 2, {})[1]
+        if "color" not in aggregate_density_aes:
+            aggregate_kwargs.setdefault("color", aggregate_default_color)
+
+        print(f"\n aggregate reduce_dims = {reduce_dims!r}")
+        print(f"\n aggregate sample_dims = {sample_dims!r}")
+        print(f"\n aggregate_kwargs = {aggregate_kwargs}")
+        aggregate_reduce_dims = reduce_dims + list(sample_dims)
+        print(f"\n aggregate_reduce_dims = {aggregate_reduce_dims}")
+
+        # setting aggregate aes_map to `[]` so `overlay` isn't applied
+        aes_map.setdefault("aggregate", [])
+        print(f"aes_map = {aes_map}")
+
+        plot_dist(
+            pp_dt,
+            var_names=var_names,
+            filter_vars=filter_vars,
+            group="pp_dt",
+            coords=coords,
+            sample_dims=aggregate_reduce_dims,
+            kind=kind,
+            plot_collection=plot_collection,
+            labeller=labeller,
+            aes_map={
+                kind: value  # aes_map["aggregate"] value gets assigned to kind
+                for key, value in aes_map.items()
+                if key == "aggregate" and key not in aggregate_density_ignore
+            },
+            plot_kwargs={
+                **{key: False for key in plot_dist_artists},
+                kind: dict(aggregate_kwargs.items()),
+            },
+            stats_kwargs={key: value for key, value in stats_kwargs.items() if key == "aggregate"},
+        )
+
+    # ---------STEP 3 (observed data)-----------
     if observed:  # all observed data group plotting logic happens here
         observed_data_group = "observed_data"
 
@@ -302,84 +411,44 @@ def plot_ppc(
             obs_density_dims, obs_density_aes, obs_density_ignore = filter_aes(
                 plot_collection, aes_map, "observed", reduce_dims
             )
-            print(f"\nobs_density_dims = {pp_density_dims}\nobs_density_aes = {obs_density_aes}")
-
-            obs_density = obs_distribution.azstats.kde(
-                dims=obs_density_dims, **stats_kwargs.get("observed", {})
-            )
-            print(f"\nobserved data density = {obs_density}")
+            print(f"\nobs_density_dims = {obs_density_dims}\nobs_density_aes = {obs_density_aes}")
 
             if "color" not in obs_density_aes:
                 obs_kwargs.setdefault("color", "black")
 
-            obs_kwargs.setdefault("zorder", 3)
-
-            plot_collection.map(
-                line_xy, "observed", data=obs_density, ignore_aes=obs_density_ignore, **obs_kwargs
+            plot_dist_artists = (
+                "credible_interval",
+                "point_estimate",
+                "point_estimate_text",
+                "title",
             )
 
-    # ---------STEP 3 (PPC MEAN)------------- (WIP)
+            print(f"\nobs_kwargs = {obs_kwargs}")
 
-    mean_kwargs = copy(plot_kwargs.get("mean", {}))
-    if mean and pp_kwargs is not False and mean_kwargs is not False:
-        _, mean_density_aes, mean_density_ignore = filter_aes(
-            plot_collection, aes_map, "mean", reduce_dims
-        )
-        pp_xs = []
-        pp_densities = []
-
-        subselections = xarray_sel_iter(pp_density, skip_dims=("plot_axis", "kde_dim"))
-        # print(len(list(subselections)))
-        for var, _, isel in subselections:
-            x_values = pp_density[var].isel(**isel).sel(plot_axis="x")
-            y_values = pp_density[var].isel(**isel).sel(plot_axis="y")
-            if np.isnan(y_values.values).any():
-                continue
-
-            pp_xs.append(x_values.values)
-            pp_densities.append(y_values.values)
-
-        pp_xs = np.array(pp_xs)
-        pp_densities = np.array(pp_densities)
-
-        print(f"\npp_xs = {pp_xs!r}")
-        print(f"\npp_densities = {pp_densities!r}")
-        print(f"\nlength of pp_xs= {len(pp_xs)}")
-
-        # mean calculation (from legacy arviz)
-        rep = len(pp_densities)
-        len_density = len(pp_densities[0])
-        new_x = np.linspace(np.min(pp_xs), np.max(pp_xs), len_density)
-        new_d = np.zeros((rep, len_density))
-        bins = np.digitize(pp_xs, new_x, right=True)
-        new_x -= (new_x[1] - new_x[0]) / 2
-        for irep in range(rep):
-            new_d[irep][bins[irep]] = pp_densities[irep]
-
-        print(f"\nnew_x = {new_x!r}")
-        print(f"\nnew_d = {new_d.mean(0)!r}")
-
-        # initializing a mean density dataset to hold the computed mean data
-        mean_density = xr.Dataset(
-            {
-                "obs": (("plot_axis", "kde_dim"), [new_x, new_d.mean(0)]),
-            },
-            coords={
-                "plot_axis": ["x", "y"],
-            },
-        )
-
-        print(f"\nmean_dataset = {mean_density!r}")
-
-        if "linestyle" not in mean_density_aes:
-            mean_kwargs.setdefault("linestyle", "--")
-
-        if "color" not in mean_density_aes:
-            mean_kwargs.setdefault("color", "C1")
-
-        plot_collection.map(
-            line_xy, "mean", data=mean_density, ignore_aes=mean_density_ignore, **mean_kwargs
-        )
+            obs_dt = DataTree(name="obs_dt", data=obs_distribution)
+            plot_dist(
+                obs_dt,
+                var_names=var_names,
+                filter_vars=filter_vars,
+                group="obs_dt",
+                coords=coords,
+                sample_dims=reduce_dims,
+                kind=kind,
+                plot_collection=plot_collection,
+                labeller=labeller,
+                aes_map={
+                    kind: value
+                    for key, value in aes_map.items()
+                    if key == "observed" and key not in obs_density_ignore
+                },
+                plot_kwargs={
+                    **{key: False for key in plot_dist_artists},
+                    "kde": dict(obs_kwargs.items()),
+                },
+                stats_kwargs={
+                    kind: value for key, value in stats_kwargs.items() if key == "observed"
+                },
+            )
 
     # adding plot title/s
     title_kwargs = copy(plot_kwargs.get("title", {}))
