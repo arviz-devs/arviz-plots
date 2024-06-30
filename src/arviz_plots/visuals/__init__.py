@@ -13,13 +13,20 @@ import xarray as xr
 from arviz_base.labels import BaseLabeller
 
 
-def line_xy(da, target, backend, **kwargs):
+def line_xy(da, target, backend, y=None, **kwargs):
     """Plot a line x vs y.
 
     The input argument `da` is split into x and y using the dimension ``plot_axis``.
+    If an additional y argument is provided, y is added to the values in the `da`
+    dataset sliced along plot_axis='y'.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.line(da.sel(plot_axis="x"), da.sel(plot_axis="y"), target, **kwargs)
+    da_has_y = "plot_axis" in da.dims and "y" in da.plot_axis
+    if da_has_y:
+        y = da.sel(plot_axis="y") if y is None else da.sel(plot_axis="y") + y
+    if y is None:
+        raise ValueError("Unable to find values for y in `da`")
+    return plot_backend.line(da.sel(plot_axis="x"), y, target, **kwargs)
 
 
 def line_x(da, target, backend, y=None, **kwargs):
