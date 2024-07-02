@@ -12,7 +12,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import annotate_label, fill_between_y, line_x, line_xy, remove_axis
+from arviz_plots.visuals import annotate_label, fill_between_y, line_xy, remove_axis
 
 
 def plot_ridge(
@@ -22,9 +22,7 @@ def plot_ridge(
     group="posterior",
     coords=None,
     sample_dims=None,
-    rescale_kde=None,
-    plot_ridge_base=None,
-    combined=False,
+    combined=True,
     labels=None,
     shade_label=None,
     plot_collection=None,
@@ -60,12 +58,7 @@ def plot_ridge(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    rescale_kde : float, optional
-        Rescale the ridge kde density by this factor for better legibility. Defaults to 1.
-    plot_ridge_base : bool, default False.
-        Whether to plot the base of the ridge plot or not for better legibility.
-        If None, defaults to false.
-    combined : bool, default False
+    combined : bool, default True
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
     labels : sequence of str, optional
@@ -98,8 +91,8 @@ def plot_ridge(
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * ridge -> passed to :func:`~visuals.line_xy`
-        * ridge_base -> passed to :func:`~.visuals.line_x`
+        * edge -> passed to :func:`~visuals.line_xy`
+        * face -> passed to :func:`~.visuals.fill_between_y`
         * labels -> passed to :func:`~.visuals.annotate_label`
         * shade -> passed to :func:`~.visuals.fill_between_y`
         * ticklabels -> passed to :func:`~.backend.xticks`
@@ -202,10 +195,6 @@ def plot_ridge(
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
-    if rescale_kde is None:
-        rescale_kde = 1
-    if plot_ridge_base is None:
-        plot_ridge_base = False
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -334,39 +323,53 @@ def plot_ridge(
         aes_map = {}
     else:
         aes_map = aes_map.copy()
-    aes_map.setdefault("ridge", plot_collection.aes_set.difference({"alpha"}))
-    if plot_ridge_base:
-        aes_map.setdefault("ridge_base", plot_collection.aes_set.difference({"alpha"}))
+    aes_map.setdefault("edge", plot_collection.aes_set.difference({"alpha"}))
+    aes_map.setdefault("face", plot_collection.aes_set.difference({"alpha"}))
     aes_map["labels"] = {"overlay"}.union(aes_map.get("labels", {}))
     aes_map["shade"] = {"overlay", "alpha"}.union(aes_map.get("shade", {}))
     if labeller is None:
         labeller = BaseLabeller()
 
     # compute kde density
-    ridge_kwargs = copy(plot_kwargs.get("ridge", {}))
-    if plot_ridge_base:
-        ridge_base_kwargs = copy(plot_kwargs.get("ridge_base", {}))
-        if ridge_base_kwargs is not False:
-            _, ridge_base_aes, ridge_base_ignore = filter_aes(
-                plot_collection, aes_map, "ridge_base", sample_dims
-            )
+    edge_kwargs = copy(plot_kwargs.get("edge", {}))
 
-    if ridge_kwargs is not False:
-        density_dims, ridge_aes, density_ignore = filter_aes(
-            plot_collection, aes_map, "ridge", sample_dims
-        )
+    if edge_kwargs is not False:
+        edge_dims, edge_aes, edge_ignore = filter_aes(plot_collection, aes_map, "edge", sample_dims)
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            density = distribution.azstats.kde(dims=density_dims, **stats_kwargs.get("density", {}))
+            density = distribution.azstats.kde(dims=edge_dims, **stats_kwargs.get("density", {}))
+            # rescaling kde
+            ridge_height = 1  # default
+            density.loc[{"plot_axis": "y"}] = (
+                density.sel(plot_axis="y")
+                / density.sel(plot_axis="y").max().to_array().max()
+                * ridge_height
+            )
+            # (f"\n printdensity = {density!r}")
+
+    face_kwargs = copy(plot_kwargs.get("face", {}))
+
+    if face_kwargs is not False:
+        _, face_aes, face_ignore = filter_aes(plot_collection, aes_map, "face", sample_dims)
+        face_density = density.rename({"plot_axis": "kwarg"})
+        face_density = face_density.assign_coords(
+            kwarg=[
+                "y_top" if coord == "y" else coord for coord in face_density.coords["kwarg"].values
+            ]
+        )
+        # adding a new coord 'y_bottom' set to all zeros
+        zeros = xr.full_like(face_density.sel(kwarg="x"), 0)
+        zeros = zeros.assign_coords(kwarg=["y_bottom"])
+        face_density = xr.concat([face_density, zeros], dim="kwarg")
+
+        # print(f"\n face_density = {face_density!r}")
 
     # computing x_range
-    if ridge_kwargs is not False:
+    if edge_kwargs is not False:
         x_range = density.sel(plot_axis="x")
-        print(f"\nx_range = {x_range}")
     else:
         x_range = xr.ones_like(distribution)
-        print(f"\nx_range = {x_range}")
 
     # add labels and shading first, so ridge plot is rendered on top
     cumulative_label = []
@@ -459,39 +462,35 @@ def plot_ridge(
             **ticklabel_kwargs,
         )
 
-    # plot kde
+    # plot edge(ridge)
     default_color = plot_bknd.get_default_aes("color", 1, {})[0]
-    # rescaling kde
-    print(f"\n kde density pre rescaled = {density!r}")
-    for var in density.data_vars:
-        density[var].loc[{"plot_axis": "y"}] = density[var].sel(plot_axis="y") ** rescale_kde
-    print(f"\n kde density post rescaled = {density!r}")
-    if ridge_kwargs is not False:
-        if "color" not in ridge_aes:
-            ridge_kwargs.setdefault("color", default_color)
+    if edge_kwargs is not False:
+        if "color" not in edge_aes:
+            edge_kwargs.setdefault("color", default_color)
         plot_collection.map(
             line_xy,
-            "ridge",
+            "edge",
             data=density,
-            ignore_aes=density_ignore,
+            ignore_aes=edge_ignore,
             coords={"column": "ridge"},
-            **ridge_kwargs,
+            **edge_kwargs,
         )
-    if plot_ridge_base:
-        if ridge_base_kwargs is not False:
-            if "linestyle" not in ridge_base_aes:
-                ridge_base_kwargs.setdefault("linestyle", "--")
-            if "color" not in ridge_base_aes:
-                ridge_base_kwargs.setdefault("color", default_color)
-            ridge_base = density.sel(plot_axis="x")
-            plot_collection.map(
-                line_x,
-                "ridge_base",
-                data=ridge_base,
-                ignore_aes=ridge_base_ignore,
-                coords={"column": "ridge"},
-                **ridge_base_kwargs,
-            )
+
+    # plot face
+    if face_kwargs is not False:
+        if "color" not in face_aes:
+            face_kwargs.setdefault("color", default_color)
+        if "alpha" not in face_aes:
+            face_kwargs.setdefault("alpha", 0.4)
+        # print("\n about to print `face`")
+        plot_collection.map(
+            fill_between_y,
+            "face",
+            data=face_density,
+            ignore_aes=face_ignore,
+            coords={"column": "ridge"},
+            **face_kwargs,
+        )
 
     if shade_label is not None:
         plot_bknd.xlim(xlim_labels, plot_collection.get_target(None, {"column": "labels"}))
@@ -501,5 +500,7 @@ def plot_ridge(
         plot_collection.map(
             remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )
+
+    # print(f"\n pc viz = {plot_collection.viz!r}")
 
     return plot_collection

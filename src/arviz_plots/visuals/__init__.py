@@ -13,20 +13,20 @@ import xarray as xr
 from arviz_base.labels import BaseLabeller
 
 
-def line_xy(da, target, backend, y=None, **kwargs):
+def line_xy(da, target, backend, x=None, y=None, **kwargs):
     """Plot a line x vs y.
 
     The input argument `da` is split into x and y using the dimension ``plot_axis``.
-    If an additional y argument is provided, y is added to the values in the `da`
-    dataset sliced along plot_axis='y'.
+    If additional x and y arguments are provided, x and y are added to the values
+    in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    da_has_y = "plot_axis" in da.dims and "y" in da.plot_axis
-    if da_has_y:
-        y = da.sel(plot_axis="y") if y is None else da.sel(plot_axis="y") + y
-    if y is None:
-        raise ValueError("Unable to find values for y in `da`")
-    return plot_backend.line(da.sel(plot_axis="x"), y, target, **kwargs)
+    if x is not None or y is not None:  # if either x or y is provided as an arg
+        x, y = _process_da_x_y(da, x, y)
+    else:
+        x = da.sel(plot_axis="x")
+        y = da.sel(plot_axis="y")
+    return plot_backend.line(x, y, target, **kwargs)
 
 
 def line_x(da, target, backend, y=None, **kwargs):
@@ -84,8 +84,12 @@ def ecdf_line(values, target, backend, **kwargs):
     return plot_backend.line(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
 
 
-def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y_top=None, **kwargs):
+def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y=None, y_top=None, **kwargs):
     """Fill the region between to given y values."""
+    if y_bottom is None and y:
+        y_bottom = y
+    if y_top is None and y:
+        y_top = y
     if "kwarg" in da.dims:
         if "x" in da.kwarg:
             x = da.sel(kwarg="x") if x is None else da.sel(kwarg="x") + x
