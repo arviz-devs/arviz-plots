@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from arviz_base import from_dict
 
-from arviz_plots import plot_dist, plot_forest, plot_trace, plot_trace_dist, visuals
+from arviz_plots import plot_dist, plot_forest, plot_ridge, plot_trace, plot_trace_dist, visuals
 
 pytestmark = [
     pytest.mark.usefixtures("clean_plots"),
@@ -181,6 +181,59 @@ class TestPlots:
 
     @pytest.mark.parametrize("pseudo_dim", ("__variable__", "hierarchy", "group"))
     def test_plot_forest_aes_labels_shading(self, backend, datatree_4d, pseudo_dim):
+        pc = plot_forest(
+            datatree_4d,
+            pc_kwargs={"aes": {"color": [pseudo_dim]}},
+            aes_map={"labels": ["color"]},
+            shade_label=pseudo_dim,
+            backend=backend,
+        )
+        assert "plot" in pc.viz.data_vars
+        assert all("shade" in child.data_vars for child in pc.viz.children.values())
+        if pseudo_dim != "__variable__":
+            assert all(0 in child["alpha"] for child in pc.aes.children.values())
+            assert any(pseudo_dim in child["shade"].dims for child in pc.viz.children.values())
+
+    @pytest.mark.parametrize("combined", (True, False))
+    def test_plot_ridge(self, datatree, backend, combined):
+        pc = plot_ridge(datatree, backend=backend, combined=combined)
+        assert "plot" in pc.viz.data_vars
+        assert all("y" in child.data_vars for child in pc.aes.children.values())
+        assert "edge" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_ridge_sample(self, datatree_sample, backend):
+        pc = plot_ridge(datatree_sample, backend=backend, sample_dims="sample")
+        assert "plot" in pc.viz.data_vars
+        assert "edge" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_ridge_models(self, datatree, datatree2, backend):
+        pc = plot_ridge({"c": datatree, "n": datatree2}, backend=backend)
+        assert "plot" in pc.viz.data_vars
+        assert "/mu" in pc.aes.groups
+        assert "/mu" in pc.viz.groups
+        assert "edge" in pc.viz["mu"].data_vars
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "model" in pc.viz["mu"].dims
+
+    def test_plot_ridge_extendable(self, datatree, backend):
+        dt_aux = (
+            datatree["posterior"]
+            .expand_dims(column=3)
+            .assign_coords(column=["labels", "ridge", "ess"])
+        )
+        pc = plot_ridge(dt_aux, combined=True, backend=backend)
+        mock_ess = datatree["posterior"].ds.mean(("chain", "draw"))
+        pc.map(visuals.scatter_x, "ess", data=mock_ess, coords={"column": "ess"}, color="blue")
+        assert "plot" in pc.viz.data_vars
+        assert pc.viz["plot"].sizes["column"] == 3
+        assert all("ess" in child.data_vars for child in pc.viz.children.values())
+
+    @pytest.mark.parametrize("pseudo_dim", ("__variable__", "hierarchy", "group"))
+    def test_plot_ridge_aes_labels_shading(self, backend, datatree_4d, pseudo_dim):
         pc = plot_forest(
             datatree_4d,
             pc_kwargs={"aes": {"color": [pseudo_dim]}},
