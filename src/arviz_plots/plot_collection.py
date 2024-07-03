@@ -695,7 +695,7 @@ class PlotCollection:
             plots_raw_shape = [data.sizes[dim] for dim in dims]
             viz_dict["/"] = xr.Dataset(
                 {
-                    "chart": fig,
+                    "chart": np.array(fig, dtype=object),
                     "plot": (dims, flat_ax_ary.reshape(plots_raw_shape)),
                     "row": (dims, flat_row_id.reshape(plots_raw_shape)),
                     "col": (dims, flat_col_id.reshape(plots_raw_shape)),
@@ -803,7 +803,7 @@ class PlotCollection:
             plots_raw_shape = [data.sizes[dim] for dim in dims]
             viz_dict["/"] = xr.Dataset(
                 {
-                    "chart": fig,
+                    "chart": np.array(fig, dtype=object),
                     "plot": (dims, ax_ary.flatten().reshape(plots_raw_shape)),
                     "row": (dims, row_id.flatten().reshape(plots_raw_shape)),
                     "col": (dims, col_id.flatten().reshape(plots_raw_shape)),

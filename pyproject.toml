@@ -46,6 +46,7 @@ test = [
     "pytest-cov",
     "matplotlib",
     "bokeh",
+    "plotly>5",
     "h5netcdf",
 ]
 doc = [
@@ -60,6 +61,7 @@ doc = [
     "h5netcdf",
     "matplotlib",
     "bokeh",
+    "plotly>5",
 ]
 
 
