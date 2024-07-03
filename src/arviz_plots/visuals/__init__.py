@@ -89,6 +89,15 @@ def scatter_x(da, target, backend, y=None, **kwargs):
     return plot_backend.scatter(da, y, target, **kwargs)
 
 
+def scatter_xy(da, target, backend, **kwargs):
+    """Plot a scatter plot x vs y.
+
+    The input argument `da` is split into x and y using the dimension ``plot_axis``.
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.scatter(da.sel(plot_axis="x"), da.sel(plot_axis="y"), target, **kwargs)
+
+
 def ecdf_line(values, target, backend, **kwargs):
     """Plot an ecdf line."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
