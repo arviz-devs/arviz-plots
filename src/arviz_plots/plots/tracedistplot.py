@@ -358,7 +358,10 @@ def plot_trace_dist(
         plot_kwargs=plot_kwargs_trace,
     )
     plot_collection.coords = None
-    plot_collection.rename_artists(xlabel="xlabel_trace", divergence="divergence_trace")
+    if xlabel_kwargs is not False:
+        plot_collection.rename_artists(xlabel="xlabel_trace")
+    if div_kwargs is not False:
+        plot_collection.rename_artists(divergence="divergence_trace")
     # divergences
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
     if (
