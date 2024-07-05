@@ -211,7 +211,7 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
     kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor}
-    return target.bar(l_e, y, width=widths ** _filter_kwargs(kwargs, None, artist_kws))
+    return target.bar(l_e, y, width=widths, **_filter_kwargs(kwargs, None, artist_kws))
 
 
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
