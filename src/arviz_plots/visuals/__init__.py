@@ -20,7 +20,11 @@ def plot_hist(da, target, backend, **kwargs):
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.hist(
-        da.sel(plot_axis="y"), da.sel(plot_axis="l_e"), da.sel(plot_axis="r_e"), target, **kwargs
+        da.sel(plot_axis="histogram"),
+        da.sel(plot_axis="left_edges"),
+        da.sel(plot_axis="right_edges"),
+        target,
+        **kwargs,
     )
 
 

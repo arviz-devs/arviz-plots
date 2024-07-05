@@ -7,14 +7,9 @@ import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
-from xarray_einstats.numba import histogram
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    process_group_variables_coords,
-    restructure_hist_data,
-)
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     ecdf_line,
     labelled_title,
@@ -259,21 +254,10 @@ def plot_dist(
             )
 
         elif kind == "hist":
-            hist_dict = {}
-            # loops through the data variables in distribution and calls histogram() for each
-            for var_name in distribution.data_vars:
-                var_data = distribution[var_name]
+            density = distribution.azstats.histogram(
+                dims=density_dims, **stats_kwargs.get("density", {})
+            )
 
-                # number of bins is provided by the user (via stats_kwargs) or set by histogram()
-                hist = histogram(da=var_data, dims=density_dims, **stats_kwargs.get("density", {}))
-                # Appending the new DataArray to hist_dict
-                hist_dict[var_name] = hist
-
-            # getting restructured kde-style dataset from hist dataarrays
-            hist_ds = restructure_hist_data(hist_dict)
-            density = hist_ds
-            print(f"Final hist dataset: {hist_ds!r}\n")
-            print("\n\n----------")
             # call plot_collection.map() with new visual element
             plot_collection.map(
                 plot_hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
@@ -326,6 +310,7 @@ def plot_dist(
             point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
         else:
             raise NotImplementedError("coming soon")
+        print(f"\n point= {point}")
 
     if pe_kwargs is not False:
         if "color" not in pe_aes:
@@ -351,10 +336,12 @@ def plot_dist(
             point_y = xr.full_like(point, 0.04)
         elif kind == "hist":
             point_density_diff = [
-                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
+                dim for dim in density.sel(plot_axis="histogram").dims if dim not in point.dims
             ]
             point_density_diff = ["hist_dim"] + point_density_diff
-            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
+            point_y = 0.04 * density.sel(plot_axis="histogram", drop=True).max(
+                dim=point_density_diff
+            )
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(
