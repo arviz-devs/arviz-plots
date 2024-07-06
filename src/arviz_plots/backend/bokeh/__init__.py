@@ -389,9 +389,9 @@ def remove_ticks(target, *, axis="y"):  # pylint: disable=unused-argument
         target.yaxis.major_tick_out = 0
         target.yaxis.major_tick_in = 0
         target.yaxis.major_label_text_font_size = "0pt"
-    if axis in {"y", "both"}:
-        target.yaxis.major_tick_out = 0
-        target.yaxis.major_tick_in = 0
+    if axis in {"x", "both"}:
+        target.xaxis.major_tick_out = 0
+        target.xaxis.major_tick_in = 0
         target.xaxis.major_label_text_font_size = "0pt"
 
 
