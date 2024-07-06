@@ -18,6 +18,7 @@ def pytest_addoption(parser):
     parser.addoption("--save", nargs="?", const="test_images", help="Save images rendered by plot")
     parser.addoption("--skip-mpl", action="store_const", const=True, help="Skip matplotlib tests")
     parser.addoption("--skip-bokeh", action="store_const", const=True, help="Skip bokeh tests")
+    parser.addoption("--skip-plotly", action="store_const", const=True, help="Skip plotly tests")
 
 
 @pytest.fixture(scope="session")
@@ -68,12 +69,15 @@ def check_skips(request):
     """Skip bokeh or matplotlib tests if requested via command line."""
     skip_mpl = request.config.getoption("--skip-mpl")
     skip_bokeh = request.config.getoption("--skip-bokeh")
+    skip_plotly = request.config.getoption("--skip-plotly")
 
     if "backend" in request.fixturenames:
         if skip_mpl and any("matplotlib" in key for key in request.keywords.keys()):
             pytest.skip(reason="Requested skipping matplolib tests via command line argument")
         if skip_bokeh and any("bokeh" in key for key in request.keywords.keys()):
             pytest.skip(reason="Requested skipping bokeh tests via command line argument")
+        if skip_plotly and any("plotly" in key for key in request.keywords.keys()):
+            pytest.skip(reason="Requested skipping plotly tests via command line argument")
 
 
 @pytest.fixture(scope="function")
