@@ -83,7 +83,7 @@ def datatree_sample(seed=31):
     )
 
 
-@pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "none"])
+@pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
 class TestPlots:
     def test_plot_dist(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)

@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from webcolors import hex_to_rgb, name_to_rgb
 
 from .. import get_default_aes as get_agnostic_default_aes
 
@@ -20,6 +21,28 @@ class UnsetDefault:
 
 unset = UnsetDefault()
 pat = re.compile(r"^(row|col)\s?:")
+
+
+def str_to_plotly_html(string):
+    """Convert input string to html subset used by plotly."""
+    return string.replace("\n", "<br>")
+
+
+def combine_color_alpha(color, alpha=1):
+    """Combine a color and alpha value into the equivalent rgba."""
+    if isinstance(color, str):
+        if color.startswith("rgba("):
+            warnings.warning("Found rgba color, value for `alpha` is ignored.")
+            return color
+        if color.startswith("#"):
+            color = hex_to_rgb(color)
+        elif color.startswith("rgb("):
+            color = color.strip("rgb()").split(",")
+        else:
+            color = name_to_rgb(color)
+    if len(color) != 3:
+        raise ValueError("Invalid color")
+    return f"rgba({color[0]}, {color[1]}, {color[2]}, {alpha:.3f})"
 
 
 # generation of default values for aesthetics
@@ -218,8 +241,8 @@ def create_plotting_grid(
             )
         elif figsize_units != "dots":
             raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
-        layout_kwargs["width"] = int(np.ceil(figsize[0] / cols))
-        layout_kwargs["height"] = int(np.ceil(figsize[1] / rows))
+        layout_kwargs["width"] = figsize[0]
+        layout_kwargs["height"] = figsize[1]
 
     kwargs["figure"] = go.Figure(layout=layout_kwargs)
 
@@ -261,7 +284,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
         line=_filter_kwargs(line_kwargs, {}),
         **_filter_kwargs(kwargs, artist_kws),
     )
-    target.append_trace(line_object)
+    target.add_trace(line_object)
     return line_object
 
 
@@ -290,7 +313,7 @@ def scatter(
             edgecolor = color
     line_kwargs = _filter_kwargs({"color": edgecolor, "width": width}, artist_kws.get("line", {}))
     scatter_kwargs = {
-        "size": size,
+        "size": size if size is unset else np.sqrt(size),
         "symbol": marker,
         "opacity": alpha,
         "color": facecolor,
@@ -305,7 +328,7 @@ def scatter(
         marker=_filter_kwargs(scatter_kwargs, {}),
         **artist_kws,
     )
-    target.append_trace(scatter_object)
+    target.add_trace(scatter_object)
     return scatter_object
 
 
@@ -332,11 +355,114 @@ def text(
     text_object = go.Scatter(
         x=np.atleast_1d(x),
         y=np.atleast_1d(y),
-        text=np.atleast_1d(string),
+        text=np.vectorize(str_to_plotly_html)(np.atleast_1d(string)),
         mode="text",
         textfont=_filter_kwargs(text_kwargs, {}),
         textposition=f"{vertical_align} {horizontal_align}",
         **_filter_kwargs(kwargs, artist_kws),
     )
-    target.append_trace(text_object)
+    target.add_trace(text_object)
     return text_object
+
+
+def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **artist_kws):
+    """Interface to plotly for plotting a filled area between two curves."""
+    kwargs = {"fillcolor": combine_color_alpha(color, alpha)}
+    first_line = go.Scatter(
+        x=np.atleast_1d(x), y=np.atleast_1d(y_bottom), mode="lines", line={"width": 0}, fill=None
+    )
+    target.add_trace(first_line)
+    second_line_with_fill = go.Scatter(
+        x=np.atleast_1d(x),
+        y=np.atleast_1d(y_top),
+        fill="tonexty",
+        mode="none",
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+    target.add_trace(second_line_with_fill)
+    return second_line_with_fill
+
+
+# general plot appeareance
+def title(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to plotly for adding a title to a plot."""
+    kwargs = {"size": size, "color": color}
+    title_object = go.layout.Annotation(
+        xref="x domain",
+        yref="y domain",
+        x=0.5,
+        y=1.01,
+        showarrow=False,
+        xanchor="center",
+        yanchor="bottom",
+        text=str_to_plotly_html(string),
+        font=_filter_kwargs(kwargs, artist_kws),
+    )
+    target.add_annotation(title_object)
+    return title_object
+
+
+def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to plotly for adding a label to the y axis."""
+    kwargs = {"size": size, "color": color}
+    target.update_yaxes(
+        title=str_to_plotly_html(string), titlefont=_filter_kwargs(kwargs, artist_kws)
+    )
+
+
+def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
+    """Interface to plotly for adding a label to the y axis."""
+    kwargs = {"size": size, "color": color}
+    target.update_xaxes(
+        title=str_to_plotly_html(string), titlefont=_filter_kwargs(kwargs, artist_kws)
+    )
+
+
+def xticks(ticks, labels, target, **artist_kws):
+    """Interface to plotly for setting ticks and labels of the x axis."""
+    if labels is None:
+        labels = [str(label) for label in labels]
+    target.update_xaxes(tickmode="array", tickvals=ticks, ticktext=labels, **artist_kws)
+
+
+def yticks(ticks, labels, target, **artist_kws):
+    """Interface to plotly for setting ticks and labels of the y axis."""
+    if labels is None:
+        labels = [str(label) for label in labels]
+    target.update_yaxes(tickmode="array", tickvals=ticks, ticktext=labels, **artist_kws)
+
+
+def xlim(lims, target, **artist_kws):
+    """Interface to plotly for setting limits for the x axis."""
+    target.update_xaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
+
+
+def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
+    """Interface to plotly for setting ticks size."""
+    kwargs = {"size": size, "color": color}
+    if axis not in ("y", "x", "both"):
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+    if axis in {"y", "both"}:
+        target.update_yaxes(tickfont=_filter_kwargs(kwargs, artist_kws))
+    if axis in {"x", "both"}:
+        target.update_xaxes(tickfont=_filter_kwargs(kwargs, artist_kws))
+
+
+def remove_ticks(target, *, axis="y"):  # pylint: disable=unused-argument
+    """Interface to plotly for removing ticks from a plot."""
+    if axis not in ("y", "x", "both"):
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+    if axis in {"y", "both"}:
+        target.update_yaxes(ticks="")
+    if axis in {"x", "both"}:
+        target.update_xaxes(ticks="")
+
+
+def remove_axis(target, axis="y"):
+    """Interface to plotly for removing axis from a plot."""
+    if axis not in ("y", "x", "both"):
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+    if axis in ("y", "both"):
+        target.update_yaxes(visible=False)
+    if axis in ("x", "both"):
+        target.update_xaxes(visible=False)
