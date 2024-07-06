@@ -36,8 +36,14 @@ facetted
 
 ## Equivalences with library specific objects
 
-| arviz-plots name | matplotlib   | bokeh   |
-|------------------|--------------|---------|
-| chart            | figure       | layout  |
-| plot             | axes/subplot | figure  |
-| artist           | artist       | glyph   |
+| arviz-plots name | matplotlib   | bokeh   | plotly           |
+|------------------|--------------|---------|------------------|
+| chart            | figure       | layout  | Figure           |
+| plot             | axes/subplot | figure  | -[^plotly_plot]  |
+| artist           | artist       | glyph   | trace            |
+
+[^plotly_plot]: In plotly there is no specific object to represent a {term}`plot`.
+
+  Instead, when adding {term}`artists` one can choose to add the artist to all {term}`plots`
+  in the {term}`chart`, or give the row/col indexes, or specify a subset of {term}`plots`
+  on which to add the {term}`artist`.
