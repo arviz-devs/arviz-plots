@@ -37,6 +37,7 @@ extensions = [
     "sphinx_design",
     "jupyter_sphinx",
     "matplotlib.sphinxext.plot_directive",
+    "bokeh.sphinxext.bokeh_plot",
 ]
 
 templates_path = ["_templates"]
