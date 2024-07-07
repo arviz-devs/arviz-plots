@@ -255,7 +255,7 @@ def plot_dist(
 
         elif kind == "hist":
             density = distribution.azstats.histogram(
-                dims=density_dims, **stats_kwargs.get("density", {})
+                dims=density_dims, density=True, **stats_kwargs.get("density", {})
             )
 
             # call plot_collection.map() with new visual element
@@ -374,7 +374,7 @@ def plot_dist(
             labeller=labeller,
             **title_kwargs,
         )
-    if (kind == "kde") and (plot_kwargs.get("remove_axis", True) is not False):
+    if (kind in ("kde", "hist")) and (plot_kwargs.get("remove_axis", True) is not False):
         plot_collection.map(
             remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )
