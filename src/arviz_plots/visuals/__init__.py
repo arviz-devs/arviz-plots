@@ -86,10 +86,6 @@ def ecdf_line(values, target, backend, **kwargs):
 
 def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y=None, y_top=None, **kwargs):
     """Fill the region between to given y values."""
-    if y_bottom is None and y:
-        y_bottom = y
-    if y_top is None and y:
-        y_top = y
     if "kwarg" in da.dims:
         if "x" in da.kwarg:
             x = da.sel(kwarg="x") if x is None else da.sel(kwarg="x") + x
@@ -101,6 +97,9 @@ def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y=None, y_top=
             )
         if "y_top" in da.kwarg:
             y_top = da.sel(kwarg="y_top") if y_top is None else da.sel(kwarg="y_top") + y_top
+    if y is not None:
+        y_top += y
+        y_bottom += y
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.fill_between_y(x, y_bottom, y_top, target, **kwargs)
 
@@ -116,17 +115,21 @@ def _process_da_x_y(da, x, y):
     if x is None and y is None:
         raise ValueError("Unable to find values for x and y.")
     if x is None:
-        x = da.item()
+        x = da
     elif y is None:
-        y = da.item()
+        y = da
     return x, y
+
+
+def _ensure_scalar(*args):
+    return tuple(arg.item() if hasattr(arg, "item") else arg for arg in args)
 
 
 def point_estimate_text(
     da, target, backend, *, point_estimate, x=None, y=None, point_label="x", **kwargs
 ):
     """Annotate a point estimate."""
-    x, y = _process_da_x_y(da, x, y)
+    x, y = _ensure_scalar(*_process_da_x_y(da, x, y))
     point = x if point_label == "x" else y
     if point.size != 1:
         raise ValueError(
@@ -148,7 +151,7 @@ def annotate_label(
     da, target, backend, *, var_name, sel, isel, x=None, y=None, dim=None, labeller=None, **kwargs
 ):
     """Annotate a dimension or aesthetic property."""
-    x, y = _process_da_x_y(da, x, y)
+    x, y = _ensure_scalar(*_process_da_x_y(da, x, y))
     if labeller is None:
         labeller = BaseLabeller()
     if dim is None:

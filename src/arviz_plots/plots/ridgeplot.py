@@ -332,8 +332,11 @@ def plot_ridge(
 
     # compute kde density
     edge_kwargs = copy(plot_kwargs.get("edge", {}))
+    face_kwargs = copy(plot_kwargs.get("face", {}))
 
-    if edge_kwargs is not False:
+    if (
+        edge_kwargs is not False or face_kwargs is not False
+    ):  # compute density if either are to be plotted
         edge_dims, edge_aes, edge_ignore = filter_aes(plot_collection, aes_map, "edge", sample_dims)
         with warnings.catch_warnings():
             if "model" in distribution:
@@ -348,9 +351,7 @@ def plot_ridge(
             )
             # (f"\n printdensity = {density!r}")
 
-    face_kwargs = copy(plot_kwargs.get("face", {}))
-
-    if face_kwargs is not False:
+    if face_kwargs is not False:  # create face_density dataset only if required
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_map, "face", sample_dims)
         face_density = density.rename({"plot_axis": "kwarg"})
         face_density = face_density.assign_coords(
@@ -366,7 +367,7 @@ def plot_ridge(
         # print(f"\n face_density = {face_density!r}")
 
     # computing x_range
-    if edge_kwargs is not False:
+    if edge_kwargs is not False or face_kwargs is not False:
         x_range = density.sel(plot_axis="x")
     else:
         x_range = xr.ones_like(distribution)
