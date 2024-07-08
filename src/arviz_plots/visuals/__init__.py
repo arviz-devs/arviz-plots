@@ -89,13 +89,17 @@ def scatter_x(da, target, backend, y=None, **kwargs):
     return plot_backend.scatter(da, y, target, **kwargs)
 
 
-def scatter_xy(da, target, backend, **kwargs):
+def scatter_xy(da, target, backend, x=None, **kwargs):
     """Plot a scatter plot x vs y.
 
     The input argument `da` is split into x and y using the dimension ``plot_axis``.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.scatter(da.sel(plot_axis="x"), da.sel(plot_axis="y"), target, **kwargs)
+    # note: temporary patch only before plot_ridge merge to use _process_da_x_y
+    # print(f"\n x arg = {x}")
+    x = da.sel(plot_axis="x") if x is None else da.sel(plot_axis="x") + x
+    # print(f"\n to plot x = {x}")
+    return plot_backend.scatter(x, da.sel(plot_axis="y"), target, **kwargs)
 
 
 def ecdf_line(values, target, backend, **kwargs):

@@ -64,10 +64,10 @@ def plot_ess(
     kind : {"local", "quantile", "evolution"}, default "local"
         Specify the kind of plot:
 
-        * The ``kind="local"`` argument generates the ESS' local efficiency for
-          estimating quantiles of a desired posterior.
-        * The ``kind="quantile"`` argument generates the ESS' local efficiency
+        * The ``kind="local"`` argument generates the ESS' local efficiency
           for estimating small-interval probability of a desired posterior.
+        * The ``kind="quantile"`` argument generates the ESS' local efficiency
+          for estimating quantiles of a desired posterior.
         * The ``kind="evolution"`` argument generates the estimated ESS'
           with incrised number of iterations of a desired posterior.
         WIP: add the other kinds for each kind of ess computation in arviz stats
@@ -152,6 +152,7 @@ def plot_ess(
         if "model" in distribution:
             pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
             pc_kwargs["aes"].setdefault("color", ["model"])
+            pc_kwargs["aes"].setdefault("x", ["model"])
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -192,28 +193,24 @@ def plot_ess(
                 ],
                 dim="ess_dim",
             )
-            print(f"\n ess_y_dataset = {ess_y_dataset}")
+            # print(f"\n ess_y_dataset = {ess_y_dataset}")
 
             # broadcasting xdata to match ess_y_dataset's shape
             xdata_da = xr.DataArray(xdata, dims="ess_dim")
-            print(f"\n xdata_da ={xdata_da}")
+            # print(f"\n xdata_da ={xdata_da}")
 
-            # broadcasting xdata_da to match shape of each variable in ess_y_dataset
-            xdata_broadcasted_dict = {}
-            for var in ess_y_dataset.data_vars:
-                _, xdata_broadcasted = xr.broadcast(ess_y_dataset[var], xdata_da)
-                xdata_broadcasted_dict[var] = xdata_broadcasted
-
+            # broadcasting xdata_da to match shape of each variable in ess_y_dataset and
             # creating a new dataset from dict of broadcasted xdata
-            xdata_dataset = xr.Dataset(xdata_broadcasted_dict)
-            print(f"\n xdata_dataset = {xdata_dataset}")
+            xdata_dataset = xr.Dataset(
+                {var_name: xdata_da.broadcast_like(da) for var_name, da in ess_y_dataset.items()}
+            )
+            # print(f"\n xdata_dataset = {xdata_dataset}")
 
             # concatenating xdata_dataset and ess_y_dataset along plot_axis
-            ess_dataset = xr.concat([xdata_dataset, ess_y_dataset], dim="plot_axis")
-
-            # assigning 'x' and 'y' coordinates to the 'plot_axis' dimension
-            ess_dataset["plot_axis"] = ["x", "y"]
-            print(f"\n ess_dataset = {ess_dataset}")
+            ess_dataset = xr.concat([xdata_dataset, ess_y_dataset], dim="plot_axis").assign_coords(
+                plot_axis=["x", "y"]
+            )
+            print(f"\n ess_dataset = {ess_dataset!r}")
 
             # step 4
             # if "color" not in ess_aes:
