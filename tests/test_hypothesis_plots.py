@@ -6,7 +6,7 @@ import pytest
 from arviz_base import from_dict
 from hypothesis import given
 
-from arviz_plots import plot_dist, plot_forest
+from arviz_plots import plot_dist, plot_forest, plot_ridge
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -106,6 +106,51 @@ def test_plot_forest(datatree, combined, ci_kind, point_estimate, plot_kwargs, l
         combined=combined,
         ci_kind=ci_kind,
         point_estimate=point_estimate,
+        labels=labels,
+        shade_label=shade_label,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" not in child for child in pc.viz.children.values())
+    assert "plot" in pc.viz.data_vars
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key == "labels":
+            for label in labels:
+                assert all(
+                    f"{label.strip('_')}_label" in child for child in pc.viz.children.values()
+                )
+        elif key == "shade":
+            if shade_label is None:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
+        elif key not in ("remove_axis", "ticklabels"):
+            assert all(key in child for child in pc.viz.children.values())
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "edge": plot_kwargs_value,
+            "face": plot_kwargs_value,
+            "labels": st.sampled_from(({}, {"color": "red"})),
+            "shade": st.sampled_from(({}, {"color": "red"})),
+            "ticklabels": st.sampled_from(({}, False)),
+            "remove_axis": st.just(False),
+        },
+    ),
+    combined=st.booleans(),
+    labels_shade_label=labels_shade(st.sampled_from(("__variable__", "hierarchy", "group"))),
+)
+def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
+    labels = labels_shade_label[0]
+    shade_label = labels_shade_label[1]
+    pc = plot_ridge(
+        datatree,
+        backend="none",
+        combined=combined,
         labels=labels,
         shade_label=shade_label,
         plot_kwargs=plot_kwargs,
