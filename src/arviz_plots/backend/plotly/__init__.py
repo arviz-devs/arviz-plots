@@ -230,7 +230,7 @@ def create_plotting_grid(
     `~arviz_plots.backend.plotly.PlotlyPlot` or ndarray of `~arviz_plots.backend.plotly.PlotlyPlot`
     """
     plots = np.empty((rows, cols), dtype=object)
-    layout_kwargs = {"legend": {"visible": False}}
+    layout_kwargs = {}  # {"legend": {"visible": False}}
 
     if figsize is not None:
         if figsize_units == "inches":
@@ -275,13 +275,15 @@ def _filter_kwargs(kwargs, artist_kws):
 # "geoms"
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to plotly for a line plot."""
+    artist_kws.setdefault("showlegend", False)
     line_kwargs = {"color": color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {}).copy()
     kwargs = {"opacity": alpha}
     line_object = go.Scatter(
         x=np.atleast_1d(x),
         y=np.atleast_1d(y),
         mode="lines",
-        line=_filter_kwargs(line_kwargs, {}),
+        line=_filter_kwargs(line_kwargs, line_artist_kws),
         **_filter_kwargs(kwargs, artist_kws),
     )
     target.add_trace(line_object)
@@ -303,6 +305,7 @@ def scatter(
     **artist_kws,
 ):
     """Interface to plotly for a scatter plot."""
+    artist_kws.setdefault("showlegend", False)
     if color is not unset:
         if facecolor is unset and edgecolor is unset:
             facecolor = color
@@ -311,7 +314,9 @@ def scatter(
             facecolor = color
         elif edgecolor is unset:
             edgecolor = color
-    line_kwargs = _filter_kwargs({"color": edgecolor, "width": width}, artist_kws.get("line", {}))
+    marker_artist_kws = artist_kws.pop("marker", {}).copy()
+    edgeline_artist_kws = marker_artist_kws.pop("line", {}).copy()
+    line_kwargs = _filter_kwargs({"color": edgecolor, "width": width}, edgeline_artist_kws)
     scatter_kwargs = {
         "size": size if size is unset else np.sqrt(size),
         "symbol": marker,
@@ -325,7 +330,7 @@ def scatter(
         x=np.atleast_1d(x),
         y=np.atleast_1d(y),
         mode="markers",
-        marker=_filter_kwargs(scatter_kwargs, {}),
+        marker=_filter_kwargs(scatter_kwargs, marker_artist_kws),
         **artist_kws,
     )
     target.add_trace(scatter_object)
@@ -346,10 +351,12 @@ def text(
     **artist_kws,
 ):
     """Interface to plotly for adding text to a plot."""
+    artist_kws.setdefault("showlegend", False)
     # plotly inverts the meaning of alignment with respect to matplotlib and bokeh
     vertical_align = {"top": "bottom", "bottom": "top"}.get(vertical_align, vertical_align)
     horizontal_align = {"right": "left", "left": "right"}.get(horizontal_align, horizontal_align)
 
+    textfont_artist_kws = artist_kws.pop("textfont", {}).copy()
     text_kwargs = {"color": color, "size": size}
     kwargs = {"opacity": alpha}
     text_object = go.Scatter(
@@ -357,7 +364,7 @@ def text(
         y=np.atleast_1d(y),
         text=np.vectorize(str_to_plotly_html)(np.atleast_1d(string)),
         mode="text",
-        textfont=_filter_kwargs(text_kwargs, {}),
+        textfont=_filter_kwargs(text_kwargs, textfont_artist_kws),
         textposition=f"{vertical_align} {horizontal_align}",
         **_filter_kwargs(kwargs, artist_kws),
     )
@@ -367,6 +374,7 @@ def text(
 
 def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to plotly for plotting a filled area between two curves."""
+    artist_kws.setdefault("showlegend", False)
     kwargs = {"fillcolor": combine_color_alpha(color, alpha)}
     first_line = go.Scatter(
         x=np.atleast_1d(x), y=np.atleast_1d(y_bottom), mode="lines", line={"width": 0}, fill=None
@@ -387,6 +395,7 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a title to a plot."""
     kwargs = {"size": size, "color": color}
+    font_kws = artist_kws.pop("font", {}).copy()
     title_object = go.layout.Annotation(
         xref="x domain",
         yref="y domain",
@@ -396,7 +405,8 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
         xanchor="center",
         yanchor="bottom",
         text=str_to_plotly_html(string),
-        font=_filter_kwargs(kwargs, artist_kws),
+        font=_filter_kwargs(kwargs, font_kws),
+        **artist_kws,
     )
     target.add_annotation(title_object)
     return title_object
