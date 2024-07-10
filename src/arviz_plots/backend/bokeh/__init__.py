@@ -2,8 +2,8 @@
 import warnings
 
 import numpy as np
-from bokeh.layouts import gridplot
-from bokeh.models import Range1d, Title
+from bokeh.layouts import GridBox, gridplot
+from bokeh.models import GridPlot, Range1d, Title
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
@@ -103,18 +103,17 @@ def get_figsize(plot_collection):
     if chart is None:
         plot = plot_collection.viz["plot"].item()
         return (plot.width, plot.height), "dots"
-    if isinstance(chart, tuple):
-        gridbox = chart.children[1]
-    else:
+    if isinstance(chart, (GridBox, GridPlot)):
         gridbox = chart
-    row_ids = [int(child[1]) for child in gridbox.children]
-    col_ids = [int(child[2]) for child in gridbox.children]
-    row_heights = np.zeros((max(row_ids) + 1, max(col_ids) + 1))
-    col_widths = np.zeros_like(row_heights)
-    for plot, row, col in gridbox.children:
-        row_heights[row, col] = plot.height
-        col_widths[row, col] = plot.width
-    return (col_widths.mean(0).sum(), row_heights.mean(-1).sum()), "dots"
+    elif isinstance(chart, tuple):
+        gridbox = chart[1]
+    else:
+        gridbox = chart.children[1]
+    if not isinstance(gridbox, (GridBox, GridPlot)):
+        return (800, 800)
+    row_heights_sum = np.sum([plot.height for plot, _, col in gridbox.children if col == 0])
+    col_widths_sum = np.sum([plot.width for plot, row, _ in gridbox.children if row == 0])
+    return (col_widths_sum, row_heights_sum), "dots"
 
 
 def create_plotting_grid(

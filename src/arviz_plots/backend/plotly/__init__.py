@@ -377,7 +377,12 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
     artist_kws.setdefault("showlegend", False)
     kwargs = {"fillcolor": combine_color_alpha(color, alpha)}
     first_line = go.Scatter(
-        x=np.atleast_1d(x), y=np.atleast_1d(y_bottom), mode="lines", line={"width": 0}, fill=None
+        x=np.atleast_1d(x),
+        y=np.atleast_1d(y_bottom),
+        mode="lines",
+        line={"width": 0},
+        fill=None,
+        showlegend=False,
     )
     target.add_trace(first_line)
     second_line_with_fill = go.Scatter(
