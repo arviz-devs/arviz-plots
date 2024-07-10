@@ -6,3 +6,4 @@ azp.style.use("arviz-clean")  # matplotlib only
 
 data = load_arviz_data("non_centered_eight")
 pc = azp.plot_trace_dist(data, backend="none")
+pc.show()
