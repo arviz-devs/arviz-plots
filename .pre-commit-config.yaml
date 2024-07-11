@@ -37,3 +37,4 @@ repos:
           "-rn", # Only display messages
           "-sn", # Don't display the score
         ]
+      exclude: ^docs/source/gallery/

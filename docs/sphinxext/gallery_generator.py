@@ -40,9 +40,6 @@ def main(app):
             page_start = fm.read()
 
         backend_tabs = f"""
-        ```{{literalinclude}} scripts/{basename}.py
-        ```
-
         ::::::{{tab-set}}
         :class: full-width
 
@@ -71,6 +68,9 @@ def main(app):
         ```
         :::::
         ::::::
+
+        ```{{literalinclude}} scripts/{basename}.py
+        ```
         """
         backend_tabs = "\n".join((line.strip(" ") for line in backend_tabs.splitlines()))
 
