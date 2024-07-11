@@ -23,6 +23,7 @@ def plot_ridge(
     coords=None,
     sample_dims=None,
     combined=True,
+    ridge_height=None,
     labels=None,
     shade_label=None,
     plot_collection=None,
@@ -61,6 +62,9 @@ def plot_ridge(
     combined : bool, default True
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
+    ridge_height : float, default 1
+        Regulates the height of the ridge (tallest peak in the ridge). 1 or lower means
+        no overlap, higher than 1 means some overlap might occur.
     labels : sequence of str, optional
         Sequence with the dimensions to be labelled in the plot. By default all dimensions
         except "chain" and "model" (if present). The order of `labels` is ignored,
@@ -195,6 +199,8 @@ def plot_ridge(
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
+    if ridge_height is None:
+        ridge_height = 1
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -342,14 +348,14 @@ def plot_ridge(
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
             density = distribution.azstats.kde(dims=edge_dims, **stats_kwargs.get("density", {}))
-            # rescaling kde
-            ridge_height = 1  # default
-            density.loc[{"plot_axis": "y"}] = (
-                density.sel(plot_axis="y")
-                / density.sel(plot_axis="y").max().to_array().max()
-                * ridge_height
-            )
-            # (f"\n printdensity = {density!r}")
+        # rescaling kde
+        # ridge_height = 1  # default
+        density.loc[{"plot_axis": "y"}] = (
+            density.sel(plot_axis="y")
+            / density.sel(plot_axis="y").max().to_array().max()
+            * ridge_height
+        )
+        # (f"\n printdensity = {density!r}")
 
     if face_kwargs is not False:  # create face_density dataset only if required
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_map, "face", sample_dims)

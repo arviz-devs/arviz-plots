@@ -21,11 +21,7 @@ def line_xy(da, target, backend, x=None, y=None, **kwargs):
     in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    if x is not None or y is not None:  # if either x or y is provided as an arg
-        x, y = _process_da_x_y(da, x, y)
-    else:
-        x = da.sel(plot_axis="x")
-        y = da.sel(plot_axis="y")
+    x, y = _process_da_x_y(da, x, y)
     return plot_backend.line(x, y, target, **kwargs)
 
 
@@ -131,7 +127,7 @@ def point_estimate_text(
     """Annotate a point estimate."""
     x, y = _ensure_scalar(*_process_da_x_y(da, x, y))
     point = x if point_label == "x" else y
-    if point.size != 1:
+    if np.size(point) != 1:
         raise ValueError(
             "Found non-scalar point estimate. Check aes mapping and sample_dims. "
             f"The dimensions still left to reduce/facet are {point.dims}."
