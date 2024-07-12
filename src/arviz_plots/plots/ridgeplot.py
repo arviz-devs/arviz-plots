@@ -23,7 +23,7 @@ def plot_ridge(
     coords=None,
     sample_dims=None,
     combined=True,
-    ridge_height=None,
+    ridge_height=0.9,
     labels=None,
     shade_label=None,
     plot_collection=None,
@@ -62,9 +62,10 @@ def plot_ridge(
     combined : bool, default True
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
-    ridge_height : float, default 1
+    ridge_height : float, default 0.9
         Regulates the height of the ridge (tallest peak in the ridge). 1 or lower means
-        no overlap, higher than 1 means some overlap might occur.
+        no overlap (with ``combined=True``), higher than 1 means some overlap might occur.
+        See the "Notes" section for more info on vertical spacing.
     labels : sequence of str, optional
         Sequence with the dimensions to be labelled in the plot. By default all dimensions
         except "chain" and "model" (if present). The order of `labels` is ignored,
@@ -199,8 +200,6 @@ def plot_ridge(
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
-    if ridge_height is None:
-        ridge_height = 1
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -336,26 +335,22 @@ def plot_ridge(
     if labeller is None:
         labeller = BaseLabeller()
 
-    # compute kde density
+    # compute kde density if at least one of edge or face element needs to be plotted
     edge_kwargs = copy(plot_kwargs.get("edge", {}))
     face_kwargs = copy(plot_kwargs.get("face", {}))
 
-    if (
-        edge_kwargs is not False or face_kwargs is not False
-    ):  # compute density if either are to be plotted
+    if edge_kwargs is not False or face_kwargs is not False:
         edge_dims, edge_aes, edge_ignore = filter_aes(plot_collection, aes_map, "edge", sample_dims)
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
             density = distribution.azstats.kde(dims=edge_dims, **stats_kwargs.get("density", {}))
         # rescaling kde
-        # ridge_height = 1  # default
         density.loc[{"plot_axis": "y"}] = (
             density.sel(plot_axis="y")
             / density.sel(plot_axis="y").max().to_array().max()
             * ridge_height
         )
-        # (f"\n printdensity = {density!r}")
 
     if face_kwargs is not False:  # create face_density dataset only if required
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_map, "face", sample_dims)
@@ -369,8 +364,6 @@ def plot_ridge(
         zeros = xr.full_like(face_density.sel(kwarg="x"), 0)
         zeros = zeros.assign_coords(kwarg=["y_bottom"])
         face_density = xr.concat([face_density, zeros], dim="kwarg")
-
-        # print(f"\n face_density = {face_density!r}")
 
     # computing x_range
     if edge_kwargs is not False or face_kwargs is not False:
@@ -469,7 +462,6 @@ def plot_ridge(
             **ticklabel_kwargs,
         )
 
-    # plot edge(ridge)
     default_color = plot_bknd.get_default_aes("color", 1, {})[0]
     if edge_kwargs is not False:
         if "color" not in edge_aes:
@@ -483,13 +475,11 @@ def plot_ridge(
             **edge_kwargs,
         )
 
-    # plot face
     if face_kwargs is not False:
         if "color" not in face_aes:
             face_kwargs.setdefault("color", default_color)
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
-        # print("\n about to print `face`")
         plot_collection.map(
             fill_between_y,
             "face",
@@ -507,7 +497,5 @@ def plot_ridge(
         plot_collection.map(
             remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )
-
-    # print(f"\n pc viz = {plot_collection.viz!r}")
 
     return plot_collection

@@ -19,5 +19,6 @@ A complementary introduction and guide to ``plot_...`` functions is available at
 
    plot_dist
    plot_forest
+   plot_ridge
    plot_trace
    plot_trace_dist

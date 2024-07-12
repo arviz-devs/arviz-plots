@@ -114,7 +114,7 @@ def _process_da_x_y(da, x, y):
         x = da
     elif y is None:
         y = da
-    return x, y
+    return np.broadcast_arrays(x, y)
 
 
 def _ensure_scalar(*args):
@@ -132,7 +132,7 @@ def point_estimate_text(
             "Found non-scalar point estimate. Check aes mapping and sample_dims. "
             f"The dimensions still left to reduce/facet are {point.dims}."
         )
-    text = f"{point.item():.3g} {point_estimate}"
+    text = f"{point:.3g} {point_estimate}"
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.text(
         x,
