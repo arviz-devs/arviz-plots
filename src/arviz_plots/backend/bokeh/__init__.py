@@ -1,4 +1,5 @@
 """Bokeh interface layer."""
+
 import warnings
 
 import numpy as np
@@ -228,6 +229,20 @@ def _float_or_str_size(size):
 
 
 # "geoms"
+def hist(
+    y, l_e, r_e, target, *, bottom=0, color=unset, facecolor=unset, edgecolor=unset, **artist_kws
+):
+    """Interface to Bokeh for a histogram bar plot."""
+    artist_kws.setdefault("level", "glyph")
+    if color is not unset:
+        if facecolor is unset:
+            facecolor = color
+        if edgecolor is unset:
+            edgecolor = color
+    kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor}
+    return target.quad(top=y, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws))
+
+
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to bokeh for a line plot."""
     kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
