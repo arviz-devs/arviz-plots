@@ -12,7 +12,12 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import labelled_title, scatter_xy
+from arviz_plots.visuals import (  # trace_rug,; line_x,; line_fixed_x,
+    labelled_title,
+    labelled_x,
+    labelled_y,
+    scatter_xy,
+)
 
 
 # function signature
@@ -97,18 +102,23 @@ def plot_ess(
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "local", "quantile", "evolution", matching the `kind` argument.
+        * One of "local" or "quantile", matching the `kind` argument.
             * "local" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-            * "quantile" -> passed to :func:`~arviz_plots.visuals.line_xy`
-            * "evolution" -> passed to :func:`~arviz_plots.visuals.line_xy`
+            * "quantile" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * divergence -> passed to :func:`~.visuals.trace_rug`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * label -> passed to :func:`~arviz_plots.visuals.labelled_x` and
+          :func:`~arviz_plots.visuals.labelled_y`
+        * mean ->
+        * sd ->
 
     stats_kwargs : mapping, optional
         Valid keys are:
 
-        * ess -> passed to ess
+        * ess -> passed to ess, method = 'local' or 'quantile' based on `kind`
+        * mean -> passed to ess, method='mean'
+        * sd -> passed to ess, method='sd'
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -152,6 +162,11 @@ def plot_ess(
         if "model" in distribution:
             pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
             pc_kwargs["aes"].setdefault("color", ["model"])
+            # setting x aesthetic to np.linspace(-x_diff/3, x_diff/3, length of 'model' dim)
+            # x_diff = span of x axis (1) divided by number of points to be plotted (n_points)
+            x_diff = 1 / n_points
+            if "x" not in pc_kwargs:
+                pc_kwargs["x"] = np.linspace(-x_diff / 3, x_diff / 3, distribution.sizes["model"])
             pc_kwargs["aes"].setdefault("x", ["model"])
         plot_collection = PlotCollection.wrap(
             distribution,
@@ -165,6 +180,10 @@ def plot_ess(
     else:
         aes_map = aes_map.copy()
     aes_map.setdefault(kind, plot_collection.aes_set)
+    aes_map.setdefault("mean", plot_collection.aes_set)
+    aes_map.setdefault("mean", ["linestyle", "-"])
+    aes_map.setdefault("sd", plot_collection.aes_set)
+    aes_map.setdefault("sd", ["linestyle", "-"])
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -178,6 +197,7 @@ def plot_ess(
         if kind == "local":
             probs = np.linspace(0, 1, n_points, endpoint=False)
             xdata = probs
+            ylabel = "{} for small intervals"
 
             # step 3
             ess_y_dataset = xr.concat(
@@ -195,7 +215,7 @@ def plot_ess(
             )
             # print(f"\n ess_y_dataset = {ess_y_dataset}")
 
-            # broadcasting xdata to match ess_y_dataset's shape
+            # converting xdata into a xr dataarray
             xdata_da = xr.DataArray(xdata, dims="ess_dim")
             # print(f"\n xdata_da ={xdata_da}")
 
@@ -221,13 +241,95 @@ def plot_ess(
                 scatter_xy, "local", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
             )
 
-        # WIP: repeat previous pattern for all ess methods as kind='method'
+        # WIP: repeat previous pattern for ess method kind = 'quantile'
+        if kind == "quantile":
+            probs = np.linspace(1 / n_points, 1 - 1 / n_points, n_points)
+            xdata = probs
+            ylabel = "{} for quantiles"
+
+            # step 3
+            ess_y_dataset = xr.concat(
+                [
+                    distribution.azstats.ess(
+                        dims=ess_dims,
+                        method="quantile",
+                        relative=relative,
+                        prob=p,
+                        **stats_kwargs.get("ess", {}),
+                    )
+                    for p in probs
+                ],
+                dim="ess_dim",
+            )
+
+            # converting xdata into an xr datarray
+            xdata_da = xr.DataArray(xdata, dims="ess_dim")
+
+            # broadcasting xdata_da to match shape of each variable in ess_y_dataset and
+            # creating a new dataset from dict of broadcasted xdata
+            xdata_dataset = xr.Dataset(
+                {var_name: xdata_da.broadcast_like(da) for var_name, da in ess_y_dataset.items()}
+            )
+
+            # concatenating xdata_dataset and ess_y_dataset along plot_axis
+            ess_dataset = xr.concat([xdata_dataset, ess_y_dataset], dim="plot_axis").assign_coords(
+                plot_axis=["x", "y"]
+            )
+            print(f"\n ess_dataset = {ess_dataset!r}")
+
+            # step 4
+            # if "color" not in ess_aes:
+            #    ess_kwargs.setdefault("color", "gray")
+
+            # step 5
+            plot_collection.map(
+                scatter_xy, "quantile", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
+            )
 
         # all the ess methods supported in arviz stats:
         # valid_methods = {
         #        "bulk", "tail", "mean", "sd", "quantile", "local", "median", "mad",
         #        "z_scale", "folded", "identity"
         #    }
+
+    # plot rug
+
+    # WIP: plot mean and sd (to be done after plot_ridge PR merge for line_xy update)
+    a = """xyz.
+    if extra_methods is not False:
+        x_range = [0, 1]
+        x_range = xr.DataArray(x_range)
+
+        mean_kwargs = copy(plot_kwargs.get("mean", {}))
+        if mean_kwargs is not False:
+            mean_dims, _, mean_ignore = filter_aes(plot_collection, aes_map, "mean", sample_dims)
+            mean_ess = distribution.azstats.ess(
+                dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
+            )
+            print(f"\nmean_ess = {mean_ess!r}")
+
+            plot_collection.map(
+                line_x,
+                "mean",
+                data=mean_ess,
+                x=x_range,
+                ignore_aes=mean_ignore,
+                **mean_kwargs,
+            )
+
+        sd_kwargs = copy(plot_kwargs.get("sd", {}))
+        if sd_kwargs is not False:
+            sd_dims, _, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
+            sd_ess = distribution.azstats.ess(
+                dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
+            )
+            print(f"\nsd_ess = {sd_ess!r}")
+
+            plot_collection.map(
+                line_fixed_x, "sd", data=sd_ess, x=x_range, ignore_aes=sd_ignore, **sd_kwargs
+            )
+        """
+    print(a)
 
     # plot titles for each facetted subplot
     title_kwargs = copy(plot_kwargs.get("title", {}))
@@ -244,5 +346,42 @@ def plot_ess(
             labeller=labeller,
             **title_kwargs,
         )
+
+    # plot x and y axis labels
+    # Add varnames as x and y labels
+    _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "label", sample_dims)
+    label_kwargs = plot_kwargs.get("label", {}).copy()
+
+    if "color" not in labels_aes:
+        label_kwargs.setdefault("color", "black")
+
+    # label_kwargs.setdefault("size", textsize)
+
+    # formatting ylabel and setting xlabel
+    if relative is not False:
+        ylabel = ylabel.format("Relative ESS")
+    else:
+        ylabel = ylabel.format("ESS")
+    xlabel = "Quantile"
+
+    plot_collection.map(
+        labelled_x,
+        "xlabel",
+        ignore_aes=labels_ignore,
+        subset_info=True,
+        text=xlabel,
+        store_artist=False,
+        **label_kwargs,
+    )
+
+    plot_collection.map(
+        labelled_y,
+        "ylabel",
+        ignore_aes=labels_ignore,
+        subset_info=True,
+        text=ylabel,
+        store_artist=False,
+        **label_kwargs,
+    )
 
     return plot_collection
