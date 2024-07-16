@@ -60,7 +60,7 @@ def line(da, target, backend, xname=None, **kwargs):
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
-def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
+def trace_rug(da, target, backend, mask, xname=None, y=None, scale=1, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
     xname = xname.item() if hasattr(xname, "item") else xname
     if xname is False:
@@ -76,6 +76,8 @@ def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
             y = da.min().item()
     if len(xvalues.shape) != 1:
         raise ValueError(f"Expected unidimensional data but got {xvalues.sizes}")
+    xvalues = xvalues / scale
+    # print(f"\n trace_rug call. xvalues = {xvalues}\nmask = {mask}")
     return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
 
 

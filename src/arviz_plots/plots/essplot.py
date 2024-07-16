@@ -11,13 +11,8 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import (  # trace_rug,; line_x,; line_fixed_x,
-    labelled_title,
-    labelled_x,
-    labelled_y,
-    scatter_xy,
-)
+from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
+from arviz_plots.visuals import labelled_title, labelled_x, labelled_y, scatter_xy, trace_rug
 
 
 # function signature
@@ -32,8 +27,8 @@ def plot_ess(
     # plot specific arguments
     kind="local",
     relative=False,
-    # rug=False,
-    # rug_kind="diverging",
+    rug=False,
+    rug_kind="diverging",
     n_points=20,
     # extra_methods=False,
     # min_ess=400,
@@ -159,8 +154,12 @@ def plot_ess(
             ["__variable__"]
             + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
         )
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        if "chain" in distribution:
+            pc_kwargs["aes"].setdefault("overlay", ["chain"])  # so rug for each chain is overlaid
+            # doing this^ sets overlay: chain for each artist. But we only want overlay for the
+            # rug so .difference() has to be be applied to the aes_map defaults if not wanted
         if "model" in distribution:
-            pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
             pc_kwargs["aes"].setdefault("color", ["model"])
             # setting x aesthetic to np.linspace(-x_diff/3, x_diff/3, length of 'model' dim)
             # x_diff = span of x axis (1) divided by number of points to be plotted (n_points)
@@ -168,10 +167,17 @@ def plot_ess(
             if "x" not in pc_kwargs:
                 pc_kwargs["x"] = np.linspace(-x_diff / 3, x_diff / 3, distribution.sizes["model"])
             pc_kwargs["aes"].setdefault("x", ["model"])
+        aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]  # for divergence
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
             **pc_kwargs,
+        )
+    else:
+        aux_dim_list = list(
+            set(
+                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
+            )
         )
 
     # set plot collection dependent defaults (like aesthetics mappings for each artist)
@@ -179,11 +185,12 @@ def plot_ess(
         aes_map = {}
     else:
         aes_map = aes_map.copy()
-    aes_map.setdefault(kind, plot_collection.aes_set)
+    aes_map.setdefault(kind, plot_collection.aes_set.difference({"overlay"}))
     aes_map.setdefault("mean", plot_collection.aes_set)
     aes_map.setdefault("mean", ["linestyle", "-"])
     aes_map.setdefault("sd", plot_collection.aes_set)
     aes_map.setdefault("sd", ["linestyle", "-"])
+    aes_map.setdefault("divergence", {"overlay"})
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -230,6 +237,7 @@ def plot_ess(
             ess_dataset = xr.concat([xdata_dataset, ess_y_dataset], dim="plot_axis").assign_coords(
                 plot_axis=["x", "y"]
             )
+            print(f"\n distribution = {distribution!r}")
             print(f"\n ess_dataset = {ess_dataset!r}")
 
             # step 4
@@ -241,7 +249,6 @@ def plot_ess(
                 scatter_xy, "local", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
             )
 
-        # WIP: repeat previous pattern for ess method kind = 'quantile'
         if kind == "quantile":
             probs = np.linspace(1 / n_points, 1 - 1 / n_points, n_points)
             xdata = probs
@@ -286,13 +293,57 @@ def plot_ess(
                 scatter_xy, "quantile", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
             )
 
-        # all the ess methods supported in arviz stats:
-        # valid_methods = {
-        #        "bulk", "tail", "mean", "sd", "quantile", "local", "median", "mad",
-        #        "z_scale", "folded", "identity"
-        #    }
-
     # plot rug
+    # overlaying divergences for each chain
+    if rug:
+        sample_stats = get_group(dt, "sample_stats", allow_missing=True)
+        divergence_kwargs = copy(plot_kwargs.get("divergence", {}))
+        if (
+            sample_stats is not None
+            and "diverging" in sample_stats.data_vars
+            and np.any(sample_stats[rug_kind])  # 'diverging' by default
+            and divergence_kwargs is not False
+        ):
+            divergence_mask = dt.sample_stats[rug_kind]  # 'diverging' by default
+            print(f"\n divergence_mask = {divergence_mask!r}")
+            _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
+            if "color" not in div_aes:
+                divergence_kwargs.setdefault("color", "black")
+            if "marker" not in div_aes:
+                divergence_kwargs.setdefault("marker", "|")
+            # if "width" not in div_aes: # should this be hardcoded?
+            #    divergence_kwargs.setdefault("width", linewidth)
+            if "size" not in div_aes:
+                divergence_kwargs.setdefault("size", 30)
+            div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
+
+            # xname is used to pick subset of dataset in map() to be masked
+            xname = None  # xname logic from traceplot
+            default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
+            if (default_xname not in distribution.dims) or (
+                not np.issubdtype(distribution[default_xname].dtype, np.number)
+            ):
+                default_xname = None
+            xname = divergence_kwargs.get("xname", default_xname)
+            divergence_kwargs["xname"] = xname
+            print(f"\n div_reduce_dims = {div_reduce_dims!r}")
+            print(f"\n xname = {xname}")
+
+            draw_length = distribution.sizes["draw"]  # used to scale xvalues to between 0-1
+
+            # print(f"\n distribution = {distribution}")
+
+            plot_collection.map(
+                trace_rug,
+                "divergence",
+                data=distribution,
+                ignore_aes=div_ignore,
+                # xname=xname,
+                y=distribution.min(div_reduce_dims),
+                mask=divergence_mask,
+                scale=draw_length,
+                **divergence_kwargs,
+            )
 
     # WIP: plot mean and sd (to be done after plot_ridge PR merge for line_xy update)
     a = """xyz.
