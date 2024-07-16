@@ -20,6 +20,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_compare
    plot_dist
    plot_ess
+   plot_ess_evolution
    plot_forest
    plot_ridge
    plot_trace

@@ -15,6 +15,7 @@ Data plotting elements
    line_x
    scatter_xy
    scatter_x
+   scatter_xy
    ecdf_line
    hist
 

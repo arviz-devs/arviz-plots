@@ -8,7 +8,7 @@ from arviz_base import from_dict
 from datatree import DataTree
 from hypothesis import given
 
-from arviz_plots import plot_dist, plot_ess, plot_forest, plot_ridge
+from arviz_plots import plot_dist, plot_ess, plot_ess_evolution, plot_forest, plot_ridge
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -246,4 +246,51 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
             else:
                 assert all(key in child for child in pc.viz.children.values())
         else:
+            assert all(key in child for child in pc.viz.children.values())
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "ess_bulk": plot_kwargs_value,
+            "ess_bulk_line": plot_kwargs_value,
+            "ess_tail": plot_kwargs_value,
+            "ess_tail_line": plot_kwargs_value,
+            "xlabel": plot_kwargs_value_no_false,
+            "ylabel": plot_kwargs_value_no_false,
+            "mean": plot_kwargs_value,
+            "mean_text": plot_kwargs_value,
+            "sd": plot_kwargs_value,
+            "sd_text": plot_kwargs_value,
+            "min_ess": plot_kwargs_value,
+            "title": plot_kwargs_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    relative=st.booleans(),
+    min_ess=st.integers(min_value=10, max_value=150),
+    extra_methods=st.booleans(),
+    n_points=st.integers(min_value=2, max_value=12),
+)
+def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess, plot_kwargs):
+    pc = plot_ess_evolution(
+        datatree,
+        backend="none",
+        relative=relative,
+        n_points=n_points,
+        extra_methods=extra_methods,
+        min_ess=min_ess,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key in ["mean", "sd", "mean_text", "sd_text"]:
+            if extra_methods is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
+        elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())
