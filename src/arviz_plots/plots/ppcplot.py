@@ -13,7 +13,7 @@ from datatree import DataTree
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.distplot import plot_dist
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import labelled_title
+from arviz_plots.visuals import labelled_title, trace_rug
 
 
 # define function
@@ -23,16 +23,14 @@ def plot_ppc(
     filter_vars=None,
     group="posterior",
     observed=None,
+    observed_rug=False,
     coords=None,
     sample_dims=None,
     kind=None,
     facet_dims=None,
-    data_pairs=None,
     aggregate=False,
     num_pp_samples=None,
     random_seed=None,
-    # jitter=None,
-    animated=False,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -60,6 +58,8 @@ def plot_ppc(
     observed : boolean, optional
         Whether or not to plot the observed data. Defaults to True for ``group = posterior``
         and False for ``group = prior``.
+    observed_rug : boolean, default False
+        Whether or not to plot a rug plot of the observed data. Only valid if observed=True.
     coords : dict, optional
         Dictionary mapping dimensions to selected coordinates to be plotted.
         Dimensions without a mapping specified will include all coordinates for that dimension.
@@ -74,14 +74,6 @@ def plot_ppc(
         Dimensions to facet over (for which multiple plots will be generated).
         Defaults to empty list. A warning is raised if `pc_kwargs` is also used to define
         dims to facet over with the `cols` key and `pc_kwargs` takes precedence.
-    data_pairs : dict, optional
-        Dictionary containing relations between observed data and posterior/prior predictive data.
-        Dictionary structure:
-            * key = observed data var_name
-            * value = posterior/prior predictive var_name
-        For example, data_pairs = {'y' : 'y_hat'}.
-        If None, it will assume that the observed data and the posterior/prior predictive data
-        have the same variable name
     aggregate: bool, optional
         If True, predictive data will be aggregated over both sample_dims and reduce_dims.
         Defaults to False.
@@ -118,6 +110,7 @@ def plot_ppc(
           * "cumulative" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "scatter" -> passed to :func: `~arviz_plots.visuals.scatter_x`
 
+        * "observed_rug" -> passed to :func:`arviz_plots.visuals.trace_rug`
         * "title" -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * "remove_axis" -> not passed anywhere, can only be ``False`` to skip calling this function
 
@@ -233,10 +226,6 @@ def plot_ppc(
     if kind.lower() not in ("kde", "ecdf", "scatter"):
         raise TypeError("`kind` argument must be either `kde`, `ecdf`, or `scatter`")
 
-    # initializaing data_pairs as empty dict in case pp and observed data var names are same
-    if data_pairs is None:
-        data_pairs = {}
-
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
@@ -262,7 +251,7 @@ def plot_ppc(
         [pp_distribution.sizes[dim] for dim in sample_dims if dim in pp_distribution.dims]
     )
     if num_pp_samples is None:
-        if kind == "scatter" and not animated:
+        if kind == "scatter":
             num_pp_samples = min(5, total_pp_samples)
         else:
             num_pp_samples = total_pp_samples
@@ -461,6 +450,33 @@ def plot_ppc(
                 "density": value for key, value in stats_kwargs.items() if key == "observed"
             },  # stats_kwargs["density"] is set to "observed" stats_kwargs
         )
+
+        # ---------STEP 4 (observed rug plot)-----------
+        if observed_rug:
+            # plot observed density as a rug
+            rug_kwargs = copy(plot_kwargs.get("observed_rug", {}))
+
+            _, rug_aes, rug_ignore = filter_aes(
+                plot_collection, aes_map, "observed_rug", reduce_dims
+            )
+            if "color" not in rug_aes:
+                rug_kwargs.setdefault("color", "black")
+            if "marker" not in rug_aes:
+                rug_kwargs.setdefault("marker", "|")
+            if "size" not in rug_aes:
+                rug_kwargs.setdefault("size", 30)
+
+            print(f"\nobs_distribution = {obs_distribution}")
+
+            plot_collection.map(
+                trace_rug,
+                "observed_rug",
+                data=obs_distribution,
+                ignore_aes=rug_ignore,
+                xname=False,
+                y=0,
+                **rug_kwargs,
+            )
 
     # adding plot title/s
     title_kwargs = copy(plot_kwargs.get("title", {}))
