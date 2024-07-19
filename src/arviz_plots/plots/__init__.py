@@ -4,9 +4,9 @@ from .compareplot import plot_compare
 from .distplot import plot_dist
 from .forestplot import plot_forest
 from .ppcplot import plot_ppc
+from .ridgeplot import plot_ridge
 from .tracedistplot import plot_trace_dist
 from .traceplot import plot_trace
-from .ridgeplot import plot_ridge
 
 __all__ = [
     "plot_compare",

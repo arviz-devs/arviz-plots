@@ -8,7 +8,7 @@ from arviz_base import from_dict
 from datatree import DataTree
 from hypothesis import given
 
-from arviz_plots import plot_dist, plot_forest, plot_ridge
+from arviz_plots import plot_dist, plot_forest, plot_ppc, plot_ridge
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -20,13 +20,19 @@ def datatree(seed=31):
     tau = rng.normal(size=(3, 50, 2))
     theta = rng.normal(size=(3, 50, 2, 3))
     diverging = rng.choice([True, False], size=(3, 50), p=[0.1, 0.9])
+    obs = rng.normal(size=(2, 3))  # hierarchy, group dims respectively
+    prior_predictive = rng.normal(size=(1, 50, 2, 3))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(3, 50, 2, 3))  # all chains
 
     dt = from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"]},
+        dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"], "obs": ["hierarchy", "group"]},
     )
     dt["point_estimate"] = dt.posterior.mean(("chain", "draw"))
     # TODO: should become dt.azstats.eti() after fix in arviz-stats
@@ -191,4 +197,44 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             else:
                 assert all(key in child for child in pc.viz.children.values())
         elif key not in ("remove_axis", "ticklabels"):
+            assert all(key in child for child in pc.viz.children.values())
+
+
+# plot_ppc tests
+ppc_kind_value = st.sampled_from(("kde", "cumulative"))
+ppc_group = st.sampled_from(("prior", "posterior"))
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "kind": plot_kwargs_value,
+            "predictive": plot_kwargs_value,
+            "observed": plot_kwargs_value,
+            "aggregate": plot_kwargs_value,
+            "observed_rug": plot_kwargs_value,
+            "title": plot_kwargs_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    kind=ppc_kind_value,
+    group=ppc_group,
+)
+def test_plot_ppc(datatree, kind, group, plot_kwargs):
+    kind_kwargs = plot_kwargs.pop("kind", None)
+    if kind_kwargs is not None:
+        plot_kwargs[kind] = kind_kwargs
+    pc = plot_ppc(
+        datatree,
+        backend="none",
+        kind=kind,
+        group=group,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())
