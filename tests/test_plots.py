@@ -339,8 +339,8 @@ class TestPlots:
             assert "ecdf" in pc.viz["obs"]
         assert "overlay" in pc.aes["obs"].data_vars
 
-    # @pytest.mark.parametrize("group", ("prior", "posterior"))
-    # @pytest.mark.parametrize("kind", ("kde", "cumulative"))
+    @pytest.mark.parametrize("group", ("prior", "posterior"))
+    @pytest.mark.parametrize("kind", ("kde", "cumulative"))
     @pytest.mark.parametrize("facet_dims", (["group"], ["hierarchy"], None))
     def test_plot_ppc_4d(self, datatree_4d, facet_dims, kind, group, backend):
         pc = plot_ppc(
