@@ -935,7 +935,6 @@ class PlotCollection:
         *,
         data=None,
         loop_data=None,
-        extra_data=None,
         coords=None,
         ignore_aes=frozenset(),
         subset_info=False,
@@ -998,8 +997,6 @@ class PlotCollection:
             coords = {}
         if fun_label is None:
             fun_label = fun.__name__
-        if extra_data is None:
-            extra_data = {}
 
         data = self.data if data is None else data
         if isinstance(loop_data, str) and loop_data == "plots":
