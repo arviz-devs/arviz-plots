@@ -28,6 +28,7 @@ def plot_ppc(
     sample_dims=None,
     kind=None,
     facet_dims=None,
+    data_pairs=None,
     aggregate=False,
     num_pp_samples=None,
     random_seed=None,
@@ -74,6 +75,14 @@ def plot_ppc(
         Dimensions to facet over (for which multiple plots will be generated).
         Defaults to empty list. A warning is raised if `pc_kwargs` is also used to define
         dims to facet over with the `cols` key and `pc_kwargs` takes precedence.
+    data_pairs : dict, optional
+        Dictionary containing relations between observed data and posterior/prior predictive data.
+        Dictionary structure:
+            * key = observed data var_name
+            * value = posterior/prior predictive var_name
+        For example, data_pairs = {'y' : 'y_hat'}.
+        If None, it will assume that the observed data and the posterior/prior predictive data
+        have the same variable name
     aggregate: bool, optional
         If True, predictive data will be aggregated over both sample_dims and reduce_dims.
         Defaults to False.
@@ -223,8 +232,14 @@ def plot_ppc(
             raise TypeError(f'`data` argument must have the group "{group}_predictive" for ppcplot')
 
     # making sure kde type is one of these three
-    if kind.lower() not in ("kde", "ecdf", "scatter"):
-        raise TypeError("`kind` argument must be either `kde`, `ecdf`, or `scatter`")
+    if kind.lower() not in ("kde", "cumulative", "scatter"):
+        raise TypeError("`kind` argument must be either `kde`, `cumulative`, or `scatter`")
+    if kind == "cumulative":
+        kind = "ecdf"
+
+    # initializaing data_pairs as empty dict in case pp and observed data var names are same
+    if data_pairs is None:
+        data_pairs = {}
 
     if backend is None:
         if plot_collection is None:
@@ -236,7 +251,15 @@ def plot_ppc(
 
     # pp distribution group plotting logic
     pp_distribution = process_group_variables_coords(
-        dt, group=predictive_data_group, var_names=var_names, filter_vars=filter_vars, coords=coords
+        dt,
+        group=predictive_data_group,
+        var_names=(
+            None
+            if var_names is None
+            else [data_pairs.get(var_name, var_name) for var_name in var_names]
+        ),
+        filter_vars=filter_vars,
+        coords=coords,
     )
 
     # creating random number generator
@@ -295,7 +318,6 @@ def plot_ppc(
     reduce_dims = [
         dim for dim in pp_distribution.dims if dim not in set(facet_dims).union(set(sample_dims))
     ]
-    # print(f"\nreduce_dims={reduce_dims}")
 
     if aes_map is None:
         aes_map = {}
@@ -466,7 +488,7 @@ def plot_ppc(
             if "size" not in rug_aes:
                 rug_kwargs.setdefault("size", 30)
 
-            print(f"\nobs_distribution = {obs_distribution}")
+            # print(f"\nobs_distribution = {obs_distribution}")
 
             plot_collection.map(
                 trace_rug,
@@ -474,6 +496,7 @@ def plot_ppc(
                 data=obs_distribution,
                 ignore_aes=rug_ignore,
                 xname=False,
+                flatten=True,
                 y=0,
                 **rug_kwargs,
             )
@@ -493,15 +516,14 @@ def plot_ppc(
             **title_kwargs,
         )
 
-    # checking plot_collection wrapped dataset and viz/aes datatrees
-    # print("\nAfter .map() of density as kde artist")
-    # print(f"\nplot_collection.data = {plot_collection.data}")
-    # print(f"\nplot_collection.aes = {plot_collection.aes}")
-    # print(f"\nplot_collection.viz = {plot_collection.viz}")
-
     # print(f"\nsample_dims = {sample_dims}")
     # print(f"\nfacet_dims = {facet_dims}")
     # print(f"\nreduce_dims = {reduce_dims}")
-    # print("End of plot_ppc()")
+
+    # print(f"\n-----------------------------------------------------------------\n")
+    # print(f"\n datatree = {dt}")
+    # print(f"\n pc.viz = {plot_collection.viz!r}")
+    # print(f"\n pc.aes = {plot_collection.aes!r}")
+    # print(f"\n-----------------------------------------------------------------\n")
 
     return plot_collection
