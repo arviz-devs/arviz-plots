@@ -200,7 +200,17 @@ def _filter_kwargs(kwargs, artist, artist_kws):
 
 # "geoms"
 def hist(
-    y, l_e, r_e, target, *, bottom=None, color=unset, facecolor=unset, edgecolor=unset, **artist_kws
+    y,
+    l_e,
+    r_e,
+    target,
+    *,
+    bottom=None,
+    color=unset,
+    alpha=unset,
+    facecolor=unset,
+    edgecolor=unset,
+    **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""
     artist_kws.setdefault("zorder", 2)
@@ -210,7 +220,7 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor}
+    kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
     return target.bar(l_e, y, width=widths, **_filter_kwargs(kwargs, None, artist_kws))
 
 
