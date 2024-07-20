@@ -12,10 +12,10 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     ecdf_line,
+    hist,
     labelled_title,
     line_x,
     line_xy,
-    plot_hist,
     point_estimate_text,
     remove_axis,
     scatter_x,
@@ -99,7 +99,7 @@ def plot_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~WIP`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -181,6 +181,8 @@ def plot_dist(
         kind = rcParams["plot.density_kind"]
     if plot_kwargs is None:
         plot_kwargs = {}
+    if kind in ("hist", "ecdf"):
+        plot_kwargs.setdefault("remove_axis", False)
     if pc_kwargs is None:
         pc_kwargs = {}
     else:
@@ -254,13 +256,14 @@ def plot_dist(
             )
 
         elif kind == "hist":
+            stats_kwargs.setdefault("density", {"density": True})
+
             density = distribution.azstats.histogram(
-                dims=density_dims, density=True, **stats_kwargs.get("density", {})
+                dims=density_dims, **stats_kwargs.get("density", {})
             )
 
-            # call plot_collection.map() with new visual element
             plot_collection.map(
-                plot_hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
+                hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
             )
 
         else:
@@ -374,7 +377,7 @@ def plot_dist(
             labeller=labeller,
             **title_kwargs,
         )
-    if (kind in ("kde", "hist")) and (plot_kwargs.get("remove_axis", True) is not False):
+    if plot_kwargs.get("remove_axis", True) is not False:
         plot_collection.map(
             remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )

@@ -99,7 +99,9 @@ def create_plotting_grid(
 
 
 # "geoms"
-def hist(y, l_e, r_e, target, *, bottom=None, color=None, facecolor=None, edgecolor=None):
+def hist(
+    y, l_e, r_e, target, *, bottom=None, color=None, alpha=None, facecolor=None, edgecolor=None
+):
     """Interface for a hist plot.
 
     Add a hist plot to the given `target`.
@@ -118,6 +120,7 @@ def hist(y, l_e, r_e, target, *, bottom=None, color=None, facecolor=None, edgeco
         The y coordinate(s) of the bottom side(s) of the bars.
     color : any
         Color of the visual element (sets both facecolor and edgecolor simultaneously).
+    alpha : float
     facecolor : any
         Color for filling the visual element.
     edgecolor : any
