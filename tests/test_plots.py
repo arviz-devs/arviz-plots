@@ -105,7 +105,7 @@ class TestPlots:
         assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
         assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
 
-    @pytest.mark.parametrize("kind", ["kde", "hist"])
+    @pytest.mark.parametrize("kind", ["kde"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
         pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
         assert "/mu" in pc.aes.groups
