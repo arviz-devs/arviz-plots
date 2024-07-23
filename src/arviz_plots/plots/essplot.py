@@ -34,7 +34,7 @@ def plot_ess(
     rug=False,
     rug_kind="diverging",
     n_points=20,
-    extra_methods=True,  # default False
+    extra_methods=False,
     min_ess=400,
     plot_collection=None,
     backend=None,
