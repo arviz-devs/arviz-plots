@@ -12,27 +12,30 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
-from arviz_plots.visuals import labelled_title, labelled_x, labelled_y, scatter_xy, trace_rug
+from arviz_plots.visuals import (
+    labelled_title,
+    labelled_x,
+    labelled_y,
+    line_xy,
+    scatter_xy,
+    trace_rug,
+)
 
 
-# function signature
 def plot_ess(
-    # initial base arguments
     dt,
     var_names=None,
     filter_vars=None,
     group="posterior",
     coords=None,
     sample_dims=None,
-    # plot specific arguments
     kind="local",
     relative=False,
     rug=False,
     rug_kind="diverging",
     n_points=20,
-    # extra_methods=False,
-    # min_ess=400,
-    # more base arguments
+    extra_methods=True,  # default False
+    min_ess=400,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -68,9 +71,6 @@ def plot_ess(
           for estimating small-interval probability of a desired posterior.
         * The ``kind="quantile"`` argument generates the ESS' local efficiency
           for estimating quantiles of a desired posterior.
-        * The ``kind="evolution"`` argument generates the estimated ESS'
-          with incrised number of iterations of a desired posterior.
-        WIP: add the other kinds for each kind of ess computation in arviz stats
 
     relative : bool, default False
         Show relative ess in plot ``ress = ess / N``.
@@ -82,11 +82,10 @@ def plot_ess(
         Number of points for which to plot their quantile/local ess or number of subsets
         in the evolution plot.
     extra_methods : bool, default False
-        Plot mean and sd ESS as horizontal lines. Not taken into account if ``kind = 'evolution'``.
+        Plot mean and sd ESS as horizontal lines.
     min_ess : int, default 400
         Minimum number of ESS desired. If ``relative=True`` the line is plotted at
-        ``min_ess / n_samples`` for local and quantile kinds and as a curve following
-        the ``min_ess / n`` dependency in evolution kind.
+        ``min_ess / n_samples`` for local and quantile kinds
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
@@ -97,16 +96,18 @@ def plot_ess(
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "local" or "quantile", matching the `kind` argument.
-            * "local" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-            * "quantile" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * ess -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+            if `kind`='local',
+            else passed to :func:`~arviz_plots.visuals.scatter_xy`
+            if `kind` = 'quantile'
 
-        * divergence -> passed to :func:`~.visuals.trace_rug`
+        * rug -> passed to :func:`~.visuals.trace_rug`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
-        * label -> passed to :func:`~arviz_plots.visuals.labelled_x` and
-          :func:`~arviz_plots.visuals.labelled_y`
-        * mean ->
-        * sd ->
+        * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
+        * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
+        * mean -> passed to :func:`~arviz.plots.visuals.line_xy`
+        * sd -> passed to :func:`~arviz.plots.visuals.line_xy`
+        * min_ess -> passed to :func:`~arviz.plots.visuals.line_xy`
 
     stats_kwargs : mapping, optional
         Valid keys are:
@@ -156,18 +157,14 @@ def plot_ess(
         )
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if "chain" in distribution:
-            pc_kwargs["aes"].setdefault("overlay", ["chain"])  # so rug for each chain is overlaid
-            # doing this^ sets overlay: chain for each artist. But we only want overlay for the
-            # rug so .difference() has to be be applied to the aes_map defaults if not wanted
+            pc_kwargs["aes"].setdefault("overlay", ["chain"])
         if "model" in distribution:
             pc_kwargs["aes"].setdefault("color", ["model"])
-            # setting x aesthetic to np.linspace(-x_diff/3, x_diff/3, length of 'model' dim)
-            # x_diff = span of x axis (1) divided by number of points to be plotted (n_points)
-            x_diff = 1 / n_points
-            if "x" not in pc_kwargs:
-                pc_kwargs["x"] = np.linspace(-x_diff / 3, x_diff / 3, distribution.sizes["model"])
+            n_models = distribution.sizes["model"]
+            x_diff = min(1 / n_points / 3, 1 / n_points * n_models / 10)
+            pc_kwargs.setdefault("x", np.linspace(-x_diff, x_diff, n_models))
             pc_kwargs["aes"].setdefault("x", ["model"])
-        aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]  # for divergence
+        aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -186,181 +183,133 @@ def plot_ess(
     else:
         aes_map = aes_map.copy()
     aes_map.setdefault(kind, plot_collection.aes_set.difference({"overlay"}))
-    aes_map.setdefault("mean", plot_collection.aes_set)
-    aes_map.setdefault("mean", ["linestyle", "-"])
-    aes_map.setdefault("sd", plot_collection.aes_set)
-    aes_map.setdefault("sd", ["linestyle", "-"])
-    aes_map.setdefault("divergence", {"overlay"})
+    aes_map.setdefault("rug", {"overlay"})
     if labeller is None:
         labeller = BaseLabeller()
 
     # compute and add ess subplots
-    # step 1
-    ess_kwargs = copy(plot_kwargs.get(kind, {}))
+    ess_kwargs = copy(plot_kwargs.get("ess", {}))
 
     if ess_kwargs is not False:
-        # step 2
         ess_dims, _, ess_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
         if kind == "local":
             probs = np.linspace(0, 1, n_points, endpoint=False)
-            xdata = probs
             ylabel = "{} for small intervals"
-
-            # step 3
-            ess_y_dataset = xr.concat(
-                [
-                    distribution.azstats.ess(
-                        dims=ess_dims,
-                        method="local",
-                        relative=relative,
-                        prob=[p, (p + 1 / n_points)],
-                        **stats_kwargs.get("ess", {}),
-                    )
-                    for p in probs
-                ],
-                dim="ess_dim",
-            )
-            # print(f"\n ess_y_dataset = {ess_y_dataset}")
-
-            # converting xdata into a xr dataarray
-            xdata_da = xr.DataArray(xdata, dims="ess_dim")
-            # print(f"\n xdata_da ={xdata_da}")
-
-            # broadcasting xdata_da to match shape of each variable in ess_y_dataset and
-            # creating a new dataset from dict of broadcasted xdata
-            xdata_dataset = xr.Dataset(
-                {var_name: xdata_da.broadcast_like(da) for var_name, da in ess_y_dataset.items()}
-            )
-            # print(f"\n xdata_dataset = {xdata_dataset}")
-
-            # concatenating xdata_dataset and ess_y_dataset along plot_axis
-            ess_dataset = xr.concat([xdata_dataset, ess_y_dataset], dim="plot_axis").assign_coords(
-                plot_axis=["x", "y"]
-            )
-            print(f"\n distribution = {distribution!r}")
-            print(f"\n ess_dataset = {ess_dataset!r}")
-
-            # step 4
-            # if "color" not in ess_aes:
-            #    ess_kwargs.setdefault("color", "gray")
-
-            # step 5
-            plot_collection.map(
-                scatter_xy, "local", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
-            )
-
-        if kind == "quantile":
+        elif kind == "quantile":
             probs = np.linspace(1 / n_points, 1 - 1 / n_points, n_points)
-            xdata = probs
             ylabel = "{} for quantiles"
+        xdata = probs
 
-            # step 3
-            ess_y_dataset = xr.concat(
-                [
-                    distribution.azstats.ess(
-                        dims=ess_dims,
-                        method="quantile",
-                        relative=relative,
-                        prob=p,
-                        **stats_kwargs.get("ess", {}),
-                    )
-                    for p in probs
-                ],
-                dim="ess_dim",
-            )
+        ess_y_dataset = xr.concat(
+            [
+                distribution.azstats.ess(
+                    dims=ess_dims,
+                    method=kind,
+                    relative=relative,
+                    prob=[p, (p + 1 / n_points)] if kind == "local" else p,
+                    **stats_kwargs.get("ess", {}),
+                )
+                for p in probs
+            ],
+            dim="ess_dim",
+        )
 
-            # converting xdata into an xr datarray
-            xdata_da = xr.DataArray(xdata, dims="ess_dim")
+        xdata_da = xr.DataArray(xdata, dims="ess_dim")
+        # broadcasting xdata_da to match shape of each variable in ess_y_dataset and
+        # creating a new dataset from dict of broadcasted xdata
+        xdata_dataset = xr.Dataset(
+            {var_name: xdata_da.broadcast_like(da) for var_name, da in ess_y_dataset.items()}
+        )
+        # concatenating xdata_dataset and ess_y_dataset along plot_axis
+        ess_dataset = xr.concat([xdata_dataset, ess_y_dataset], dim="plot_axis").assign_coords(
+            plot_axis=["x", "y"]
+        )
 
-            # broadcasting xdata_da to match shape of each variable in ess_y_dataset and
-            # creating a new dataset from dict of broadcasted xdata
-            xdata_dataset = xr.Dataset(
-                {var_name: xdata_da.broadcast_like(da) for var_name, da in ess_y_dataset.items()}
-            )
-
-            # concatenating xdata_dataset and ess_y_dataset along plot_axis
-            ess_dataset = xr.concat([xdata_dataset, ess_y_dataset], dim="plot_axis").assign_coords(
-                plot_axis=["x", "y"]
-            )
-            print(f"\n ess_dataset = {ess_dataset!r}")
-
-            # step 4
-            # if "color" not in ess_aes:
-            #    ess_kwargs.setdefault("color", "gray")
-
-            # step 5
-            plot_collection.map(
-                scatter_xy, "quantile", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
-            )
+        plot_collection.map(
+            scatter_xy, "ess", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
+        )
 
     # plot rug
-    # overlaying divergences for each chain
+    # overlaying divergences(or other 'rug_kind') for each chain
     if rug:
         sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-        divergence_kwargs = copy(plot_kwargs.get("divergence", {}))
+        rug_kwargs = copy(plot_kwargs.get("rug", {}))
+        if rug_kwargs is False:
+            raise ValueError("plot_kwargs['rug'] can't be False, use rug=False to remove the rug")
         if (
             sample_stats is not None
-            and "diverging" in sample_stats.data_vars
+            and rug_kind in sample_stats.data_vars
             and np.any(sample_stats[rug_kind])  # 'diverging' by default
-            and divergence_kwargs is not False
+            and rug_kwargs is not False
         ):
-            divergence_mask = dt.sample_stats[rug_kind]  # 'diverging' by default
-            print(f"\n divergence_mask = {divergence_mask!r}")
-            _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
+            rug_mask = dt.sample_stats[rug_kind]  # 'diverging' by default
+            _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
             if "color" not in div_aes:
-                divergence_kwargs.setdefault("color", "black")
+                rug_kwargs.setdefault("color", "black")
             if "marker" not in div_aes:
-                divergence_kwargs.setdefault("marker", "|")
-            # if "width" not in div_aes: # should this be hardcoded?
-            #    divergence_kwargs.setdefault("width", linewidth)
+                rug_kwargs.setdefault("marker", "|")
+            # WIP: if using a default linewidth once defined in backend/agnostic defaults
+            # if "width" not in div_aes:
+            #    # get default linewidth for backends
+            #    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+            #    default_linewidth = plot_bknd.get_default_aes("linewidth", 1, {})
+            #    rug_kwargs.setdefault("width", default_linewidth)
             if "size" not in div_aes:
-                divergence_kwargs.setdefault("size", 30)
+                rug_kwargs.setdefault("size", 30)
             div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
             # xname is used to pick subset of dataset in map() to be masked
-            xname = None  # xname logic from traceplot
+            xname = None
             default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
             if (default_xname not in distribution.dims) or (
                 not np.issubdtype(distribution[default_xname].dtype, np.number)
             ):
                 default_xname = None
-            xname = divergence_kwargs.get("xname", default_xname)
-            divergence_kwargs["xname"] = xname
-            print(f"\n div_reduce_dims = {div_reduce_dims!r}")
-            print(f"\n xname = {xname}")
+            xname = rug_kwargs.get("xname", default_xname)
+            rug_kwargs["xname"] = xname
 
-            draw_length = distribution.sizes["draw"]  # used to scale xvalues to between 0-1
-
-            # print(f"\n distribution = {distribution}")
+            draw_length = (
+                distribution.sizes[sample_dims[0]]
+                if len(sample_dims) == 1
+                else distribution.sizes["draw"]
+            )  # used to scale xvalues to between 0-1
 
             plot_collection.map(
                 trace_rug,
-                "divergence",
+                "rug",
                 data=distribution,
                 ignore_aes=div_ignore,
                 # xname=xname,
                 y=distribution.min(div_reduce_dims),
-                mask=divergence_mask,
+                mask=rug_mask,
                 scale=draw_length,
-                **divergence_kwargs,
-            )
+                **rug_kwargs,
+            )  # note: after plot_ppc merge, the `trace_rug` function might change
 
-    # WIP: plot mean and sd (to be done after plot_ridge PR merge for line_xy update)
-    a = """xyz.
+    # defining x_range (used for mean, sd, minimum ess plotting)
+    x_range = [0, 1]
+    x_range = xr.DataArray(x_range)
+
+    # plot mean and sd
     if extra_methods is not False:
-        x_range = [0, 1]
-        x_range = xr.DataArray(x_range)
-
         mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
-            mean_dims, _, mean_ignore = filter_aes(plot_collection, aes_map, "mean", sample_dims)
+            mean_dims, mean_aes, mean_ignore = filter_aes(
+                plot_collection, aes_map, "mean", sample_dims
+            )
             mean_ess = distribution.azstats.ess(
                 dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
             )
-            print(f"\nmean_ess = {mean_ess!r}")
+            print(f"\n mean_ess = {mean_ess}")
+
+            if "linestyle" not in mean_aes:
+                if backend == "matplotlib":
+                    mean_kwargs.setdefault("linestyle", "--")
+                elif backend == "bokeh":
+                    mean_kwargs.setdefault("linestyle", "dashed")
 
             plot_collection.map(
-                line_x,
+                line_xy,
                 "mean",
                 data=mean_ess,
                 x=x_range,
@@ -370,17 +319,58 @@ def plot_ess(
 
         sd_kwargs = copy(plot_kwargs.get("sd", {}))
         if sd_kwargs is not False:
-            sd_dims, _, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
+            sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
             sd_ess = distribution.azstats.ess(
                 dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
             )
-            print(f"\nsd_ess = {sd_ess!r}")
+            print(f"\n sd_ess = {sd_ess}")
+
+            if "linestyle" not in sd_aes:
+                if backend == "matplotlib":
+                    sd_kwargs.setdefault("linestyle", "--")
+                elif backend == "bokeh":
+                    sd_kwargs.setdefault("linestyle", "dashed")
 
             plot_collection.map(
-                line_fixed_x, "sd", data=sd_ess, x=x_range, ignore_aes=sd_ignore, **sd_kwargs
+                line_xy, "sd", data=sd_ess, ignore_aes=sd_ignore, x=x_range, **sd_kwargs
             )
-        """
-    print(a)
+
+    # plot minimum ess
+    min_ess_kwargs = copy(plot_kwargs.get("min_ess", {}))
+
+    if min_ess_kwargs is not False:
+        min_ess_dims, min_ess_aes, min_ess_ignore = filter_aes(
+            plot_collection, aes_map, "min_ess", sample_dims
+        )
+
+        if relative:
+            min_ess = min_ess / n_points
+
+        # for each variable of distribution, put min_ess as the value, reducing all min_ess_dims
+        min_ess_data = {}
+        for var in distribution.data_vars:
+            reduced_data = distribution[var].mean(
+                dim=[dim for dim in distribution[var].dims if dim in min_ess_dims]
+            )
+            min_ess_data[var] = xr.full_like(reduced_data, min_ess)
+
+        min_ess_dataset = xr.Dataset(min_ess_data)
+        print(f"\n min_ess = {min_ess_dataset}")
+
+        if "linestyle" not in min_ess_aes:
+            if backend == "matplotlib":
+                min_ess_kwargs.setdefault("linestyle", "--")
+            elif backend == "bokeh":
+                min_ess_kwargs.setdefault("linestyle", "dashed")
+
+        plot_collection.map(
+            line_xy,
+            "min_ess",
+            data=min_ess_dataset,
+            ignore_aes=min_ess_ignore,
+            x=x_range,
+            **min_ess_kwargs,
+        )
 
     # plot titles for each facetted subplot
     title_kwargs = copy(plot_kwargs.get("title", {}))
@@ -400,39 +390,43 @@ def plot_ess(
 
     # plot x and y axis labels
     # Add varnames as x and y labels
-    _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "label", sample_dims)
-    label_kwargs = plot_kwargs.get("label", {}).copy()
+    _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
+    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+    if xlabel_kwargs is not False:
+        if "color" not in labels_aes:
+            xlabel_kwargs.setdefault("color", "black")
 
-    if "color" not in labels_aes:
-        label_kwargs.setdefault("color", "black")
+        # formatting ylabel and setting xlabel
+        xlabel_kwargs.setdefault("text", "Quantile")
 
-    # label_kwargs.setdefault("size", textsize)
+        plot_collection.map(
+            labelled_x,
+            "xlabel",
+            ignore_aes=labels_ignore,
+            subset_info=True,
+            store_artist=False,
+            **xlabel_kwargs,
+        )
 
-    # formatting ylabel and setting xlabel
-    if relative is not False:
-        ylabel = ylabel.format("Relative ESS")
-    else:
-        ylabel = ylabel.format("ESS")
-    xlabel = "Quantile"
+    _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
+    ylabel_kwargs = plot_kwargs.get("ylabel", {}).copy()
+    if ylabel_kwargs is not False:
+        if "color" not in labels_aes:
+            ylabel_kwargs.setdefault("color", "black")
 
-    plot_collection.map(
-        labelled_x,
-        "xlabel",
-        ignore_aes=labels_ignore,
-        subset_info=True,
-        text=xlabel,
-        store_artist=False,
-        **label_kwargs,
-    )
+        if relative is not False:
+            ylabel_text = ylabel.format("Relative ESS")
+        else:
+            ylabel_text = ylabel.format("ESS")
+        ylabel_kwargs.setdefault("text", ylabel_text)
 
-    plot_collection.map(
-        labelled_y,
-        "ylabel",
-        ignore_aes=labels_ignore,
-        subset_info=True,
-        text=ylabel,
-        store_artist=False,
-        **label_kwargs,
-    )
+        plot_collection.map(
+            labelled_y,
+            "ylabel",
+            ignore_aes=labels_ignore,
+            subset_info=True,
+            store_artist=False,
+            **ylabel_kwargs,
+        )
 
     return plot_collection
