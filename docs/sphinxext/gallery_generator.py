@@ -100,7 +100,7 @@ def main(app):
             else:
                 raise ValueError(f"No title found for {basename} example")
             example_title = head_lines[i]
-            example_description = "\n".join(head_lines[i:])
+            example_description = "\n".join(head_lines[i + 1 :])
 
             index_page.append(
                 grid_item_template.format(
