@@ -518,6 +518,8 @@ def plot_forest(
             pe_kwargs.setdefault("color", default_color)
         if "facecolor" not in pe_aes:
             pe_kwargs.setdefault("facecolor", "white")
+        if "width" not in pe_aes:
+            pe_kwargs.setdefault("width", 1)
         plot_collection.map(
             scatter_x,
             "point_estimate",

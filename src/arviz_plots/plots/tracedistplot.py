@@ -360,26 +360,26 @@ def plot_trace_dist(
     plot_collection.coords = None
     if xlabel_kwargs is not False:
         plot_collection.rename_artists(xlabel="xlabel_trace")
-    if div_kwargs is not False:
-        plot_collection.rename_artists(divergence="divergence_trace")
     # divergences
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
     if (
-        sample_stats is not None
+        div_kwargs is not False
+        and sample_stats is not None
         and "diverging" in sample_stats.data_vars
         and np.any(sample_stats.diverging)
     ):
+        # rename divergences artist from plot_trace to avoid clashing
+        plot_collection.rename_artists(divergence="divergence_trace")
         divergence_mask = dt.sample_stats.diverging
         _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
-        divergence_kwargs = plot_kwargs.get("divergence", {}).copy()
         if "color" not in div_aes:
-            divergence_kwargs.setdefault("color", "black")
+            div_kwargs.setdefault("color", "black")
         if "marker" not in div_aes:
-            divergence_kwargs.setdefault("marker", "|")
+            div_kwargs.setdefault("marker", "|")
         if "width" not in div_aes:
-            divergence_kwargs.setdefault("width", linewidth)
+            div_kwargs.setdefault("width", linewidth)
         if "size" not in div_aes:
-            divergence_kwargs.setdefault("size", 30)
+            div_kwargs.setdefault("size", 30)
 
         plot_collection.map(
             trace_rug,
@@ -390,51 +390,52 @@ def plot_trace_dist(
             y=0,
             coords={"column": "dist"},
             mask=divergence_mask,
-            **divergence_kwargs,
+            **div_kwargs,
         )
 
     ## aesthetics
     # Add varnames as x and y labels
     _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "label", sample_dims)
-    label_kwargs = plot_kwargs.get("label", {}).copy()
+    label_kwargs = copy(plot_kwargs.get("label", {}))
+    if label_kwargs is not False:
+        if "color" not in labels_aes:
+            label_kwargs.setdefault("color", "black")
 
-    if "color" not in labels_aes:
-        label_kwargs.setdefault("color", "black")
+        label_kwargs.setdefault("size", textsize)
 
-    label_kwargs.setdefault("size", textsize)
+        plot_collection.map(
+            labelled_x,
+            "xlabel_dist",
+            ignore_aes=labels_ignore,
+            coords={"column": "dist"},
+            subset_info=True,
+            labeller=labeller,
+            store_artist=False,
+            **label_kwargs,
+        )
 
-    plot_collection.map(
-        labelled_x,
-        "xlabel_dist",
-        ignore_aes=labels_ignore,
-        coords={"column": "dist"},
-        subset_info=True,
-        labeller=labeller,
-        store_artist=False,
-        **label_kwargs,
-    )
-
-    plot_collection.map(
-        labelled_y,
-        "ylabel_trace",
-        ignore_aes=labels_ignore,
-        coords={"column": "trace"},
-        subset_info=True,
-        labeller=labeller,
-        store_artist=False,
-        **label_kwargs,
-    )
+        plot_collection.map(
+            labelled_y,
+            "ylabel_trace",
+            ignore_aes=labels_ignore,
+            coords={"column": "trace"},
+            subset_info=True,
+            labeller=labeller,
+            store_artist=False,
+            **label_kwargs,
+        )
 
     # Adjust tick labels
-    ticklabels_kwargs = plot_kwargs.get("ticklabels", {}).copy()
-    ticklabels_kwargs.setdefault("size", textsize)
-    _, _, ticklabels_ignore = filter_aes(plot_collection, aes_map, "ticklabels", sample_dims)
-    plot_collection.map(
-        ticklabel_props,
-        ignore_aes=ticklabels_ignore,
-        axis="both",
-        store_artist=False,
-        **ticklabels_kwargs,
-    )
+    ticklabels_kwargs = copy(plot_kwargs.get("ticklabels", {}))
+    if ticklabels_kwargs is not False:
+        ticklabels_kwargs.setdefault("size", textsize)
+        _, _, ticklabels_ignore = filter_aes(plot_collection, aes_map, "ticklabels", sample_dims)
+        plot_collection.map(
+            ticklabel_props,
+            ignore_aes=ticklabels_ignore,
+            axis="both",
+            store_artist=False,
+            **ticklabels_kwargs,
+        )
 
     return plot_collection

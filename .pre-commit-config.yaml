@@ -16,6 +16,7 @@ repos:
   rev: 23.3.0
   hooks:
   - id: black
+    exclude: ^docs/source/gallery/
 
 - repo: https://github.com/pycqa/pydocstyle
   rev: 6.3.0
@@ -36,3 +37,4 @@ repos:
           "-rn", # Only display messages
           "-sn", # Don't display the score
         ]
+      exclude: ^docs/source/gallery/

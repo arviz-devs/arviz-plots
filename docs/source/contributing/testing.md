@@ -55,6 +55,7 @@ but backend specific tests can be skipped when running the test suite:
 ```console
 tox -e py311 -- --skip-bokeh
 tox -e py311 -- --skip-mpl
+tox -e py311 -- --skip-plotly
 ```
 
 :::{note} It is also possible to use both flags, in which case, only tests

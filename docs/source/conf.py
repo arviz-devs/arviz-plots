@@ -1,5 +1,6 @@
 # pylint: disable=redefined-builtin,invalid-name
 import os
+import sys
 from importlib.metadata import metadata
 from pathlib import Path
 
@@ -25,6 +26,8 @@ release = version
 
 # -- General configuration
 
+sys.path.insert(0, os.path.abspath("../sphinxext"))
+
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
@@ -37,6 +40,8 @@ extensions = [
     "sphinx_design",
     "jupyter_sphinx",
     "matplotlib.sphinxext.plot_directive",
+    "bokeh.sphinxext.bokeh_plot",
+    "gallery_generator",
 ]
 
 templates_path = ["_templates"]
@@ -47,6 +52,7 @@ exclude_patterns = [
     ".ipynb_checkpoints",
     "**/*.template.rst",
     "**/*.part.rst",
+    "**/*.part.md",
 ]
 suppress_warnings = ["mystnb.unknown_mime_type"]
 
@@ -112,7 +118,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
-    "bokeh": ("https://docs.bokeh.org/en/2.4.3", None),
+    "bokeh": ("https://docs.bokeh.org/en/latest", None),
 }
 
 # -- Options for HTML output

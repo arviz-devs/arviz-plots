@@ -40,12 +40,13 @@ documentation = "https://arviz-plots.readthedocs.io"
 funding = "https://opencollective.com/arviz"
 
 [project.optional-dependencies]
+matplotlib = ["matplotlib"]
+bokeh = ["bokeh"]
+plotly = ["plotly>5", "webcolors"]
 test = [
     "hypothesis",
     "pytest",
     "pytest-cov",
-    "matplotlib",
-    "bokeh",
     "h5netcdf",
 ]
 doc = [
@@ -58,8 +59,6 @@ doc = [
     "sphinx-design",
     "jupyter-sphinx",
     "h5netcdf",
-    "matplotlib",
-    "bokeh",
 ]
 
 

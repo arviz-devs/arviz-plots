@@ -16,3 +16,6 @@ python:
      path: .
      extra_requirements:
        - doc
+       - matplotlib
+       - bokeh
+       - plotly

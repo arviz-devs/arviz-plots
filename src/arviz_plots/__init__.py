@@ -15,6 +15,7 @@ from arviz_plots._version import __version__
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots import *
+from arviz_plots import style
 
 
 if not logging.root.handlers:
@@ -27,13 +28,13 @@ if not logging.root.handlers:
 
 # add ArviZ's styles to matplotlib's styles
 try:
-    from matplotlib.pyplot import style
+    from matplotlib.pyplot import style as mplstyle
     from matplotlib.colors import LinearSegmentedColormap
     import matplotlib as mpl
 
     _arviz_style_path = os.path.join(os.path.dirname(__file__), "styles")
-    style.core.USER_LIBRARY_PATHS.append(_arviz_style_path)
-    style.core.reload_library()
+    mplstyle.core.USER_LIBRARY_PATHS.append(_arviz_style_path)
+    mplstyle.core.reload_library()
 
     # adds perceptually uniform grey scale from colorcet
     _linear_grey_10_95_c0 = [
@@ -306,11 +307,20 @@ try:
         _mpl_cm("gray", _linear_grey_10_95_c0)
         _mpl_cm("gray_r", list(reversed(_linear_grey_10_95_c0)))
 
-    del LinearSegmentedColormap, mpl
+    del LinearSegmentedColormap, mpl, mplstyle
 
 except ImportError:
     pass
 
+# Add ArviZ styles to Plotly styles
+try:
+    import plotly.io as pio
+    from arviz_plots.backend.plotly.templates import arviz_clean_template
+
+    pio.templates["arviz-clean"] = arviz_clean_template
+
+except ImportError:
+    pass
 
 # clean namespace
 del os, logging
