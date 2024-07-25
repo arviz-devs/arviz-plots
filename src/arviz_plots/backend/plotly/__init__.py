@@ -9,6 +9,7 @@ import warnings
 
 import numpy as np
 import plotly.graph_objects as go
+import plotly.io as pio
 from plotly.subplots import make_subplots
 from webcolors import hex_to_rgb, name_to_rgb
 
@@ -56,6 +57,8 @@ def get_default_aes(aes_key, n, kwargs):
                 '#a96b59', '#e76300', '#b9ac70', '#717581', '#92dadd'
             ]
             # fmt: on
+            template_colors = pio.templates[pio.templates.default].layout.colorway
+            vals = vals if template_colors is None else template_colors
         elif aes_key in {"linestyle", "dash"}:
             vals = ["solid", "dash", "dot", "dashdot"]
         elif aes_key in {"marker", "style"}:
