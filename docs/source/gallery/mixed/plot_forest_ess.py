@@ -1,3 +1,17 @@
+"""
+(gallery_forest_ess)=
+# Forest plot with ESS
+
+Multiple panel visualization with a forest plot and ESS information
+
+---
+
+:::{seealso}
+API Documentation: {func}`~arviz_plots.plot_forest`
+
+Other gallery examples using `plot_forest`: {ref}`gallery_forest`, {ref}`gallery_forest_shade`
+:::
+"""
 from importlib import import_module
 
 import arviz_stats  # make azstats accessor available
@@ -5,7 +19,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")  # matplotlib only
+azp.style.use("arviz-clean")
 
 backend="none"  # change to preferred backend
 plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")

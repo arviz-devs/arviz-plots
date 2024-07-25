@@ -97,10 +97,8 @@ docs/_build/
 docs/build
 docs/source/api/**/generated
 docs/source/gallery/_images
-docs/source/gallery/*
-!docs/source/gallery/*.part.md
-!docs/source/gallery/index.md
-!docs/source/gallery/scripts
+docs/source/gallery/_scripts
+docs/source/gallery/*.md
 docs/jupyter_execute
 docs/source/api/backend/matplotlib.rst
 docs/source/api/backend/bokeh.rst

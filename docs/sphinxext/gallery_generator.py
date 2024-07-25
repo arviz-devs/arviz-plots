@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 """Generate images and full gallery pages from python scripts."""
 import os
 from pathlib import Path
@@ -7,77 +8,180 @@ from sphinx.util import logging
 
 logger = logging.getLogger(__name__)
 
+dir_title_map = {
+    "mixed": "Mixed plots",
+    "distribution": "Distribution visualization",
+    "distribution_comparison": "Distribution comparison",
+    "inference_diagnostics": "Inference diagnostics",
+}
+
+toctree_template = """
+## {title}
+
+:::{{toctree}}
+:hidden:
+:caption: {title}
+
+{files}
+:::
+"""
+
+grid_item_template = """
+::::{{grid-item-card}}
+:link: {basename}
+:link-type: doc
+:text-align: center
+:shadow: none
+:class-card: example-gallery
+
+:::{{div}} example-img-plot-overlay
+{description}
+:::
+
+:::{{image}} _images/{basename}.png
+:alt:
+
+:::
+
++++
+{title}
+::::
+"""
+
 
 def main(app):
-    """Generate images with matplotlib backend and put together the full gallery pages."""
+    """Generate thumbnail images with matplotlib backend and put together the full gallery pages."""
     working_dir = Path.cwd()
     os.chdir(app.builder.srcdir)
     gallery_dir = Path(app.builder.srcdir).resolve() / "gallery"
-    script_dir = gallery_dir / "scripts"
     images_dir = gallery_dir / "_images"
+    scripts_dir = gallery_dir / "_scripts"
+    site_url = "https://arviz-plots.readthedocs.io/en/latest/"
 
     if not images_dir.is_dir():
         os.makedirs(images_dir)
 
-    files = sorted(script_dir.glob("*.py"))
-    for filename in files:
-        basename = filename.stem
-        logger.info(f"Processing gallery example {basename}")
-        # first step: run scripts with matplotlib backend and save png files
-        with open(filename, "r", encoding="utf-8") as fp:
-            code_text = fp.read()
-        mpl_noshow_code = code_text.replace('backend="none"', 'backend="matplotlib"').replace(
-            "pc.show()", ""
-        )
-        exec(compile(mpl_noshow_code, basename, "exec"))  # pylint: disable=exec-used
-        fig = plt.gcf()
-        fig.canvas.draw()
-        fig.savefig(images_dir / f"{basename}.png", dpi=75)
-        plt.close("all")
+    if not scripts_dir.is_dir():
+        os.makedirs(scripts_dir)
 
-        # generate the md/rst files corresponding to the tabbed content
-        with open(gallery_dir / f"{basename}.part.md", "r", encoding="utf-8") as fm:
-            page_start = fm.read()
+    index_page = ["(example_gallery)=\n# Example gallery"]
 
-        backend_tabs = f"""
-        ::::::{{tab-set}}
-        :class: full-width
+    for folder, title in dir_title_map.items():
+        category_dir = gallery_dir / folder
+        files = [filename.stem for filename in sorted(category_dir.glob("*.py"))]
+        index_page.append(toctree_template.format(title=title, files="\n".join(files)))
+        index_page.append(":::::{grid} 1 2 3 3\n:gutter: 2 2 3 3\n")
+        for basename in files:
+            logger.info(f"Processing gallery example {basename}")
+            # first step: run scripts with matplotlib backend and save png files
+            with open(category_dir / f"{basename}.py", "r", encoding="utf-8") as fp:
+                text = fp.read()
+            _, doc_text, code_text = text.split('"""')
+            code_text = code_text.strip("\n")
 
-        :::::{{tab-item}} Matplotlib
-        ![Matplotlib version of {basename}](_images/{basename}.png)
-        :::::
+            backend_line_emphasis = ""
+            emph_lines = []
+            for i, line in enumerate(code_text.splitlines()):
+                if 'backend="none"' in line:
+                    emph_lines.append(str(i + 1))
 
-        :::::{{tab-item}} Bokeh
-        ```{{bokeh-plot}}
-        :source-position: none
+            if emph_lines:
+                backend_line_emphasis = f":emphasize-lines: {','.join(emph_lines)}"
 
-        from bokeh.plotting import show
+            with open(scripts_dir / f"{basename}.py", "w", encoding="utf-8") as fc:
+                fc.write(code_text)
 
-        {code_text.replace('backend="none"', 'backend="bokeh"').replace("pc.show()", "")}
+            head_text, foot_text = doc_text.split("---")
 
-        # for some reason the bokeh plot extension needs explicit use of show
-        show(pc.viz["chart"].item())
-        ```
-        :::::
+            head_lines = head_text.splitlines()
+            for i, line in enumerate(head_lines):
+                if line.startswith("# "):
+                    break
+            else:
+                raise ValueError(f"No title found for {basename} example")
+            example_title = head_lines[i]
+            example_description = "\n".join(head_lines[i:])
 
-        :::::{{tab-item}} Plotly
-        ```{{jupyter-execute}}
-        :hide-code:
+            index_page.append(
+                grid_item_template.format(
+                    basename=basename,
+                    title=example_title.strip("# "),
+                    description=example_description.strip(" \n"),
+                )
+            )
 
-        {code_text.replace('backend="none"', 'backend="plotly"')}
-        ```
-        :::::
-        ::::::
+            mpl_noshow_code = code_text.replace('backend="none"', 'backend="matplotlib"').replace(
+                "pc.show()", ""
+            )
+            exec(compile(mpl_noshow_code, basename, "exec"))  # pylint: disable=exec-used
+            fig = plt.gcf()
+            fig.canvas.draw()
+            fig.savefig(images_dir / f"{basename}.png", dpi=75)
+            plt.close("all")
 
-        ```{{literalinclude}} scripts/{basename}.py
-        ```
-        """
-        backend_tabs = "\n".join((line.strip(" ") for line in backend_tabs.splitlines()))
+            myst_text = f"""
+            {head_text}
 
-        with open(gallery_dir / f"{basename}.md", "w", encoding="utf-8") as fm:
-            fm.write(page_start)
-            fm.write("\n")
-            fm.write(backend_tabs)
+            ::::::{{tab-set}}
+            :class: full-width
+            :sync-group: backend
+
+            :::::{{tab-item}} Matplotlib
+            :sync: matplotlib
+
+            ![Matplotlib version of {basename}](_images/{basename}.png)
+
+            :::::
+
+            :::::{{tab-item}} Bokeh
+            :sync: bokeh
+
+            ```{{bokeh-plot}}
+            :source-position: none
+
+            from bokeh.plotting import show
+
+            {code_text.replace('backend="none"', 'backend="bokeh"').replace("pc.show()", "")}
+
+            # for some reason the bokeh plot extension needs explicit use of show
+            show(pc.viz["chart"].item())
+            ```
+
+            Link to this page with the [bokeh tab selected]({site_url}/gallery/{basename}.html?backend=bokeh#synchronised-tabs)
+            :::::
+
+            :::::{{tab-item}} Plotly
+            :sync: plotly
+
+            ```{{jupyter-execute}}
+            :hide-code:
+
+            {code_text.replace('backend="none"', 'backend="plotly"')}
+            ```
+
+            Link to this page with the [plotly tab selected]({site_url}/gallery/{basename}.html?backend=plotly#synchronised-tabs)
+            :::::
+            ::::::
+
+            ```{{literalinclude}} _scripts/{basename}.py
+            {backend_line_emphasis}
+            ```
+
+            {foot_text}
+
+            :::{{div}} example-plot-download
+            {{download}}`Download Python Source Code: {basename}.py<_scripts/{basename}.py>`
+            :::
+            """
+            myst_text = "\n".join((line.strip(" ") for line in myst_text.splitlines()))
+
+            with open(gallery_dir / f"{basename}.md", "w", encoding="utf-8") as fm:
+                fm.write(myst_text)
+
+        index_page.append("\n:::::\n")
+
+    with open(gallery_dir / "index.md", "w", encoding="utf-8") as fi:
+        fi.write("\n".join(index_page))
 
     os.chdir(working_dir)
 
