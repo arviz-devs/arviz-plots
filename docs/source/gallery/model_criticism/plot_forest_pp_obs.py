@@ -14,25 +14,31 @@ Other gallery examples using `plot_forest`: {ref}`gallery_forest`, {ref}`gallery
 """
 from importlib import import_module
 
-import arviz_stats  # make azstats accessor available
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
 azp.style.use("arviz-clean")
 
-centered = load_arviz_data("non_centered_eight")
+backend="none"  # change to preferred backend
+plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+color = plot_bknd.get_default_aes("color", 3, {})[-1]
+
+idata = load_arviz_data("non_centered_eight")
 pc = azp.plot_forest(
-    centered,
+    idata,
     group="posterior_predictive",
     combined=True,
-    backend="none"  # change to preferred backend
+    labels=["obs_dim_0"],
+    backend=backend,
 )
 pc.map(
     azp.visuals.scatter_x,
     "observations",
-    data=centered.observed_data.ds,
+    data=idata.observed_data.ds,
     coords={"column": "forest"},
-    color="black",
+    color=color,
 )
+target = pc.viz["plot"].sel(column="forest").item()
+plot_bknd.xlabel("Observations", target)
 pc.show()
