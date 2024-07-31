@@ -1,5 +1,7 @@
 """Style/templating helpers."""
 
+from arviz_base import rcParams
+
 
 def use(name):
     """Set an arviz style as the default style/template for all available backends.
@@ -39,25 +41,26 @@ def use(name):
 
 def available():
     """List available styles."""
+    styles = {}
+
     try:
         import matplotlib.pyplot as plt
 
-        print("Matplotlib styles:")
-        print(plt.style.available)
-        print()
+        styles["matplotlib"] = plt.style.available
     except ImportError:
         pass
 
     try:
         import plotly.io as pio
 
-        print("Plotly templates:")
-        print(list(pio.templates))
+        styles["plotly"] = list(pio.templates)
     except ImportError:
         pass
 
+    return styles
 
-def get(name, backend="matplotlib"):
+
+def get(name, backend=None):
     """Get the style/template with the given name.
 
     Parameters
@@ -65,27 +68,24 @@ def get(name, backend="matplotlib"):
     name : str
         Name of the style/template to get.
     backend : str
-        Name of the backend to use. Options are 'matplotlib' (default) and 'plotly'.
+        Name of the backend to use. Options are 'matplotlib' and 'plotly'.
+        Defaults to ``rcParams["plot.backend"]``.
     """
-    if backend not in ["matplotlib", "plotly"]:
+    if backend is None:
+        backend = rcParams["plot.backend"]
+    elif backend not in ["matplotlib", "plotly"]:
         raise ValueError(f"Default styles/templates are not supported for Backend {backend}")
 
     if backend == "matplotlib":
-        try:
-            import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
 
-            if name in plt.style.available:
-                return plt.style.library[name]
-        except ImportError:
-            pass
+        if name in plt.style.available:
+            return plt.style.library[name]
 
     elif backend == "plotly":
-        try:
-            import plotly.io as pio
+        import plotly.io as pio
 
-            if name in pio.templates:
-                return pio.templates[name]
-        except ImportError:
-            pass
+        if name in pio.templates:
+            return pio.templates[name]
 
     return ValueError(f"Style {name} not found.")
