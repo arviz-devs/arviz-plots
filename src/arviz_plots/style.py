@@ -73,7 +73,7 @@ def get(name, backend=None):
     """
     if backend is None:
         backend = rcParams["plot.backend"]
-    elif backend not in ["matplotlib", "plotly"]:
+    if backend not in ["matplotlib", "plotly"]:
         raise ValueError(f"Default styles/templates are not supported for Backend {backend}")
 
     if backend == "matplotlib":
@@ -88,4 +88,4 @@ def get(name, backend=None):
         if name in pio.templates:
             return pio.templates[name]
 
-    return ValueError(f"Style {name} not found.")
+    raise ValueError(f"Style {name} not found.")
