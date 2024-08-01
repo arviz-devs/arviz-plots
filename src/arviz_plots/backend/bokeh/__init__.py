@@ -243,7 +243,6 @@ def hist(
     **artist_kws,
 ):
     """Interface to Bokeh for a histogram bar plot."""
-    artist_kws.setdefault("level", "glyph")
     if color is not unset:
         if facecolor is unset:
             facecolor = color
