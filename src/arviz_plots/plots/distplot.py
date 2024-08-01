@@ -1,4 +1,5 @@
 """dist plot code."""
+
 import warnings
 from copy import copy
 
@@ -11,6 +12,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     ecdf_line,
+    hist,
     labelled_title,
     line_x,
     line_xy,
@@ -97,6 +99,7 @@ def plot_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -178,6 +181,8 @@ def plot_dist(
         kind = rcParams["plot.density_kind"]
     if plot_kwargs is None:
         plot_kwargs = {}
+    if kind in ("hist", "ecdf"):
+        plot_kwargs.setdefault("remove_axis", False)
     if pc_kwargs is None:
         pc_kwargs = {}
     else:
@@ -250,6 +255,17 @@ def plot_dist(
                 **density_kwargs,
             )
 
+        elif kind == "hist":
+            stats_kwargs.setdefault("density", {"density": True})
+
+            density = distribution.azstats.histogram(
+                dims=density_dims, **stats_kwargs.get("density", {})
+            )
+
+            plot_collection.map(
+                hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
+            )
+
         else:
             raise NotImplementedError("coming soon")
 
@@ -297,6 +313,7 @@ def plot_dist(
             point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
         else:
             raise NotImplementedError("coming soon")
+        print(f"\n point= {point}")
 
     if pe_kwargs is not False:
         if "color" not in pe_aes:
@@ -320,6 +337,14 @@ def plot_dist(
         elif kind == "ecdf":
             # ecdf max is always 1
             point_y = xr.full_like(point, 0.04)
+        elif kind == "hist":
+            point_density_diff = [
+                dim for dim in density.sel(plot_axis="histogram").dims if dim not in point.dims
+            ]
+            point_density_diff = ["hist_dim"] + point_density_diff
+            point_y = 0.04 * density.sel(plot_axis="histogram", drop=True).max(
+                dim=point_density_diff
+            )
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(
@@ -352,7 +377,7 @@ def plot_dist(
             labeller=labeller,
             **title_kwargs,
         )
-    if (kind == "kde") and (plot_kwargs.get("remove_axis", True) is not False):
+    if plot_kwargs.get("remove_axis", True) is not False:
         plot_collection.map(
             remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )

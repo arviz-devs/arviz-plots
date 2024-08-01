@@ -13,6 +13,21 @@ import xarray as xr
 from arviz_base.labels import BaseLabeller
 
 
+def hist(da, target, backend, **kwargs):
+    """Plot a histogram bins(as two arrays of left and right bin edges) vs bin_height('y').
+
+    The input argument `da` is split into l_e, r_e and y using the dimension ``plot_axis``.
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.hist(
+        da.sel(plot_axis="histogram"),
+        da.sel(plot_axis="left_edges"),
+        da.sel(plot_axis="right_edges"),
+        target,
+        **kwargs,
+    )
+
+
 def line_xy(da, target, backend, x=None, y=None, **kwargs):
     """Plot a line x vs y.
 
