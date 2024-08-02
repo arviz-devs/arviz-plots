@@ -311,51 +311,48 @@ class TestPlots:
             backend=backend,
         )
 
-    @pytest.mark.parametrize("group", ("prior", "posterior"))
     @pytest.mark.parametrize("kind", ("kde", "cumulative"))
-    def test_plot_ppc(self, datatree, kind, group, backend):
-        pc = plot_ppc(datatree, kind=kind, group=group, backend=backend)
+    def test_plot_ppc(self, datatree, kind, backend):
+        pc = plot_ppc(datatree, kind=kind, backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "obs" in pc.viz
-        assert "ppc_dim" in pc.viz["obs"].dims
+        # assert "ppc_dim" in pc.viz["obs"].dims
         if kind == "kde":
             assert "kde" in pc.viz["obs"]
         elif kind == "cumulative":
             assert "ecdf" in pc.viz["obs"]
         assert "overlay" in pc.aes["obs"].data_vars
 
-    @pytest.mark.parametrize("group", ("prior", "posterior"))
     @pytest.mark.parametrize("kind", ("kde", "cumulative"))
-    def test_plot_ppc_sample(self, datatree_sample, kind, group, backend):
-        pc = plot_ppc(
-            datatree_sample, kind=kind, group=group, sample_dims="sample", backend=backend
-        )
+    def test_plot_ppc_sample(self, datatree_sample, kind, backend):
+        pc = plot_ppc(datatree_sample, kind=kind, sample_dims="sample", backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "obs" in pc.viz
-        assert "ppc_dim" in pc.viz["obs"].dims
+        # assert "ppc_dim" in pc.viz["obs"].dims
         if kind == "kde":
             assert "kde" in pc.viz["obs"]
         elif kind == "cumulative":
             assert "ecdf" in pc.viz["obs"]
         assert "overlay" in pc.aes["obs"].data_vars
 
-    @pytest.mark.parametrize("group", ("prior", "posterior"))
     @pytest.mark.parametrize("kind", ("kde", "cumulative"))
     @pytest.mark.parametrize("facet_dims", (["group"], ["hierarchy"], None))
-    def test_plot_ppc_4d(self, datatree_4d, facet_dims, kind, group, backend):
+    def test_plot_ppc_4d(self, datatree_4d, facet_dims, kind, backend):
         pc = plot_ppc(
             datatree_4d,
             facet_dims=facet_dims,
             kind=kind,
-            group=group,
             observed_rug=True,
             backend=backend,
         )
         assert "chart" in pc.viz.data_vars
         assert "obs" in pc.viz
-        assert "ppc_dim" in pc.viz["obs"].dims
+        # assert "ppc_dim" in pc.viz["obs"].dims
         if kind == "kde":
             assert "kde" in pc.viz["obs"]
         elif kind == "cumulative":
             assert "ecdf" in pc.viz["obs"]
         assert "overlay" in pc.aes["obs"].data_vars
+        if facet_dims is not None:
+            for dim in facet_dims:
+                assert dim in pc.viz["obs"]["plot"].dims

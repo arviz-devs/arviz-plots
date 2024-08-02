@@ -32,7 +32,11 @@ def datatree(seed=31):
             "prior_predictive": {"obs": prior_predictive},
             "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"], "obs": ["hierarchy", "group"]},
+        dims={
+            "theta": ["chain", "draw", "hierarchy", "group"],
+            "tau": ["chain", "draw", "hierarchy"],
+            "obs": ["chain", "draw", "hierarchy", "group"],
+        },
     )
     dt["point_estimate"] = dt.posterior.mean(("chain", "draw"))
     # TODO: should become dt.azstats.eti() after fix in arviz-stats
@@ -200,9 +204,26 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             assert all(key in child for child in pc.viz.children.values())
 
 
-# plot_ppc tests
 ppc_kind_value = st.sampled_from(("kde", "cumulative"))
 ppc_group = st.sampled_from(("prior", "posterior"))
+ppc_observed = st.booleans()
+ppc_aggregate = st.booleans()
+ppc_sample_dims = st.sampled_from((["chain"], ["chain", "draw"]))
+ppc_facet_dims = st.sampled_from((["group"], ["hierarchy"], None))
+
+
+@st.composite  # composite func to determine num_pp_samples based on draws of group, sample_dims
+def draw_num_pp_samples(draw, group, sample_dims):
+    group = draw(group)
+    sample_dims = draw(sample_dims)
+    # print(f"\n sample_dims = {sample_dims}\ngroup = {group}")
+    chain_dim_length = 1 if group == "prior" else 3
+    draw_dim_length = 50 if sample_dims == ["chain", "draw"] else 1
+    total_num_samples = np.prod([chain_dim_length, draw_dim_length])
+
+    num_pp_samples = draw(st.integers(min_value=1, max_value=total_num_samples))
+    # print(f"\nnum_pp_samples = {num_pp_samples}")
+    return num_pp_samples
 
 
 @given(
@@ -220,16 +241,42 @@ ppc_group = st.sampled_from(("prior", "posterior"))
     ),
     kind=ppc_kind_value,
     group=ppc_group,
+    observed=ppc_observed,
+    observed_rug=ppc_observed,
+    aggregate=ppc_aggregate,
+    facet_dims=ppc_facet_dims,
+    sample_dims=ppc_sample_dims,
+    num_pp_samples=draw_num_pp_samples(ppc_group, ppc_sample_dims),
 )
-def test_plot_ppc(datatree, kind, group, plot_kwargs):
+def test_plot_ppc(
+    kind,
+    group,
+    observed,
+    observed_rug,
+    aggregate,
+    facet_dims,
+    sample_dims,
+    num_pp_samples,
+    plot_kwargs,
+):
     kind_kwargs = plot_kwargs.pop("kind", None)
     if kind_kwargs is not None:
         plot_kwargs[kind] = kind_kwargs
+    if plot_kwargs.get("observed", False) is False:
+        plot_kwargs["observed"] = True  # cannot be False
+    if plot_kwargs.get("aggregate", False) is False:
+        plot_kwargs["aggregate"] = True  # cannot be False
     pc = plot_ppc(
         datatree,
         backend="none",
         kind=kind,
         group=group,
+        observed=observed,
+        observed_rug=observed_rug,
+        aggregate=aggregate,
+        facet_dims=facet_dims,
+        sample_dims=sample_dims,
+        num_pp_samples=num_pp_samples,
         plot_kwargs=plot_kwargs,
     )
     assert all("plot" in child for child in pc.viz.children.values())
