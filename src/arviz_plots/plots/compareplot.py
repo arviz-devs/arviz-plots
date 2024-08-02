@@ -1,15 +1,7 @@
 """Compare plot code."""
-from arviz_base import rcParams
+from importlib import import_module
 
-from arviz_plots.visuals import (
-    labelled_title,
-    labelled_x,
-    labelled_y,
-    line_x,
-    line_y,
-    scatter_x,
-    yticks,
-)
+from arviz_base import rcParams
 
 
 def plot_compare(cmp_df, color="black", target=None, backend=None):
@@ -60,24 +52,18 @@ def plot_compare(cmp_df, color="black", target=None, backend=None):
     if backend is None:
         backend = rcParams["plot.backend"]
 
-    # Maybe all this should be in a separate function
-    # that also checks what backends are supported and if they can be imported
-    if backend == "bokeh":
-        from bokeh.plotting import figure
+    if backend not in ["bokeh", "matplotlib", "plotly"]:
+        raise ValueError(
+            f"Invalid backend: '{backend}'. Backend must be 'bokeh', 'matplotlib' or 'plotly'"
+        )
 
-        target = figure()
-    elif backend == "matplotlib":
-        import matplotlib.pyplot as plt
-
-        _, target = plt.subplots()
-    elif backend == "plotly":
-        import plotly.graph_objects as go
-
-        target = go.Figure()
+    p_be = import_module(f"arviz_plots.backend.{backend}")
+    _, target = p_be.create_plotting_grid(1)
+    linestyle = p_be.get_default_aes("linestyle", 2, {})[-1]
 
     # Compute positions of yticks
-    yticks_pos = range(len(cmp_df), 0, -1)
-    yticks_pos_double = [tuple(yticks_pos)] * len(cmp_df)
+    yticks_pos = list(range(len(cmp_df), 0, -1))
+    yticks_pos_double = [tuple(yticks_pos)] * 2
 
     # Get scale and adjust it if necessary
     scale = cmp_df["scale"].iloc[0]
@@ -88,24 +74,27 @@ def plot_compare(cmp_df, color="black", target=None, backend=None):
     se_tuple = tuple(cmp_df["elpd_loo"] - cmp_df["se"]), tuple(cmp_df["elpd_loo"] + cmp_df["se"])
 
     # Plot ELPD point statimes
-    scatter_x(cmp_df["elpd_loo"], target, backend, y=yticks_pos, color=color)
+    p_be.scatter(cmp_df["elpd_loo"], yticks_pos, target, color=color)
     # Plot ELPD standard error bars
-    line_x(se_tuple, target, backend, y=yticks_pos_double, color=color)
+    p_be.line(se_tuple, yticks_pos_double, target, color=color)
 
     # Add reference line for the best model
-    line_y(
-        yticks_pos, target, "matplotlib", cmp_df["elpd_loo"].iloc[0], color=color, linestyle="--"
+    # make me nicer
+    p_be.line(
+        (cmp_df["elpd_loo"].iloc[0], cmp_df["elpd_loo"].iloc[0]),
+        (yticks_pos[0], yticks_pos[-1]),
+        target,
+        color=color,
+        linestyle=linestyle,
     )
 
     # Add title and labels
-    labelled_title(
-        None,
+    p_be.title(
+        f"Model comparison\n{'higher' if scale == 'log' else 'lower'} is better",
         target,
-        backend,
-        text=f"Model comparison\n{'higher' if scale == 'log' else 'lower'} is better",
     )
-    labelled_y(None, target, backend, text="ranked models")
-    labelled_x(None, target, backend, text=f"ELPD ({scale})")
-    yticks(None, target, backend, yticks_pos, cmp_df.index)
+    p_be.ylabel("ranked models", target)
+    p_be.xlabel(f"ELPD ({scale})", target)
+    p_be.yticks(yticks_pos, cmp_df.index, target)
 
     return target
