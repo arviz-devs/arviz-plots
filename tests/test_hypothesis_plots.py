@@ -6,7 +6,7 @@ import pytest
 from arviz_base import from_dict
 from hypothesis import given
 
-from arviz_plots import plot_dist, plot_forest, plot_ridge
+from arviz_plots import plot_dist, plot_forest, plot_ppc, plot_ridge
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -18,13 +18,23 @@ def datatree(seed=31):
     tau = rng.normal(size=(3, 50, 2))
     theta = rng.normal(size=(3, 50, 2, 3))
     diverging = rng.choice([True, False], size=(3, 50), p=[0.1, 0.9])
+    obs = rng.normal(size=(2, 3))  # hierarchy, group dims respectively
+    prior_predictive = rng.normal(size=(1, 50, 2, 3))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(3, 50, 2, 3))  # all chains
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"]},
+        dims={
+            "theta": ["chain", "draw", "hierarchy", "group"],
+            "tau": ["chain", "draw", "hierarchy"],
+            "obs": ["chain", "draw", "hierarchy", "group"],
+        },
     )
 
 
@@ -171,4 +181,87 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             else:
                 assert all(key in child for child in pc.viz.children.values())
         elif key not in ("remove_axis", "ticklabels"):
+            assert all(key in child for child in pc.viz.children.values())
+
+
+ppc_kind_value = st.sampled_from(("kde", "cumulative"))
+ppc_group = st.sampled_from(("prior", "posterior"))
+ppc_observed = st.booleans()
+ppc_aggregate = st.booleans()
+ppc_sample_dims = st.sampled_from((["chain"], ["chain", "draw"]))
+ppc_facet_dims = st.sampled_from((["group"], ["hierarchy"], None))
+
+
+@st.composite  # composite func to determine num_pp_samples based on draws of group, sample_dims
+def draw_num_pp_samples(draw, group, sample_dims):
+    group = draw(group)
+    sample_dims = draw(sample_dims)
+    # print(f"\n sample_dims = {sample_dims}\ngroup = {group}")
+    chain_dim_length = 1 if group == "prior" else 3
+    draw_dim_length = 50 if sample_dims == ["chain", "draw"] else 1
+    total_num_samples = np.prod([chain_dim_length, draw_dim_length])
+
+    num_pp_samples = draw(st.integers(min_value=1, max_value=total_num_samples))
+    # print(f"\nnum_pp_samples = {num_pp_samples}")
+    return num_pp_samples
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "kind": plot_kwargs_value,
+            "predictive": plot_kwargs_value,
+            "observed": plot_kwargs_value,
+            "aggregate": plot_kwargs_value,
+            "observed_rug": plot_kwargs_value,
+            "title": plot_kwargs_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    kind=ppc_kind_value,
+    group=ppc_group,
+    observed=ppc_observed,
+    observed_rug=ppc_observed,
+    aggregate=ppc_aggregate,
+    facet_dims=ppc_facet_dims,
+    sample_dims=ppc_sample_dims,
+    num_pp_samples=draw_num_pp_samples(ppc_group, ppc_sample_dims),
+)
+def test_plot_ppc(
+    kind,
+    group,
+    observed,
+    observed_rug,
+    aggregate,
+    facet_dims,
+    sample_dims,
+    num_pp_samples,
+    plot_kwargs,
+):
+    kind_kwargs = plot_kwargs.pop("kind", None)
+    if kind_kwargs is not None:
+        plot_kwargs[kind] = kind_kwargs
+    if plot_kwargs.get("observed", False) is False:
+        plot_kwargs["observed"] = True  # cannot be False
+    if plot_kwargs.get("aggregate", False) is False:
+        plot_kwargs["aggregate"] = True  # cannot be False
+    pc = plot_ppc(
+        datatree,
+        backend="none",
+        kind=kind,
+        group=group,
+        observed=observed,
+        observed_rug=observed_rug,
+        aggregate=aggregate,
+        facet_dims=facet_dims,
+        sample_dims=sample_dims,
+        num_pp_samples=num_pp_samples,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())
