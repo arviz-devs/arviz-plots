@@ -54,7 +54,7 @@ def get_default_aes(aes_key, n, kwargs):
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
-def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
+def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):  # pylint: disable=unused-argument
     """Scale figure properties according to figsize, rows and cols.
 
     Parameters
@@ -77,6 +77,8 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     linewidth : float
         linewidth
     """
+    if figsize_units is None:
+        figsize_units = "inches"
     if figsize is None:
         width = rcParams["figure.figsize"][0]
         height = (rows + 1) ** 1.1
@@ -84,21 +86,13 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     else:
         width, height = figsize
     dpi = rcParams["figure.dpi"]
-    cols = cols * dpi
-    rows = rows * dpi
     if figsize_units == "inches":
         width *= dpi
         height *= dpi
     elif figsize_units != "dots":
         raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
 
-    val = (width * height) ** 0.5
-    val2 = (cols * rows) ** 0.5
-    scale_factor = val / (4 * val2)
-    labelsize = rcParams["font.size"] * scale_factor
-    linewidth = rcParams["lines.linewidth"] * scale_factor
-
-    return (width, height), labelsize, linewidth
+    return (width, height)
 
 
 # object creation and i/o

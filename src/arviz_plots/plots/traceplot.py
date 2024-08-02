@@ -124,7 +124,7 @@ def plot_trace(
         n_rows = leaf_dataset(plot_collection.viz, "row").max().to_array().max().item()
         n_cols = leaf_dataset(plot_collection.viz, "col").max().to_array().max().item()
 
-    figsize, textsize, linewidth = plot_bknd.scale_fig_size(
+    figsize = plot_bknd.scale_fig_size(
         figsize,
         rows=n_rows,
         cols=n_cols,
@@ -176,8 +176,6 @@ def plot_trace(
         xname = trace_kwargs.get("xname", default_xname)
         trace_kwargs["xname"] = xname
         _, trace_aes, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
-        if "width" not in trace_aes:
-            trace_kwargs.setdefault("width", linewidth)
         plot_collection.map(
             line,
             "trace",
@@ -201,8 +199,6 @@ def plot_trace(
             divergence_kwargs.setdefault("color", "black")
         if "marker" not in div_aes:
             divergence_kwargs.setdefault("marker", "|")
-        if "width" not in div_aes:
-            divergence_kwargs.setdefault("width", linewidth)
         if "size" not in div_aes:
             divergence_kwargs.setdefault("size", 30)
         div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
@@ -240,8 +236,6 @@ def plot_trace(
 
         if "color" not in xlabel_aes:
             xlabel_kwargs.setdefault("color", "black")
-        if "size" not in xlabel_aes:
-            xlabel_kwargs.setdefault("size", textsize)
 
         plot_collection.map(
             labelled_x,
@@ -255,7 +249,6 @@ def plot_trace(
     ticklabels_kwargs = copy(plot_kwargs.get("ticklabels", {}))
     if ticklabels_kwargs is not False:
         _, _, ticklabels_ignore = filter_aes(plot_collection, aes_map, "ticklabels", sample_dims)
-        ticklabels_kwargs.setdefault("size", textsize)
         plot_collection.map(
             ticklabel_props,
             ignore_aes=ticklabels_ignore,

@@ -39,7 +39,7 @@ def get_default_aes(aes_key, n, kwargs):
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
-def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
+def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):  # pylint: disable=unused-argument
     """Scale figure properties according to figsize, rows and cols.
 
     Parameters
@@ -62,14 +62,14 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     linewidth : float
         linewidth
     """
+    if figsize_units is None:
+        figsize_units = "dots"
     if figsize is None:
         width = 800
-        height = (100 * rows + 100) ** 1.1
+        height = 100 * (rows + 1) ** 1.1
         figsize_units = "dots"
     else:
         width, height = figsize
-    cols = cols * 100
-    rows = rows * 100
     if figsize_units == "inches":
         warnings.warn(
             f"Assuming dpi=100. Use figsize_units='dots' and figsize={figsize} "
@@ -80,15 +80,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     elif figsize_units != "dots":
         raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
 
-    val = (width * height) ** 0.5
-    val2 = (cols * rows) ** 0.5
-    scale_factor = val / (4 * val2)
-    # I didn't find any Bokeh equivalent to theme/rcParams,
-    # so they are hardcoded for now
-    labelsize = 14 * scale_factor
-    linewidth = 1 * scale_factor
-
-    return (width, height), labelsize, linewidth
+    return (width, height)
 
 
 # object creation and i/o

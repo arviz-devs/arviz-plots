@@ -8,7 +8,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x
 
@@ -215,7 +215,7 @@ def plot_forest(
     if ci_probs[0] > ci_probs[1]:
         raise ValueError("First element of ci_probs must be smaller than the second")
     if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
+        ci_kind = rcParams["stats.ci_kind"]
     if point_estimate is None:
         point_estimate = rcParams["stats.point_estimate"]
     if plot_kwargs is None:
@@ -256,6 +256,7 @@ def plot_forest(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     given_plotcollection = True
     if plot_collection is None:
         given_plotcollection = False
@@ -291,6 +292,16 @@ def plot_forest(
                 pc_kwargs.setdefault("alpha", [0, 0, 0.3])
         if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
+        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        figsize = plot_bknd.scale_fig_size(
+            figsize,
+            rows=process_facet_dims(pc_data, pc_kwargs["aes"]["y"])[0],
+            cols=process_facet_dims(pc_data, pc_kwargs["cols"])[0],
+            figsize_units=figsize_units,
+        )
+        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
         plot_collection = PlotCollection.grid(
             pc_data,
             backend=backend,
@@ -475,7 +486,6 @@ def plot_forest(
             **lab_kwargs,
         )
         x += 1
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     ticklabel_kwargs = copy(plot_kwargs.get("ticklabels", {}))
     if ticklabel_kwargs is not False:
         plot_bknd.xticks(
