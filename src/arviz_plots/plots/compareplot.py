@@ -4,7 +4,15 @@ from importlib import import_module
 from arviz_base import rcParams
 
 
-def plot_compare(cmp_df, color="black", target=None, backend=None):
+def plot_compare(
+    cmp_df,
+    color="black",
+    similar_band=True,
+    relative_scale=False,
+    figsize=None,
+    target=None,
+    backend=None,
+):
     r"""Summary plot for model comparison.
 
     Models are compared based on their expected log pointwise predictive density (ELPD).
@@ -24,11 +32,11 @@ def plot_compare(cmp_df, color="black", target=None, backend=None):
     similar_band : bool, optional
         If True, a band is drawn to indicate models with similar
         predictive performance to the best model. Defaults to True.
-    relative_scale : bool, optiona.
+    relative_scale : bool, optional.
         If True scale the ELPD values relative to the best model.
         Defaults to True???
     figsize : (float, float), optional
-        If `None`, size is (6, num of models) inches.
+        If `None`, size is (10, num of models) inches.
     target : bokeh figure, matplotlib axes, or plotly figure optional
     backend : {"bokeh", "matplotlib", "plotly"}
         Select plotting backend. Defaults to rcParams["plot.backend"].
@@ -49,6 +57,17 @@ def plot_compare(cmp_df, color="black", target=None, backend=None):
     .. [1] Vehtari et al. (2016). Practical Bayesian model evaluation using leave-one-out
        cross-validation and WAIC https://arxiv.org/abs/1507.04544
     """
+    information_criterion = ["elpd_loo", "elpd_waic"]
+    column_index = [c.lower() for c in cmp_df.columns]
+    for i_c in information_criterion:
+        if i_c in column_index:
+            break
+    else:
+        raise ValueError(
+            "cmp_df must contain one of the following "
+            f"information criterion: {information_criterion}"
+        )
+
     if backend is None:
         backend = rcParams["plot.backend"]
 
@@ -57,13 +76,19 @@ def plot_compare(cmp_df, color="black", target=None, backend=None):
             f"Invalid backend: '{backend}'. Backend must be 'bokeh', 'matplotlib' or 'plotly'"
         )
 
+    if relative_scale:
+        cmp_df = cmp_df.copy()
+        cmp_df[i_c] = cmp_df[i_c] - cmp_df[i_c].iloc[0]
+
+    if figsize is None:
+        figsize = (10, len(cmp_df))
+
     p_be = import_module(f"arviz_plots.backend.{backend}")
-    _, target = p_be.create_plotting_grid(1)
+    _, target = p_be.create_plotting_grid(1, figsize=figsize)
     linestyle = p_be.get_default_aes("linestyle", 2, {})[-1]
 
     # Compute positions of yticks
     yticks_pos = list(range(len(cmp_df), 0, -1))
-    yticks_pos_double = [tuple(yticks_pos)] * 2
 
     # Get scale and adjust it if necessary
     scale = cmp_df["scale"].iloc[0]
@@ -71,22 +96,39 @@ def plot_compare(cmp_df, color="black", target=None, backend=None):
         scale = "-log"
 
     # Compute values for standard error bars
-    se_tuple = tuple(cmp_df["elpd_loo"] - cmp_df["se"]), tuple(cmp_df["elpd_loo"] + cmp_df["se"])
+    # se_tuple = tuple(cmp_df[i_c] - cmp_df["se"]), tuple(cmp_df[i_c] + cmp_df["se"])
+    se_list = list(zip((cmp_df[i_c] - cmp_df["se"]), (cmp_df[i_c] + cmp_df["se"])))
 
     # Plot ELPD point statimes
-    p_be.scatter(cmp_df["elpd_loo"], yticks_pos, target, color=color)
+    p_be.scatter(cmp_df[i_c], yticks_pos, target, color=color)
     # Plot ELPD standard error bars
-    p_be.line(se_tuple, yticks_pos_double, target, color=color)
+    for se_vals, ytick in zip(se_list, yticks_pos):
+        p_be.line(se_vals, (ytick, ytick), target, color=color)
 
     # Add reference line for the best model
-    # make me nicer
     p_be.line(
-        (cmp_df["elpd_loo"].iloc[0], cmp_df["elpd_loo"].iloc[0]),
+        (cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0]),
         (yticks_pos[0], yticks_pos[-1]),
         target,
         color=color,
         linestyle=linestyle,
+        alpha=0.5,
     )
+
+    # Add band for statistically undistinguishable models
+    if similar_band:
+        if scale == "log":
+            x_0, x_1 = cmp_df[i_c].iloc[0] - 4, cmp_df[i_c].iloc[0]
+        else:
+            x_0, x_1 = cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0] + 4
+
+        p_be.axvspan(
+            x_0,
+            x_1,
+            target,
+            color=color,
+            alpha=0.1,
+        )
 
     # Add title and labels
     p_be.title(

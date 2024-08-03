@@ -35,16 +35,6 @@ def line_x(da, target, backend, y=None, **kwargs):
     return plot_backend.line(da, y, target, **kwargs)
 
 
-def line_y(da, target, backend, x=None, **kwargs):
-    """Plot a line along the y axis (x constant)."""
-    if x is None:
-        x = np.zeros_like(da)
-    if np.asarray(x).size == 1:
-        x = np.zeros_like(da) + (x.item() if hasattr(x, "item") else x)
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.line(x, da, target, **kwargs)
-
-
 def line(da, target, backend, xname=None, **kwargs):
     """Plot a line along the y axis with x being the range of len(y)."""
     if len(da.shape) != 1:
@@ -180,14 +170,10 @@ def annotate_label(
     )
 
 
-def labelled_title(
-    da, target, backend, *, text=None, labeller=None, var_name=None, sel=None, isel=None, **kwargs
-):
+def labelled_title(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
     """Add a title label to a plot using an ArviZ labeller."""
-    if labeller is not None:
-        text = labeller.make_label_vert(var_name, sel, isel)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.title(text, target, **kwargs)
+    return plot_backend.title(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
 
 
 def labelled_y(
@@ -234,9 +220,3 @@ def remove_ticks(da, target, backend, **kwargs):
     """Dispatch to ``remove_axis`` function in backend."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_backend.remove_ticks(target, **kwargs)
-
-
-def yticks(da, target, backend, ticks, labels, **kwargs):
-    """Dispatch to ``yticks`` function in backend."""
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.yticks(ticks, labels, target, **kwargs)

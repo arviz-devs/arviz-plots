@@ -321,6 +321,12 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     return target.varea(x=x, y1=y_bottom, y2=y_top, **artist_kws)
 
 
+def axvspan(x_low, x_up, target, color=unset, alpha=unset, **artist_kws):
+    """Fill the area between x_low and x_up."""
+    kwargs = {"fill_color": color, "fill_alpha": alpha}
+    return target.harea(x_low, x_up, **_filter_kwargs(kwargs, artist_kws))
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a title to a plot."""
