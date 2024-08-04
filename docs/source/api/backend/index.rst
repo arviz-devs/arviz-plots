@@ -33,7 +33,7 @@ Available backends
         :link: none
         :link-type: doc
         :link-alt: none
-        :img-background: ../../_static/none-logo-light.svg
+        :img-background: ../../_static/no-image.svg
         :class-img-bottom: dark-light
 
 .. toctree::
