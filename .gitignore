@@ -100,9 +100,9 @@ docs/source/gallery/_images
 docs/source/gallery/_scripts
 docs/source/gallery/*.md
 docs/jupyter_execute
-docs/source/api/backend/matplotlib.rst
-docs/source/api/backend/bokeh.rst
-docs/source/api/backend/index.rst
+docs/source/api/backend/*.rst
+!docs/source/api/backend/*.part.rst
+!docs/source/api/backend/index.rst
 
 # PyBuilder
 .pybuilder/

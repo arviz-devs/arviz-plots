@@ -22,12 +22,28 @@ Available backends
         :img-background: ../../_static/bokeh-logo-light.svg
         :class-img-bottom: dark-light
 
+    .. grid-item-card::
+        :link: plotly
+        :link-type: doc
+        :link-alt: plotly
+        :img-background: ../../_static/plotly-logo-light.svg
+        :class-img-bottom: dark-light
+
+    .. grid-item-card::
+        :link: none
+        :link-type: doc
+        :link-alt: none
+        :img-background: ../../_static/none-logo-light.svg
+        :class-img-bottom: dark-light
+
 .. toctree::
    :maxdepth: 1
    :hidden:
 
    Matplotlib <matplotlib>
    Bokeh <bokeh>
+   Plotly <plotly>
+   None (only processing, no plotting) <none>
 
 ---------------------------
 Common interface definition
@@ -85,5 +101,3 @@ Common interface definition
 
     axis
         Data axis (x, y or both) on which to apply the function.
-
-.. autosummary of module elements will be added here from template
