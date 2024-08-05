@@ -54,7 +54,7 @@ grid_item_template = """
 ::::
 """
 
-minigallery_item_template = """
+minigallery_item_template_rst = """
 .. grid-item-card::
    :link: {refname}
    :link-type: ref
@@ -71,6 +71,14 @@ minigallery_item_template = """
 
    +++
    {title}
+"""
+
+minigallery_in_example = """
+f"## Other examples with `{fun}`
+
+```{{eval-rst}}
+.. minigallery:: {fun}
+```
 """
 
 
@@ -124,7 +132,6 @@ def main(app):
 
             head_text, foot_text = doc_text.split("---")
 
-            head_text = f"---\nhtml_theme.sidebar_secondary.remove:\n---\n\n{head_text}"
             head_lines = head_text.splitlines()
             for i, line in enumerate(head_lines):
                 if line.startswith("# "):
@@ -153,7 +160,10 @@ def main(app):
             fig.savefig(images_dir / f"{basename}.png", dpi=75)
             plt.close("all")
 
+            minigalleries = "\n".join(minigallery_in_example.format(fun=fun) for fun in api_funs)
+
             myst_text = f"""
+            ({basename.replace("plot_", "gallery_")})=
             {head_text}
 
             ::::::{{tab-set}}
@@ -202,6 +212,8 @@ def main(app):
             ```
 
             {foot_text}
+
+            {minigalleries}
 
             :::{{div}} example-plot-download
             {{download}}`Download Python Source Code: {basename}.py<_scripts/{basename}.py>`
@@ -254,10 +266,11 @@ class MiniGallery(Directive):
     def run(self):
         """Generate mini-gallery from backreference and example files."""
         gallery_dir = Path(self.state.document.settings.env.srcdir).resolve() / "gallery"
+        docname = self.state.document.settings.env.docname
         with open(gallery_dir / "backreferences.json", "r", encoding="utf-8") as f:
             backreferences = json.load(f)
 
-        # Parse the argument into the individual objects
+        # Parse the argument into the individual object
         target_obj = self.arguments[0].strip()
 
         lines = []
@@ -267,8 +280,13 @@ class MiniGallery(Directive):
         lines.append(".. grid:: 1 2 3 3\n   :gutter: 2 2 3 3\n\n")
 
         for entry in entry_elements:
+            if f"gallery/{entry['basename']}" == docname:
+                continue
             lines.extend(
-                [f"   {line}" for line in minigallery_item_template.format(**entry).splitlines()]
+                [
+                    f"   {line}"
+                    for line in minigallery_item_template_rst.format(**entry).splitlines()
+                ]
             )
 
         text = "\n".join(lines)

@@ -1,5 +1,4 @@
 """
-(gallery_forest_pp_obs)=
 # Posterior predictive and observations forest plot
 
 Overlay of forest plot for the posterior predictive samples and the actual observations
@@ -8,8 +7,6 @@ Overlay of forest plot for the posterior predictive samples and the actual obser
 
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_forest`
-
-Other gallery examples using `plot_forest`: {ref}`gallery_forest`, {ref}`gallery_forest_shade`
 :::
 """
 from importlib import import_module

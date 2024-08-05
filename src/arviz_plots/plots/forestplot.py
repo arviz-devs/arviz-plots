@@ -131,11 +131,19 @@ def plot_forest(
 
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_forest``.
+    The following examples focus on behaviour specific to ``plot_forest`` and aim to illustrate
+    usage of specific arguments.
     For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`
+    usage examples see :ref:`plots_intro`. Alternatively, to see common usage patterns
+    or how the plot looks for different combinations, links to all examples using
+    ``plot_forest`` in the example gallery are shown at the bottom of the docstring.
 
-    Default forest plot for a single model:
+    Single model forest plot with color mapped to the variable (mapping which is also applied
+    to the labels) and alternate shading per school.
+    Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
+    constrained layout (set by the "arviz-clean" theme) and to avoid having the labels
+    too squished we'll set the ``width_ratios`` for
+    :func:`~arviz_plots.backend.none.create_plotting_grid` via ``pc_kwargs``.
 
     .. plot::
         :context: close-figs
@@ -143,28 +151,7 @@ def plot_forest(
         >>> from arviz_plots import plot_forest, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
         >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_forest(centered)
-
-    Default forest plot for multiple models:
-
-    .. plot::
-        :context: close-figs
-
-        >>> pc = plot_forest({"centered": centered, "non centered": non_centered})
-        >>> pc.add_legend("model")
-
-    Single model forest plot with color mapped to the variable (mapping which is also applied
-    to the labels) and alternate shading per school.
-    Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
-    constrained layout (set by the "arviz-clean" theme) and to avoid having the labels
-    too squished we'll set the ``width_ratios`` for
-    :func:`~arviz_plots.backend.create_plotting_grid` via ``pc_kwargs``.
-
-    .. plot::
-        :context: close-figs
-
         >>> pc = plot_forest(
         >>>     non_centered,
         >>>     var_names=["theta", "mu", "theta_t", "tau"],
@@ -176,30 +163,7 @@ def plot_forest(
         >>>     shade_label="school",
         >>> )
 
-    Extend the forest plot with an extra :term:`plot` with ess estimates.
-    To achieve that, we manually add a "column" dimension with size 3.
-    ``plot_forest`` only plots on the "labels" and "forest" coordinate values,
-    leaving the "ess" coordinate empty. Afterwards, we manually use
-    :meth:`.PlotCollection.map` with the ess result as data on the "ess" column
-    to plot their values.
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import visuals
-        >>> import arviz_stats  # make accessor available
-        >>>
-        >>> c_aux = centered["posterior"].expand_dims(
-        >>>     column=3
-        >>> ).assign_coords(column=["labels", "forest", "ess"])
-        >>> pc = plot_forest(c_aux, combined=True)
-        >>> pc.map(
-        >>>     visuals.scatter_x, "ess", data=centered.azstats.ess().ds,
-        >>>     coords={"column": "ess"}, color="C0"
-        >>> )
-
-    Note that we are using the same :class:`~.PlotCollection`, so when using
-    ``map`` all the same aesthetic mappings used by ``plot_forest`` are used.
+    .. minigallery:: plot_forest
 
     """
     if ci_kind not in ("hdi", "eti", None):
@@ -294,14 +258,24 @@ def plot_forest(
             pc_kwargs["aes"].setdefault("color", ["model"])
         figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
         figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
-        figsize = plot_bknd.scale_fig_size(
-            figsize,
-            rows=process_facet_dims(pc_data, pc_kwargs["aes"]["y"])[0],
-            cols=process_facet_dims(pc_data, pc_kwargs["cols"])[0],
-            figsize_units=figsize_units,
-        )
+        if figsize is None:
+            coeff = 0.2
+            n_blocks = process_facet_dims(
+                pc_data, [dim for dim in pc_kwargs["aes"]["y"] if dim not in ("chain", "model")]
+            )[0]
+            if not combined and "chain" in distribution.dims:
+                coeff += 0.1
+            if "model" in distribution.dims:
+                coeff += 0.1 * distribution.sizes["model"]
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=1 + coeff * n_blocks,
+                cols=process_facet_dims(pc_data, pc_kwargs["cols"])[0],
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
         pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
         plot_collection = PlotCollection.grid(
             pc_data,
             backend=backend,

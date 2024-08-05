@@ -1,5 +1,4 @@
 """
-(gallery_dist_kde)=
 # KDE plot
 
 Facetted KDE plots for 1D marginals of the distribution
@@ -9,12 +8,6 @@ Facetted KDE plots for 1D marginals of the distribution
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_dist`
 :::
-
-## Other examples with `plot_dist`
-
-```{eval-rst}
-.. minigallery:: plot_dist
-```
 """
 from arviz_base import load_arviz_data
 

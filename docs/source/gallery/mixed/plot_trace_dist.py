@@ -1,5 +1,4 @@
 """
-(gallery_trace_dist)=
 # Trace and distribution plot
 
 Two column layout with marginal distributions on the left and MCMC traces on the right

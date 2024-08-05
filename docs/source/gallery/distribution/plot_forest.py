@@ -1,5 +1,4 @@
 """
-(gallery_forest)=
 # Forest plot
 
 Default forest plot with marginal distribution summaries
@@ -8,8 +7,6 @@ Default forest plot with marginal distribution summaries
 
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_forest`
-
-Other gallery examples using `plot_forest`: {ref}`gallery_forest_shade`
 :::
 """
 from arviz_base import load_arviz_data

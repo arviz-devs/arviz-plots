@@ -41,7 +41,7 @@ def get_default_aes(aes_key, n, kwargs=None):
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
-def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):  # pylint: disable=unused-argument
+def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
     """Scale figure properties according to figsize, rows and cols.
 
     Parameters
@@ -67,7 +67,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):  # pylint: disa
     if figsize_units is None:
         figsize_units = "dots"
     if figsize is None:
-        width = 800
+        width = cols * (400 if cols < 4 else 300)
         height = 100 * (rows + 1) ** 1.1
         figsize_units = "dots"
     else:

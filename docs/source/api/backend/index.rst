@@ -6,7 +6,7 @@ Interface to plotting backends
 Available backends
 ------------------
 
-.. grid:: 2
+.. grid:: 1 1 2 2
 
     .. grid-item-card::
         :link: matplotlib
@@ -33,8 +33,24 @@ Available backends
         :link: none
         :link-type: doc
         :link-alt: none
-        :img-background: ../../_static/no-image.svg
-        :class-img-bottom: dark-light
+
+        .. grid:: 3
+
+           .. grid-item::
+              
+              .. image:: ../../_static/no-image.svg
+                 :class: dark-light
+                 :alt:
+
+           .. grid-item::
+
+              Data
+
+           .. grid-item::
+
+              .. raw:: html
+
+                 <s>Viz</s>
 
 .. toctree::
    :maxdepth: 1

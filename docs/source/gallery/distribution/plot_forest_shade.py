@@ -1,5 +1,4 @@
 """
-(gallery_forest_shade)=
 # Forest plot with shading
 
 Forest plot marginal summaries with row shading to enhance reading
@@ -8,8 +7,6 @@ Forest plot marginal summaries with row shading to enhance reading
 
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_forest`
-
-Other gallery examples using `plot_forest`: {ref}`gallery_forest`
 :::
 """
 from arviz_base import load_arviz_data
