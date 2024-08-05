@@ -74,7 +74,7 @@ minigallery_item_template_rst = """
 """
 
 minigallery_in_example = """
-f"## Other examples with `{fun}`
+## Other examples with `{fun}`
 
 ```{{eval-rst}}
 .. minigallery:: {fun}
