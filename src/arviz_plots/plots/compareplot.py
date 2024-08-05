@@ -91,7 +91,6 @@ def plot_compare(
         scale = "-log"
 
     # Compute values for standard error bars
-    # se_tuple = tuple(cmp_df[i_c] - cmp_df["se"]), tuple(cmp_df[i_c] + cmp_df["se"])
     se_list = list(zip((cmp_df[i_c] - cmp_df["se"]), (cmp_df[i_c] + cmp_df["se"])))
 
     # Plot ELPD point statimes
