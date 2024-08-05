@@ -57,7 +57,7 @@ grid_item_template = """
 minigallery_item_template = """
 .. grid-item-card::
    :link: {refname}
-   :link-type: doc
+   :link-type: ref
    :text-align: center
    :shadow: none
    :class-card: example-gallery
@@ -207,7 +207,7 @@ def main(app):
             {{download}}`Download Python Source Code: {basename}.py<_scripts/{basename}.py>`
             :::
             """
-            myst_text = "\n".join((line.strip(" ") for line in myst_text.splitlines()))
+            myst_text = "\n".join((line.strip(" ") for line in myst_text.strip("\n").splitlines()))
 
             with open(gallery_dir / f"{basename}.md", "w", encoding="utf-8") as fm:
                 fm.write(myst_text)

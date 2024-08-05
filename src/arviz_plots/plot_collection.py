@@ -482,7 +482,7 @@ class PlotCollection:
         self._aes = aes
         self._kwargs = kwargs
         if not hasattr(self, "backend"):
-            plot_bknd = import_module(".backend", package="arviz_plots")
+            plot_bknd = import_module(".backend.none", package="arviz_plots")
         else:
             plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         get_default_aes = plot_bknd.get_default_aes

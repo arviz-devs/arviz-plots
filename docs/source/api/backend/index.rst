@@ -26,7 +26,7 @@ Available backends
         :link: plotly
         :link-type: doc
         :link-alt: plotly
-        :img-background: ../../_static/plotly-logo-light.svg
+        :img-background: ../../_static/plotly-logo-light.png
         :class-img-bottom: dark-light
 
     .. grid-item-card::
