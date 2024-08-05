@@ -55,7 +55,7 @@ doc = [
     "myst-nb",
     "sphinx-copybutton",
     "numpydoc",
-    "sphinx>=5",
+    "sphinx>=5,<8",
     "sphinx-design",
     "jupyter-sphinx",
     "h5netcdf",
