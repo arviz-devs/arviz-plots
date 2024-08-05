@@ -5,6 +5,7 @@ Notes
 Sets ``zorder`` of all non-text "geoms" to ``2`` so that elements plotted later
 on are on top of previous ones.
 """
+
 import warnings
 from typing import Any, Dict
 
@@ -242,6 +243,42 @@ def scatter(
         "linewidths": width,
     }
     return target.scatter(x, y, **_filter_kwargs(kwargs, None, artist_kws))
+
+
+def errorbar(
+    x,
+    y,
+    error,
+    target,
+    *,
+    size=unset,
+    marker=unset,
+    color=unset,
+    facecolor=unset,
+    edgecolor=unset,
+    width=unset,
+    **artist_kws,
+):
+    """Interface to matplotlib for an errorbar plot."""
+    artist_kws.setdefault("zorder", 2)
+    fillable_marker = (marker is unset) or (marker in Line2D.filled_markers)
+    if color is not unset:
+        if facecolor is unset and edgecolor is unset:
+            facecolor = color
+            if fillable_marker:
+                edgecolor = color
+        elif facecolor is unset:
+            facecolor = color
+        elif edgecolor is unset and fillable_marker:
+            edgecolor = color
+    kwargs = {
+        "capsize": size,
+        "marker": marker,
+        "markerfacecolor": facecolor,
+        "markeredgecolor": edgecolor,
+        "elinewidth": width,
+    }
+    return target.errorbar(x, y, error, **_filter_kwargs(kwargs, None, artist_kws))
 
 
 def text(
