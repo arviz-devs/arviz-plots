@@ -175,7 +175,7 @@ def plot_trace(
             default_xname = None
         xname = trace_kwargs.get("xname", default_xname)
         trace_kwargs["xname"] = xname
-        _, trace_aes, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
+        _, _, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
         plot_collection.map(
             line,
             "trace",

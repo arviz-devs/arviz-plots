@@ -323,11 +323,8 @@ def plot_trace_dist(
 
     # trace
     trace_kwargs = copy(plot_kwargs.get("trace", {}))
-    _, trace_aes, _ = filter_aes(plot_collection, aes_map, "trace", sample_dims)
     div_kwargs = copy(plot_kwargs.get("divergence", {}))
-    _, div_aes, _ = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
     xlabel_kwargs = copy(plot_kwargs.get("xlabel_trace", {}))
-    _, xlabel_aes, _ = filter_aes(plot_collection, aes_map, "xlabel_trace", sample_dims)
     plot_kwargs_trace = {"trace": trace_kwargs, "divergence": div_kwargs, "xlabel": xlabel_kwargs}
     plot_kwargs_trace["title"] = False
     plot_kwargs_trace["ticklabels"] = False
