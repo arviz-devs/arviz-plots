@@ -11,6 +11,23 @@ from importlib import import_module
 import numpy as np
 import xarray as xr
 from arviz_base.labels import BaseLabeller
+from arviz_stats.numba import array_stats
+
+
+def error_bar(da, target, backend, distribution, x=None, y=None, **kwargs):
+    """Plot error bars.
+
+    Note: This uses subset info from .map() so toggle it to true when calling this func
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    probs, yerr = _process_da_x_y(da, x, y)
+    # the dataarray of distribution subset (by map()) is flattened and
+    # used to calculate the quantile values
+    da = distribution
+    # print(f"\n subsetted distribution = {da}")
+    da = da.values.flatten()
+    quantile_values = array_stats.quantile(da, probs)
+    return plot_backend.errorbar(probs, quantile_values, yerr, target, **kwargs)
 
 
 def hist(da, target, backend, **kwargs):
@@ -36,6 +53,7 @@ def line_xy(da, target, backend, x=None, y=None, **kwargs):
     in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    # print(f"\nline_xy\nx={x}, y={y}, da = {da}")
     x, y = _process_da_x_y(da, x, y)
     return plot_backend.line(x, y, target, **kwargs)
 
@@ -87,6 +105,19 @@ def scatter_x(da, target, backend, y=None, **kwargs):
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.scatter(da, y, target, **kwargs)
+
+
+def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
+    """Plot a scatter plot x vs y.
+
+    The input argument `da` is split into x and y using the dimension ``plot_axis``.
+    If additional x and y arguments are provided, x and y are added to the values
+    in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    # print(f"\nscatter_xy\nx={x}, y={y}, da = {da}")
+    x, y = _process_da_x_y(da, x, y)
+    return plot_backend.scatter(x, y, target, **kwargs)
 
 
 def ecdf_line(values, target, backend, **kwargs):
