@@ -14,6 +14,7 @@ dir_title_map = {
     "distribution_comparison": "Distribution comparison",
     "inference_diagnostics": "Inference diagnostics",
     "model_criticism": "Model criticism",
+    "model_comparison": "Model comparison",
 }
 
 toctree_template = """

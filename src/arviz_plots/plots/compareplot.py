@@ -34,7 +34,7 @@ def plot_compare(
         predictive performance to the best model. Defaults to True.
     relative_scale : bool, optional.
         If True scale the ELPD values relative to the best model.
-        Defaults to True???
+        Defaults to False.
     figsize : (float, float), optional
         If `None`, size is (10, num of models) inches.
     target : bokeh figure, matplotlib axes, or plotly figure optional
@@ -70,11 +70,6 @@ def plot_compare(
 
     if backend is None:
         backend = rcParams["plot.backend"]
-
-    if backend not in ["bokeh", "matplotlib", "plotly"]:
-        raise ValueError(
-            f"Invalid backend: '{backend}'. Backend must be 'bokeh', 'matplotlib' or 'plotly'"
-        )
 
     if relative_scale:
         cmp_df = cmp_df.copy()
