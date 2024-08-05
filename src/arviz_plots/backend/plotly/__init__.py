@@ -399,12 +399,6 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
     return second_line_with_fill
 
 
-def axvspan(x_low, x_up, target, color=unset, alpha=unset, **artist_kws):
-    """Fill the area between y_bottom and y_top."""
-    kwargs = {"fillcolor": color, "opacity": alpha}
-    return target.add_vrect(x_low, x_up, **_filter_kwargs(kwargs, artist_kws))
-
-
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a title to a plot."""

@@ -274,11 +274,6 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     return target.fill_between(x, y_bottom, y_top, **artist_kws)
 
 
-def axvspan(x_low, x_up, target, **artist_kws):
-    """Fill the area between y_bottom and y_top."""
-    return target.axvspan(x_low, x_up, **artist_kws)
-
-
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a title to a plot."""

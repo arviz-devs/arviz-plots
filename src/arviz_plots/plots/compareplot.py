@@ -122,10 +122,11 @@ def plot_compare(
         else:
             x_0, x_1 = cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0] + 4
 
-        p_be.axvspan(
-            x_0,
-            x_1,
-            target,
+        p_be.fill_between_y(
+            x=[x_0, x_1],
+            y_bottom=yticks_pos[-1],
+            y_top=yticks_pos[0],
+            target=target,
             color=color,
             alpha=0.1,
         )
