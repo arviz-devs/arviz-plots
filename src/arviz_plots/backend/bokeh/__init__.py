@@ -7,7 +7,7 @@ from bokeh.models import GridPlot, Range1d, Title
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
-from .. import get_default_aes as get_agnostic_default_aes
+from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
 
@@ -19,8 +19,10 @@ unset = UnsetDefault()
 
 
 # generation of default values for aesthetics
-def get_default_aes(aes_key, n, kwargs):
+def get_default_aes(aes_key, n, kwargs=None):
     """Generate `n` *bokeh valid* default values for a given aesthetics keyword."""
+    if kwargs is None:
+        kwargs = {}
     if aes_key not in kwargs:
         if "color" in aes_key:
             # fmt: off
@@ -34,7 +36,7 @@ def get_default_aes(aes_key, n, kwargs):
         elif aes_key == "marker":
             vals = ["circle", "cross", "triangle", "x", "diamond"]
         else:
-            return get_agnostic_default_aes(aes_key, n, {})
+            return get_agnostic_default_aes(aes_key, n)
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
     return get_agnostic_default_aes(aes_key, n, kwargs)
 

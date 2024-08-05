@@ -13,7 +13,7 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 from webcolors import hex_to_rgb, name_to_rgb
 
-from .. import get_default_aes as get_agnostic_default_aes
+from ..none import get_default_aes as get_agnostic_default_aes
 
 
 class UnsetDefault:
@@ -47,8 +47,10 @@ def combine_color_alpha(color, alpha=1):
 
 
 # generation of default values for aesthetics
-def get_default_aes(aes_key, n, kwargs):
+def get_default_aes(aes_key, n, kwargs=None):
     """Generate `n` *plotly valid* default values for a given aesthetics keyword."""
+    if kwargs is None:
+        kwargs = {}
     if aes_key not in kwargs:
         if "color" in aes_key:
             # fmt: off

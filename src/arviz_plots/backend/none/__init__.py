@@ -11,8 +11,6 @@ import warnings
 
 import numpy as np
 
-from .. import get_default_aes as get_agnostic_default_aes
-
 ALLOW_KWARGS = True
 
 
@@ -24,13 +22,21 @@ unset = UnsetDefault()
 
 
 # generation of default values for aesthetics
-def get_default_aes(aes_key, n, kwargs):
+def get_default_aes(aes_key, n, kwargs=None):
     """Generate `n` default values for a given aesthetics keyword."""
+    if kwargs is None:
+        kwargs = {}
     if aes_key not in kwargs:
         if aes_key in {"x", "y"}:
             return np.arange(n)
-        return np.array([f"{aes_key}_{i}" for i in range(n)])
-    return get_agnostic_default_aes(aes_key, n, kwargs)
+        if aes_key == "alpha":
+            return np.linspace(0.2, 0.7, n)
+        return [None] * n
+    aes_vals = kwargs[aes_key]
+    n_aes_vals = len(aes_vals)
+    if n_aes_vals >= n:
+        return aes_vals[:n]
+    return np.tile(aes_vals, (n // n_aes_vals) + 1)[:n]
 
 
 def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):  # pylint: disable=unused-argument

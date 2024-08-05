@@ -1,9 +1,14 @@
 # pylint: disable=invalid-name
 """Generate images and full gallery pages from python scripts."""
+import json
 import os
+import re
+from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from docutils import statemachine
+from docutils.parsers.rst import Directive
 from sphinx.util import logging
 
 logger = logging.getLogger(__name__)
@@ -39,7 +44,7 @@ grid_item_template = """
 {description}
 :::
 
-:::{{image}} _images/{basename}.png
+:::{{image}} /gallery/_images/{basename}.png
 :alt:
 
 :::
@@ -47,6 +52,25 @@ grid_item_template = """
 +++
 {title}
 ::::
+"""
+
+minigallery_item_template = """
+.. grid-item-card::
+   :link: {refname}
+   :link-type: doc
+   :text-align: center
+   :shadow: none
+   :class-card: example-gallery
+
+   .. div:: example-img-plot-overlay
+
+      {description}
+
+   .. image:: /gallery/_images/{basename}.png
+      :alt:
+
+   +++
+   {title}
 """
 
 
@@ -66,6 +90,8 @@ def main(app):
         os.makedirs(scripts_dir)
 
     index_page = ["(example_gallery)=\n# Example gallery"]
+    backreferences = defaultdict(list)
+    api_regex = re.compile(r"azp\.(plot_[a-z]+)\(")
 
     for folder, title in dir_title_map.items():
         category_dir = gallery_dir / folder
@@ -82,9 +108,13 @@ def main(app):
 
             backend_line_emphasis = ""
             emph_lines = []
+            api_funs = []
             for i, line in enumerate(code_text.splitlines()):
                 if 'backend="none"' in line:
                     emph_lines.append(str(i + 1))
+                match = api_regex.search(line)
+                if match is not None:
+                    api_funs.append(match.groups()[0])
 
             if emph_lines:
                 backend_line_emphasis = f":emphasize-lines: {','.join(emph_lines)}"
@@ -94,6 +124,7 @@ def main(app):
 
             head_text, foot_text = doc_text.split("---")
 
+            head_text = f"---\nhtml_theme.sidebar_secondary.remove:\n---\n\n{head_text}"
             head_lines = head_text.splitlines()
             for i, line in enumerate(head_lines):
                 if line.startswith("# "):
@@ -102,14 +133,16 @@ def main(app):
                 raise ValueError(f"No title found for {basename} example")
             example_title = head_lines[i]
             example_description = "\n".join(head_lines[i + 1 :])
+            entry = {
+                "basename": basename,
+                "refname": basename.replace("plot_", "gallery_"),
+                "title": example_title.strip("# "),
+                "description": example_description.strip(" \n").replace("\n", " "),
+            }
+            for fun in api_funs:
+                backreferences[fun].append(entry)
 
-            index_page.append(
-                grid_item_template.format(
-                    basename=basename,
-                    title=example_title.strip("# "),
-                    description=example_description.strip(" \n"),
-                )
-            )
+            index_page.append(grid_item_template.format(**entry))
 
             mpl_noshow_code = code_text.replace('backend="none"', 'backend="matplotlib"').replace(
                 "pc.show()", ""
@@ -181,12 +214,71 @@ def main(app):
 
         index_page.append("\n:::::\n")
 
+    with open(gallery_dir / "backreferences.json", "w", encoding="utf-8") as f:
+        json.dump(backreferences, f)
+
     with open(gallery_dir / "index.md", "w", encoding="utf-8") as fi:
         fi.write("\n".join(index_page))
 
     os.chdir(working_dir)
 
 
+class MiniGallery(Directive):
+    """Custom directive to insert a mini-gallery.
+
+    The required argument is one or more of the following:
+
+    * fully qualified names of objects
+    * pathlike strings to example Python files
+    * glob-style pathlike strings to example Python files
+
+    The string list of arguments is separated by spaces.
+
+    The mini-gallery will be the subset of gallery
+    examples that make use of that object from that specific namespace
+
+    Options:
+
+    * `add-heading` adds a heading to the mini-gallery.  If an argument is
+      provided, it uses that text for the heading.  Otherwise, it uses
+      default text.
+    * `heading-level` specifies the heading level of the heading as a single
+      character.  If omitted, the default heading level is `'^'`.
+    """
+
+    required_arguments = 1
+    has_content = False
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self):
+        """Generate mini-gallery from backreference and example files."""
+        gallery_dir = Path(self.state.document.settings.env.srcdir).resolve() / "gallery"
+        with open(gallery_dir / "backreferences.json", "r", encoding="utf-8") as f:
+            backreferences = json.load(f)
+
+        # Parse the argument into the individual objects
+        target_obj = self.arguments[0].strip()
+
+        lines = []
+
+        entry_elements = backreferences[target_obj]
+
+        lines.append(".. grid:: 1 2 3 3\n   :gutter: 2 2 3 3\n\n")
+
+        for entry in entry_elements:
+            lines.extend(
+                [f"   {line}" for line in minigallery_item_template.format(**entry).splitlines()]
+            )
+
+        text = "\n".join(lines)
+        include_lines = statemachine.string2lines(text, convert_whitespace=True)
+        self.state_machine.insert_input(include_lines, self.state_machine.get_source_and_line()[0])
+
+        return []
+
+
 def setup(app):
     """Connect the extension to sphinx so it is executed when the builder is initialized."""
+    app.add_directive("minigallery", MiniGallery)
     app.connect("builder-inited", main)

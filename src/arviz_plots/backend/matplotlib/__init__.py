@@ -16,7 +16,7 @@ from matplotlib.pyplot import show as _show
 from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
-from .. import get_default_aes as get_agnostic_default_aes
+from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
 
@@ -28,8 +28,10 @@ unset = UnsetDefault()
 
 
 # generation of default values for aesthetics
-def get_default_aes(aes_key, n, kwargs):
-    """Generate `n` *bokeh valid* default values for a given aesthetics keyword."""
+def get_default_aes(aes_key, n, kwargs=None):
+    """Generate `n` *matplotlib valid* default values for a given aesthetics keyword."""
+    if kwargs is None:
+        kwargs = {}
     if aes_key not in kwargs:
         default_prop_cycle = rcParams["axes.prop_cycle"].by_key()
         if ("color" in aes_key) or aes_key == "c":
@@ -49,7 +51,7 @@ def get_default_aes(aes_key, n, kwargs):
         elif aes_key in default_prop_cycle:
             vals = default_prop_cycle[aes_key]
         else:
-            return get_agnostic_default_aes(aes_key, n, {})
+            return get_agnostic_default_aes(aes_key, n)
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
