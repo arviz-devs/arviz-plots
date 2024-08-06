@@ -112,7 +112,7 @@ def plot_forest(
     stats_kwargs : mapping, optional
         Valid keys are:
 
-        * credible_interval -> passed to eti or hdi
+        * trunk, twig -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 
     pc_kwargs : mapping
@@ -349,13 +349,17 @@ def plot_forest(
     elif ci_kind == "hdi":
         ci_fun = distribution.azstats.hdi
     if twig_kwargs is not False:
-        ci_twig = ci_fun(
-            prob=ci_probs[1], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
+        twig_stats = stats_kwargs.get("twig", {})
+        if isinstance(twig_stats, xr.Dataset):
+            ci_twig = twig_stats
+        else:
+            ci_twig = ci_fun(prob=ci_probs[1], dims=ci_dims, **twig_stats)
     if trunk_kwargs is not False:
-        ci_trunk = ci_fun(
-            prob=ci_probs[0], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
+        trunk_stats = stats_kwargs.get("trunk", {})
+        if isinstance(trunk_stats, xr.Dataset):
+            ci_trunk = trunk_stats
+        else:
+            ci_trunk = ci_fun(prob=ci_probs[0], dims=ci_dims, **trunk_stats)
 
     # compute point estimate
     pe_kwargs = copy(plot_kwargs.get("point_estimate", {}))
@@ -363,10 +367,13 @@ def plot_forest(
         pe_dims, pe_aes, pe_ignore = filter_aes(
             plot_collection, aes_map, "point_estimate", sample_dims
         )
-        if point_estimate == "median":
-            point = distribution.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        pe_stats = stats_kwargs.get("point_estimate", {})
+        if isinstance(pe_stats, xr.Dataset):
+            point = pe_stats
+        elif point_estimate == "median":
+            point = distribution.median(dim=pe_dims, **pe_stats)
         elif point_estimate == "mean":
-            point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+            point = distribution.mean(dim=pe_dims, **pe_stats)
         else:
             raise NotImplementedError("coming soon")
 

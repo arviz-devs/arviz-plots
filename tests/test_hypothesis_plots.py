@@ -1,9 +1,11 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test batteries-included plots using the none backend."""
+import arviz_stats  # pylint: disable=unused-import
 import hypothesis.strategies as st
 import numpy as np
 import pytest
 from arviz_base import from_dict
+from datatree import DataTree
 from hypothesis import given
 
 from arviz_plots import plot_dist, plot_forest, plot_ridge
@@ -19,13 +21,19 @@ def datatree(seed=31):
     theta = rng.normal(size=(3, 50, 2, 3))
     diverging = rng.choice([True, False], size=(3, 50), p=[0.1, 0.9])
 
-    return from_dict(
+    dt = from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
         },
         dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"]},
     )
+    dt["point_estimate"] = dt.posterior.mean(("chain", "draw"))
+    # TODO: should become dt.azstats.eti() after fix in arviz-stats
+    post = dt.posterior.ds
+    DataTree(name="trunk", parent=dt, data=post.azstats.eti(prob=0.5))
+    DataTree(name="twig", parent=dt, data=post.azstats.eti(prob=0.9))
+    return dt
 
 
 kind_value = st.sampled_from(("kde", "ecdf"))
@@ -92,14 +100,25 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, plot_kwargs):
             "remove_axis": st.just(False),
         },
     ),
+    stats_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "trunk": st.just(True),
+            "twig": st.just(True),
+            "point_estimate": st.just(True),
+        },
+    ),
     combined=st.booleans(),
     ci_kind=ci_kind_value,
     point_estimate=point_estimate_value,
     labels_shade_label=labels_shade(st.sampled_from(("__variable__", "hierarchy", "group"))),
 )
-def test_plot_forest(datatree, combined, ci_kind, point_estimate, plot_kwargs, labels_shade_label):
+def test_plot_forest(
+    datatree, combined, ci_kind, point_estimate, plot_kwargs, stats_kwargs, labels_shade_label
+):
     labels = labels_shade_label[0]
     shade_label = labels_shade_label[1]
+    stats_kwargs = {key: datatree[key].ds for key in stats_kwargs}
     pc = plot_forest(
         datatree,
         backend="none",
@@ -109,6 +128,7 @@ def test_plot_forest(datatree, combined, ci_kind, point_estimate, plot_kwargs, l
         labels=labels,
         shade_label=shade_label,
         plot_kwargs=plot_kwargs,
+        stats_kwargs=stats_kwargs,
     )
     assert all("plot" not in child for child in pc.viz.children.values())
     assert "plot" in pc.viz.data_vars

@@ -275,9 +275,14 @@ class MiniGallery(Directive):
 
         lines = []
 
-        entry_elements = backreferences[target_obj]
+        entry_elements = [
+            entry
+            for entry in backreferences[target_obj]
+            if f"gallery/{entry['basename']}" != docname
+        ]
 
-        lines.append(".. grid:: 1 2 3 3\n   :gutter: 2 2 3 3\n\n")
+        if len(entry_elements) >= 1:
+            lines.append(".. grid:: 1 2 3 3\n   :gutter: 2 2 3 3\n\n")
 
         for entry in entry_elements:
             if f"gallery/{entry['basename']}" == docname:
