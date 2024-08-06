@@ -129,15 +129,14 @@ def plot_forest(
     in case they are present, which get a smaller spacing to give a sense of
     grouping among visual elements that only differ on their chain or model id.
 
+    See Also
+    --------
+    :ref:`plots_intro` :
+        General introduction to batteries-included plotting functions, common use and logic overview
+    plot_ridge : Visual representation of marginal distributions over the y axis
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_forest`` and aim to illustrate
-    usage of specific arguments.
-    For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`. Alternatively, to see common usage patterns
-    or how the plot looks for different combinations, links to all examples using
-    ``plot_forest`` in the example gallery are shown at the bottom of the docstring.
-
     Single model forest plot with color mapped to the variable (mapping which is also applied
     to the labels) and alternate shading per school.
     Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
