@@ -97,7 +97,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
     if figsize_units is None:
         figsize_units = "dots"
     if figsize is None:
-        width = cols * (400 if cols < 4 else 300)
+        width = cols * (400 if cols < 4 else 250)
         height = 100 * (rows + 1) ** 1.1
         figsize_units = "dots"
     else:

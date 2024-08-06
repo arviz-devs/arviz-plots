@@ -83,7 +83,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
         figsize_units = "inches"
     if figsize is None:
         default_width, default_height = rcParams["figure.figsize"]
-        width = cols * (default_width if cols < 4 else 0.75 * default_width)
+        width = cols * (default_width if cols < 4 else 0.6 * default_width)
         height = default_height / 4 * (rows + 1) ** 1.1
         figsize_units = "inches"
     else:
