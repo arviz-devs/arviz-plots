@@ -233,86 +233,9 @@ def plot_mcse(
         # else:
         # use new errorbar visual element function to plot errorbars
         else:
-            # ----------------------------------------------
-            # ||                WIP                       ||
-            # ----------------------------------------------
-            # data to pass to .map() and get facetted:
-            # - mcse_dataset
-
-            # data that has to be computed before: quantile values
-            # thi can be computed with distribution and probs and the quantile func from arviz-stats
-
-            # ^for every subsel of variable/dimension-by-coords in distribution, the values are
-            # flattened. then call quantile(values, probs) for each of these subselections, and
-            # concatenate it to the mcse_dataset for later facetting by map() and destructuring by
-            # the errorbar visual element func
-
-            a = """
-            plotters = xarray_sel_iter(
-                distribution, skip_dims=mcse_dims
-            )  # create subselections of distribution, looping over all dims except mcse_dims
-
-            z_mcse_dataset = (
-                xr.Dataset()
-            )  # to be concatenated with mcse_dataset later along dim=plot_axis
-            # z_mcse_dict = {}
-
-            # compute quantile values for each subselection of distribution
-            for var_name, sel, isel in plotters:
-                print(f"\nvar={var_name} | sel={sel} | sel.items()={sel.items()} | isel={isel}")
-                da = distribution[var_name].sel(sel)
-                da = da.values.flatten()
-                # print(f"\n da = {da}")
-                quantile_values = array_stats.quantile(da, probs)
-                # print(f"quantile_values = {quantile_values}")
-
-                # Convert quantile_values to a DataArray
-                quantile_da = xr.DataArray(quantile_values, dims=["mcse_dim"], name=var_name)
-                print(f"\n quantile_da = {quantile_da}")
-
-                # Expand dims of dataarray and assign new coords 'z' and sel dim coords
-                quantile_da_expanded = quantile_da.expand_dims({"plot_axis": ["z"]})
-                # .assign_coords(
-                #    {"plot_axis": ["z"]}
-                # )
-                # .to_dataset(  # .assign_coords(plot_axis=["z"])
-                #    name=var_name
-                # )
-                if sel:  # adding sel dims to quantile_da
-                    sel_expanded = {key: [value] for key, value in sel.items()}
-                    print(f"sel_expanded = {sel_expanded}")
-                    quantile_da_expanded = quantile_da_expanded.expand_dims(sel_expanded)
-                    #    dim=list(sel.keys())
-                    # ).assign_coords(**sel)
-                # quantile_da_expanded = quantile_da_expanded.assign_coords(**sel)
-
-                print(f"\n quantile_da_expanded = {quantile_da_expanded}")
-
-                # print(f"\n mcse_dataset sel = {mcse_dataset[var_name].sel(**sel)!r}")
-                # print(f"\n mcse_dataset isel = {mcse_dataset[var_name].isel(isel)!r}")
-
-                if var_name in z_mcse_dataset:
-                    combined_dataarray = z_mcse_dataset[var_name].combine_first(
-                        quantile_da_expanded
-                    )
-                    print(f"\n combined_dataarray = {combined_dataarray}")
-                    z_mcse_dataset.update({var_name: (var_name, combined_dataarray)})
-                    # .concat(), .merge() are not in-place functions. .update() is in-place but
-                    # not working rn
-
-                    # z_mcse_dataset[var_name] =
-                    # xr.concat(
-                    #    [z_mcse_dataset[var_name], quantile_da_expanded],
-                    #    dim="school",
-                    # )
-                else:
-                    z_mcse_dataset[var_name] = quantile_da_expanded
-                    # print(f"\n adding var {var_name} to z_mcse_dataset: {z_mcse_dataset}")
-
-            print(f"\n z_mcse_dataset = {z_mcse_dataset}")"""
-            print(len(a))
-
             # print(f"\n final z_mcse_dataset = {z_mcse_dataset}")
+            quantiles_dataset = distribution.quantile(probs, dim=mcse_dims)
+            print(f"\n quantiles_dataset = {quantiles_dataset}")
 
             # for now the quantile_values can be computed in the visual element function itself
             plot_collection.map(
@@ -320,7 +243,8 @@ def plot_mcse(
                 "mcse",
                 data=mcse_dataset,
                 ignore_aes=mcse_ignore,
-                distribution=distribution,  # map() subsets this before passing to error_bar
+                quantiles_dataset=quantiles_dataset,
+                # distribution=distribution,  # map() subsets this before passing to error_bar
                 **mcse_kwargs,
             )
 

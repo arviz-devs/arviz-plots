@@ -14,19 +14,14 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.numba import array_stats
 
 
-def error_bar(da, target, backend, distribution, x=None, y=None, **kwargs):
+def error_bar(da, target, backend, quantiles_dataset, x=None, y=None, **kwargs):
     """Plot error bars.
 
     Note: This uses subset info from .map() so toggle it to true when calling this func
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     probs, yerr = _process_da_x_y(da, x, y)
-    # the dataarray of distribution subset (by map()) is flattened and
-    # used to calculate the quantile values
-    da = distribution
-    # print(f"\n subsetted distribution = {da}")
-    da = da.values.flatten()
-    quantile_values = array_stats.quantile(da, probs)
+    quantile_values = quantiles_dataset
     return plot_backend.errorbar(probs, quantile_values, yerr, target, **kwargs)
 
 
