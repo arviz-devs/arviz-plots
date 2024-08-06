@@ -6,7 +6,7 @@ Interface to plotting backends
 Available backends
 ------------------
 
-.. grid:: 2
+.. grid:: 1 1 2 2
 
     .. grid-item-card::
         :link: matplotlib
@@ -22,12 +22,44 @@ Available backends
         :img-background: ../../_static/bokeh-logo-light.svg
         :class-img-bottom: dark-light
 
+    .. grid-item-card::
+        :link: plotly
+        :link-type: doc
+        :link-alt: plotly
+        :img-background: ../../_static/plotly-logo-light.png
+        :class-img-bottom: dark-light
+
+    .. grid-item-card::
+        :link: none
+        :link-type: doc
+        :link-alt: none
+
+        .. grid:: 3
+
+           .. grid-item::
+              
+              .. image:: ../../_static/no-image.svg
+                 :class: dark-light
+                 :alt:
+
+           .. grid-item::
+
+              Data
+
+           .. grid-item::
+
+              .. raw:: html
+
+                 <s>Viz</s>
+
 .. toctree::
    :maxdepth: 1
    :hidden:
 
    Matplotlib <matplotlib>
    Bokeh <bokeh>
+   Plotly <plotly>
+   None (only processing, no plotting) <none>
 
 ---------------------------
 Common interface definition
@@ -85,5 +117,3 @@ Common interface definition
 
     axis
         Data axis (x, y or both) on which to apply the function.
-
-.. autosummary of module elements will be added here from template

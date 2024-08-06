@@ -202,7 +202,7 @@ def plot_trace_dist(
         )
         row_dims = ["__variable__"] + aux_dim_list
 
-    figsize, textsize, linewidth = plot_bknd.scale_fig_size(
+    figsize = plot_bknd.scale_fig_size(
         figsize,
         rows=process_facet_dims(distribution, row_dims)[0],
         cols=2,
@@ -297,8 +297,6 @@ def plot_trace_dist(
     }
     dist_kwargs = copy(plot_kwargs.get(kind, {}))
     if dist_kwargs is not False:
-        if "linewidth" not in dist_aes:
-            dist_kwargs.setdefault("width", linewidth)
         if neutral_color and "color" not in dist_aes:
             dist_kwargs.setdefault("color", neutral_color)
         if neutral_linestyle and "linestyle" not in dist_aes:
@@ -325,17 +323,8 @@ def plot_trace_dist(
 
     # trace
     trace_kwargs = copy(plot_kwargs.get("trace", {}))
-    _, trace_aes, _ = filter_aes(plot_collection, aes_map, "trace", sample_dims)
-    if trace_kwargs is not False and ("width" not in trace_aes):
-        trace_kwargs.setdefault("width", linewidth)
     div_kwargs = copy(plot_kwargs.get("divergence", {}))
-    _, div_aes, _ = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
-    if div_kwargs is not False and ("width" not in div_aes):
-        div_kwargs.setdefault("width", linewidth)
     xlabel_kwargs = copy(plot_kwargs.get("xlabel_trace", {}))
-    _, xlabel_aes, _ = filter_aes(plot_collection, aes_map, "xlabel_trace", sample_dims)
-    if xlabel_kwargs is not False and ("size" not in xlabel_aes):
-        xlabel_kwargs.setdefault("size", textsize)
     plot_kwargs_trace = {"trace": trace_kwargs, "divergence": div_kwargs, "xlabel": xlabel_kwargs}
     plot_kwargs_trace["title"] = False
     plot_kwargs_trace["ticklabels"] = False
@@ -376,8 +365,6 @@ def plot_trace_dist(
             div_kwargs.setdefault("color", "black")
         if "marker" not in div_aes:
             div_kwargs.setdefault("marker", "|")
-        if "width" not in div_aes:
-            div_kwargs.setdefault("width", linewidth)
         if "size" not in div_aes:
             div_kwargs.setdefault("size", 30)
 
@@ -400,8 +387,6 @@ def plot_trace_dist(
     if label_kwargs is not False:
         if "color" not in labels_aes:
             label_kwargs.setdefault("color", "black")
-
-        label_kwargs.setdefault("size", textsize)
 
         plot_collection.map(
             labelled_x,
@@ -428,7 +413,6 @@ def plot_trace_dist(
     # Adjust tick labels
     ticklabels_kwargs = copy(plot_kwargs.get("ticklabels", {}))
     if ticklabels_kwargs is not False:
-        ticklabels_kwargs.setdefault("size", textsize)
         _, _, ticklabels_ignore = filter_aes(plot_collection, aes_map, "ticklabels", sample_dims)
         plot_collection.map(
             ticklabel_props,

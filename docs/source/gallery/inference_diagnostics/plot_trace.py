@@ -1,5 +1,4 @@
 """
-(gallery_trace)=
 # Trace plot
 
 Facetted plot with MCMC traces for each variable

@@ -8,7 +8,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x
 
@@ -112,7 +112,7 @@ def plot_forest(
     stats_kwargs : mapping, optional
         Valid keys are:
 
-        * credible_interval -> passed to eti or hdi
+        * trunk, twig -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 
     pc_kwargs : mapping
@@ -129,13 +129,20 @@ def plot_forest(
     in case they are present, which get a smaller spacing to give a sense of
     grouping among visual elements that only differ on their chain or model id.
 
+    See Also
+    --------
+    :ref:`plots_intro` :
+        General introduction to batteries-included plotting functions, common use and logic overview
+    plot_ridge : Visual representation of marginal distributions over the y axis
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_forest``.
-    For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`
-
-    Default forest plot for a single model:
+    Single model forest plot with color mapped to the variable (mapping which is also applied
+    to the labels) and alternate shading per school.
+    Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
+    constrained layout (set by the "arviz-clean" theme) and to avoid having the labels
+    too squished we'll set the ``width_ratios`` for
+    :func:`~arviz_plots.backend.none.create_plotting_grid` via ``pc_kwargs``.
 
     .. plot::
         :context: close-figs
@@ -143,28 +150,7 @@ def plot_forest(
         >>> from arviz_plots import plot_forest, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
         >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_forest(centered)
-
-    Default forest plot for multiple models:
-
-    .. plot::
-        :context: close-figs
-
-        >>> pc = plot_forest({"centered": centered, "non centered": non_centered})
-        >>> pc.add_legend("model")
-
-    Single model forest plot with color mapped to the variable (mapping which is also applied
-    to the labels) and alternate shading per school.
-    Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
-    constrained layout (set by the "arviz-clean" theme) and to avoid having the labels
-    too squished we'll set the ``width_ratios`` for
-    :func:`~arviz_plots.backend.create_plotting_grid` via ``pc_kwargs``.
-
-    .. plot::
-        :context: close-figs
-
         >>> pc = plot_forest(
         >>>     non_centered,
         >>>     var_names=["theta", "mu", "theta_t", "tau"],
@@ -176,30 +162,7 @@ def plot_forest(
         >>>     shade_label="school",
         >>> )
 
-    Extend the forest plot with an extra :term:`plot` with ess estimates.
-    To achieve that, we manually add a "column" dimension with size 3.
-    ``plot_forest`` only plots on the "labels" and "forest" coordinate values,
-    leaving the "ess" coordinate empty. Afterwards, we manually use
-    :meth:`.PlotCollection.map` with the ess result as data on the "ess" column
-    to plot their values.
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import visuals
-        >>> import arviz_stats  # make accessor available
-        >>>
-        >>> c_aux = centered["posterior"].expand_dims(
-        >>>     column=3
-        >>> ).assign_coords(column=["labels", "forest", "ess"])
-        >>> pc = plot_forest(c_aux, combined=True)
-        >>> pc.map(
-        >>>     visuals.scatter_x, "ess", data=centered.azstats.ess().ds,
-        >>>     coords={"column": "ess"}, color="C0"
-        >>> )
-
-    Note that we are using the same :class:`~.PlotCollection`, so when using
-    ``map`` all the same aesthetic mappings used by ``plot_forest`` are used.
+    .. minigallery:: plot_forest
 
     """
     if ci_kind not in ("hdi", "eti", None):
@@ -215,7 +178,7 @@ def plot_forest(
     if ci_probs[0] > ci_probs[1]:
         raise ValueError("First element of ci_probs must be smaller than the second")
     if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
+        ci_kind = rcParams["stats.ci_kind"]
     if point_estimate is None:
         point_estimate = rcParams["stats.point_estimate"]
     if plot_kwargs is None:
@@ -256,6 +219,7 @@ def plot_forest(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     given_plotcollection = True
     if plot_collection is None:
         given_plotcollection = False
@@ -291,6 +255,26 @@ def plot_forest(
                 pc_kwargs.setdefault("alpha", [0, 0, 0.3])
         if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
+        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        if figsize is None:
+            coeff = 0.2
+            n_blocks = process_facet_dims(
+                pc_data, [dim for dim in pc_kwargs["aes"]["y"] if dim not in ("chain", "model")]
+            )[0]
+            if not combined and "chain" in distribution.dims:
+                coeff += 0.1
+            if "model" in distribution.dims:
+                coeff += 0.1 * distribution.sizes["model"]
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=1 + coeff * n_blocks,
+                cols=process_facet_dims(pc_data, pc_kwargs["cols"])[0],
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
+        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
         plot_collection = PlotCollection.grid(
             pc_data,
             backend=backend,
@@ -364,13 +348,17 @@ def plot_forest(
     elif ci_kind == "hdi":
         ci_fun = distribution.azstats.hdi
     if twig_kwargs is not False:
-        ci_twig = ci_fun(
-            prob=ci_probs[1], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
+        twig_stats = stats_kwargs.get("twig", {})
+        if isinstance(twig_stats, xr.Dataset):
+            ci_twig = twig_stats
+        else:
+            ci_twig = ci_fun(prob=ci_probs[1], dims=ci_dims, **twig_stats)
     if trunk_kwargs is not False:
-        ci_trunk = ci_fun(
-            prob=ci_probs[0], dims=ci_dims, **stats_kwargs.get("credible_interval", {})
-        )
+        trunk_stats = stats_kwargs.get("trunk", {})
+        if isinstance(trunk_stats, xr.Dataset):
+            ci_trunk = trunk_stats
+        else:
+            ci_trunk = ci_fun(prob=ci_probs[0], dims=ci_dims, **trunk_stats)
 
     # compute point estimate
     pe_kwargs = copy(plot_kwargs.get("point_estimate", {}))
@@ -378,10 +366,13 @@ def plot_forest(
         pe_dims, pe_aes, pe_ignore = filter_aes(
             plot_collection, aes_map, "point_estimate", sample_dims
         )
-        if point_estimate == "median":
-            point = distribution.median(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+        pe_stats = stats_kwargs.get("point_estimate", {})
+        if isinstance(pe_stats, xr.Dataset):
+            point = pe_stats
+        elif point_estimate == "median":
+            point = distribution.median(dim=pe_dims, **pe_stats)
         elif point_estimate == "mean":
-            point = distribution.mean(dim=pe_dims, **stats_kwargs.get("point_estimate", {}))
+            point = distribution.mean(dim=pe_dims, **pe_stats)
         else:
             raise NotImplementedError("coming soon")
 
@@ -475,7 +466,6 @@ def plot_forest(
             **lab_kwargs,
         )
         x += 1
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     ticklabel_kwargs = copy(plot_kwargs.get("ticklabels", {}))
     if ticklabel_kwargs is not False:
         plot_bknd.xticks(

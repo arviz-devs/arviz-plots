@@ -56,7 +56,7 @@ exclude_patterns = [
 ]
 suppress_warnings = ["mystnb.unknown_mime_type"]
 
-backend_modules = ("index", "matplotlib", "bokeh")
+backend_modules = ("none", "matplotlib", "bokeh", "plotly")
 api_backend_dir = Path(__file__).parent.resolve() / "api" / "backend"
 with open(api_backend_dir / "interface.template.rst", "r", encoding="utf-8") as f:
     interface_template = f.read()

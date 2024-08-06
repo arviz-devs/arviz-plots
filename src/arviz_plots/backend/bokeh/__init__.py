@@ -7,7 +7,7 @@ from bokeh.models import GridPlot, Range1d, Title
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
-from .. import get_default_aes as get_agnostic_default_aes
+from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
 
@@ -19,8 +19,10 @@ unset = UnsetDefault()
 
 
 # generation of default values for aesthetics
-def get_default_aes(aes_key, n, kwargs):
+def get_default_aes(aes_key, n, kwargs=None):
     """Generate `n` *bokeh valid* default values for a given aesthetics keyword."""
+    if kwargs is None:
+        kwargs = {}
     if aes_key not in kwargs:
         if "color" in aes_key:
             # fmt: off
@@ -34,12 +36,12 @@ def get_default_aes(aes_key, n, kwargs):
         elif aes_key == "marker":
             vals = ["circle", "cross", "triangle", "x", "diamond"]
         else:
-            return get_agnostic_default_aes(aes_key, n, {})
+            return get_agnostic_default_aes(aes_key, n)
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
-def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
+def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
     """Scale figure properties according to figsize, rows and cols.
 
     Parameters
@@ -62,14 +64,14 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     linewidth : float
         linewidth
     """
+    if figsize_units is None:
+        figsize_units = "dots"
     if figsize is None:
-        width = 800
-        height = (100 * rows + 100) ** 1.1
+        width = cols * (400 if cols < 4 else 250)
+        height = 100 * (rows + 1) ** 1.1
         figsize_units = "dots"
     else:
         width, height = figsize
-    cols = cols * 100
-    rows = rows * 100
     if figsize_units == "inches":
         warnings.warn(
             f"Assuming dpi=100. Use figsize_units='dots' and figsize={figsize} "
@@ -80,15 +82,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     elif figsize_units != "dots":
         raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
 
-    val = (width * height) ** 0.5
-    val2 = (cols * rows) ** 0.5
-    scale_factor = val / (4 * val2)
-    # I didn't find any Bokeh equivalent to theme/rcParams,
-    # so they are hardcoded for now
-    labelsize = 14 * scale_factor
-    linewidth = 1 * scale_factor
-
-    return (width, height), labelsize, linewidth
+    return (width, height)
 
 
 # object creation and i/o

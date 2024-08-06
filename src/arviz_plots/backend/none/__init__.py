@@ -11,8 +11,6 @@ import warnings
 
 import numpy as np
 
-from .. import get_default_aes as get_agnostic_default_aes
-
 ALLOW_KWARGS = True
 
 
@@ -24,46 +22,70 @@ unset = UnsetDefault()
 
 
 # generation of default values for aesthetics
-def get_default_aes(aes_key, n, kwargs):
-    """Generate `n` default values for a given aesthetics keyword."""
-    if aes_key not in kwargs:
-        if aes_key in {"x", "y"}:
-            return np.arange(n)
-        return np.array([f"{aes_key}_{i}" for i in range(n)])
-    return get_agnostic_default_aes(aes_key, n, kwargs)
-
-
-def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
-    """Scale figure properties according to figsize, rows and cols.
+def get_default_aes(aes_key, n, kwargs=None):
+    """Generate `n` default values for a given aesthetics keyword.
 
     Parameters
     ----------
-    figsize : (float, float) or None
+    aes_key : str
+        The key for which default values should be generated.
+        Ideally part of {ref}`common interface arguments <backend_interface_arguments>`.
+    n : int
+        Number of values to generate.
+    kwargs : mapping of {str : array_like}, optional
+        Mapping with aesthetic keywords as keys and its correponding values as values.
+        If `aes_key` is present, the provided values will be used, repeating them
+        with :func:`numpy.tile` if necessary.
+
+    Returns
+    -------
+    ndarray of shape (n,)
+        The requested `n` default values for `aes_key`. They might not be unique.
+    """
+    if kwargs is None:
+        kwargs = {}
+    if aes_key not in kwargs:
+        if aes_key in {"x", "y"}:
+            return np.arange(n)
+        if aes_key == "alpha":
+            return np.linspace(0.2, 0.7, n)
+        return np.array([f"{aes_key}_{i}" for i in range(n)])
+    aes_vals = kwargs[aes_key]
+    n_aes_vals = len(aes_vals)
+    if n_aes_vals >= n:
+        return aes_vals[:n]
+    return np.tile(aes_vals, (n // n_aes_vals) + 1)[:n]
+
+
+def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
+    """Scale figure properties according to figsize, rows and cols.
+
+    Provide a default figure size given `rows` and `cols`.
+
+    Parameters
+    ----------
+    figsize : tuple of (float, float) or None
         Size of figure in `figsize_units`
-    rows : int
+    rows : int, default 1
         Number of rows
-    cols : int
+    cols : int, default 1
         Number of columns
-    figsize_units : {"inches", "dots"}
+    figsize_units : {"inches", "dots"}, optional
         Ignored if `figsize` is ``None``
 
     Returns
     -------
-    figsize : (float, float) or None
+    figsize : tuple of (float, float) or None
         Size of figure in dots
-    labelsize : float
-        fontsize for labels
-    linewidth : float
-        linewidth
     """
+    if figsize_units is None:
+        figsize_units = "dots"
     if figsize is None:
-        width = 800
-        height = (100 * rows + 100) ** 1.1
+        width = cols * (400 if cols < 4 else 250)
+        height = 100 * (rows + 1) ** 1.1
         figsize_units = "dots"
     else:
         width, height = figsize
-    cols = cols * 100
-    rows = rows * 100
     if figsize_units == "inches":
         warnings.warn(
             f"Assuming dpi=100. Use figsize_units='dots' and figsize={figsize} "
@@ -74,13 +96,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units="inches"):
     elif figsize_units != "dots":
         raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
 
-    val = (width * height) ** 0.5
-    val2 = (cols * rows) ** 0.5
-    scale_factor = val / (4 * val2)
-    labelsize = 14 * scale_factor
-    linewidth = 1 * scale_factor
-
-    return (width, height), labelsize, linewidth
+    return (width, height)
 
 
 # object creation and i/o
@@ -89,7 +105,7 @@ def show(chart):
 
     Parameters
     ----------
-    chart : chart type
+    chart : chart_type
     """
     raise TypeError("'none' backend objects can't be shown.")
 
@@ -123,7 +139,7 @@ def create_plotting_grid(
         Number of plots required
     rows, cols : int, default 1
         Number of rows and columns.
-    figsize : (float, float), optional
+    figsize : tuple of (float, float), optional
         Size of the figure in `figsize_units`.
     figsize_units : {"inches", "dots"}, default "inches"
         Units in which `figsize` is given.

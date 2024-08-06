@@ -7,8 +7,8 @@ figure.edgecolor:   None    # broken white outside box
 figure.titleweight: bold    # weight of the figure title
 figure.titlesize:   18
 
-figure.figsize:     11.5, 5
-figure.dpi:         300.0
+figure.figsize:     6, 5
+figure.dpi:         200.0
 figure.constrained_layout.use: True
 
 ## ***************************************************************************
