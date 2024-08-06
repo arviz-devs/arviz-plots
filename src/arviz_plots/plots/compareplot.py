@@ -1,17 +1,12 @@
 """Compare plot code."""
+from copy import copy
 from importlib import import_module
 
 from arviz_base import rcParams
 
 
 def plot_compare(
-    cmp_df,
-    color="black",
-    similar_band=True,
-    relative_scale=False,
-    figsize=None,
-    target=None,
-    backend=None,
+    cmp_df, similar_shade=True, relative_scale=False, backend=None, plot_kwargs=None, pc_kwargs=None
 ):
     r"""Summary plot for model comparison.
 
@@ -27,19 +22,28 @@ def plot_compare(
     ----------
     comp_df : pandas.DataFrame
         Result of the :func:`arviz.compare` method.
-    color : str, optional
-        Color for the plot elements. Defaults to "black".
-    similar_band : bool, optional
-        If True, a band is drawn to indicate models with similar
+    similar_shade : bool, optional
+        If True, a shade is drawn to indicate models with similar
         predictive performance to the best model. Defaults to True.
     relative_scale : bool, optional.
         If True scale the ELPD values relative to the best model.
         Defaults to False.
-    figsize : (float, float), optional
-        If `None`, size is (10, num of models) inches.
-    target : bokeh figure, matplotlib axes, or plotly figure optional
     backend : {"bokeh", "matplotlib", "plotly"}
         Select plotting backend. Defaults to rcParams["plot.backend"].
+    figsize : (float, float), optional
+        If `None`, size is (10, num of models) inches.
+    plot_kwargs : mapping of {str : mapping or False}, optional
+        Valid keys are:
+
+        * point_estimate -> passed to :func:`~.backend.scatter`
+        * error_bar -> passed to :func:`~.backend.line`
+        * ref_line -> passed to :func:`~.backend.line`
+        * shade -> passed to :func:`~.backend.fill_between_y`
+        * labels -> passed to :func:`~.backend.xticks` and :func:`~.backend.yticks`
+        * title -> passed to :func:`~.backend.title`
+        * ticklabels -> passed to :func:`~.backend.yticks`
+
+    pc_kwargs : mapping
 
     Returns
     -------
@@ -57,6 +61,7 @@ def plot_compare(
     .. [1] Vehtari et al. (2016). Practical Bayesian model evaluation using leave-one-out
        cross-validation and WAIC https://arxiv.org/abs/1507.04544
     """
+    # Check if cmp_df contains the required information criterion
     information_criterion = ["elpd_loo", "elpd_waic"]
     column_index = [c.lower() for c in cmp_df.columns]
     for i_c in information_criterion:
@@ -68,19 +73,29 @@ def plot_compare(
             f"information criterion: {information_criterion}"
         )
 
+    # Set default backend
     if backend is None:
         backend = rcParams["plot.backend"]
 
+    if plot_kwargs is None:
+        plot_kwargs = {}
+
+    if pc_kwargs is None:
+        pc_kwargs = {}
+
+    # Get plotting backend
+    p_be = import_module(f"arviz_plots.backend.{backend}")
+
+    # Get figure params and create figure and axis
+    pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+    figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", (10, len(cmp_df)))
+    figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+    _, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
+
+    # Set scale relative to the best model
     if relative_scale:
         cmp_df = cmp_df.copy()
         cmp_df[i_c] = cmp_df[i_c] - cmp_df[i_c].iloc[0]
-
-    if figsize is None:
-        figsize = (10, len(cmp_df))
-
-    p_be = import_module(f"arviz_plots.backend.{backend}")
-    _, target = p_be.create_plotting_grid(1, figsize=figsize)
-    linestyle = p_be.get_default_aes("linestyle", 2, {})[-1]
 
     # Compute positions of yticks
     yticks_pos = list(range(len(cmp_df), 0, -1))
@@ -93,45 +108,61 @@ def plot_compare(
     # Compute values for standard error bars
     se_list = list(zip((cmp_df[i_c] - cmp_df["se"]), (cmp_df[i_c] + cmp_df["se"])))
 
-    # Plot ELPD point statimes
-    p_be.scatter(cmp_df[i_c], yticks_pos, target, color=color)
     # Plot ELPD standard error bars
+    error_kwargs = copy(plot_kwargs.get("error_bar", {}))
+    error_kwargs.setdefault("color", "black")
     for se_vals, ytick in zip(se_list, yticks_pos):
-        p_be.line(se_vals, (ytick, ytick), target, color=color)
+        p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
 
     # Add reference line for the best model
+    ref_kwargs = copy(plot_kwargs.get("ref_line", {}))
+    ref_kwargs.setdefault("color", "gray")
+    ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
     p_be.line(
         (cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0]),
         (yticks_pos[0], yticks_pos[-1]),
         target,
-        color=color,
-        linestyle=linestyle,
-        alpha=0.5,
+        **ref_kwargs,
     )
 
-    # Add band for statistically undistinguishable models
-    if similar_band:
+    # Plot ELPD point estimates
+    pe_kwargs = copy(plot_kwargs.get("point_estimate", {}))
+    pe_kwargs.setdefault("color", "black")
+    p_be.scatter(cmp_df[i_c], yticks_pos, target, **pe_kwargs)
+
+    # Add shade for statistically undistinguishable models
+    if similar_shade:
+        shade_kwargs = copy(plot_kwargs.get("shade", {}))
+        shade_kwargs.setdefault("color", "black")
+        shade_kwargs.setdefault("alpha", 0.1)
+
         if scale == "log":
             x_0, x_1 = cmp_df[i_c].iloc[0] - 4, cmp_df[i_c].iloc[0]
         else:
             x_0, x_1 = cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0] + 4
 
+        padding = (yticks_pos[0] - yticks_pos[-1]) * 0.05
         p_be.fill_between_y(
             x=[x_0, x_1],
-            y_bottom=yticks_pos[-1],
-            y_top=yticks_pos[0],
+            y_bottom=yticks_pos[-1] - padding,
+            y_top=yticks_pos[0] + padding,
             target=target,
-            color=color,
-            alpha=0.1,
+            **shade_kwargs,
         )
 
     # Add title and labels
+    title_kwargs = copy(plot_kwargs.get("title", {}))
     p_be.title(
         f"Model comparison\n{'higher' if scale == 'log' else 'lower'} is better",
         target,
+        **title_kwargs,
     )
-    p_be.ylabel("ranked models", target)
-    p_be.xlabel(f"ELPD ({scale})", target)
-    p_be.yticks(yticks_pos, cmp_df.index, target)
+
+    labels_kwargs = copy(plot_kwargs.get("labels", {}))
+    p_be.ylabel("ranked models", target, **labels_kwargs)
+    p_be.xlabel(f"ELPD ({scale})", target, **labels_kwargs)
+
+    ticklabels_kwargs = copy(plot_kwargs.get("ticklabels", {}))
+    p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
 
     return target
