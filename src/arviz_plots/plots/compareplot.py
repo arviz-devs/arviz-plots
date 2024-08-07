@@ -1,5 +1,4 @@
 """Compare plot code."""
-from copy import copy
 from importlib import import_module
 
 import numpy as np
@@ -123,34 +122,34 @@ def plot_compare(
     if scale == "negative_log":
         scale = "-log"
 
-    # Compute values for standard error bars
-    se_list = list(zip((cmp_df[i_c] - cmp_df["se"]), (cmp_df[i_c] + cmp_df["se"])))
-
     # Plot ELPD standard error bars
-    error_kwargs = copy(plot_kwargs.get("error_bar", {}))
-    error_kwargs.setdefault("color", "black")
-    for se_vals, ytick in zip(se_list, yticks_pos):
-        p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
+    if (error_kwargs := plot_kwargs.get("error_bar", {})) is not False:
+        error_kwargs.setdefault("color", "black")
+
+        # Compute values for standard error bars
+        se_list = list(zip((cmp_df[i_c] - cmp_df["se"]), (cmp_df[i_c] + cmp_df["se"])))
+
+        for se_vals, ytick in zip(se_list, yticks_pos):
+            p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
 
     # Add reference line for the best model
-    ref_kwargs = copy(plot_kwargs.get("ref_line", {}))
-    ref_kwargs.setdefault("color", "gray")
-    ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
-    p_be.line(
-        (cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0]),
-        (yticks_pos[0], yticks_pos[-1]),
-        target,
-        **ref_kwargs,
-    )
+    if (ref_kwargs := plot_kwargs.get("ref_line", {})) is not False:
+        ref_kwargs.setdefault("color", "gray")
+        ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
+        p_be.line(
+            (cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0]),
+            (yticks_pos[0], yticks_pos[-1]),
+            target,
+            **ref_kwargs,
+        )
 
     # Plot ELPD point estimates
-    pe_kwargs = copy(plot_kwargs.get("point_estimate", {}))
-    pe_kwargs.setdefault("color", "black")
-    p_be.scatter(cmp_df[i_c], yticks_pos, target, **pe_kwargs)
+    if (pe_kwargs := plot_kwargs.get("point_estimate", {})) is not False:
+        pe_kwargs.setdefault("color", "black")
+        p_be.scatter(cmp_df[i_c], yticks_pos, target, **pe_kwargs)
 
     # Add shade for statistically undistinguishable models
-    if similar_shade:
-        shade_kwargs = copy(plot_kwargs.get("shade", {}))
+    if similar_shade and (shade_kwargs := plot_kwargs.get("shade", {})) is not False:
         shade_kwargs.setdefault("color", "black")
         shade_kwargs.setdefault("alpha", 0.1)
 
@@ -169,18 +168,18 @@ def plot_compare(
         )
 
     # Add title and labels
-    title_kwargs = copy(plot_kwargs.get("title", {}))
-    p_be.title(
-        f"Model comparison\n{'higher' if scale == 'log' else 'lower'} is better",
-        target,
-        **title_kwargs,
-    )
+    if (title_kwargs := plot_kwargs.get("title", {})) is not False:
+        p_be.title(
+            f"Model comparison\n{'higher' if scale == 'log' else 'lower'} is better",
+            target,
+            **title_kwargs,
+        )
 
-    labels_kwargs = copy(plot_kwargs.get("labels", {}))
-    p_be.ylabel("ranked models", target, **labels_kwargs)
-    p_be.xlabel(f"ELPD ({scale})", target, **labels_kwargs)
+    if (labels_kwargs := plot_kwargs.get("labels", {})) is not False:
+        p_be.ylabel("ranked models", target, **labels_kwargs)
+        p_be.xlabel(f"ELPD ({scale})", target, **labels_kwargs)
 
-    ticklabels_kwargs = copy(plot_kwargs.get("ticklabels", {}))
-    p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
+    if (ticklabels_kwargs := plot_kwargs.get("ticklabels", {})) is not False:
+        p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
 
     return plot_collection
