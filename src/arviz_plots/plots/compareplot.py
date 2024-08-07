@@ -48,6 +48,7 @@ def plot_compare(
         * ticklabels -> passed to :func:`~.backend.yticks`
 
     pc_kwargs : mapping
+        Passed to :class:`arviz_plots.PlotCollection`
 
     Returns
     -------
@@ -107,6 +108,7 @@ def plot_compare(
             }
         ),
         backend=backend,
+        **pc_kwargs,
     )
 
     # Set scale relative to the best model
