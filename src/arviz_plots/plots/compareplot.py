@@ -97,6 +97,7 @@ def plot_compare(
     figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
     chart, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
 
+    # Create plot collection
     plot_collection = PlotCollection(
         Dataset({}),
         viz_dt=DataTree.from_dict(
@@ -106,6 +107,7 @@ def plot_compare(
                 )
             }
         ),
+        backend=backend,
     )
 
     # Set scale relative to the best model
