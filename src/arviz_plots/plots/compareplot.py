@@ -2,7 +2,12 @@
 from copy import copy
 from importlib import import_module
 
+import numpy as np
 from arviz_base import rcParams
+from datatree import DataTree
+from xarray import Dataset
+
+from arviz_plots.plot_collection import PlotCollection
 
 
 def plot_compare(
@@ -90,7 +95,18 @@ def plot_compare(
     pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
     figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", (10, len(cmp_df)))
     figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
-    _, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
+    chart, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
+
+    plot_collection = PlotCollection(
+        Dataset({}),
+        viz_dt=DataTree.from_dict(
+            {
+                "/": Dataset(
+                    {"chart": np.array(chart, dtype=object), "plot": np.array(target, dtype=object)}
+                )
+            }
+        ),
+    )
 
     # Set scale relative to the best model
     if relative_scale:
@@ -165,4 +181,4 @@ def plot_compare(
     ticklabels_kwargs = copy(plot_kwargs.get("ticklabels", {}))
     p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
 
-    return target
+    return plot_collection
