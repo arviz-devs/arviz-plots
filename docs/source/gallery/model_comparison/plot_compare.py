@@ -10,6 +10,7 @@ API Documentation: {func}`~arviz_plots.plot_compare`
 :::
 """
 import arviz_plots as azp
+import pandas as pd
 
 azp.style.use("arviz-clean")
 
