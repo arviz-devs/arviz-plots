@@ -263,8 +263,6 @@ def create_plotting_grid(
     for row in range(rows):
         for col in range(cols):
             plots[row, col] = PlotlyPlot(chart, row + 1, col + 1)
-    if squeeze and plots.size == 1:
-        return None, plots[0, 0]
     return chart, plots.squeeze() if squeeze else plots
 
 
