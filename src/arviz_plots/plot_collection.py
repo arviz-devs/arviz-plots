@@ -328,7 +328,11 @@ class PlotCollection:
         if "chart" not in self.viz:
             raise ValueError("No plot found to be shown")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        plot_bknd.show(self.viz["chart"].item())
+        chart = self.viz["chart"].item()
+        if chart is not None:
+            plot_bknd.show(chart)
+        else:
+            self.viz["plot"].item()
 
     def generate_aes_dt(self, aes=None, **kwargs):
         """Generate the aesthetic mappings.
