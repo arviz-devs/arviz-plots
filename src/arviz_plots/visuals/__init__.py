@@ -45,7 +45,7 @@ def line(da, target, backend, xname=None, **kwargs):
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
-def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
+def trace_rug(da, target, backend, mask, xname=None, y=None, scale=1, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
     xname = xname.item() if hasattr(xname, "item") else xname
     if xname is False:
@@ -61,6 +61,8 @@ def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
             y = da.min().item()
     if len(xvalues.shape) != 1:
         raise ValueError(f"Expected unidimensional data but got {xvalues.sizes}")
+    xvalues = xvalues / scale
+    # print(f"\n trace_rug call. xvalues = {xvalues}\nmask = {mask}")
     return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
 
 
@@ -72,6 +74,18 @@ def scatter_x(da, target, backend, y=None, **kwargs):
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.scatter(da, y, target, **kwargs)
+
+
+def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
+    """Plot a scatter plot x vs y.
+
+    The input argument `da` is split into x and y using the dimension ``plot_axis``.
+    If additional x and y arguments are provided, x and y are added to the values
+    in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    x, y = _process_da_x_y(da, x, y)
+    return plot_backend.scatter(x, y, target, **kwargs)
 
 
 def ecdf_line(values, target, backend, **kwargs):
