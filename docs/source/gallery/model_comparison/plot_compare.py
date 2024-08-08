@@ -1,22 +1,18 @@
 """
-(gallery_forest_pp_obs)=
-# Posterior predictive and observations forest plot
+# Predicive model comparison plot
 
-Overlay of forest plot for the posterior predictive samples and the actual observations
+Compare multiple models using predictive accuracy estimates like  {abbr}`LOO-CV (leave one out cross validation)` or {abbr}`WAIC (widely applicable information criterion)`
 
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_forest`
-
-Other gallery examples using `plot_forest`: {ref}`gallery_forest`, {ref}`gallery_forest_shade`
+API Documentation: {func}`~arviz_plots.plot_compare`
 :::
 """
 import arviz_plots as azp
 
 azp.style.use("arviz-clean")
 
-backend="none"  # change to preferred backend
 
 cmp_df = pd.DataFrame({"elpd_loo": [-4.5, -14.3, -16.2], 
                        "p_loo": [2.6, 2.3, 2.1], 
@@ -27,4 +23,5 @@ cmp_df = pd.DataFrame({"elpd_loo": [-4.5, -14.3, -16.2],
                        "warning": [False, False, False], 
                        "scale": ["log", "log", "log"]}, index=["Model B", "Model A", "Model C"])
 
-azp.plot_compare(cmp_df, backend=backend)
+pc = azp.plot_compare(cmp_df, backend="none")  # change to preferred backend
+pc.show()
