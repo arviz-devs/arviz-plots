@@ -85,6 +85,7 @@ def plot_rootogram(
         * "observed" -> passed to :func: `~arviz_plots.visuals.scatter_xy`
         * "observed_line" -> passed to :func:`~arviz_plots.visuals.line_xy`
         * "observed_rug" -> passed to :func:`arviz_plots.visuals.trace_rug`
+        * "baseline" -> passed to :func:`~arviz_plots.visuals.line_xy`
         * "title" -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * "remove_axis" -> not passed anywhere, can only be ``False`` to skip calling this function
     stats_kwargs : mapping, optional
