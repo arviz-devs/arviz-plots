@@ -215,7 +215,7 @@ def hist(
     """Interface to matplotlib for a histogram bar plot."""
     artist_kws.setdefault("zorder", 2)
     widths = np.asarray(r_e) - np.asarray(l_e)
-    if bottom != 0:
+    if np.any(bottom != 0):
         y = y - bottom  # making y the top coordinate and not height
     if color is not unset:
         if facecolor is unset:

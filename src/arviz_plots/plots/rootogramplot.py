@@ -311,7 +311,7 @@ def plot_rootogram(
             linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
 
             if "linestyle" not in obs_line_aes:
-                obs_kwargs.setdefault("linestyle", linestyle)
+                obs_line_kwargs.setdefault("linestyle", linestyle)
 
             if "color" not in obs_line_aes:
                 obs_line_kwargs.setdefault("color", "black")
