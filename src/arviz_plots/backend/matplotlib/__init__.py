@@ -205,7 +205,7 @@ def hist(
     r_e,
     target,
     *,
-    bottom=None,
+    bottom=0,
     color=unset,
     alpha=unset,
     facecolor=unset,
@@ -215,13 +215,17 @@ def hist(
     """Interface to matplotlib for a histogram bar plot."""
     artist_kws.setdefault("zorder", 2)
     widths = np.asarray(r_e) - np.asarray(l_e)
+    if np.any(bottom != 0):
+        y = y - bottom  # making y the top coordinate and not height
     if color is not unset:
         if facecolor is unset:
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
     kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
-    return target.bar(l_e, y, width=widths, **_filter_kwargs(kwargs, None, artist_kws))
+    return target.bar(
+        l_e, y, width=widths, align="edge", **_filter_kwargs(kwargs, None, artist_kws)
+    )
 
 
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
