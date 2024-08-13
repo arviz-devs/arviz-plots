@@ -323,12 +323,13 @@ class TestPlots:
             assert "ecdf" in pc.viz["obs"]
         assert "overlay" in pc.aes["obs"].data_vars
 
+    # no stacking of sample_dims into ppc_dim
     @pytest.mark.parametrize("kind", ("kde", "cumulative"))
     def test_plot_ppc_sample(self, datatree_sample, kind, backend):
         pc = plot_ppc(datatree_sample, kind=kind, sample_dims="sample", backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "obs" in pc.viz
-        # assert "ppc_dim" in pc.viz["obs"].dims
+        assert "sample" in pc.viz["obs"].dims
         if kind == "kde":
             assert "kde" in pc.viz["obs"]
         elif kind == "cumulative":

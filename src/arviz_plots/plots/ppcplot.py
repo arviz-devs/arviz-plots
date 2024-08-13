@@ -186,6 +186,15 @@ def plot_ppc(
             plot element"""
         )
 
+    observed_rug_kwargs = copy(plot_kwargs.get("observed_rug", {}))
+    if observed_rug_kwargs is False:
+        raise ValueError(
+            """plot_kwargs['observed_rug'] can't be False, use observed_rug=False to remove 
+            observed_rug plot element"""
+        )
+    if observed is False and observed_rug is True:
+        raise ValueError("""observed_rug=True is only valid when observed=True""")
+
     aggregate_kwargs = copy(plot_kwargs.get("aggregate", {}))
     if aggregate_kwargs is False:
         raise ValueError(
