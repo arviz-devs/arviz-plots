@@ -1,16 +1,18 @@
 """dist plot code."""
 import warnings
 from copy import copy
+from importlib import import_module
 
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     ecdf_line,
+    hist,
     labelled_title,
     line_x,
     line_xy,
@@ -97,6 +99,7 @@ def plot_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -118,13 +121,15 @@ def plot_dist(
     -------
     PlotCollection
 
+    See Also
+    --------
+    :ref:`plots_intro` :
+        General introduction to batteries-included plotting functions, common use and logic overview
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_dist``.
-    For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`
-
-    Default plot_dist for a single model:
+    Map the color to the variable, and have the mapping apply
+    to the title too instead of only the density representation:
 
     .. plot::
         :context: close-figs
@@ -132,33 +137,15 @@ def plot_dist(
         >>> from arviz_plots import plot_dist, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
         >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_dist(centered)
-
-    Default plot_dist for multiple models:
-
-    .. plot::
-        :context: close-figs
-
-        >>> pc = plot_dist(
-        >>>     {"centered": centered, "non centered": non_centered},
-        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>> )
-        >>> pc.add_legend("model")
-
-    We can also manually map the color to the variable, and have the mapping apply
-    to the title too instead of only the density representation:
-
-    .. plot::
-        :context: close-figs
-
         >>> pc = plot_dist(
         >>>     non_centered,
         >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
         >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
         >>>     aes_map={"title": ["color"]},
         >>> )
+
+    .. minigallery:: plot_dist
 
     """
     if ci_kind not in ("hdi", "eti", None):
@@ -178,6 +165,8 @@ def plot_dist(
         kind = rcParams["plot.density_kind"]
     if plot_kwargs is None:
         plot_kwargs = {}
+    if kind in ("hist", "ecdf"):
+        plot_kwargs.setdefault("remove_axis", False)
     if pc_kwargs is None:
         pc_kwargs = {}
     else:
@@ -189,6 +178,12 @@ def plot_dist(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     if plot_collection is None:
         if backend is None:
@@ -203,6 +198,27 @@ def plot_dist(
             pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
             pc_kwargs["aes"].setdefault("color", ["model"])
             pc_kwargs["aes"].setdefault("y", ["model"])
+
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
+        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+        if figsize is None:
+            num_plots = process_facet_dims(distribution, pc_kwargs["cols"])[0]
+            if num_plots < pc_kwargs["col_wrap"]:
+                cols = num_plots
+                rows = 1
+            else:
+                cols = pc_kwargs["col_wrap"]
+                rows = num_plots // cols + 1
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=rows,
+                cols=cols,
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
+        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -226,7 +242,14 @@ def plot_dist(
     density_kwargs = copy(plot_kwargs.get(kind, {}))
 
     if density_kwargs is not False:
-        density_dims, _, density_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
+        density_dims, density_aes, density_ignore = filter_aes(
+            plot_collection, aes_map, kind, sample_dims
+        )
+
+        default_color = plot_bknd.get_default_aes("color", 1, {})[0]
+        if "color" not in density_aes:
+            density_kwargs.setdefault("color", default_color)
+
         if kind == "kde":
             with warnings.catch_warnings():
                 if "model" in distribution:
@@ -248,6 +271,17 @@ def plot_dist(
                 data=density,
                 ignore_aes=density_ignore,
                 **density_kwargs,
+            )
+
+        elif kind == "hist":
+            stats_kwargs.setdefault("density", {"density": True})
+
+            density = distribution.azstats.histogram(
+                dims=density_dims, **stats_kwargs.get("density", {})
+            )
+
+            plot_collection.map(
+                hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
             )
 
         else:
@@ -320,6 +354,14 @@ def plot_dist(
         elif kind == "ecdf":
             # ecdf max is always 1
             point_y = xr.full_like(point, 0.04)
+        elif kind == "hist":
+            point_density_diff = [
+                dim for dim in density.sel(plot_axis="histogram").dims if dim not in point.dims
+            ]
+            point_density_diff = ["hist_dim"] + point_density_diff
+            point_y = 0.04 * density.sel(plot_axis="histogram", drop=True).max(
+                dim=point_density_diff
+            )
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(
@@ -352,7 +394,7 @@ def plot_dist(
             labeller=labeller,
             **title_kwargs,
         )
-    if (kind == "kde") and (plot_kwargs.get("remove_axis", True) is not False):
+    if plot_kwargs.get("remove_axis", True) is not False:
         plot_collection.map(
             remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )

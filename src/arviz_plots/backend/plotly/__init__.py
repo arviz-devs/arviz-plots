@@ -270,6 +270,48 @@ def _filter_kwargs(kwargs, artist_kws):
 
 
 # "geoms"
+def hist(
+    y,
+    l_e,
+    r_e,
+    target,
+    *,
+    bottom=0,
+    color=unset,
+    alpha=unset,
+    facecolor=unset,
+    edgecolor=unset,
+    **artist_kws,
+):
+    """Interface to matplotlib for a histogram bar plot."""
+    artist_kws.setdefault("showlegend", False)
+    widths = np.asarray(r_e) - np.asarray(l_e)
+    if np.any(bottom != 0):
+        height = y - bottom
+    else:
+        height = y
+    if color is not unset:
+        if facecolor is unset:
+            facecolor = color
+        if edgecolor is unset:
+            edgecolor = color
+    marker_artist_kws = artist_kws.pop("marker", {}).copy()
+    line_kwargs = {"color": edgecolor}
+    line_artist_kws = marker_artist_kws.pop("line", {}).copy()
+    marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
+    marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
+    hist_object = go.Bar(
+        x=(l_e + r_e) / 2,
+        y=height,
+        base=bottom,
+        width=widths,
+        marker=marker_kwargs,
+        **_filter_kwargs({"opacity": alpha}, artist_kws),
+    )
+    target.add_trace(hist_object)
+    return hist_object
+
+
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to plotly for a line plot."""
     artist_kws.setdefault("showlegend", False)

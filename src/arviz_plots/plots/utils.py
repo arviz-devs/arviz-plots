@@ -1,4 +1,5 @@
 """Utilities for batteries included plots."""
+
 from arviz_base.utils import _var_names
 from xarray import Dataset
 
