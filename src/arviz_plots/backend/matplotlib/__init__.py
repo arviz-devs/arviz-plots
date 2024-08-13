@@ -216,7 +216,9 @@ def hist(
     artist_kws.setdefault("zorder", 2)
     widths = np.asarray(r_e) - np.asarray(l_e)
     if np.any(bottom != 0):
-        y = y - bottom  # making y the top coordinate and not height
+        height = y - bottom
+    else:
+        height = y
     if color is not unset:
         if facecolor is unset:
             facecolor = color
@@ -224,7 +226,7 @@ def hist(
             edgecolor = color
     kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
     return target.bar(
-        l_e, y, width=widths, align="edge", **_filter_kwargs(kwargs, None, artist_kws)
+        l_e, height, width=widths, align="edge", **_filter_kwargs(kwargs, None, artist_kws)
     )
 
 
