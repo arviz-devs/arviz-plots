@@ -14,6 +14,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import (
+    annotate_xy,
     labelled_title,
     labelled_x,
     labelled_y,
@@ -34,7 +35,7 @@ def plot_ess_evolution(
     rug=False,
     rug_kind="diverging",
     n_points=20,
-    extra_methods=False,
+    extra_methods=True,
     min_ess=400,
     plot_collection=None,
     backend=None,
@@ -96,6 +97,8 @@ def plot_ess_evolution(
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * mean -> passed to :func:`~arviz_plots.visuals.line_xy`
         * sd -> passed to :func:`~arviz_plots.visuals.line_xy`
+        * mean_text -> passed to :func:`~arviz.plots.visuals.annotate_xy`
+        * sd_text -> passed to :func:`~arviz.plots.visuals.annotate_xy`
         * min_ess -> passed to :func:`~arviz_plots.visuals.line_xy`
 
     stats_kwargs : mapping, optional
@@ -170,6 +173,10 @@ def plot_ess_evolution(
     aes_map.setdefault("ess_tail", plot_collection.aes_set.difference({"overlay"}))
     aes_map.setdefault("ess_tail_line", plot_collection.aes_set.difference({"overlay"}))
     aes_map.setdefault("divergence", {"overlay"})
+    if "mean" in aes_map and "mean_text" not in aes_map:
+        aes_map["mean_text"] = aes_map["mean"]
+    if "sd" in aes_map and "sd_text" not in aes_map:
+        aes_map["sd_text"] = aes_map["sd"]
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -397,7 +404,7 @@ def plot_ess_evolution(
     # and default color
     default_color = plot_bknd.get_default_aes("color", 1, {})[0]
 
-    # plot mean and sd
+    # plot mean and sd and annotate them
     if extra_methods is not False:
         mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
@@ -437,6 +444,70 @@ def plot_ess_evolution(
 
             plot_collection.map(
                 line_xy, "sd", data=sd_ess, ignore_aes=sd_ignore, x=xdata, **sd_kwargs
+            )
+
+        mean_text_kwargs = copy(plot_kwargs.get("mean_text", {}))
+        if (
+            mean_text_kwargs is not False and mean_ess
+        ):  # mean_ess has to exist for an annotation to be applied
+            _, mean_text_aes, mean_text_ignore = filter_aes(
+                plot_collection, aes_map, "mean_text", sample_dims
+            )
+
+            if "color" not in mean_text_aes:
+                mean_text_kwargs.setdefault("color", "black")
+
+            mean_text_kwargs.setdefault("x", max(xdata))
+            mean_text_kwargs.setdefault("horizontal_align", "right")
+            mean_text_kwargs.setdefault(
+                "vertical_align", "bottom"
+            )  # by default set to bottom for mean
+
+            # pass the sd_ess data to be facetted/subsetted too for vertical alignment setting
+            if sd_ess:
+                extra_da = sd_ess
+            else:
+                extra_da = None
+
+            plot_collection.map(
+                annotate_xy,
+                "mean_text",
+                text="mean",
+                data=mean_ess,
+                extra_da=extra_da,
+                ignore_aes=mean_text_ignore,
+                **mean_text_kwargs,
+            )
+
+        sd_text_kwargs = copy(plot_kwargs.get("sd_text", {}))
+        if (
+            sd_text_kwargs is not False and sd_ess
+        ):  # sd_ess has to exist for an annotation to be applied
+            _, sd_text_aes, sd_text_ignore = filter_aes(
+                plot_collection, aes_map, "sd_text", sample_dims
+            )
+
+            if "color" not in sd_text_aes:
+                sd_text_kwargs.setdefault("color", "black")
+
+            sd_text_kwargs.setdefault("x", max(xdata))
+            sd_text_kwargs.setdefault("horizontal_align", "right")
+            sd_text_kwargs.setdefault("vertical_align", "top")  # by default set to top for sd
+
+            # pass the mean_ess data to be facetted/subsetted too for vertical alignment setting
+            if mean_ess:
+                extra_da = mean_ess
+            else:
+                extra_da = None
+
+            plot_collection.map(
+                annotate_xy,
+                "sd_text",
+                text="sd",
+                data=sd_ess,
+                extra_da=extra_da,
+                ignore_aes=sd_text_ignore,
+                **sd_text_kwargs,
             )
 
     # plot minimum ess
