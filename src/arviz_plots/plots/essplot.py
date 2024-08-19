@@ -133,6 +133,17 @@ def plot_ess(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
 
+    # from importlib.metadata import version, PackageNotFoundError
+
+    # get the version of the arviz_stats module
+    # try:
+    #    arviz_stats_version = version("arviz_stats")
+    #    print(f"arviz_stats version: {arviz_stats_version}")
+    # except PackageNotFoundError:
+    #    print("arviz_stats package is not installed")
+
+    # print(f"arviz_stats version: {arviz_stats.__version__}")
+
     # mutable inputs
     if plot_kwargs is None:
         plot_kwargs = {}
@@ -266,31 +277,16 @@ def plot_ess(
                 rug_kwargs.setdefault("size", 30)
             div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
-            # xname is used to pick subset of dataset in map() to be masked
-            xname = None
-            default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
-            if (default_xname not in distribution.dims) or (
-                not np.issubdtype(distribution[default_xname].dtype, np.number)
-            ):
-                default_xname = None
-            xname = rug_kwargs.get("xname", default_xname)
-            rug_kwargs["xname"] = xname
-
-            draw_length = (
-                distribution.sizes[sample_dims[0]]
-                if len(sample_dims) == 1
-                else distribution.sizes["draw"]
-            )  # used to scale xvalues to between 0-1
+            values = distribution.azstats.compute_ranks(relative=False)
+            print(f"\n compute_ranks values = {values}")
 
             plot_collection.map(
                 trace_rug,
                 "rug",
-                data=distribution,
+                data=values,
                 ignore_aes=div_ignore,
-                # xname=xname,
                 y=distribution.min(div_reduce_dims),
                 mask=rug_mask,
-                scale=draw_length,
                 **rug_kwargs,
             )  # note: after plot_ppc merge, the `trace_rug` function might change
 
@@ -306,6 +302,9 @@ def plot_ess(
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
+        mean_ess = None
+        sd_ess = None
+
         mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
             mean_dims, mean_aes, mean_ignore = filter_aes(
@@ -346,9 +345,15 @@ def plot_ess(
                 line_xy, "sd", data=sd_ess, ignore_aes=sd_ignore, x=x_range, **sd_kwargs
             )
 
+        sd_va_align = None
+        mean_va_align = None
+        if mean_ess is not None and sd_ess is not None:
+            sd_va_align = xr.where(mean_ess < sd_ess, "bottom", "top")
+            mean_va_align = xr.where(mean_ess < sd_ess, "top", "bottom")
+
         mean_text_kwargs = copy(plot_kwargs.get("mean_text", {}))
         if (
-            mean_text_kwargs is not False and mean_ess
+            mean_text_kwargs is not False and mean_ess is not None
         ):  # mean_ess has to exist for an annotation to be applied
             _, mean_text_aes, mean_text_ignore = filter_aes(
                 plot_collection, aes_map, "mean_text", sample_dims
@@ -359,29 +364,29 @@ def plot_ess(
 
             mean_text_kwargs.setdefault("x", 1)
             mean_text_kwargs.setdefault("horizontal_align", "right")
-            mean_text_kwargs.setdefault(
-                "vertical_align", "bottom"
-            )  # by default set to bottom for mean
+            # mean_text_kwargs.setdefault(
+            #    "vertical_align", "bottom"
+            # )  # by default set to bottom for mean
 
-            # pass the sd_ess data to be facetted/subsetted too for vertical alignment setting
-            if sd_ess:
-                extra_da = sd_ess
+            # pass the mean vertical_align data for vertical alignment setting
+            if mean_va_align is not None:
+                vertical_align = mean_va_align
             else:
-                extra_da = None
+                vertical_align = "bottom"
 
             plot_collection.map(
                 annotate_xy,
                 "mean_text",
                 text="mean",
                 data=mean_ess,
-                extra_da=extra_da,
+                vertical_align=vertical_align,
                 ignore_aes=mean_text_ignore,
                 **mean_text_kwargs,
             )
 
         sd_text_kwargs = copy(plot_kwargs.get("sd_text", {}))
         if (
-            sd_text_kwargs is not False and sd_ess
+            sd_text_kwargs is not False and sd_ess is not None
         ):  # sd_ess has to exist for an annotation to be applied
             _, sd_text_aes, sd_text_ignore = filter_aes(
                 plot_collection, aes_map, "sd_text", sample_dims
@@ -392,20 +397,20 @@ def plot_ess(
 
             sd_text_kwargs.setdefault("x", 1)
             sd_text_kwargs.setdefault("horizontal_align", "right")
-            sd_text_kwargs.setdefault("vertical_align", "top")  # by default set to top for sd
+            # sd_text_kwargs.setdefault("vertical_align", "top")  # by default set to top for sd
 
-            # pass the mean_ess data to be facetted/subsetted too for vertical alignment setting
-            if mean_ess:
-                extra_da = mean_ess
+            # pass the sd vertical_align data for vertical alignment setting
+            if sd_va_align is not None:
+                vertical_align = sd_va_align
             else:
-                extra_da = None
+                vertical_align = "top"
 
             plot_collection.map(
                 annotate_xy,
                 "sd_text",
                 text="sd",
                 data=sd_ess,
-                extra_da=extra_da,
+                vertical_align=vertical_align,
                 ignore_aes=sd_text_ignore,
                 **sd_text_kwargs,
             )
@@ -492,5 +497,9 @@ def plot_ess(
             store_artist=False,
             **ylabel_kwargs,
         )
+
+    # print(f"\n plot_collection.viz = {plot_collection.viz}")
+
+    # print(f"\n plot_collection.aes = {plot_collection.aes}")
 
     return plot_collection
