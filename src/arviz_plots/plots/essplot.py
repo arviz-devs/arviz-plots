@@ -66,7 +66,7 @@ def plot_ess(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    kind : {"local", "quantile", "evolution"}, default "local"
+    kind : {"local", "quantile"}, default "local"
         Specify the kind of plot:
 
         * The ``kind="local"`` argument generates the ESS' local efficiency
@@ -99,10 +99,6 @@ def plot_ess(
         Valid keys are:
 
         * ess -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-            if `kind`='local',
-            else passed to :func:`~arviz_plots.visuals.scatter_xy`
-            if `kind` = 'quantile'
-
         * rug -> passed to :func:`~.visuals.trace_rug`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
@@ -126,12 +122,85 @@ def plot_ess(
     Returns
     -------
     PlotCollection
+
+    Examples
+    --------
+    The following examples focus on behaviour specific to ``plot_ess``.
+    For a general introduction to batteries-included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
+    Default plot_ess for a single model:
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_ess, style
+        >>> style.use("arviz-clean")
+        >>> from arviz_base import load_arviz_data
+        >>> centered = load_arviz_data('centered_eight')
+        >>> non_centered = load_arviz_data('non_centered_eight')
+        >>> pc = plot_ess(centered)
+
+    Default plot_ess for multiple models: (Depending on the number of models, a slight
+    x-axis separation aesthetic is applied for each ess point for distinguishability in
+    case of overlap)
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess(
+        >>>     {"centered": centered, "non centered": non_centered},
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>> )
+        >>> pc.add_legend("model")
+
+    We can also manually map the color to the variable, and have the mapping apply
+    to the title too instead of only the ess markers:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>>     aes_map={"title": ["color"]},
+        >>> )
+
+    If we add a mapping (like color) manually to the variable, but not specify which artist
+    to apply the mapping to- then it is applied to the 'ess' marker artist by default:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess(
+        >>>     centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>> )
+
+    The artists' visual features can also be customized through plot_kwargs, based on the
+    kwargs that the visual element function for the artist accepts- like all the other
+    batteries included plots. For example, for the 'ess' artist, the scatter_xy function is
+    used. So if we want to change the marker:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess(
+        >>>    centered,
+        >>>    coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>    plot_kwargs={"ess": {"marker": "_"}},
+        >>> )
+
     """
     # initial defaults
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
+
+    ylabel = "{}"
 
     # from importlib.metadata import version, PackageNotFoundError
 
