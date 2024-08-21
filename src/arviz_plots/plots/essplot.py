@@ -346,7 +346,7 @@ def plot_ess(
                 rug_kwargs.setdefault("size", 30)
             div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
-            values = distribution.azstats.compute_ranks(relative=False)
+            values = distribution.azstats.compute_ranks(relative=True)
             print(f"\n compute_ranks values = {values}")
 
             plot_collection.map(
@@ -356,6 +356,7 @@ def plot_ess(
                 ignore_aes=div_ignore,
                 y=distribution.min(div_reduce_dims),
                 mask=rug_mask,
+                xname=False,
                 **rug_kwargs,
             )  # note: after plot_ppc merge, the `trace_rug` function might change
 
