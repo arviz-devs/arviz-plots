@@ -114,6 +114,65 @@ def plot_ess_evolution(
     Returns
     -------
     PlotCollection
+
+    Examples
+    --------
+    The following examples focus on behaviour specific to ``plot_ess_evolution``.
+    For a general introduction to batteries-included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
+    Default plot_ess_evolution:
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_dist, style
+        >>> style.use("arviz-clean")
+        >>> from arviz_base import load_arviz_data
+        >>> centered = load_arviz_data('centered_eight')
+        >>> pc = plot_ess_evolution(centered)
+
+    When adding a mapping for color across variables, the same color for a variable gets
+    applied to both the 'bulk' and 'tail' ess. In such a case, if separate linestyles for
+    'bulk' and 'tail' are desired to distinguish them instead of colors (which is what is
+    used by default), then this can be implemented:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess_evolution(
+        >>>     data,
+        >>>     var_names=["mu", "tau"],
+        >>>     extra_methods=True,
+        >>>     plot_kwargs={
+        >>>         "ess_bulk_line": {"linestyle": "-."},
+        >>>         "ess_tail_line": {"linestyle": ":"},
+        >>>         "ess_bulk": False,
+        >>>         "ess_tail": False,
+        >>>     },
+        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>>     aes_map={"title": ["color"]},
+        >>> )
+
+    The points and lines for ess 'bulk' and 'tail' can be individually switched on and off.
+    If only the points are desired, and a situation like the previous example occurs,
+    markers can be used to distinguish between points for 'bulk' and 'tail':
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess_evolution(
+        >>>     data,
+        >>>     var_names=["mu", "tau"],
+        >>>     extra_methods=True,
+        >>>     plot_kwargs={
+        >>>         "ess_bulk": {"marker": "x"},
+        >>>         "ess_tail": {"marker": "_"},
+        >>>     },
+        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>>     aes_map={"title": ["color"]},
+        >>> )
+
     """
     # initial defaults
     if sample_dims is None:
