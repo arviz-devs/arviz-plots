@@ -21,5 +21,6 @@ pc = azp.plot_ess(
     data,
     kind="local",
     backend="none",  # change to preferred backend
+    rug=True,
 )
 pc.show()
