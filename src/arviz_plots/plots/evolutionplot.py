@@ -133,7 +133,7 @@ def plot_ess_evolution(
         :context: close-figs
 
         >>> pc = plot_ess_evolution(
-        >>>     data,
+        >>>     centered,
         >>>     var_names=["mu", "tau"],
         >>>     extra_methods=True,
         >>>     plot_kwargs={
@@ -154,7 +154,7 @@ def plot_ess_evolution(
         :context: close-figs
 
         >>> pc = plot_ess_evolution(
-        >>>     data,
+        >>>     centered,
         >>>     var_names=["mu", "tau"],
         >>>     extra_methods=True,
         >>>     plot_kwargs={
@@ -254,6 +254,7 @@ def plot_ess_evolution(
         relative,
         stats_kwargs,
     ):
+        # print(f"\n distribution: {distribution}")
         first_sample_dim = sample_dims[-1]  # take the last dim of the sample dims
         ess_y_dataset = xr.concat(
             [

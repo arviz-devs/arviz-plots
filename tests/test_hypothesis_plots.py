@@ -228,11 +228,12 @@ def ess_evolution_min_ess(draw):
         },
     ),
     relative=ess_evolution_relative,
-    n_points=ess_evolution_n_points(),
-    extra_methods=ess_evolution_extra_methods,
     min_ess=ess_evolution_min_ess(),
+    extra_methods=ess_evolution_extra_methods,
+    n_points=ess_evolution_n_points(),
 )
-def test_plot_ess(datatree, relative, n_points, extra_methods, min_ess, plot_kwargs):
+def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess, plot_kwargs):
+    # print(f"\n{datatree.posterior!r}")
     pc = plot_ess_evolution(
         datatree,
         backend="none",
