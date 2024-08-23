@@ -12,7 +12,7 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     annotate_xy,
     labelled_title,
@@ -20,7 +20,6 @@ from arviz_plots.visuals import (
     labelled_y,
     line_xy,
     scatter_xy,
-    trace_rug,
 )
 
 
@@ -32,8 +31,6 @@ def plot_ess_evolution(
     coords=None,
     sample_dims=None,
     relative=False,
-    rug=False,
-    rug_kind="diverging",
     n_points=20,
     extra_methods=False,
     min_ess=400,
@@ -67,10 +64,6 @@ def plot_ess_evolution(
         Defaults to ``rcParams["data.sample_dims"]``
     relative : bool, default False
         Show relative ess in plot ``ress = ess / N``.
-    rug : bool, default False
-        Add a `rug plot <https://en.wikipedia.org/wiki/Rug_plot>`_ for a specific subset of values.
-    rug_kind : str, default "diverging"
-        Variable in sample stats to use as rug mask. Must be a boolean variable.
     n_points : int, default 20
         Number of subsets in the evolution plot.
     extra_methods : bool, default False
@@ -91,7 +84,6 @@ def plot_ess_evolution(
         * ess_bulk_line -> passed to :func:`~arviz_plots.visuals.line_xy`
         * ess_tail -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * ess_tail_line -> passed to :func:`~arviz_plots.visuals.line_xy`
-        * rug -> passed to :func:`~.visuals.trace_rug`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
@@ -207,19 +199,10 @@ def plot_ess_evolution(
             + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
         )
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        if "chain" in distribution:
-            pc_kwargs["aes"].setdefault("overlay", ["chain"])
-        aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]  # for rug
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
             **pc_kwargs,
-        )
-    else:
-        aux_dim_list = list(
-            set(
-                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
-            )
         )
 
     # set plot collection dependent defaults (like aesthetics mappings for each artist)
@@ -227,11 +210,10 @@ def plot_ess_evolution(
         aes_map = {}
     else:
         aes_map = aes_map.copy()
-    aes_map.setdefault("ess_bulk", plot_collection.aes_set.difference({"overlay"}))
-    aes_map.setdefault("ess_bulk_line", plot_collection.aes_set.difference({"overlay"}))
-    aes_map.setdefault("ess_tail", plot_collection.aes_set.difference({"overlay"}))
-    aes_map.setdefault("ess_tail_line", plot_collection.aes_set.difference({"overlay"}))
-    aes_map.setdefault("rug", {"overlay"})
+    aes_map.setdefault("ess_bulk", plot_collection.aes_set)
+    aes_map.setdefault("ess_bulk_line", plot_collection.aes_set)
+    aes_map.setdefault("ess_tail", plot_collection.aes_set)
+    aes_map.setdefault("ess_tail_line", plot_collection.aes_set)
     if "mean" in aes_map and "mean_text" not in aes_map:
         aes_map["mean_text"] = aes_map["mean"]
     if "sd" in aes_map and "sd_text" not in aes_map:
@@ -405,42 +387,6 @@ def plot_ess_evolution(
             ignore_aes=tail_line_ignore,
             **tail_line_kwargs,
         )
-
-    # plot rug
-    # overlaying divergences(or other 'rug_kind') for each chain
-    if rug:
-        sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-        rug_kwargs = copy(plot_kwargs.get("rug", {}))
-        if (
-            sample_stats is not None
-            and rug_kind in sample_stats.data_vars
-            and np.any(sample_stats[rug_kind])  # 'diverging' by default
-            and rug_kwargs is not False
-        ):
-            rug_mask = dt.sample_stats[rug_kind]  # 'diverging' by default
-            # print(f"\n rug_mask = {rug_mask!r}")
-            _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
-            if "color" not in div_aes:
-                rug_kwargs.setdefault("color", "black")
-            if "marker" not in div_aes:
-                rug_kwargs.setdefault("marker", "|")
-            if "size" not in div_aes:
-                rug_kwargs.setdefault("size", 30)
-            div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
-
-            values = distribution.azstats.compute_ranks(relative=False)
-            # print(f"\n compute_ranks values = {values}")
-
-            plot_collection.map(
-                trace_rug,
-                "rug",
-                data=values,
-                ignore_aes=div_ignore,
-                y=distribution.min(div_reduce_dims),
-                mask=rug_mask,
-                xname=False,
-                **rug_kwargs,
-            )
 
     # getting backend specific linestyles
     linestyles = plot_bknd.get_default_aes("linestyle", 4, {})
