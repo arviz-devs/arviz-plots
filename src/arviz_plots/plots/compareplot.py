@@ -93,8 +93,8 @@ def plot_compare(
 
     # Get figure params and create figure and axis
     pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-    figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", (10, len(cmp_df)))
-    figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+    figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", (2000, len(cmp_df) * 200))
+    figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "dots")
     chart, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
 
     # Create plot collection
