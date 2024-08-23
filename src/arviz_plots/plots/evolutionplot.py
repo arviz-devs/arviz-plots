@@ -35,7 +35,7 @@ def plot_ess_evolution(
     rug=False,
     rug_kind="diverging",
     n_points=20,
-    extra_methods=True,
+    extra_methods=False,
     min_ess=400,
     plot_collection=None,
     backend=None,
@@ -126,7 +126,7 @@ def plot_ess_evolution(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_dist, style
+        >>> from arviz_plots import plot_ess_evolution, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
@@ -209,7 +209,7 @@ def plot_ess_evolution(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
-        aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]  # for divergence
+        aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]  # for rug
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -231,7 +231,7 @@ def plot_ess_evolution(
     aes_map.setdefault("ess_bulk_line", plot_collection.aes_set.difference({"overlay"}))
     aes_map.setdefault("ess_tail", plot_collection.aes_set.difference({"overlay"}))
     aes_map.setdefault("ess_tail_line", plot_collection.aes_set.difference({"overlay"}))
-    aes_map.setdefault("divergence", {"overlay"})
+    aes_map.setdefault("rug", {"overlay"})
     if "mean" in aes_map and "mean_text" not in aes_map:
         aes_map["mean_text"] = aes_map["mean"]
     if "sd" in aes_map and "sd_text" not in aes_map:
@@ -272,10 +272,10 @@ def plot_ess_evolution(
         relative,
         stats_kwargs,
     ):
-        first_draw = distribution.draw.values[0]
+        first_sample_dim = sample_dims[-1]  # take the last dim of the sample dims
         ess_y_dataset = xr.concat(
             [
-                distribution.sel(draw=slice(first_draw + draw_div)).azstats.ess(
+                distribution.isel(({first_sample_dim: slice(None, draw_div)})).azstats.ess(
                     dims=method_dims,
                     method=method,
                     relative=relative,
@@ -406,56 +406,40 @@ def plot_ess_evolution(
             **tail_line_kwargs,
         )
 
-    # plot rug WIP: to use with rank_data from arviz-stats
-    # overlaying divergences for each chain
+    # plot rug
+    # overlaying divergences(or other 'rug_kind') for each chain
     if rug:
         sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-        divergence_kwargs = copy(plot_kwargs.get("divergence", {}))
+        rug_kwargs = copy(plot_kwargs.get("rug", {}))
         if (
             sample_stats is not None
-            and "diverging" in sample_stats.data_vars
+            and rug_kind in sample_stats.data_vars
             and np.any(sample_stats[rug_kind])  # 'diverging' by default
-            and divergence_kwargs is not False
+            and rug_kwargs is not False
         ):
-            divergence_mask = dt.sample_stats[rug_kind]  # 'diverging' by default
-            print(f"\n divergence_mask = {divergence_mask!r}")
-            _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
+            rug_mask = dt.sample_stats[rug_kind]  # 'diverging' by default
+            # print(f"\n rug_mask = {rug_mask!r}")
+            _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
             if "color" not in div_aes:
-                divergence_kwargs.setdefault("color", "black")
+                rug_kwargs.setdefault("color", "black")
             if "marker" not in div_aes:
-                divergence_kwargs.setdefault("marker", "|")
-            # if "width" not in div_aes: # should this be hardcoded?
-            #    divergence_kwargs.setdefault("width", linewidth)
+                rug_kwargs.setdefault("marker", "|")
             if "size" not in div_aes:
-                divergence_kwargs.setdefault("size", 30)
+                rug_kwargs.setdefault("size", 30)
             div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
-            # xname is used to pick subset of dataset in map() to be masked
-            xname = None  # xname logic from traceplot
-            default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
-            if (default_xname not in distribution.dims) or (
-                not np.issubdtype(distribution[default_xname].dtype, np.number)
-            ):
-                default_xname = None
-            xname = divergence_kwargs.get("xname", default_xname)
-            divergence_kwargs["xname"] = xname
-            print(f"\n div_reduce_dims = {div_reduce_dims!r}")
-            print(f"\n xname = {xname}")
-
-            draw_length = distribution.sizes["draw"]  # used to scale xvalues to between 0-1
-
-            # print(f"\n distribution = {distribution}")
+            values = distribution.azstats.compute_ranks(relative=False)
+            # print(f"\n compute_ranks values = {values}")
 
             plot_collection.map(
                 trace_rug,
-                "divergence",
-                data=distribution,
+                "rug",
+                data=values,
                 ignore_aes=div_ignore,
-                # xname=xname,
                 y=distribution.min(div_reduce_dims),
-                mask=divergence_mask,
-                scale=draw_length,
-                **divergence_kwargs,
+                mask=rug_mask,
+                xname=False,
+                **rug_kwargs,
             )
 
     # getting backend specific linestyles
@@ -465,6 +449,9 @@ def plot_ess_evolution(
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
+        mean_ess = None
+        sd_ess = None
+
         mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
             mean_dims, mean_aes, mean_ignore = filter_aes(
@@ -505,9 +492,15 @@ def plot_ess_evolution(
                 line_xy, "sd", data=sd_ess, ignore_aes=sd_ignore, x=xdata, **sd_kwargs
             )
 
+        sd_va_align = None
+        mean_va_align = None
+        if mean_ess is not None and sd_ess is not None:
+            sd_va_align = xr.where(mean_ess < sd_ess, "bottom", "top")
+            mean_va_align = xr.where(mean_ess < sd_ess, "top", "bottom")
+
         mean_text_kwargs = copy(plot_kwargs.get("mean_text", {}))
         if (
-            mean_text_kwargs is not False and mean_ess
+            mean_text_kwargs is not False and mean_ess is not None
         ):  # mean_ess has to exist for an annotation to be applied
             _, mean_text_aes, mean_text_ignore = filter_aes(
                 plot_collection, aes_map, "mean_text", sample_dims
@@ -518,29 +511,26 @@ def plot_ess_evolution(
 
             mean_text_kwargs.setdefault("x", max(xdata))
             mean_text_kwargs.setdefault("horizontal_align", "right")
-            mean_text_kwargs.setdefault(
-                "vertical_align", "bottom"
-            )  # by default set to bottom for mean
 
-            # pass the sd_ess data to be facetted/subsetted too for vertical alignment setting
-            if sd_ess:
-                extra_da = sd_ess
+            # pass the mean vertical_align data for vertical alignment setting
+            if mean_va_align is not None:
+                vertical_align = mean_va_align
             else:
-                extra_da = None
+                vertical_align = "bottom"
 
             plot_collection.map(
                 annotate_xy,
                 "mean_text",
                 text="mean",
                 data=mean_ess,
-                extra_da=extra_da,
+                vertical_align=vertical_align,
                 ignore_aes=mean_text_ignore,
                 **mean_text_kwargs,
             )
 
         sd_text_kwargs = copy(plot_kwargs.get("sd_text", {}))
         if (
-            sd_text_kwargs is not False and sd_ess
+            sd_text_kwargs is not False and sd_ess is not None
         ):  # sd_ess has to exist for an annotation to be applied
             _, sd_text_aes, sd_text_ignore = filter_aes(
                 plot_collection, aes_map, "sd_text", sample_dims
@@ -551,20 +541,19 @@ def plot_ess_evolution(
 
             sd_text_kwargs.setdefault("x", max(xdata))
             sd_text_kwargs.setdefault("horizontal_align", "right")
-            sd_text_kwargs.setdefault("vertical_align", "top")  # by default set to top for sd
 
-            # pass the mean_ess data to be facetted/subsetted too for vertical alignment setting
-            if mean_ess:
-                extra_da = mean_ess
+            # pass the sd vertical_align data for vertical alignment setting
+            if sd_va_align is not None:
+                vertical_align = sd_va_align
             else:
-                extra_da = None
+                vertical_align = "top"
 
             plot_collection.map(
                 annotate_xy,
                 "sd_text",
                 text="sd",
                 data=sd_ess,
-                extra_da=extra_da,
+                vertical_align=vertical_align,
                 ignore_aes=sd_text_ignore,
                 **sd_text_kwargs,
             )
@@ -652,5 +641,9 @@ def plot_ess_evolution(
             store_artist=False,
             **ylabel_kwargs,
         )
+
+    # print(f"\n plot_collection.viz = {plot_collection.viz}")
+
+    # print(f"\n plot_collection.aes = {plot_collection.aes}")
 
     return plot_collection
