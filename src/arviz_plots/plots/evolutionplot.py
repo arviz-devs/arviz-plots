@@ -588,8 +588,4 @@ def plot_ess_evolution(
             **ylabel_kwargs,
         )
 
-    # print(f"\n plot_collection.viz = {plot_collection.viz}")
-
-    # print(f"\n plot_collection.aes = {plot_collection.aes}")
-
     return plot_collection

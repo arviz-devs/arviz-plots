@@ -8,6 +8,7 @@ from arviz_base import from_dict
 from arviz_plots import (
     plot_compare,
     plot_dist,
+    plot_ess_evolution,
     plot_forest,
     plot_ridge,
     plot_trace,
@@ -291,3 +292,34 @@ class TestPlots:
             pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200)}},
             backend=backend,
         )
+
+    def test_plot_ess_evolution(self, datatree, backend):
+        pc = plot_ess_evolution(datatree, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "ess_bulk" in pc.viz["mu"]
+        assert "ess_tail" in pc.viz["mu"]
+        assert "ess_bulk_line" in pc.viz["mu"]
+        assert "ess_tail_line" in pc.viz["mu"]
+        assert "min_ess" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    # currently an error here due to dims!=length 2 (arviz-stats modification required)
+    a = """
+    def test_plot_ess_evolution_sample(self, datatree_sample, backend):
+        pc = plot_ess_evolution(datatree_sample, backend=backend, sample_dims="sample")
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "ess_bulk" in pc.viz["mu"]
+        assert "ess_tail" in pc.viz["mu"]
+        assert "ess_bulk_line" in pc.viz["mu"]
+        assert "ess_tail_line" in pc.viz["mu"]
+        assert "min_ess" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+    """
+    if a:
+        print("Reminder: Un-comment out test_plot_ess_evolution_sample once arviz-stats is updated")
