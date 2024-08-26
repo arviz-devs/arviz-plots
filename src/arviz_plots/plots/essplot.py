@@ -202,17 +202,6 @@ def plot_ess(
 
     ylabel = "{}"
 
-    # from importlib.metadata import version, PackageNotFoundError
-
-    # get the version of the arviz_stats module
-    # try:
-    #    arviz_stats_version = version("arviz_stats")
-    #    print(f"arviz_stats version: {arviz_stats_version}")
-    # except PackageNotFoundError:
-    #    print("arviz_stats package is not installed")
-
-    # print(f"arviz_stats version: {arviz_stats.__version__}")
-
     # mutable inputs
     if plot_kwargs is None:
         plot_kwargs = {}
@@ -347,7 +336,6 @@ def plot_ess(
             div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
             values = distribution.azstats.compute_ranks(relative=True)
-            print(f"\n compute_ranks values = {values}")
 
             plot_collection.map(
                 trace_rug,
@@ -372,18 +360,20 @@ def plot_ess(
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
-        mean_ess = None
-        sd_ess = None
+        # computing mean_ess
+        mean_dims, mean_aes, mean_ignore = filter_aes(plot_collection, aes_map, "mean", sample_dims)
+        mean_ess = distribution.azstats.ess(
+            dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
+        )
+
+        # computing sd_ess
+        sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
+        sd_ess = distribution.azstats.ess(
+            dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
+        )
 
         mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
-            mean_dims, mean_aes, mean_ignore = filter_aes(
-                plot_collection, aes_map, "mean", sample_dims
-            )
-            mean_ess = distribution.azstats.ess(
-                dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
-            )
-
             # getting 2nd default linestyle for chosen backend and assigning it by default
             mean_kwargs.setdefault("linestyle", linestyles[1])
 
@@ -401,11 +391,6 @@ def plot_ess(
 
         sd_kwargs = copy(plot_kwargs.get("sd", {}))
         if sd_kwargs is not False:
-            sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
-            sd_ess = distribution.azstats.ess(
-                dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
-            )
-
             sd_kwargs.setdefault("linestyle", linestyles[2])
 
             if "color" not in sd_aes:
@@ -434,9 +419,6 @@ def plot_ess(
 
             mean_text_kwargs.setdefault("x", 1)
             mean_text_kwargs.setdefault("horizontal_align", "right")
-            # mean_text_kwargs.setdefault(
-            #    "vertical_align", "bottom"
-            # )  # by default set to bottom for mean
 
             # pass the mean vertical_align data for vertical alignment setting
             if mean_va_align is not None:
@@ -467,7 +449,6 @@ def plot_ess(
 
             sd_text_kwargs.setdefault("x", 1)
             sd_text_kwargs.setdefault("horizontal_align", "right")
-            # sd_text_kwargs.setdefault("vertical_align", "top")  # by default set to top for sd
 
             # pass the sd vertical_align data for vertical alignment setting
             if sd_va_align is not None:
@@ -543,7 +524,6 @@ def plot_ess(
             "xlabel",
             ignore_aes=labels_ignore,
             subset_info=True,
-            store_artist=False,
             **xlabel_kwargs,
         )
 
@@ -564,12 +544,7 @@ def plot_ess(
             "ylabel",
             ignore_aes=labels_ignore,
             subset_info=True,
-            store_artist=False,
             **ylabel_kwargs,
         )
-
-    # print(f"\n plot_collection.viz = {plot_collection.viz}")
-
-    # print(f"\n plot_collection.aes = {plot_collection.aes}")
 
     return plot_collection

@@ -250,6 +250,11 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
     for key, value in plot_kwargs.items():
         if value is False:
             assert all(key not in child for child in pc.viz.children.values())
+        elif key in ["mean", "sd", "mean_text", "sd_text"]:
+            if extra_methods is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
         elif key == "rug":
             if rug is False:
                 assert all(key not in child for child in pc.viz.children.values())

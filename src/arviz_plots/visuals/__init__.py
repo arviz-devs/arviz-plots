@@ -77,8 +77,6 @@ def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
             y = da.min().item()
     if len(xvalues.shape) != 1:
         raise ValueError(f"Expected unidimensional data but got {xvalues.sizes}")
-    # print(f"\n trace_rug call. xvalues = {xvalues}\nmask = {mask}")
-    print(f"\n trace_rug call. xvalues[mask] = {xvalues[mask]}")
     return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
 
 
