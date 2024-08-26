@@ -198,9 +198,10 @@ ess_evolution_relative = st.booleans()
 ess_evolution_extra_methods = st.booleans()
 
 
+# set to 50/4=12 to keep each draw div >= 4 (minimum enforced limit in arviz-stats)
 @st.composite
 def ess_evolution_n_points(draw):
-    return draw(st.integers(min_value=1, max_value=50))  # should this range be changed?
+    return draw(st.integers(min_value=1, max_value=12))
 
 
 @st.composite
@@ -233,7 +234,6 @@ def ess_evolution_min_ess(draw):
     n_points=ess_evolution_n_points(),
 )
 def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess, plot_kwargs):
-    # print(f"\n{datatree.posterior!r}")
     pc = plot_ess_evolution(
         datatree,
         backend="none",
@@ -247,5 +247,10 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
     for key, value in plot_kwargs.items():
         if value is False:
             assert all(key not in child for child in pc.viz.children.values())
+        elif key in ["mean", "sd", "mean_text", "sd_text"]:
+            if extra_methods is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
         elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())

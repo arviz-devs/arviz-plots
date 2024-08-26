@@ -564,7 +564,6 @@ def plot_ess_evolution(
             "xlabel",
             ignore_aes=xlabels_ignore,
             subset_info=True,
-            store_artist=False,
             **xlabel_kwargs,
         )
 
@@ -585,7 +584,6 @@ def plot_ess_evolution(
             "ylabel",
             ignore_aes=ylabels_ignore,
             subset_info=True,
-            store_artist=False,
             **ylabel_kwargs,
         )
 
