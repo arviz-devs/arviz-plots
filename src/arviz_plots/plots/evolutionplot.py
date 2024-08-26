@@ -396,18 +396,20 @@ def plot_ess_evolution(
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
-        mean_ess = None
-        sd_ess = None
+        # computing mean_ess
+        mean_dims, mean_aes, mean_ignore = filter_aes(plot_collection, aes_map, "mean", sample_dims)
+        mean_ess = distribution.azstats.ess(
+            dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
+        )
+
+        # computing sd_ess
+        sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
+        sd_ess = distribution.azstats.ess(
+            dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
+        )
 
         mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
-            mean_dims, mean_aes, mean_ignore = filter_aes(
-                plot_collection, aes_map, "mean", sample_dims
-            )
-            mean_ess = distribution.azstats.ess(
-                dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
-            )
-
             # getting 2nd default linestyle for chosen backend and assigning it by default
             mean_kwargs.setdefault("linestyle", linestyles[1])
 
@@ -425,11 +427,6 @@ def plot_ess_evolution(
 
         sd_kwargs = copy(plot_kwargs.get("sd", {}))
         if sd_kwargs is not False:
-            sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
-            sd_ess = distribution.azstats.ess(
-                dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
-            )
-
             sd_kwargs.setdefault("linestyle", linestyles[2])
 
             if "color" not in sd_aes:
