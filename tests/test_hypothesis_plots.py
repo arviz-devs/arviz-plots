@@ -204,7 +204,7 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             assert all(key in child for child in pc.viz.children.values())
 
 
-ppc_kind_value = st.sampled_from(("kde", "cumulative"))
+ppc_kind_value = st.sampled_from(("kde", "ecdf"))
 ppc_group = st.sampled_from(("prior", "posterior"))
 ppc_observed = st.booleans()
 ppc_aggregate = st.booleans()
@@ -219,7 +219,7 @@ def draw_num_pp_samples(draw, group, sample_dims):
     # print(f"\n sample_dims = {sample_dims}\ngroup = {group}")
     chain_dim_length = 1 if group == "prior" else 3
     draw_dim_length = 50 if sample_dims == ["chain", "draw"] else 1
-    total_num_samples = np.prod([chain_dim_length, draw_dim_length])
+    total_num_samples = int(np.prod([chain_dim_length, draw_dim_length]))
 
     num_pp_samples = draw(st.integers(min_value=1, max_value=total_num_samples))
     # print(f"\nnum_pp_samples = {num_pp_samples}")
@@ -242,17 +242,18 @@ def draw_num_pp_samples(draw, group, sample_dims):
     kind=ppc_kind_value,
     group=ppc_group,
     observed=ppc_observed,
-    observed_rug=ppc_observed,
+    # observed_rug=ppc_observed,
     aggregate=ppc_aggregate,
     facet_dims=ppc_facet_dims,
     sample_dims=ppc_sample_dims,
     drawed_samples=draw_num_pp_samples(ppc_group, ppc_sample_dims),
 )
 def test_plot_ppc(
+    datatree,
     kind,
     group,
     observed,
-    observed_rug,
+    # observed_rug,
     aggregate,
     facet_dims,
     sample_dims,
@@ -268,7 +269,8 @@ def test_plot_ppc(
         kind=kind,
         group=group,
         observed=observed,
-        observed_rug=observed_rug,
+        # observed_rug=observed_rug,
+        observed_rug=observed,  # same since observed rug cannot be True if observed is False
         aggregate=aggregate,
         facet_dims=facet_dims,
         sample_dims=sample_dims,
@@ -279,14 +281,25 @@ def test_plot_ppc(
     num_pp_samples = drawed_samples[0]
     total_num_samples = drawed_samples[1]
     if num_pp_samples == total_num_samples:
-        assert sample_dims in pc.viz["obs"].dims
+        # assert sample_dims in pc.viz["obs"].dims
+        assert all(dim in pc.viz["obs"].dims for dim in sample_dims)
     else:
         if len(sample_dims) > 1:
             assert "ppc_dim" in pc.viz["obs"].dims
         else:
-            assert sample_dims in pc.viz["obs"].dims
+            all(dim in pc.viz["obs"].dims for dim in sample_dims)
     for key, value in plot_kwargs.items():
         if value is False:
             assert all(key not in child for child in pc.viz.children.values())
+        elif key in ["observed", "observed_rug"]:
+            if observed is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
+        elif key in ["aggregate"]:
+            if aggregate is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
         elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())

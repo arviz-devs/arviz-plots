@@ -213,10 +213,8 @@ def plot_ppc(
             raise TypeError(f'`data` argument must have the group "{group}_predictive" for ppcplot')
 
     # making sure kde type is one of these three
-    if kind.lower() not in ("kde", "cumulative", "scatter"):
-        raise TypeError("`kind` argument must be either `kde`, `cumulative`, or `scatter`")
-    if kind == "cumulative":
-        kind = "ecdf"
+    if kind.lower() not in ("kde", "ecdf", "hist", "scatter"):
+        raise TypeError("`kind` argument must be either `kde`, `ecdf`, `hist` or `scatter`")
 
     # initializaing data_pairs as empty dict in case pp and observed data var names are same
     if data_pairs is None:
@@ -260,14 +258,6 @@ def plot_ppc(
     ):
         raise TypeError(f"`num_pp_samples` must be an integer between 1 and {total_pp_samples}.")
 
-    # if num_pp_samples==1, no stacking or subselecting required
-
-    # stacking sample dimensions and subselecting from
-    # if len(sample_dims)>1 and num_pp_samples!=total_pp_samples
-
-    # subselecting from without stacking if len(sample_dims)==1 and
-    # num_pp_samples!=total_pp_samples
-
     if num_pp_samples != total_pp_samples:
         # creating random number generator for random subselecting
         if random_seed is not None:
@@ -276,7 +266,7 @@ def plot_ppc(
             rng = np.random.default_rng()
 
         if len(sample_dims) > 1:
-            # stacking into one dim (ppc_dim) required before subselecting
+            # stacking sample dims into one dim (ppc_dim) required before subselecting
             pp_sample_ix = rng.choice(total_pp_samples, size=num_pp_samples, replace=False)
 
             # stacking sample dims into a new 'ppc_dim' dimension
@@ -340,6 +330,9 @@ def plot_ppc(
 
     # print(f"\n aes_map = {aes_map}")
 
+    pp_dt = DataTree(name="pp_dt", data=pp_distribution)  # has to be converted from a
+    # dataarray to a datatree first before passing to plot_dist
+
     # ---------STEP 1 (PPC data)-------------
     # print(f"\nposterior predictive distri = {pp_distribution!r}")
 
@@ -364,8 +357,6 @@ def plot_ppc(
         plot_kwargs_dist[kind] = pp_kwargs
 
         # calling plot_dist with plot_collection and customized args
-        pp_dt = DataTree(name="pp_dt", data=pp_distribution)  # has to be converted from a
-        # dataarray to a datatree first before passing to plot_dist
 
         plot_dist(
             pp_dt,

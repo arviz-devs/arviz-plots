@@ -311,7 +311,7 @@ class TestPlots:
             backend=backend,
         )
 
-    @pytest.mark.parametrize("kind", ("kde", "cumulative"))
+    @pytest.mark.parametrize("kind", ("kde", "ecdf"))
     def test_plot_ppc(self, datatree, kind, backend):
         pc = plot_ppc(datatree, kind=kind, backend=backend)
         assert "chart" in pc.viz.data_vars
@@ -324,7 +324,7 @@ class TestPlots:
         assert "overlay" in pc.aes["obs"].data_vars
 
     # no stacking of sample_dims into ppc_dim
-    @pytest.mark.parametrize("kind", ("kde", "cumulative"))
+    @pytest.mark.parametrize("kind", ("kde", "ecdf"))
     def test_plot_ppc_sample(self, datatree_sample, kind, backend):
         pc = plot_ppc(datatree_sample, kind=kind, sample_dims="sample", backend=backend)
         assert "chart" in pc.viz.data_vars
@@ -336,7 +336,7 @@ class TestPlots:
             assert "ecdf" in pc.viz["obs"]
         assert "overlay" in pc.aes["obs"].data_vars
 
-    @pytest.mark.parametrize("kind", ("kde", "cumulative"))
+    @pytest.mark.parametrize("kind", ("kde", "ecdf"))
     @pytest.mark.parametrize("facet_dims", (["group"], ["hierarchy"], None))
     def test_plot_ppc_4d(self, datatree_4d, facet_dims, kind, backend):
         pc = plot_ppc(
