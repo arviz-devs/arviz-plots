@@ -119,6 +119,80 @@ def plot_mcse(
     -------
     PlotCollection
 
+    Examples
+    --------
+    The following examples focus on behaviour specific to ``plot_mcse``.
+    For a general introduction to batteries-included functions like this one and common
+    usage examples see :ref:`plots_intro`
+
+    Default plot_mcse for a single model:
+
+    .. plot::
+        :context: close-figs
+        >>> from arviz_plots import plot_mcse, style
+        >>> style.use("arviz-clean")
+        >>> from arviz_base import load_arviz_data
+        >>> centered = load_arviz_data('centered_eight')
+        >>> non_centered = load_arviz_data('non_centered_eight')
+        >>> pc = plot_mcse(centered)
+
+    Default plot_mcse for multiple models: (Depending on the number of models, a slight
+    x-axis separation aesthetic is applied for each mcse point for distinguishability in
+    case of overlap)
+
+    .. plot::
+        :context: close-figs
+        >>> pc = plot_mcse(
+        >>>     {"centered": centered, "non centered": non_centered},
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>> )
+        >>> pc.add_legend("model")
+
+    We can also manually map the color to the variable, and have the mapping apply
+    to the title too instead of only the mcse markers:
+
+    .. plot::
+        :context: close-figs
+        >>> pc = plot_mcse(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>>     aes_map={"title": ["color"]},
+        >>> )
+
+    If we add a mapping (like color) manually to the variable, but not specify which artist
+    to apply the mapping to- then it is applied to the 'mcse' marker artist by default:
+
+    .. plot::
+        :context: close-figs
+        >>> pc = plot_mcse(
+        >>>     centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>> )
+
+    The artists' visual features can also be customized through plot_kwargs, based on the
+    kwargs that the visual element function for the artist accepts- like all the other
+    batteries included plots. For example, for the 'mcse' artist, the scatter_xy function or
+    errorbar function is used. So if we want to change the marker:
+
+    .. plot::
+        :context: close-figs
+        >>> pc = plot_mcse(
+        >>>    centered,
+        >>>    coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>    plot_kwargs={"mcse": {"marker": "_"}},
+        >>> )
+
+    .. plot::
+        :context: close-figs
+        >>> pc = plot_mcse(
+        >>>    centered,
+        >>>    coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>    plot_kwargs={"mcse": {"marker": "_"}},
+        >>>    errorbar=True,
+        >>> )
+
     """
     # initial defaults
     if sample_dims is None:
