@@ -14,6 +14,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import (
+    annotate_xy,
     error_bar,
     labelled_title,
     labelled_x,
@@ -101,6 +102,8 @@ def plot_mcse(
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * mean -> passed to :func:`~arviz.plots.visuals.line_xy`
         * sd -> passed to :func:`~arviz.plots.visuals.line_xy`
+        * mean_text -> passed to :func:`~arviz.plots.visuals.annotate_xy`
+        * sd_text -> passed to :func:`~arviz.plots.visuals.annotate_xy`
 
     stats_kwargs : mapping, optional
         Valid keys are:
@@ -115,6 +118,8 @@ def plot_mcse(
     Returns
     -------
     PlotCollection
+
+
     """
     # initial defaults
     if sample_dims is None:
@@ -162,17 +167,10 @@ def plot_mcse(
             x_diff = min(1 / n_points / 3, 1 / n_points * n_models / 10)
             pc_kwargs.setdefault("x", np.linspace(-x_diff, x_diff, n_models))
             pc_kwargs["aes"].setdefault("x", ["model"])
-        aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
             **pc_kwargs,
-        )
-    else:
-        aux_dim_list = list(
-            set(
-                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
-            )
         )
 
     # set plot collection dependent defaults (like aesthetics mappings for each artist)
@@ -185,6 +183,10 @@ def plot_mcse(
     if "model" in distribution:
         aes_map.setdefault("mean", {"color"})
         aes_map.setdefault("sd", {"color"})
+    if "mean" in aes_map and "mean_text" not in aes_map:
+        aes_map["mean_text"] = aes_map["mean"]
+    if "sd" in aes_map and "sd_text" not in aes_map:
+        aes_map["sd_text"] = aes_map["sd"]
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -248,7 +250,7 @@ def plot_mcse(
                 **mcse_kwargs,
             )
 
-    # WIP: plot rug. rankdata func to be used.
+    # plot rug
     # overlaying divergences(or other 'rug_kind') for each chain
     if rug:
         sample_stats = get_group(dt, "sample_stats", allow_missing=True)
@@ -264,41 +266,19 @@ def plot_mcse(
                 rug_kwargs.setdefault("color", "black")
             if "marker" not in div_aes:
                 rug_kwargs.setdefault("marker", "|")
-            # WIP: if using a default linewidth once defined in backend/agnostic defaults
-            # if "width" not in div_aes:
-            #    # get default linewidth for backends
-            #    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-            #    default_linewidth = plot_bknd.get_default_aes("linewidth", 1, {})
-            #    rug_kwargs.setdefault("width", default_linewidth)
             if "size" not in div_aes:
                 rug_kwargs.setdefault("size", 30)
-            div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
-            # xname is used to pick subset of dataset in map() to be masked
-            xname = None
-            default_xname = sample_dims[0] if len(sample_dims) == 1 else "draw"
-            if (default_xname not in distribution.dims) or (
-                not np.issubdtype(distribution[default_xname].dtype, np.number)
-            ):
-                default_xname = None
-            xname = rug_kwargs.get("xname", default_xname)
-            rug_kwargs["xname"] = xname
-
-            draw_length = (
-                distribution.sizes[sample_dims[0]]
-                if len(sample_dims) == 1
-                else distribution.sizes["draw"]
-            )  # used to scale xvalues to between 0-1
+            values = distribution.azstats.compute_ranks(relative=True)
 
             plot_collection.map(
                 trace_rug,
                 "rug",
-                data=distribution,
+                data=values,
                 ignore_aes=div_ignore,
-                # xname=xname,
-                y=distribution.min(div_reduce_dims),
+                y=0,
                 mask=rug_mask,
-                scale=draw_length,
+                xname=False,
                 **rug_kwargs,
             )  # note: after plot_ppc merge, the `trace_rug` function might change
 
@@ -316,16 +296,19 @@ def plot_mcse(
     if extra_methods is not False:
         if errorbar is not False:
             raise ValueError("Please ensure errorbar=False if you want to plot mean and sd")
+
+        # computing mean_mcse
+        mean_dims, mean_aes, mean_ignore = filter_aes(plot_collection, aes_map, "mean", sample_dims)
+        mean_mcse = distribution.azstats.mcse(
+            dims=mean_dims, method="mean", **stats_kwargs.get("mean", {})
+        )
+
+        # computing sd_mcse
+        sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
+        sd_mcse = distribution.azstats.mcse(dims=sd_dims, method="sd", **stats_kwargs.get("sd", {}))
+
         mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
-            mean_dims, mean_aes, mean_ignore = filter_aes(
-                plot_collection, aes_map, "mean", sample_dims
-            )
-            mean_mcse = distribution.azstats.mcse(
-                dims=mean_dims, method="mean", **stats_kwargs.get("mean", {})
-            )
-            # print(f"\n mean_mcse = {mean_mcse}")
-
             # getting 2nd default linestyle for chosen backend and assigning it by default
             mean_kwargs.setdefault("linestyle", linestyles[1])
 
@@ -343,11 +326,6 @@ def plot_mcse(
 
         sd_kwargs = copy(plot_kwargs.get("sd", {}))
         if sd_kwargs is not False:
-            sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
-            sd_mcse = distribution.azstats.mcse(
-                dims=sd_dims, method="sd", **stats_kwargs.get("sd", {})
-            )
-            # print(f"\n sd_mcse = {sd_mcse}")
             sd_kwargs.setdefault("linestyle", linestyles[2])
 
             if "color" not in sd_aes:
@@ -355,6 +333,72 @@ def plot_mcse(
 
             plot_collection.map(
                 line_xy, "sd", data=sd_mcse, ignore_aes=sd_ignore, x=x_range, **sd_kwargs
+            )
+
+        sd_va_align = None
+        mean_va_align = None
+        if mean_mcse is not None and sd_mcse is not None:
+            sd_va_align = xr.where(mean_mcse < sd_mcse, "bottom", "top")
+            mean_va_align = xr.where(mean_mcse < sd_mcse, "top", "bottom")
+
+        mean_text_kwargs = copy(plot_kwargs.get("mean_text", {}))
+        if (
+            mean_text_kwargs is not False and mean_mcse is not None
+        ):  # mean_mcse has to exist for an annotation to be applied
+            _, mean_text_aes, mean_text_ignore = filter_aes(
+                plot_collection, aes_map, "mean_text", sample_dims
+            )
+
+            if "color" not in mean_text_aes:
+                mean_text_kwargs.setdefault("color", "black")
+
+            mean_text_kwargs.setdefault("x", 1)
+            mean_text_kwargs.setdefault("horizontal_align", "right")
+
+            # pass the mean vertical_align data for vertical alignment setting
+            if mean_va_align is not None:
+                vertical_align = mean_va_align
+            else:
+                vertical_align = "bottom"
+
+            plot_collection.map(
+                annotate_xy,
+                "mean_text",
+                text="mean",
+                data=mean_mcse,
+                vertical_align=vertical_align,
+                ignore_aes=mean_text_ignore,
+                **mean_text_kwargs,
+            )
+
+        sd_text_kwargs = copy(plot_kwargs.get("sd_text", {}))
+        if (
+            sd_text_kwargs is not False and sd_mcse is not None
+        ):  # sd_mcse has to exist for an annotation to be applied
+            _, sd_text_aes, sd_text_ignore = filter_aes(
+                plot_collection, aes_map, "sd_text", sample_dims
+            )
+
+            if "color" not in sd_text_aes:
+                sd_text_kwargs.setdefault("color", "black")
+
+            sd_text_kwargs.setdefault("x", 1)
+            sd_text_kwargs.setdefault("horizontal_align", "right")
+
+            # pass the sd vertical_align data for vertical alignment setting
+            if sd_va_align is not None:
+                vertical_align = sd_va_align
+            else:
+                vertical_align = "top"
+
+            plot_collection.map(
+                annotate_xy,
+                "sd_text",
+                text="sd",
+                data=sd_mcse,
+                vertical_align=vertical_align,
+                ignore_aes=sd_text_ignore,
+                **sd_text_kwargs,
             )
 
     # plot titles for each facetted subplot
@@ -389,7 +433,6 @@ def plot_mcse(
             "xlabel",
             ignore_aes=labels_ignore,
             subset_info=True,
-            store_artist=False,
             **xlabel_kwargs,
         )
 
@@ -408,8 +451,11 @@ def plot_mcse(
             "ylabel",
             ignore_aes=labels_ignore,
             subset_info=True,
-            store_artist=False,
             **ylabel_kwargs,
         )
+
+    print(f"\n pc.viz = {plot_collection.viz}")
+
+    print(f"\n pc.aes = {plot_collection.aes}")
 
     return plot_collection
