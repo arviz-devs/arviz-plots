@@ -119,7 +119,6 @@ def plot_mcse(
     -------
     PlotCollection
 
-
     """
     # initial defaults
     if sample_dims is None:
@@ -237,16 +236,14 @@ def plot_mcse(
         else:
             # print(f"\n final z_mcse_dataset = {z_mcse_dataset}")
             quantiles_dataset = distribution.quantile(probs, dim=mcse_dims)
-            print(f"\n quantiles_dataset = {quantiles_dataset}")
+            # print(f"\n quantiles_dataset = {quantiles_dataset}")
 
-            # for now the quantile_values can be computed in the visual element function itself
             plot_collection.map(
                 error_bar,
                 "mcse",
                 data=mcse_dataset,
                 ignore_aes=mcse_ignore,
                 quantiles_dataset=quantiles_dataset,
-                # distribution=distribution,  # map() subsets this before passing to error_bar
                 **mcse_kwargs,
             )
 

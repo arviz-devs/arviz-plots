@@ -15,10 +15,7 @@ from arviz_stats.numba import array_stats
 
 
 def error_bar(da, target, backend, quantiles_dataset, x=None, y=None, **kwargs):
-    """Plot error bars.
-
-    Note: This uses subset info from .map() so toggle it to true when calling this func
-    """
+    """Plot error bars."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     probs, yerr = _process_da_x_y(da, x, y)
     quantile_values = quantiles_dataset

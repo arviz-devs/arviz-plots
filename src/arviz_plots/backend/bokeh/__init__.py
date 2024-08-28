@@ -298,6 +298,49 @@ def scatter(
     return target.scatter(np.atleast_1d(x), np.atleast_1d(y), **kwargs)
 
 
+def errorbar(
+    x,
+    y,
+    error,
+    target,
+    *,
+    size=unset,
+    marker=unset,
+    color=unset,
+    facecolor=unset,
+    edgecolor=unset,
+    width=unset,
+    **artist_kws,
+):
+    """Interface to bokeh for an errorbar plot."""
+    if color is not unset:
+        if facecolor is unset and edgecolor is unset:
+            facecolor = color
+            edgecolor = color
+        elif facecolor is unset:
+            facecolor = color
+        elif edgecolor is unset:
+            edgecolor = color
+    kwargs = {
+        "size": size,
+        "marker": marker,
+        "fill_color": facecolor,
+        "line_color": edgecolor,
+        "line_width": width,
+    }
+    kwargs = _filter_kwargs(kwargs, artist_kws)
+    if marker == "|":
+        kwargs["marker"] = "dash"
+        kwargs["angle"] = np.pi / 2
+
+    target.scatter(np.atleast_1d(x), np.atleast_1d(y), **kwargs)
+
+    x_err = list(zip(x, x))
+    y_err = [(y_i - err, y_i + err) for y_i, err in zip(y, error)]
+    target.multi_line(xs=x_err, ys=y_err, **kwargs)
+    return target
+
+
 def text(
     x,
     y,
