@@ -9,8 +9,9 @@ Compare multiple models using predictive accuracy estimates like  {abbr}`LOO-CV 
 API Documentation: {func}`~arviz_plots.plot_compare`
 :::
 """
-import arviz_plots as azp
 import pandas as pd
+
+import arviz_plots as azp
 
 azp.style.use("arviz-clean")
 
