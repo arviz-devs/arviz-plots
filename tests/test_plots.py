@@ -273,9 +273,6 @@ class TestPlots:
             assert all(0 in child["alpha"] for child in pc.aes.children.values())
             assert any(pseudo_dim in child["shade"].dims for child in pc.viz.children.values())
 
-
-@pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly"])
-class TestComparePlot:
     def test_plot_compare(self, cmp, backend):
         pc = plot_compare(cmp, backend=backend)
         assert pc.viz["plot"]
@@ -284,9 +281,9 @@ class TestComparePlot:
         plot_compare(
             cmp,
             plot_kwargs={
-                "shade": {"color": "C0", "alpha": 0.2},
-                "error_bar": {"color": "C2"},
-                "point_estimate": {"color": "C1", "marker": "s"},
+                "shade": {"color": "black", "alpha": 0.2},
+                "error_bar": {"color": "gray"},
+                "point_estimate": {"color": "red", "marker": "|"},
             },
             pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200)}},
             backend=backend,

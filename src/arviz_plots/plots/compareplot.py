@@ -111,6 +111,9 @@ def plot_compare(
         **pc_kwargs,
     )
 
+    if isinstance(target, np.ndarray):
+        target = target.tolist()
+
     # Set scale relative to the best model
     if relative_scale:
         cmp_df = cmp_df.copy()
