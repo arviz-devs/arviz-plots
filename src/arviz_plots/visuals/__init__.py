@@ -28,7 +28,7 @@ def hist(da, target, backend, **kwargs):
     )
 
 
-def line_xy(da, target, backend, x=None, y=None, **kwargs):
+def line_xy(da, target, backend, x=None, y=None, negative=None, **kwargs):
     """Plot a line x vs y.
 
     The input argument `da` is split into x and y using the dimension ``plot_axis``.
@@ -37,6 +37,16 @@ def line_xy(da, target, backend, x=None, y=None, **kwargs):
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     x, y = _process_da_x_y(da, x, y)
+
+    if negative is not None:
+        if negative == "x":
+            x = -x
+        elif negative == "y":
+            y = -y
+
+    # print(f'\n line_xy "x": {x}')
+    # print(f'\n line_xy "y": {y}')
+
     return plot_backend.line(x, y, target, **kwargs)
 
 
@@ -48,6 +58,16 @@ def line_x(da, target, backend, y=None, **kwargs):
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.line(da, y, target, **kwargs)
+
+
+def line_y(da, target, backend, x=None, **kwargs):
+    """Plot a line along the y axis (x constant)."""
+    if x is None:
+        x = np.zeros_like(da)
+    if np.asarray(x).size == 1:
+        x = np.zeros_like(da) + (x.item() if hasattr(x, "item") else x)
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.line(x, da, target, **kwargs)
 
 
 def line(da, target, backend, xname=None, **kwargs):
@@ -87,6 +107,16 @@ def scatter_x(da, target, backend, y=None, **kwargs):
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.scatter(da, y, target, **kwargs)
+
+
+def scatter_y(da, target, backend, x=None, **kwargs):
+    """Plot a dot/rug/scatter along the y axis (x constant)."""
+    if x is None:
+        x = np.zeros_like(da)
+    if np.asarray(x).size == 1:
+        x = np.zeros_like(da) + (x.item() if hasattr(x, "item") else x)
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.scatter(x, da, target, **kwargs)
 
 
 def ecdf_line(values, target, backend, **kwargs):
