@@ -288,6 +288,78 @@ def plot_rootogram(
 
     print(f"\n new_obs_hist = {new_obs_hist}")
 
+    # ---------(PPC data)-------------
+
+    min_bottom = xr.Dataset()  # minimum value of the histogram 'bottoms, for observed_rug 'y'
+
+    pp_kwargs = copy(plot_kwargs.get("predictive", {}))
+
+    if pp_kwargs is not False:
+        pp_hist_dims, pp_hist_aes, pp_hist_ignore = filter_aes(
+            plot_collection, aes_map, "predictive", reduce_dims
+        )
+        # getting first default color from color cycle and picking it
+        pp_default_color = plot_bknd.get_default_aes("color", 1, {})[0]
+        if "color" not in pp_hist_aes:
+            pp_kwargs.setdefault("color", pp_default_color)
+
+        if "alpha" not in pp_hist_aes:
+            pp_kwargs.setdefault("alpha", 0.2)
+
+        pp_stats_kwargs = copy(stats_kwargs.get("predictive", {}))
+        pp_stats_kwargs.setdefault("bins", bins)
+
+        pp_hist = pp_distribution.azstats.histogram(
+            dims=list(pp_hist_dims) + list(sample_dims), **pp_stats_kwargs
+        )
+
+        # print(f"\n pp_density histogram form pp_hist = {pp_hist}")
+
+        # the top of the predictive bars height = the observed height for that bin
+        # the bottom = difference between observed and predictive height for that bin
+
+        # getting mean of counts across all predictive samples and taking its square root
+        pp_hist.loc[{"plot_axis": "histogram"}] = (
+            pp_hist.sel(plot_axis="histogram") / total_pp_samples
+        ) ** 0.5
+
+        # new_pp_hist dataset
+        new_pp_hist = xr.Dataset()
+
+        for var_name in list(pp_hist.keys()):
+            left_edges = pp_hist[var_name].sel(plot_axis="left_edges").values
+            right_edges = pp_hist[var_name].sel(plot_axis="right_edges").values
+
+            # getting top of histogram (observed values dataset's 'y' coord)
+            new_histogram = new_obs_hist[var_name].sel(plot_axis="y").values
+            # print(f"\n new_pp_hist (new_histogram) observed heights= {new_histogram}")
+
+            histogram_bottom = new_histogram - pp_hist[var_name].sel(plot_axis="histogram").values
+            # print(f"\n new_pp_hist histogram_bottom= {histogram_bottom}")
+
+            stacked_data = np.stack(
+                (new_histogram, left_edges, right_edges, histogram_bottom), axis=-1
+            )
+            new_var = xr.DataArray(
+                stacked_data,
+                dims=["hist_dim", "plot_axis"],
+                coords={
+                    "plot_axis": ["histogram", "left_edges", "right_edges", "histogram_bottom"]
+                },
+            )
+
+            new_pp_hist[var_name] = new_var
+            min_histogram_bottom = min(histogram_bottom)
+            min_bottom[var_name] = min_histogram_bottom - (0.2 * (0 - min_histogram_bottom))
+
+        print(f"\n new_pp_hist = {new_pp_hist}")
+
+        plot_collection.map(
+            hist, "predictive", data=new_pp_hist, ignore_aes=pp_hist_ignore, **pp_kwargs
+        )
+
+    # ------------(Observed)--------------------
+
     if observed:  # all observed data group plotting logic happens here
         obs_kwargs = copy(plot_kwargs.get("observed", {}))
         if obs_kwargs is not False:
@@ -339,6 +411,9 @@ def plot_rootogram(
             if "size" not in rug_aes:
                 rug_kwargs.setdefault("size", 30)
 
+            # rug_kwargs.setdefault("y", min_bottom)
+            print(f"\n min_bottom = {min_bottom}")
+
             # print(f"\nobs_distribution = {obs_distribution}")
 
             plot_collection.map(
@@ -347,75 +422,9 @@ def plot_rootogram(
                 data=obs_distribution,
                 ignore_aes=rug_ignore,
                 xname=False,
-                y=0,
+                y=min_bottom,
                 **rug_kwargs,
             )
-
-    # ---------(PPC data)-------------
-
-    pp_kwargs = copy(plot_kwargs.get("predictive", {}))
-
-    if pp_kwargs is not False:
-        pp_hist_dims, pp_hist_aes, pp_hist_ignore = filter_aes(
-            plot_collection, aes_map, "predictive", reduce_dims
-        )
-        # getting first default color from color cycle and picking it
-        pp_default_color = plot_bknd.get_default_aes("color", 1, {})[0]
-        if "color" not in pp_hist_aes:
-            pp_kwargs.setdefault("color", pp_default_color)
-
-        if "alpha" not in pp_hist_aes:
-            pp_kwargs.setdefault("alpha", 0.2)
-
-        pp_stats_kwargs = copy(stats_kwargs.get("predictive", {}))
-        pp_stats_kwargs.setdefault("bins", bins)
-
-        pp_hist = pp_distribution.azstats.histogram(
-            dims=list(pp_hist_dims) + list(sample_dims), **pp_stats_kwargs
-        )
-
-        # print(f"\n pp_density histogram form pp_hist = {pp_hist}")
-
-        # the top of the predictive bars height = the observed height for that bin
-        # the bottom = difference between observed and predictive height for that bin
-
-        # getting mean of counts across all predictive samples and taking its square root
-        pp_hist.loc[{"plot_axis": "histogram"}] = (
-            pp_hist.sel(plot_axis="histogram") / total_pp_samples
-        ) ** 0.5
-
-        # new_pp_hist dataset
-        new_pp_hist = xr.Dataset()
-
-        for var_name in list(pp_hist.keys()):
-            left_edges = pp_hist[var_name].sel(plot_axis="left_edges").values
-            right_edges = pp_hist[var_name].sel(plot_axis="right_edges").values
-
-            # getting top of histogram (observed values dataset's 'y' coord)
-            new_histogram = new_obs_hist[var_name].sel(plot_axis="y").values
-            print(f"\n new_pp_hist (new_histogram) observed heights= {new_histogram}")
-
-            histogram_bottom = new_histogram - pp_hist[var_name].sel(plot_axis="histogram").values
-            # print(f"\n new_pp_hist histogram_bottom= {histogram_bottom}")
-
-            stacked_data = np.stack(
-                (new_histogram, left_edges, right_edges, histogram_bottom), axis=-1
-            )
-            new_var = xr.DataArray(
-                stacked_data,
-                dims=["hist_dim", "plot_axis"],
-                coords={
-                    "plot_axis": ["histogram", "left_edges", "right_edges", "histogram_bottom"]
-                },
-            )
-
-            new_pp_hist[var_name] = new_var
-
-        print(f"\n new_pp_hist = {new_pp_hist}")
-
-        plot_collection.map(
-            hist, "predictive", data=new_pp_hist, ignore_aes=pp_hist_ignore, **pp_kwargs
-        )
 
     # adding baseline at 0
     baseline_kwargs = copy(plot_kwargs.get("baseline", {}))
