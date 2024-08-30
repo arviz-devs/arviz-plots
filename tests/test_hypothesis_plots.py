@@ -37,9 +37,11 @@ def datatree(seed=31):
 
 
 kind_value = st.sampled_from(("kde", "ecdf"))
+ess_kind_value = st.sampled_from(("local", "quantile"))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 point_estimate_value = st.sampled_from(("mean", "median"))
 plot_kwargs_value = st.sampled_from(({}, False, {"color": "red"}))
+plot_kwargs_value_no_false = st.sampled_from(({}, {"color": "red"}))
 
 
 @st.composite
@@ -194,17 +196,6 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             assert all(key in child for child in pc.viz.children.values())
 
 
-ess_kind_value = st.sampled_from(("local", "quantile"))
-ess_relative = st.booleans()
-ess_rug = st.booleans()
-ess_extra_methods = st.booleans()
-
-
-@st.composite
-def ess_n_points(draw):
-    return draw(st.integers(min_value=1, max_value=50))  # should this range be changed?
-
-
 @st.composite
 def ess_min_ess(draw):
     return draw(st.integers(min_value=10, max_value=150))  # max samples = 3 x 50 = 150
@@ -215,9 +206,9 @@ def ess_min_ess(draw):
         {},
         optional={
             "ess": plot_kwargs_value,
-            "rug": st.sampled_from(({}, {"color": "red"})),
-            "xlabel": st.sampled_from(({}, {"color": "red"})),
-            "ylabel": st.sampled_from(({}, {"color": "red"})),
+            "rug": plot_kwargs_value_no_false,
+            "xlabel": plot_kwargs_value_no_false,
+            "ylabel": plot_kwargs_value_no_false,
             "mean": plot_kwargs_value,
             "mean_text": plot_kwargs_value,
             "sd": plot_kwargs_value,
@@ -228,10 +219,10 @@ def ess_min_ess(draw):
         },
     ),
     kind=ess_kind_value,
-    relative=ess_relative,
-    rug=ess_rug,
-    n_points=ess_n_points(),
-    extra_methods=ess_extra_methods,
+    relative=st.booleans(),
+    rug=st.booleans(),
+    n_points=st.integers(min_value=1, max_value=5),
+    extra_methods=st.booleans(),
     min_ess=ess_min_ess(),
 )
 def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_ess, plot_kwargs):

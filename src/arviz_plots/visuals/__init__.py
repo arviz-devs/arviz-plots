@@ -62,7 +62,6 @@ def line(da, target, backend, xname=None, **kwargs):
 
 def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
-    # print(f'\n da = {da}')
     xname = xname.item() if hasattr(xname, "item") else xname
     if xname is False:
         xvalues = da
@@ -156,7 +155,6 @@ def _ensure_scalar(*args):
 def annotate_xy(da, target, backend, *, text, x=None, y=None, vertical_align=None, **kwargs):
     """Annotate a point (x, y) in a plot."""
     if vertical_align is not None:
-        # print(f"\n vertical_align.item() = {vertical_align.item()}")
         if hasattr(vertical_align, "item"):
             kwargs["vertical_align"] = vertical_align.item()
         else:

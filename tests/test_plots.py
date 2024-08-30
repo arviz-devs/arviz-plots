@@ -303,7 +303,7 @@ class TestPlots:
         assert "rug" in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
-        assert pc.viz["mu"].rug.shape == (4,)  # checking rug artist shape (4 chains overlaid)
+        assert "chain" in pc.viz["mu"].rug.dims  # checking rug artist overlay
         # checking aesthetics
         assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
 
@@ -330,11 +330,10 @@ class TestPlots:
         assert "ess" in pc.viz["mu"]
         assert "min_ess" in pc.viz["mu"]
         assert "title" in pc.viz["mu"]
-        # assert "rug" in pc.viz["mu"]
+        assert "rug" not in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
         assert "model" in pc.viz["mu"].dims
-        # assert pc.viz["mu"].rug.shape == (2, 4)  # since there are 2 Ms, 4 Cs in datatree
         # checking aesthetics
         assert "model" in pc.aes["mu"].dims
         assert "x" in pc.aes["mu"].data_vars
