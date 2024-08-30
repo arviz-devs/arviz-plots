@@ -1,10 +1,19 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test batteries-included plots."""
 import numpy as np
+import pandas as pd
 import pytest
 from arviz_base import from_dict
 
-from arviz_plots import plot_dist, plot_forest, plot_ridge, plot_trace, plot_trace_dist, visuals
+from arviz_plots import (
+    plot_compare,
+    plot_dist,
+    plot_forest,
+    plot_ridge,
+    plot_trace,
+    plot_trace_dist,
+    visuals,
+)
 
 pytestmark = [
     pytest.mark.usefixtures("clean_plots"),
@@ -80,6 +89,23 @@ def datatree_sample(seed=31):
         },
         dims={"theta": ["hierarchy"]},
         sample_dims=["sample"],
+    )
+
+
+@pytest.fixture(scope="module")
+def cmp():
+    return pd.DataFrame(
+        {
+            "elpd_loo": [-4.5, -14.3, -16.2],
+            "p_loo": [2.6, 2.3, 2.1],
+            "elpd_diff": [0, 9.7, 11.3],
+            "weight": [0.9, 0.1, 0],
+            "se": [2.3, 2.7, 2.3],
+            "dse": [0, 2.7, 2.3],
+            "warning": [False, False, False],
+            "scale": ["log", "log", "log"],
+        },
+        index=["Model B", "Model A", "Model C"],
     )
 
 
@@ -249,3 +275,19 @@ class TestPlots:
         if pseudo_dim != "__variable__":
             assert all(0 in child["alpha"] for child in pc.aes.children.values())
             assert any(pseudo_dim in child["shade"].dims for child in pc.viz.children.values())
+
+    def test_plot_compare(self, cmp, backend):
+        pc = plot_compare(cmp, backend=backend)
+        assert pc.viz["plot"]
+
+    def test_plot_compare_kwargs(self, cmp, backend):
+        plot_compare(
+            cmp,
+            plot_kwargs={
+                "shade": {"color": "black", "alpha": 0.2},
+                "error_bar": {"color": "gray"},
+                "point_estimate": {"color": "red", "marker": "|"},
+            },
+            pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200)}},
+            backend=backend,
+        )

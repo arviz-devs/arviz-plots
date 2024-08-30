@@ -17,6 +17,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
 .. autosummary::
    :toctree: generated/
 
+   plot_compare
    plot_dist
    plot_forest
    plot_ridge
