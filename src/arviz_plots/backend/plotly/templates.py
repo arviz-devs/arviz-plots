@@ -12,14 +12,14 @@ arviz_clean_template.layout.xaxis = axis_common
 arviz_clean_template.layout.yaxis = axis_common
 
 arviz_clean_template.layout.colorway = [
-    "#1a6587",
-    "#a6ccfe",
-    "#f98d74",
-    "#f5e257",
-    "#e5441a",
-    "#5b8073",
-    "#b66edd",
-    "#9b403d",
-    "#969bab",
-    "#c1c1c1",
+    "#36acc6",
+    "#f66d7f",
+    "#fac364",
+    "#7c2695",
+    "#228306",
+    "#a252f4",
+    "#63f0ea",
+    "#000000",
+    "#6f6f6f",
+    "#b7b7b7",
 ]
