@@ -101,11 +101,7 @@ def plot_compare(
     plot_collection = PlotCollection(
         Dataset({}),
         viz_dt=DataTree.from_dict(
-            {
-                "/": Dataset(
-                    {"chart": np.array(chart, dtype=object), "plot": np.array(target, dtype=object)}
-                )
-            }
+            {"/": Dataset({"chart": np.array(chart, dtype=object), "plot": target})}
         ),
         backend=backend,
         **pc_kwargs,
