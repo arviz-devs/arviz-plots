@@ -11,7 +11,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import hist, labelled_title, line_xy, scatter_xy, trace_rug
+from arviz_plots.visuals import hist, labelled_title, line_xy, scatter_xy
 
 
 def plot_rootogram(
@@ -19,8 +19,6 @@ def plot_rootogram(
     var_names=None,
     filter_vars=None,
     group="posterior",
-    observed=None,
-    observed_rug=False,
     coords=None,
     sample_dims=None,
     facet_dims=None,
@@ -49,11 +47,6 @@ def plot_rootogram(
     group : str, default "posterior"
         Group to be plotted. Note: Posterior refers to posterior-predictive, prior refers to
         prior-predictive.
-    observed : boolean, optional
-        Whether or not to plot the observed data. Defaults to True for ``group = posterior``
-        and False for ``group = prior``.
-    observed_rug : boolean, default False
-        Whether or not to plot a rug plot of the observed data. Only valid if observed=True.
     coords : dict, optional
         Dictionary mapping dimensions to selected coordinates to be plotted.
         Dimensions without a mapping specified will include all coordinates for that dimension.
@@ -83,7 +76,6 @@ def plot_rootogram(
         * "predictive" -> Passed to :func:`~arviz_plots.visuals.hist_line`
         * "observed" -> passed to :func: `~arviz_plots.visuals.scatter_xy`
         * "observed_line" -> passed to :func:`~arviz_plots.visuals.line_xy`
-        * "observed_rug" -> passed to :func:`arviz_plots.visuals.trace_rug`
         * "baseline" -> passed to :func:`~arviz_plots.visuals.line_xy`
         * "title" -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * "remove_axis" -> not passed anywhere, can only be ``False`` to skip calling this function
@@ -129,26 +121,12 @@ def plot_rootogram(
         raise TypeError("`group` argument must be either `posterior` or `prior`")
 
     predictive_data_group = f"{group}_predictive"
-    if observed is None:
-        observed = group == "posterior"  # by default true if posterior, false if prior
-
-    # checking to make sure plot_kwargs["observed"] is not False
-    observed_kwargs = copy(plot_kwargs.get("observed", {}))
-    if observed_kwargs is False:
-        raise ValueError(
-            """plot_kwargs['observed'] can't be False, use observed=False to remove observed 
-            plot element"""
-        )
 
     # making sure both posterior/prior predictive group and observed_data group exists in
     # datatree provided
-    if observed:
-        for group_name in (predictive_data_group, "observed_data"):
-            if group_name not in dt.children:
-                raise TypeError(f'`data` argument must have the group "{group_name}" for ppcplot')
-    else:
-        if f"{predictive_data_group}" not in dt.children:
-            raise TypeError(f'`data` argument must have the group "{group}_predictive" for ppcplot')
+    for group_name in (predictive_data_group, "observed_data"):
+        if group_name not in dt.children:
+            raise TypeError(f'`data` argument must have the group "{group_name}" for ppcplot')
 
     # initializaing data_pairs as empty dict in case pp and observed data var names are same
     if data_pairs is None:
@@ -189,7 +167,6 @@ def plot_rootogram(
             + list(facet_dims),  # making sure multiple plots are created for each facet dim
         )
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("overlay", sample_dims)  # setting overlay dim
         plot_collection = PlotCollection.wrap(
             pp_distribution,
             backend=backend,
@@ -216,7 +193,8 @@ def plot_rootogram(
     # if "remove_axis" in plot_kwargs:
     plot_kwargs_dist["remove_axis"] = False  # plot_kwargs["remove_axis"]
 
-    # obs distribution calculated outside `if observed` since plotting predictive bars requires it
+    # obs distribution calculated outside observed artist plotting since plotting predictive bars
+    # requires it
     observed_data_group = "observed_data"
     obs_distribution = process_group_variables_coords(
         dt,
@@ -227,8 +205,9 @@ def plot_rootogram(
     )
 
     # ---------(observed data)-----------
-    # observed data calculations are made outside of and before 'if observed' since predictive also
-    # depends on this computed data (number of bins and top of predictive bars for rootograms)
+    # observed data calculations are made outside of and before observed artist plotting since
+    # predictive also depends on this computed data (number of bins and top of predictive bars
+    # for rootograms)
 
     # this portion is situated in an out of convention spot becuse obs_hist_dims is required
     obs_hist_dims, obs_hist_aes, obs_hist_ignore = filter_aes(
@@ -249,28 +228,15 @@ def plot_rootogram(
     obs_hist.loc[{"plot_axis": "histogram"}] = (obs_hist.sel(plot_axis="histogram")) ** 0.5
 
     # new_obs_hist with histogram->y and left_edge/right_edge midpoint->x
-    new_obs_hist = xr.Dataset()
-
-    for var_name in list(obs_hist.keys()):
-        left_edges = obs_hist[var_name].sel(plot_axis="left_edges").values
-        right_edges = obs_hist[var_name].sel(plot_axis="right_edges").values
-
-        left_edges = np.array(left_edges)
-        right_edges = np.array(right_edges)
-
-        x = (left_edges + right_edges) / 2
-        y = obs_hist[var_name].sel(plot_axis="histogram").values
-
-        stacked_data = np.stack((x, y), axis=-1)
-        new_var = xr.DataArray(
-            stacked_data, dims=["hist_dim", "plot_axis"], coords={"plot_axis": ["x", "y"]}
-        )
-
-        new_obs_hist[var_name] = new_var
+    new_obs_hist = xr.concat(
+        (
+            obs_hist.sel(plot_axis=["right_edges", "left_edges"]).sum("plot_axis") / 2,
+            obs_hist.sel(plot_axis="histogram", drop=True),
+        ),
+        dim="plot_axis",
+    ).assign_coords(plot_axis=["x", "y"])
 
     # ---------(PPC data)-------------
-
-    min_bottom = xr.Dataset()  # minimum value of the histogram 'bottoms, for observed_rug 'y'
 
     pp_kwargs = copy(plot_kwargs.get("predictive", {}))
 
@@ -301,32 +267,20 @@ def plot_rootogram(
             pp_hist.sel(plot_axis="histogram") / total_pp_samples
         ) ** 0.5
 
-        # new_pp_hist dataset
-        new_pp_hist = xr.Dataset()
+        # print(f"\n new_obs_hist = {new_obs_hist}\n pp_hist = {pp_hist}\n")
+        histogram_bottom = new_obs_hist.sel(plot_axis="y") - pp_hist.sel(plot_axis="histogram")
+        histogram_bottom = histogram_bottom.expand_dims(plot_axis=["histogram_bottom"])
+        # print(f" diff = {a}\n")
 
-        for var_name in list(pp_hist.keys()):
-            left_edges = pp_hist[var_name].sel(plot_axis="left_edges").values
-            right_edges = pp_hist[var_name].sel(plot_axis="right_edges").values
-
-            # getting top of histogram (observed values dataset's 'y' coord)
-            new_histogram = new_obs_hist[var_name].sel(plot_axis="y").values
-
-            histogram_bottom = new_histogram - pp_hist[var_name].sel(plot_axis="histogram").values
-
-            stacked_data = np.stack(
-                (new_histogram, left_edges, right_edges, histogram_bottom), axis=-1
-            )
-            new_var = xr.DataArray(
-                stacked_data,
-                dims=["hist_dim", "plot_axis"],
-                coords={
-                    "plot_axis": ["histogram", "left_edges", "right_edges", "histogram_bottom"]
-                },
-            )
-
-            new_pp_hist[var_name] = new_var
-            min_histogram_bottom = min(histogram_bottom)
-            min_bottom[var_name] = min_histogram_bottom - (0.2 * (0 - min_histogram_bottom))
+        new_pp_hist = xr.concat(
+            (
+                new_obs_hist.sel(plot_axis="y"),  # getting tops of histogram (observed values)
+                pp_hist.sel(plot_axis="left_edges"),
+                pp_hist.sel(plot_axis="right_edges"),
+                histogram_bottom,
+            ),
+            dim="plot_axis",
+        ).assign_coords(plot_axis=["histogram", "left_edges", "right_edges", "histogram_bottom"])
 
         plot_collection.map(
             hist, "predictive", data=new_pp_hist, ignore_aes=pp_hist_ignore, **pp_kwargs
@@ -334,67 +288,40 @@ def plot_rootogram(
 
     # ------------(Observed)--------------------
 
-    if observed:  # all observed data group plotting logic happens here
-        obs_kwargs = copy(plot_kwargs.get("observed", {}))
-        if obs_kwargs is not False:
-            if "color" not in obs_hist_aes:
-                obs_kwargs.setdefault("color", "black")
+    obs_kwargs = copy(plot_kwargs.get("observed", {}))
+    if obs_kwargs is not False:
+        if "color" not in obs_hist_aes:
+            obs_kwargs.setdefault("color", "black")
 
-            plot_collection.map(
-                scatter_xy,
-                "observed",
-                data=new_obs_hist,
-                ignore_aes=obs_hist_ignore,
-                **obs_kwargs,
-            )
+        plot_collection.map(
+            scatter_xy,
+            "observed",
+            data=new_obs_hist,
+            ignore_aes=obs_hist_ignore,
+            **obs_kwargs,
+        )
 
-        obs_line_kwargs = copy(plot_kwargs.get("observed_line", {}))
-        if obs_line_kwargs is not False:
-            _, obs_line_aes, obs_line_ignore = filter_aes(
-                plot_collection, aes_map, "observed", reduce_dims
-            )
+    obs_line_kwargs = copy(plot_kwargs.get("observed_line", {}))
+    if obs_line_kwargs is not False:
+        _, obs_line_aes, obs_line_ignore = filter_aes(
+            plot_collection, aes_map, "observed", reduce_dims
+        )
 
-            linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
+        linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
 
-            if "linestyle" not in obs_line_aes:
-                obs_line_kwargs.setdefault("linestyle", linestyle)
+        if "linestyle" not in obs_line_aes:
+            obs_line_kwargs.setdefault("linestyle", linestyle)
 
-            if "color" not in obs_line_aes:
-                obs_line_kwargs.setdefault("color", "black")
+        if "color" not in obs_line_aes:
+            obs_line_kwargs.setdefault("color", "black")
 
-            plot_collection.map(
-                line_xy,
-                "observed_line",
-                data=new_obs_hist,
-                ignore_aes=obs_line_ignore,
-                **obs_line_kwargs,
-            )
-
-        # ---------(observed rug plot)-----------
-        if observed_rug:
-            # plot observed density as a rug
-            rug_kwargs = copy(plot_kwargs.get("observed_rug", {}))
-
-            _, rug_aes, rug_ignore = filter_aes(
-                plot_collection, aes_map, "observed_rug", reduce_dims
-            )
-            if "color" not in rug_aes:
-                rug_kwargs.setdefault("color", "black")
-            if "marker" not in rug_aes:
-                rug_kwargs.setdefault("marker", "|")
-            if "size" not in rug_aes:
-                rug_kwargs.setdefault("size", 30)
-
-            rug_kwargs.setdefault("y", min_bottom)
-
-            plot_collection.map(
-                trace_rug,
-                "observed_rug",
-                data=obs_distribution,
-                ignore_aes=rug_ignore,
-                xname=False,
-                **rug_kwargs,
-            )
+        plot_collection.map(
+            line_xy,
+            "observed_line",
+            data=new_obs_hist,
+            ignore_aes=obs_line_ignore,
+            **obs_line_kwargs,
+        )
 
     # adding baseline at 0
     baseline_kwargs = copy(plot_kwargs.get("baseline", {}))
