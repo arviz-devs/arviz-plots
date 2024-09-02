@@ -1,7 +1,5 @@
 """ess plot code."""
 
-# imports
-# import warnings
 from copy import copy
 from importlib import import_module
 
@@ -11,7 +9,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection, leaf_dataset, process_facet_dims
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import (
     annotate_xy,
@@ -224,52 +222,23 @@ def plot_ess(
         raise ValueError("plot_kwargs['rug'] can't be False, use rug=False to remove the rug")
 
     if backend is None:
-        backend = rcParams["plot.backend"]
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
-    # set plot collection initialization defaults if it doesnt exist
-
-    # figsizing related plot collection initialization
+    # set plot collection initialization defaults
     if plot_collection is None:
-        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
             + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
         )
-        n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
-        col_wrap = pc_kwargs["col_wrap"]
-        if n_plots <= col_wrap:
-            n_rows, n_cols = 1, n_plots
-        else:
-            div_mod = divmod(n_plots, col_wrap)
-            n_rows = div_mod[0] + (div_mod[1] != 0)
-            n_cols = col_wrap
-    else:
-        figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
-        n_rows = leaf_dataset(plot_collection.viz, "row").max().to_array().max().item()
-        n_cols = leaf_dataset(plot_collection.viz, "col").max().to_array().max().item()
-
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-
-    figsize = plot_bknd.scale_fig_size(
-        figsize,
-        rows=n_rows,
-        cols=n_cols,
-        figsize_units=figsize_units,
-    )
-
-    # other plot collection related initialization
-    if plot_collection is None:
-        # making copy of pc_kwargs["plot_grid_kws"] to pass to .wrap()
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        if "figsize" not in pc_kwargs["plot_grid_kws"]:
-            pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-            pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
-
-        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
         if "model" in distribution:
@@ -279,7 +248,35 @@ def plot_ess(
             pc_kwargs.setdefault("x", np.linspace(-x_diff, x_diff, n_models))
             pc_kwargs["aes"].setdefault("x", ["model"])
         aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]
-        plot_collection = PlotCollection.wrap(
+        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        if figsize is None:
+            coeff = 0.2
+            if "chain" in distribution.dims:
+                coeff += 0.1
+            if "model" in distribution.dims:
+                coeff += 0.1 * distribution.sizes["model"]
+            n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
+            col_wrap = pc_kwargs["col_wrap"]
+            print(f"\n n_plots = {n_plots},\n col_wrap = {col_wrap}")
+            if n_plots <= col_wrap:
+                n_rows, n_cols = 1, n_plots
+            else:
+                div_mod = divmod(n_plots, col_wrap)
+                n_rows = div_mod[0] + (div_mod[1] != 0)
+                n_cols = col_wrap
+            print(f"\n n_rows = {n_rows},\n n_cols = {n_cols}")
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=n_rows,
+                cols=n_cols,
+                figsize_units=figsize_units,
+            )
+            print(f"\n figsize = {figsize!r}")
+            figsize_units = "dots"
+        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+        plot_collection = PlotCollection.grid(
             distribution,
             backend=backend,
             **pc_kwargs,
