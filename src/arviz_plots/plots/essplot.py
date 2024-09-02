@@ -121,13 +121,20 @@ def plot_ess(
     -------
     PlotCollection
 
+    Notes
+    -----
+    Depending on the number of models, a slight x-axis separation aesthetic is applied for each
+    ess point for distinguishability in case of overlap
+
+    See Also
+    --------
+    :ref:`plots_intro` :
+        General introduction to batteries-included plotting functions, common use and logic overview
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_ess``.
-    For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`
-
-    Default plot_ess for a single model:
+    We can manually map the color to the variable, and have the mapping apply
+    to the title too instead of only the ess markers:
 
     .. plot::
         :context: close-figs
@@ -135,29 +142,7 @@ def plot_ess(
         >>> from arviz_plots import plot_ess, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
         >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_ess(centered)
-
-    Default plot_ess for multiple models: (Depending on the number of models, a slight
-    x-axis separation aesthetic is applied for each ess point for distinguishability in
-    case of overlap)
-
-    .. plot::
-        :context: close-figs
-
-        >>> pc = plot_ess(
-        >>>     {"centered": centered, "non centered": non_centered},
-        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>> )
-        >>> pc.add_legend("model")
-
-    We can also manually map the color to the variable, and have the mapping apply
-    to the title too instead of only the ess markers:
-
-    .. plot::
-        :context: close-figs
-
         >>> pc = plot_ess(
         >>>     non_centered,
         >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
@@ -165,31 +150,53 @@ def plot_ess(
         >>>     aes_map={"title": ["color"]},
         >>> )
 
-    If we add a mapping (like color) manually to the variable, but not specify which artist
-    to apply the mapping to- then it is applied to the 'ess' marker artist by default:
+    We can add extra methods to plot the mean and standard deviation as lines, and adjust
+    the minimum ess baseline as well:
 
     .. plot::
         :context: close-figs
 
         >>> pc = plot_ess(
-        >>>     centered,
+        >>>     non_centered,
         >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>>     extra_methods=True,
+        >>>     min_ess=200,
         >>> )
 
-    The artists' visual features can also be customized through plot_kwargs, based on the
-    kwargs that the visual element function for the artist accepts- like all the other
-    batteries included plots. For example, for the 'ess' artist, the scatter_xy function is
-    used. So if we want to change the marker:
+    Rugs can also be added:
 
     .. plot::
         :context: close-figs
 
         >>> pc = plot_ess(
-        >>>    centered,
-        >>>    coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>>    plot_kwargs={"ess": {"marker": "_"}},
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     rug=True,
         >>> )
+
+    Relative ESS can be plotted instead of absolute:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     relative=True,
+        >>> )
+
+    We can also adjust the number of points:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     n_points=10,
+        >>> )
+
+    .. minigallery:: plot_ess
 
     """
     # initial defaults
