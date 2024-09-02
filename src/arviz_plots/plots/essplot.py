@@ -258,32 +258,24 @@ def plot_ess(
         figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
         figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
         if figsize is None:
-            coeff = 0.2
-            if "chain" in distribution.dims:
-                coeff += 0.1
-            if "model" in distribution.dims:
-                coeff += 0.1 * distribution.sizes["model"]
             n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
             col_wrap = pc_kwargs["col_wrap"]
-            print(f"\n n_plots = {n_plots},\n col_wrap = {col_wrap}")
             if n_plots <= col_wrap:
                 n_rows, n_cols = 1, n_plots
             else:
                 div_mod = divmod(n_plots, col_wrap)
                 n_rows = div_mod[0] + (div_mod[1] != 0)
                 n_cols = col_wrap
-            print(f"\n n_rows = {n_rows},\n n_cols = {n_cols}")
             figsize = plot_bknd.scale_fig_size(
                 figsize,
                 rows=n_rows,
                 cols=n_cols,
                 figsize_units=figsize_units,
             )
-            print(f"\n figsize = {figsize!r}")
             figsize_units = "dots"
         pc_kwargs["plot_grid_kws"]["figsize"] = figsize
         pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
-        plot_collection = PlotCollection.grid(
+        plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
             **pc_kwargs,
