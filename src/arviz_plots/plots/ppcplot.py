@@ -137,6 +137,11 @@ def plot_ppc(
     -------
     PlotCollection
 
+    Notes
+    -----
+    When kind is set to "scatter", the 'observed_rug' argument is automatically set to False
+    since the observed artist represents the same visually.
+
     Examples
     --------
     WIP
@@ -215,6 +220,10 @@ def plot_ppc(
     # making sure kde type is one of these three
     if kind.lower() not in ("kde", "ecdf", "hist", "scatter"):
         raise TypeError("`kind` argument must be either `kde`, `ecdf`, `hist` or `scatter`")
+
+    # automatically turn obeerved_rug off if kind=="scatter"
+    if kind == "scatter":
+        observed_rug = False
 
     # initializaing data_pairs as empty dict in case pp and observed data var names are same
     if data_pairs is None:
@@ -295,10 +304,11 @@ def plot_ppc(
         )
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs["aes"].setdefault("overlay", sample_dims)  # setting overlay dim
-        pc_kwargs.setdefault("y", np.linspace(0.01, 0.1, 11))
-        pc_kwargs["aes"].setdefault(
-            "y", sample_dims
-        )  # setting y aesthetic for sample_dims('ppc_dim' or other) in case of kind="scatter"
+        # pc_kwargs.setdefault("y", np.linspace(0.01, 0.1, 11))
+        if kind == "scatter":
+            pc_kwargs["aes"].setdefault(
+                "y", sample_dims
+            )  # setting y aesthetic for sample_dims('ppc_dim' or other)
         plot_collection = PlotCollection.wrap(
             pp_distribution,
             backend=backend,
@@ -489,7 +499,7 @@ def plot_ppc(
                 data=obs_distribution,
                 ignore_aes=obs_density_ignore,
                 xname=False,
-                y=0,
+                y=-1,
                 **obs_kwargs,
             )
 
@@ -568,8 +578,8 @@ def plot_ppc(
 
     # print(f"\n-----------------------------------------------------------------\n")
     # print(f"\n datatree = {dt}")
-    # print(f"\n pc.viz = {plot_collection.viz!r}")
-    # print(f"\n pc.aes = {plot_collection.aes!r}")
+    print(f"\n pc.viz = {plot_collection.viz!r}")
+    print(f"\n pc.aes = {plot_collection.aes!r}")
     # print(f"\n-----------------------------------------------------------------\n")
 
     return plot_collection

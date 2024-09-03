@@ -50,6 +50,12 @@ kind_value = st.sampled_from(("kde", "ecdf"))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 point_estimate_value = st.sampled_from(("mean", "median"))
 plot_kwargs_value = st.sampled_from(({}, False, {"color": "red"}))
+ppc_kind_value = st.sampled_from(("kde", "ecdf", "hist", "scatter"))
+# ppc_group = st.sampled_from(("prior", "posterior"))
+# ppc_observed = st.booleans()
+# ppc_aggregate = st.booleans()
+ppc_sample_dims = st.sampled_from((["draw"], ["chain", "draw"]))
+ppc_facet_dims = st.sampled_from((["group"], ["hierarchy"], None))
 
 
 @st.composite
@@ -204,33 +210,19 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             assert all(key in child for child in pc.viz.children.values())
 
 
-ppc_kind_value = st.sampled_from(("kde", "ecdf"))
-ppc_group = st.sampled_from(("prior", "posterior"))
-ppc_observed = st.booleans()
-ppc_aggregate = st.booleans()
-ppc_sample_dims = st.sampled_from((["chain"], ["chain", "draw"]))
-ppc_facet_dims = st.sampled_from((["group"], ["hierarchy"], None))
-
-
-@st.composite  # composite func to determine num_pp_samples based on draws of group, sample_dims
-def draw_num_pp_samples(draw, group, sample_dims):
-    group = draw(group)
-    sample_dims = draw(sample_dims)
-    # print(f"\n sample_dims = {sample_dims}\ngroup = {group}")
-    chain_dim_length = 1 if group == "prior" else 3
-    draw_dim_length = 50 if sample_dims == ["chain", "draw"] else 1
-    total_num_samples = int(np.prod([chain_dim_length, draw_dim_length]))
-
-    num_pp_samples = draw(st.integers(min_value=1, max_value=total_num_samples))
-    # print(f"\nnum_pp_samples = {num_pp_samples}")
-    return [num_pp_samples, total_num_samples]
+@st.composite
+def observed_and_rug(draw):
+    observed = draw(st.booleans())
+    if not observed:
+        return (False, False)
+    rug = draw(st.booleans())
+    return (observed, rug)
 
 
 @given(
     plot_kwargs=st.fixed_dictionaries(
         {},
         optional={
-            "kind": plot_kwargs_value,
             "predictive": plot_kwargs_value,
             "observed": st.sampled_from(({}, {"color": "red"})),
             "aggregate": st.sampled_from(({}, {"color": "red"})),
@@ -240,46 +232,46 @@ def draw_num_pp_samples(draw, group, sample_dims):
         },
     ),
     kind=ppc_kind_value,
-    group=ppc_group,
-    observed=ppc_observed,
-    # observed_rug=ppc_observed,
-    aggregate=ppc_aggregate,
+    # group=ppc_group,
+    observed_and_rug=observed_and_rug(),
+    aggregate=st.booleans(),
     facet_dims=ppc_facet_dims,
     sample_dims=ppc_sample_dims,
-    drawed_samples=draw_num_pp_samples(ppc_group, ppc_sample_dims),
+    num_pp_samples=st.integers(min_value=1, max_value=150),
 )
 def test_plot_ppc(
     datatree,
     kind,
-    group,
-    observed,
-    # observed_rug,
+    # group,
+    observed_and_rug,
     aggregate,
     facet_dims,
     sample_dims,
-    drawed_samples,
+    num_pp_samples,
     plot_kwargs,
 ):
-    kind_kwargs = plot_kwargs.pop("kind", None)
-    if kind_kwargs is not None:
-        plot_kwargs[kind] = kind_kwargs
+    if sample_dims == ["chain", "draw"]:
+        total_num_samples = 150
+    else:
+        total_num_samples = 50
+    # if num_pp_samples drawn is larger than total, just make it equal to total
+    if num_pp_samples > total_num_samples:  # pylint: disable=consider-using-min-builtin
+        num_pp_samples = total_num_samples
+    observed, observed_rug = observed_and_rug
     pc = plot_ppc(
         datatree,
         backend="none",
         kind=kind,
-        group=group,
+        # group=group,
         observed=observed,
-        # observed_rug=observed_rug,
-        observed_rug=observed,  # same since observed rug cannot be True if observed is False
+        observed_rug=observed_rug,
         aggregate=aggregate,
         facet_dims=facet_dims,
         sample_dims=sample_dims,
-        num_pp_samples=drawed_samples[0],
+        num_pp_samples=num_pp_samples,
         plot_kwargs=plot_kwargs,
     )
     assert all("plot" in child for child in pc.viz.children.values())
-    num_pp_samples = drawed_samples[0]
-    total_num_samples = drawed_samples[1]
     if num_pp_samples == total_num_samples:
         # assert sample_dims in pc.viz["obs"].dims
         assert all(dim in pc.viz["obs"].dims for dim in sample_dims)
@@ -288,18 +280,37 @@ def test_plot_ppc(
             assert "ppc_dim" in pc.viz["obs"].dims
         else:
             all(dim in pc.viz["obs"].dims for dim in sample_dims)
+
+    if kind != "scatter":
+        if observed is True or aggregate is True or plot_kwargs.get("predictive", {}) is not False:
+            assert all(kind in child for child in pc.viz.children.values())
+        else:
+            assert all(kind not in child for child in pc.viz.children.values())
+    else:  # kind = "scatter"
+        if aggregate is True:
+            assert all(kind in child for child in pc.viz.children.values())
+        else:
+            assert all(kind not in child for child in pc.viz.children.values())
+
     for key, value in plot_kwargs.items():
         if value is False:
             assert all(key not in child for child in pc.viz.children.values())
-        elif key in ["observed", "observed_rug"]:
-            if observed is False:
-                assert all(key not in child for child in pc.viz.children.values())
-            else:
-                assert all(key in child for child in pc.viz.children.values())
-        elif key in ["aggregate"]:
-            if aggregate is False:
-                assert all(key not in child for child in pc.viz.children.values())
-            else:
-                assert all(key in child for child in pc.viz.children.values())
+        elif key in ["observed_rug"]:
+            if kind != "scatter":
+                if observed is False or observed_rug is False:
+                    assert all(key not in child for child in pc.viz.children.values())
+                else:
+                    assert all(key in child for child in pc.viz.children.values())
+        # if key in predictive, aggregate, or observed, key will be in child only if
+        # kind = "scatter" for observed, predictive (not aggregate)
+        elif key in ["predictive", "aggregate", "observed"]:
+            if kind == "scatter":  # kind="scatter"
+                if key in ["observed"]:
+                    if observed is False:
+                        assert all(key not in child for child in pc.viz.children.values())
+                    else:
+                        assert all(key in child for child in pc.viz.children.values())
+                elif key in ["predictive"]:
+                    assert all(key in child for child in pc.viz.children.values())
         elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())
