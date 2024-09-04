@@ -11,7 +11,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import (
     annotate_xy,
@@ -23,11 +23,6 @@ from arviz_plots.visuals import (
     scatter_xy,
     trace_rug,
 )
-
-# from arviz_base.sel_utils import xarray_sel_iter
-
-
-# from arviz_stats.numba import array_stats
 
 
 def plot_mcse(
@@ -119,13 +114,20 @@ def plot_mcse(
     -------
     PlotCollection
 
+    Notes
+    -----
+    Depending on the number of models, a slight x-axis separation aesthetic is applied for each
+    ess point for distinguishability in case of overlap
+
+    See Also
+    --------
+    :ref:`plots_intro` :
+        General introduction to batteries-included plotting functions, common use and logic overview
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_mcse``.
-    For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`
-
-    Default plot_mcse for a single model:
+    We can manually map the color to the variable, and have the mapping apply
+    to the title too instead of only the mcse markers:
 
     .. plot::
         :context: close-figs
@@ -134,25 +136,6 @@ def plot_mcse(
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
         >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_mcse(centered)
-
-    Default plot_mcse for multiple models: (Depending on the number of models, a slight
-    x-axis separation aesthetic is applied for each mcse point for distinguishability in
-    case of overlap)
-
-    .. plot::
-        :context: close-figs
-        >>> pc = plot_mcse(
-        >>>     {"centered": centered, "non centered": non_centered},
-        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>> )
-        >>> pc.add_legend("model")
-
-    We can also manually map the color to the variable, and have the mapping apply
-    to the title too instead of only the mcse markers:
-
-    .. plot::
-        :context: close-figs
         >>> pc = plot_mcse(
         >>>     non_centered,
         >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
@@ -160,38 +143,46 @@ def plot_mcse(
         >>>     aes_map={"title": ["color"]},
         >>> )
 
-    If we add a mapping (like color) manually to the variable, but not specify which artist
-    to apply the mapping to- then it is applied to the 'mcse' marker artist by default:
+    We can add extra methods to plot the mean and standard deviation as lines
 
     .. plot::
         :context: close-figs
         >>> pc = plot_mcse(
-        >>>     centered,
+        >>>     non_centered,
         >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
+        >>>     extra_methods=True,
         >>> )
 
-    The artists' visual features can also be customized through plot_kwargs, based on the
-    kwargs that the visual element function for the artist accepts- like all the other
-    batteries included plots. For example, for the 'mcse' artist, the scatter_xy function or
-    errorbar function is used. So if we want to change the marker:
+    Rugs can also be added:
+    .. plot::
+        :context: close-figs
+        >>> pc = plot_mcse(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     rug=True,
+        >>> )
+
+    We can also adjust the number of points:
 
     .. plot::
         :context: close-figs
         >>> pc = plot_mcse(
-        >>>    centered,
-        >>>    coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>>    plot_kwargs={"mcse": {"marker": "_"}},
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     n_points=10,
         >>> )
+
+    If we want to plot quantile values +/- mcse, we can turn errorbars on:
 
     .. plot::
         :context: close-figs
         >>> pc = plot_mcse(
-        >>>    centered,
-        >>>    coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
-        >>>    plot_kwargs={"mcse": {"marker": "_"}},
-        >>>    errorbar=True,
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     errorbar=True,
         >>> )
+
+    .. minigallery:: plot_mcse
 
     """
     # initial defaults
@@ -221,17 +212,24 @@ def plot_mcse(
     if rug_kwargs is False:
         raise ValueError("plot_kwargs['rug'] can't be False, use rug=False to remove the rug")
 
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+
     # set plot collection initialization defaults if it doesnt exist
     if plot_collection is None:
-        if backend is None:
-            backend = rcParams["plot.backend"]
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
             + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
         )
-        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
         if "model" in distribution:
@@ -240,6 +238,26 @@ def plot_mcse(
             x_diff = min(1 / n_points / 3, 1 / n_points * n_models / 10)
             pc_kwargs.setdefault("x", np.linspace(-x_diff, x_diff, n_models))
             pc_kwargs["aes"].setdefault("x", ["model"])
+        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        if figsize is None:
+            n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
+            col_wrap = pc_kwargs["col_wrap"]
+            if n_plots <= col_wrap:
+                n_rows, n_cols = 1, n_plots
+            else:
+                div_mod = divmod(n_plots, col_wrap)
+                n_rows = div_mod[0] + (div_mod[1] != 0)
+                n_cols = col_wrap
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=n_rows,
+                cols=n_cols,
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
+        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -270,7 +288,6 @@ def plot_mcse(
         mcse_dims, _, mcse_ignore = filter_aes(plot_collection, aes_map, "mcse", sample_dims)
         probs = np.linspace(1 / n_points, 1 - 1 / n_points, n_points)
         xdata = probs
-        print(f"\n mcse_dims = {mcse_dims}")
 
         mcse_y_dataset = xr.concat(
             [
@@ -284,7 +301,6 @@ def plot_mcse(
             ],
             dim="mcse_dim",
         )
-        # print(f"\n mcse_y_dataset = {mcse_y_dataset}")
 
         xdata_da = xr.DataArray(xdata, dims="mcse_dim")
         # broadcasting xdata_da to match shape of each variable in mcse_y_dataset and
@@ -297,9 +313,6 @@ def plot_mcse(
             plot_axis=["x", "y"]
         )
 
-        print(f"\n mcse_dataset = {mcse_dataset!r}")
-        # print(f"\n distribution = {distribution!r}")
-
         if errorbar is False:
             plot_collection.map(
                 scatter_xy, "mcse", data=mcse_dataset, ignore_aes=mcse_ignore, **mcse_kwargs
@@ -308,9 +321,7 @@ def plot_mcse(
         # else:
         # use new errorbar visual element function to plot errorbars
         else:
-            # print(f"\n final z_mcse_dataset = {z_mcse_dataset}")
             quantiles_dataset = distribution.quantile(probs, dim=mcse_dims)
-            # print(f"\n quantiles_dataset = {quantiles_dataset}")
 
             plot_collection.map(
                 error_bar,
@@ -358,7 +369,6 @@ def plot_mcse(
     x_range = xr.DataArray(x_range)
 
     # getting backend specific linestyles
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     linestyles = plot_bknd.get_default_aes("linestyle", 4, {})
     # and default color
     default_color = plot_bknd.get_default_aes("color", 1, {})[0]
@@ -431,13 +441,13 @@ def plot_mcse(
                 vertical_align = mean_va_align
             else:
                 vertical_align = "bottom"
+            mean_text_kwargs.setdefault("vertical_align", vertical_align)
 
             plot_collection.map(
                 annotate_xy,
                 "mean_text",
                 text="mean",
                 data=mean_mcse,
-                vertical_align=vertical_align,
                 ignore_aes=mean_text_ignore,
                 **mean_text_kwargs,
             )
@@ -461,13 +471,13 @@ def plot_mcse(
                 vertical_align = sd_va_align
             else:
                 vertical_align = "top"
+            sd_text_kwargs.setdefault("vertical_align", vertical_align)
 
             plot_collection.map(
                 annotate_xy,
                 "sd_text",
                 text="sd",
                 data=sd_mcse,
-                vertical_align=vertical_align,
                 ignore_aes=sd_text_ignore,
                 **sd_text_kwargs,
             )
@@ -524,9 +534,5 @@ def plot_mcse(
             subset_info=True,
             **ylabel_kwargs,
         )
-
-    print(f"\n pc.viz = {plot_collection.viz}")
-
-    print(f"\n pc.aes = {plot_collection.aes}")
 
     return plot_collection

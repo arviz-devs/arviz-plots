@@ -45,7 +45,6 @@ def line_xy(da, target, backend, x=None, y=None, **kwargs):
     in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    # print(f"\nline_xy\nx={x}, y={y}, da = {da}")
     x, y = _process_da_x_y(da, x, y)
     return plot_backend.line(x, y, target, **kwargs)
 
@@ -107,7 +106,6 @@ def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
     in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    # print(f"\nscatter_xy\nx={x}, y={y}, da = {da}")
     x, y = _process_da_x_y(da, x, y)
     return plot_backend.scatter(x, y, target, **kwargs)
 

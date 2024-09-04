@@ -111,7 +111,7 @@ def cmp():
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-class TestPlots:
+class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind)
