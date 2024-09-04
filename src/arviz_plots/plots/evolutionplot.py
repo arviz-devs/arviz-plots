@@ -122,7 +122,7 @@ def plot_ess_evolution(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_dist, style
+        >>> from arviz_plots import plot_ess_evolution, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
         >>> non_centered = load_arviz_data('non_centered_eight')
@@ -165,7 +165,7 @@ def plot_ess_evolution(
     .. plot::
         :context: close-figs
 
-        >>> pc = plot_es_evolution(
+        >>> pc = plot_ess_evolution(
         >>>     non_centered,
         >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
         >>>     extra_methods=True,
