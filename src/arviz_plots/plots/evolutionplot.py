@@ -11,7 +11,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     annotate_xy,
@@ -107,23 +107,13 @@ def plot_ess_evolution(
     -------
     PlotCollection
 
+    See Also
+    --------
+    :ref:`plots_intro` :
+        General introduction to batteries-included plotting functions, common use and logic overview
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_ess_evolution``.
-    For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`
-
-    Default plot_ess_evolution:
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import plot_ess_evolution, style
-        >>> style.use("arviz-clean")
-        >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
-        >>> pc = plot_ess_evolution(centered)
-
     When adding a mapping for color across variables, the same color for a variable gets
     applied to both the 'bulk' and 'tail' ess. In such a case, if separate linestyles for
     'bulk' and 'tail' are desired to distinguish them instead of colors (which is what is
@@ -132,8 +122,12 @@ def plot_ess_evolution(
     .. plot::
         :context: close-figs
 
+        >>> from arviz_plots import plot_dist, style
+        >>> style.use("arviz-clean")
+        >>> from arviz_base import load_arviz_data
+        >>> non_centered = load_arviz_data('non_centered_eight')
         >>> pc = plot_ess_evolution(
-        >>>     centered,
+        >>>     non_centered,
         >>>     var_names=["mu", "tau"],
         >>>     extra_methods=True,
         >>>     plot_kwargs={
@@ -154,7 +148,7 @@ def plot_ess_evolution(
         :context: close-figs
 
         >>> pc = plot_ess_evolution(
-        >>>     centered,
+        >>>     non_centered,
         >>>     var_names=["mu", "tau"],
         >>>     extra_methods=True,
         >>>     plot_kwargs={
@@ -164,6 +158,43 @@ def plot_ess_evolution(
         >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
         >>>     aes_map={"title": ["color"]},
         >>> )
+
+    We can add extra methods to plot the mean and standard deviation as lines, and adjust
+    the minimum ess baseline as well:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_es_evolution(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     extra_methods=True,
+        >>>     min_ess=200,
+        >>> )
+
+    Relative ESS can be plotted instead of absolute:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess_evolution(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     relative=True,
+        >>> )
+
+    We can also adjust the number of points:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_ess_evolution(
+        >>>     non_centered,
+        >>>     coords={"school": ["Choate", "Deerfield", "Hotchkiss"]},
+        >>>     n_points=10,
+        >>> )
+
+    .. minigallery:: plot_ess_evolution
 
     """
     # initial defaults
@@ -188,17 +219,44 @@ def plot_ess_evolution(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+
     # set plot collection initialization defaults if it doesnt exist
     if plot_collection is None:
-        if backend is None:
-            backend = rcParams["plot.backend"]
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
             + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
         )
-        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        if figsize is None:
+            n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
+            col_wrap = pc_kwargs["col_wrap"]
+            if n_plots <= col_wrap:
+                n_rows, n_cols = 1, n_plots
+            else:
+                div_mod = divmod(n_plots, col_wrap)
+                n_rows = div_mod[0] + (div_mod[1] != 0)
+                n_cols = col_wrap
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=n_rows,
+                cols=n_cols,
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
+        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -236,10 +294,6 @@ def plot_ess_evolution(
     xdata = np.linspace(n_samples / n_points, n_samples, n_points)
     draw_divisions = np.linspace(n_draws // n_points, n_draws, n_points, dtype=int)
 
-    # n_draws = distribution.sizes["draw"]
-    # n_samples = n_draws * distribution.sizes["chain"]
-
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     default_bulk_color, default_tail_color = plot_bknd.get_default_aes("color", 2, {})
 
     ess_bulk_dataset = None
@@ -254,7 +308,6 @@ def plot_ess_evolution(
         relative,
         stats_kwargs,
     ):
-        # print(f"\n distribution: {distribution}")
         first_sample_dim = sample_dims[-1]  # take the last dim of the sample dims
         ess_y_dataset = xr.concat(
             [
@@ -461,13 +514,13 @@ def plot_ess_evolution(
                 vertical_align = mean_va_align
             else:
                 vertical_align = "bottom"
+            mean_text_kwargs.setdefault("vertical_align", vertical_align)
 
             plot_collection.map(
                 annotate_xy,
                 "mean_text",
                 text="mean",
                 data=mean_ess,
-                vertical_align=vertical_align,
                 ignore_aes=mean_text_ignore,
                 **mean_text_kwargs,
             )
@@ -491,13 +544,13 @@ def plot_ess_evolution(
                 vertical_align = sd_va_align
             else:
                 vertical_align = "top"
+            sd_text_kwargs.setdefault("vertical_align", vertical_align)
 
             plot_collection.map(
                 annotate_xy,
                 "sd_text",
                 text="sd",
                 data=sd_ess,
-                vertical_align=vertical_align,
                 ignore_aes=sd_text_ignore,
                 **sd_text_kwargs,
             )
