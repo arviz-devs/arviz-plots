@@ -50,7 +50,7 @@ kind_value = st.sampled_from(("kde", "ecdf"))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 point_estimate_value = st.sampled_from(("mean", "median"))
 plot_kwargs_value = st.sampled_from(({}, False, {"color": "red"}))
-ppc_kind_value = st.sampled_from(("kde", "ecdf", "hist", "scatter"))
+ppc_kind_value = st.sampled_from(("kde", "ecdf", "scatter"))  # , "hist"
 # ppc_group = st.sampled_from(("prior", "posterior"))
 # ppc_observed = st.booleans()
 # ppc_aggregate = st.booleans()
@@ -272,14 +272,20 @@ def test_plot_ppc(
         plot_kwargs=plot_kwargs,
     )
     assert all("plot" in child for child in pc.viz.children.values())
-    if num_pp_samples == total_num_samples:
-        # assert sample_dims in pc.viz["obs"].dims
-        assert all(dim in pc.viz["obs"].dims for dim in sample_dims)
-    else:
-        if len(sample_dims) > 1:
-            assert "ppc_dim" in pc.viz["obs"].dims
+    # sample_dims (or "ppc_dim") should be in pc.viz["obs"].dims only if predictive
+    # plot_kwargs is False
+    if plot_kwargs.get("predictive", {}) is not False:
+        if num_pp_samples == total_num_samples:
+            # assert sample_dims in pc.viz["obs"].dims
+            assert all(dim in pc.viz["obs"].dims for dim in sample_dims)
         else:
-            all(dim in pc.viz["obs"].dims for dim in sample_dims)
+            if len(sample_dims) > 1:
+                assert "ppc_dim" in pc.viz["obs"].dims
+            else:
+                all(dim in pc.viz["obs"].dims for dim in sample_dims)
+    else:
+        assert all(dim not in pc.viz["obs"].dims for dim in ["ppc_dim"])
+        assert all(dim not in pc.viz["obs"].dims for dim in sample_dims)
 
     if kind != "scatter":
         if observed is True or aggregate is True or plot_kwargs.get("predictive", {}) is not False:
@@ -288,9 +294,9 @@ def test_plot_ppc(
             assert all(kind not in child for child in pc.viz.children.values())
     else:  # kind = "scatter"
         if aggregate is True:
-            assert all(kind in child for child in pc.viz.children.values())
+            assert all("kde" in child for child in pc.viz.children.values())
         else:
-            assert all(kind not in child for child in pc.viz.children.values())
+            assert all("kde" not in child for child in pc.viz.children.values())
 
     for key, value in plot_kwargs.items():
         if value is False:

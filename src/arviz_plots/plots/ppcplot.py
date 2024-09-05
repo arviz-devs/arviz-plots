@@ -578,8 +578,9 @@ def plot_ppc(
 
     # print(f"\n-----------------------------------------------------------------\n")
     # print(f"\n datatree = {dt}")
-    print(f"\n pc.viz = {plot_collection.viz!r}")
-    print(f"\n pc.aes = {plot_collection.aes!r}")
+    # print(f"\n pc.viz = {plot_collection.viz!r}")
+    # print(f'\n pc.viz["obs"].dims = {plot_collection.viz["obs"].dims}')
+    # print(f"\n pc.aes = {plot_collection.aes!r}")
     # print(f"\n-----------------------------------------------------------------\n")
 
     return plot_collection

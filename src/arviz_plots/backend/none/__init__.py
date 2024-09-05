@@ -190,7 +190,17 @@ def _filter_kwargs(kwargs, artist_kws):
 
 
 def hist(
-    y, l_e, r_e, target, *, bottom=None, color=unset, facecolor=unset, edgecolor=unset, **artist_kws
+    y,
+    l_e,
+    r_e,
+    target,
+    *,
+    bottom=None,
+    color=unset,
+    alpha=unset,
+    facecolor=unset,
+    edgecolor=unset,
+    **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""
     if not ALLOW_KWARGS and artist_kws:
@@ -200,7 +210,7 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
+    kwargs = {"bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor, "alpha": alpha}
     artist_element = {
         "function": "hist",
         "l_e": np.atleast_1d(l_e),
