@@ -234,6 +234,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to matplotlib for a line plot."""
     artist_kws.setdefault("zorder", 2)
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    print(f"\n kws = {kwargs}")
     return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
 

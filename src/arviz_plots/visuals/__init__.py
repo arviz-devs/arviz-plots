@@ -47,6 +47,8 @@ def line_xy(da, target, backend, x=None, y=None, negative=None, **kwargs):
     # print(f'\n line_xy "x": {x}')
     # print(f'\n line_xy "y": {y}')
 
+    print(f"\n kwargs = {kwargs}")
+
     return plot_backend.line(x, y, target, **kwargs)
 
 

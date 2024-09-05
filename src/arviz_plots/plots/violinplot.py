@@ -166,6 +166,15 @@ def plot_violin(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    print(f"\n distribution = {distribution!r}")
+
+    # if more than two models are provided, an error is raised
+    if "model" in distribution:
+        if distribution.sizes["model"] > 2:
+            raise ValueError(
+                "More than two models detected. Please ensure only one or two models are passed."
+            )
+
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
@@ -232,6 +241,8 @@ def plot_violin(
     # different stats kwargs keys for right/left densities means things like the effect
     # of different bandwidths and stat args can be compared
 
+    print(f"\n aes_map = {aes_map}")
+
     left_density_kwargs = copy(plot_kwargs.get("left_density", {}))
 
     if left_density_kwargs is not False:
@@ -241,6 +252,9 @@ def plot_violin(
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
+                # left_distribution = distribution.isel(model=0)
+            # else:
+            #    left_distribution = distribution
             left_density = distribution.azstats.kde(
                 dims=left_density_dims, **stats_kwargs.get("left_density", {})
             )
@@ -256,6 +270,13 @@ def plot_violin(
         density_flipped = density_flipped.assign_coords(flipped_plot_axis=["y", "x"])
         density_flipped = density_flipped.rename({"flipped_plot_axis": "plot_axis"})
         # print(f"\n flipped density = {density_flipped}")
+
+        if "model" in density_flipped:
+            density_flipped = density_flipped.isel(model=0)
+
+        print(f"\n left_dens_aes: {left_density_aes}\n left_dens_ignore: {left_density_ignore}")
+
+        print(f"\n left density flipped = {density_flipped}")
 
         plot_collection.map(
             line_xy,
@@ -274,6 +295,9 @@ def plot_violin(
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
+                # right_distribution = distribution.isel(model=1)
+            # else:
+            #    right_distribution = distribution
             right_density = distribution.azstats.kde(
                 dims=right_density_dims, **stats_kwargs.get("right_density", {})
             )
@@ -286,6 +310,11 @@ def plot_violin(
         density_flipped = right_density.rename({"plot_axis": "flipped_plot_axis"})
         density_flipped = density_flipped.assign_coords(flipped_plot_axis=["y", "x"])
         density_flipped = density_flipped.rename({"flipped_plot_axis": "plot_axis"})
+
+        if "model" in density_flipped:
+            density_flipped = density_flipped.isel(model=1)
+
+        print(f"\n right_dens_aes: {right_density_aes}\n right_dens_ignore: {right_density_ignore}")
 
         plot_collection.map(
             line_xy,
@@ -413,8 +442,8 @@ def plot_violin(
             remove_axis, store_artist=False, axis="x", ignore_aes=plot_collection.aes_set
         )
 
-    print(f"\n pc.viz = {plot_collection.viz}")
+    # print(f"\n pc.viz = {plot_collection.viz}")
 
-    print(f"\n pc.aes = {plot_collection.aes}")
+    # print(f"\n pc.aes = {plot_collection.aes}")
 
     return plot_collection
