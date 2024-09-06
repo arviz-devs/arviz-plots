@@ -412,6 +412,8 @@ def plot_ppc(
                 },  # stats_kwargs["density"] is set to "predictive" stats_kwargs
                 # via plot_dist
             )
+            # renaming generated artist
+            plot_collection.rename_artists({kind: "predictive"})
 
     # ---------STEP 2 (PPC AGGREGATE)-------------
 
@@ -463,6 +465,8 @@ def plot_ppc(
                 "density": stats_kwargs.get("aggregate", {})
             },  # stats_kwargs["density"] is set to "aggregate" stats_kwargs
         )
+        # renaming generated artist
+        plot_collection.rename_artists({kind: "aggregate"})
 
     # ---------STEP 3 (observed data)-----------
     if observed:  # all observed data group plotting logic happens here
@@ -525,6 +529,8 @@ def plot_ppc(
                     "density": stats_kwargs.get("observed", {})
                 },  # stats_kwargs["density"] is set to "observed" stats_kwargs
             )
+            # renaming generated artist
+            plot_collection.rename_artists({kind: "observed"})
 
         # ---------STEP 4 (observed rug plot)-----------
         if observed_rug:

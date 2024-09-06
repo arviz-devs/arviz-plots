@@ -272,51 +272,59 @@ def test_plot_ppc(
         plot_kwargs=plot_kwargs,
     )
     assert all("plot" in child for child in pc.viz.children.values())
-    # sample_dims (or "ppc_dim") should be in pc.viz["obs"].dims only if predictive
+
+    # checking presence of dimensions
+
+    # sample_dims (or "ppc_dim") should be in pc.viz["obs"]["predictive"].dims only if predictive
     # plot_kwargs is False
     if plot_kwargs.get("predictive", {}) is not False:
         if num_pp_samples == total_num_samples:
             # assert sample_dims in pc.viz["obs"].dims
-            assert all(dim in pc.viz["obs"].dims for dim in sample_dims)
+            # assert all(dim in pc.viz["obs"].dims for dim in sample_dims)
+            assert all(dim in pc.viz["obs"]["predictive"].dims for dim in sample_dims)
+            if observed is not False:
+                assert all(dim not in pc.viz["obs"]["observed"].dims for dim in sample_dims)
+            if aggregate is not False:
+                assert all(dim not in pc.viz["obs"]["aggregate"].dims for dim in sample_dims)
         else:
             if len(sample_dims) > 1:
-                assert "ppc_dim" in pc.viz["obs"].dims
+                # assert "ppc_dim" in pc.viz["obs"].dims
+                assert "ppc_dim" in pc.viz["obs"]["predictive"].dims
+                if observed is not False:
+                    assert "ppc_dim" not in pc.viz["obs"]["observed"].dims
+                if aggregate is not False:
+                    assert "ppc_dim" not in pc.viz["obs"]["aggregate"].dims
             else:
-                all(dim in pc.viz["obs"].dims for dim in sample_dims)
+                # all(dim in pc.viz["obs"].dims for dim in sample_dims)
+                all(dim in pc.viz["obs"]["predictive"].dims for dim in sample_dims)
+                if observed is not False:
+                    assert all(dim not in pc.viz["obs"]["observed"].dims for dim in sample_dims)
+                if aggregate is not False:
+                    assert all(dim not in pc.viz["obs"]["aggregate"].dims for dim in sample_dims)
     else:
-        assert all(dim not in pc.viz["obs"].dims for dim in ["ppc_dim"])
-        assert all(dim not in pc.viz["obs"].dims for dim in sample_dims)
+        if observed is not False:
+            assert all(dim not in pc.viz["obs"]["observed"].dims for dim in sample_dims)
+        if aggregate is not False:
+            assert all(dim not in pc.viz["obs"]["aggregate"].dims for dim in sample_dims)
+        assert "ppc_dim" not in pc.viz["obs"]["predictive"].dims
+        assert all(dim not in pc.viz["obs"]["predictive"].dims for dim in sample_dims)
 
-    if kind != "scatter":
-        if observed is True or aggregate is True or plot_kwargs.get("predictive", {}) is not False:
-            assert all(kind in child for child in pc.viz.children.values())
-        else:
-            assert all(kind not in child for child in pc.viz.children.values())
-    else:  # kind = "scatter"
-        if aggregate is True:
-            assert all("kde" in child for child in pc.viz.children.values())
-        else:
-            assert all("kde" not in child for child in pc.viz.children.values())
+    # checking presence of artists
 
     for key, value in plot_kwargs.items():
         if value is False:
             assert all(key not in child for child in pc.viz.children.values())
         elif key in ["observed_rug"]:
-            if kind != "scatter":
+            if kind != "scatter":  # since observed rugs are not plotted then
                 if observed is False or observed_rug is False:
                     assert all(key not in child for child in pc.viz.children.values())
                 else:
                     assert all(key in child for child in pc.viz.children.values())
-        # if key in predictive, aggregate, or observed, key will be in child only if
-        # kind = "scatter" for observed, predictive (not aggregate)
-        elif key in ["predictive", "aggregate", "observed"]:
-            if kind == "scatter":  # kind="scatter"
-                if key in ["observed"]:
-                    if observed is False:
-                        assert all(key not in child for child in pc.viz.children.values())
-                    else:
-                        assert all(key in child for child in pc.viz.children.values())
-                elif key in ["predictive"]:
-                    assert all(key in child for child in pc.viz.children.values())
+        elif key in ["observed"]:
+            if observed is not False:
+                assert all(key in child for child in pc.viz.children.values())
+        elif key in ["aggregate"]:
+            if aggregate is not False:
+                assert all(key in child for child in pc.viz.children.values())
         elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())
