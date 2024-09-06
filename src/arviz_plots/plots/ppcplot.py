@@ -426,8 +426,10 @@ def plot_ppc(
         #    f"\agg_dens_aes = {aggregate_density_aes}\nagg_dens_ignore= {aggregate_density_ignore}"
         # )
 
+        # get default linestyle
+        default_aggregate_linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
         if "linestyle" not in aggregate_density_aes:
-            aggregate_kwargs.setdefault("linestyle", "--")
+            aggregate_kwargs.setdefault("linestyle", default_aggregate_linestyle)  # "--"
 
         # getting first two default colors from color cycle and picking the second
         aggregate_default_color = plot_bknd.get_default_aes("color", 2, {})[1]
@@ -466,7 +468,7 @@ def plot_ppc(
             },  # stats_kwargs["density"] is set to "aggregate" stats_kwargs
         )
         # renaming generated artist
-        plot_collection.rename_artists({kind: "aggregate"})
+        plot_collection.rename_artists({aggregate_kind: "aggregate"})
 
     # ---------STEP 3 (observed data)-----------
     if observed:  # all observed data group plotting logic happens here

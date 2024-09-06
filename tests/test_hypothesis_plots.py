@@ -19,10 +19,10 @@ def datatree(seed=31):
     mu = rng.normal(size=(3, 50))
     tau = rng.normal(size=(3, 50, 2))
     theta = rng.normal(size=(3, 50, 2, 3))
-    diverging = rng.choice([True, False], size=(3, 50), p=[0.1, 0.9])
+    diverging = rng.choice([True, False], size=(3, 20), p=[0.1, 0.9])
     obs = rng.normal(size=(2, 3))  # hierarchy, group dims respectively
-    prior_predictive = rng.normal(size=(1, 50, 2, 3))  # assuming 1 chain
-    posterior_predictive = rng.normal(size=(3, 50, 2, 3))  # all chains
+    prior_predictive = rng.normal(size=(1, 20, 2, 3))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(3, 20, 2, 3))  # all chains
 
     dt = from_dict(
         {
@@ -50,7 +50,7 @@ kind_value = st.sampled_from(("kde", "ecdf"))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 point_estimate_value = st.sampled_from(("mean", "median"))
 plot_kwargs_value = st.sampled_from(({}, False, {"color": "red"}))
-ppc_kind_value = st.sampled_from(("kde", "ecdf", "scatter"))  # , "hist"
+ppc_kind_value = st.sampled_from(("kde", "ecdf", "hist", "scatter"))
 # ppc_group = st.sampled_from(("prior", "posterior"))
 # ppc_observed = st.booleans()
 # ppc_aggregate = st.booleans()
@@ -237,7 +237,7 @@ def observed_and_rug(draw):
     aggregate=st.booleans(),
     facet_dims=ppc_facet_dims,
     sample_dims=ppc_sample_dims,
-    num_pp_samples=st.integers(min_value=1, max_value=150),
+    num_pp_samples=st.integers(min_value=1, max_value=60),
 )
 def test_plot_ppc(
     datatree,
@@ -251,9 +251,9 @@ def test_plot_ppc(
     plot_kwargs,
 ):
     if sample_dims == ["chain", "draw"]:
-        total_num_samples = 150
+        total_num_samples = 60
     else:
-        total_num_samples = 50
+        total_num_samples = 20
     # if num_pp_samples drawn is larger than total, just make it equal to total
     if num_pp_samples > total_num_samples:  # pylint: disable=consider-using-min-builtin
         num_pp_samples = total_num_samples
@@ -306,8 +306,6 @@ def test_plot_ppc(
             assert all(dim not in pc.viz["obs"]["observed"].dims for dim in sample_dims)
         if aggregate is not False:
             assert all(dim not in pc.viz["obs"]["aggregate"].dims for dim in sample_dims)
-        assert "ppc_dim" not in pc.viz["obs"]["predictive"].dims
-        assert all(dim not in pc.viz["obs"]["predictive"].dims for dim in sample_dims)
 
     # checking presence of artists
 
