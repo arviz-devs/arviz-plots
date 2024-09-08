@@ -10,6 +10,7 @@ from arviz_plots import (
     plot_dist,
     plot_forest,
     plot_ridge,
+    plot_rootogram,
     plot_trace,
     plot_trace_dist,
     visuals,
@@ -29,13 +30,19 @@ def datatree(seed=31):
     tau = rng.normal(size=(4, 100))
     theta = rng.normal(size=(4, 100, 7))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
+    obs = rng.normal(size=7)
+    prior_predictive = rng.normal(size=(1, 100, 7))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(4, 100, 7))
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy"]},
+        dims={"theta": ["hierarchy"], "obs": ["hierarchy"]},
     )
 
 
@@ -64,13 +71,19 @@ def datatree_4d(seed=31):
     theta = rng.normal(size=(4, 100, 5))
     eta = rng.normal(size=(4, 100, 5, 3))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
+    obs = rng.normal(size=(5, 3))  # hierarchy, group dims respectively
+    prior_predictive = rng.normal(size=(1, 100, 5, 3))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(4, 100, 5, 3))  # all chains
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "eta": eta},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy"], "eta": ["hierarchy", "group"]},
+        dims={"theta": ["hierarchy"], "eta": ["hierarchy", "group"], "obs": ["hierarchy", "group"]},
     )
 
 
@@ -81,11 +94,17 @@ def datatree_sample(seed=31):
     tau = rng.normal(size=100)
     theta = rng.normal(size=(100, 7))
     diverging = rng.choice([True, False], size=100, p=[0.1, 0.9])
+    obs = rng.normal(size=7)
+    prior_predictive = rng.normal(size=(10, 7))  # assuming 10 prior predictive samples
+    posterior_predictive = rng.normal(size=(100, 7))
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
         dims={"theta": ["hierarchy"]},
         sample_dims=["sample"],
@@ -110,7 +129,7 @@ def cmp():
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-class TestPlots:
+class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind)
@@ -291,3 +310,38 @@ class TestPlots:
             pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200)}},
             backend=backend,
         )
+
+    def test_plot_rootogram(self, datatree, backend):
+        pc = plot_rootogram(datatree, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "obs" in pc.viz
+        assert "predictive" in pc.viz["obs"]
+        assert "observed" in pc.viz["obs"]
+        assert "observed_line" in pc.viz["obs"]
+        assert "baseline" in pc.viz["obs"]
+
+    def test_plot_rootogram_sample(self, datatree_sample, backend):
+        pc = plot_rootogram(datatree_sample, sample_dims="sample", backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "obs" in pc.viz
+        assert "predictive" in pc.viz["obs"]
+        assert "observed" in pc.viz["obs"]
+        assert "observed_line" in pc.viz["obs"]
+        assert "baseline" in pc.viz["obs"]
+
+    @pytest.mark.parametrize("facet_dims", (["group"], ["hierarchy"], None))
+    def test_plot_rootogram_4d(self, datatree_4d, facet_dims, backend):
+        pc = plot_rootogram(
+            datatree_4d,
+            facet_dims=facet_dims,
+            backend=backend,
+        )
+        assert "chart" in pc.viz.data_vars
+        assert "obs" in pc.viz
+        assert "predictive" in pc.viz["obs"]
+        assert "observed" in pc.viz["obs"]
+        assert "observed_line" in pc.viz["obs"]
+        assert "baseline" in pc.viz["obs"]
+        if facet_dims is not None:
+            for dim in facet_dims:
+                assert dim in pc.viz["obs"]["plot"].dims

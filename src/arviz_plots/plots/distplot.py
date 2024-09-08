@@ -1,4 +1,5 @@
 """dist plot code."""
+
 import warnings
 from copy import copy
 from importlib import import_module
@@ -358,7 +359,9 @@ def plot_dist(
             point_density_diff = [
                 dim for dim in density.sel(plot_axis="histogram").dims if dim not in point.dims
             ]
-            point_density_diff = ["hist_dim"] + point_density_diff
+            point_density_diff = [
+                f"hist_dim_{var_name}" for var_name in density.data_vars
+            ] + point_density_diff
             point_y = 0.04 * density.sel(plot_axis="histogram", drop=True).max(
                 dim=point_density_diff
             )

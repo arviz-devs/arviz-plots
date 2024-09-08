@@ -204,6 +204,10 @@ def plot_rootogram(
         coords=coords,
     )
 
+    # print(f"\n sample_dims = {sample_dims}")
+    # print(f"\n facet_dims = {facet_dims}")
+    # print(f"\n reduce_dims = {reduce_dims}")
+
     # ---------(observed data)-----------
     # observed data calculations are made outside of and before observed artist plotting since
     # predictive also depends on this computed data (number of bins and top of predictive bars
@@ -362,10 +366,6 @@ def plot_rootogram(
             labeller=labeller,
             **title_kwargs,
         )
-
-    # print(f"\nsample_dims = {sample_dims}")
-    # print(f"\nfacet_dims = {facet_dims}")
-    # print(f"\nreduce_dims = {reduce_dims}")
 
     # print(f"\n-----------------------------------------------------------------\n")
     # print(f"\n datatree = {dt}")
