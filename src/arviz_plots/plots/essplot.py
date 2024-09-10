@@ -93,6 +93,14 @@ def plot_ess(
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs`.
 
+        By default, no aesthetic mappings are defined. Only when multiple models
+        are present a color and x shift is generated to distinguish the data
+        coming from the different models.
+
+        When ``mean`` or ``sd`` keys are present in `aes_map` but ``mean_text``
+        or ``sd_text`` are not, the respective ``_text`` key will be added
+        with the same values as ``mean`` or ``sd`` ones.
+
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
@@ -120,11 +128,6 @@ def plot_ess(
     Returns
     -------
     PlotCollection
-
-    Notes
-    -----
-    Depending on the number of models, a slight x-axis separation aesthetic is applied for each
-    ess point for distinguishability in case of overlap
 
     See Also
     --------
@@ -235,6 +238,10 @@ def plot_ess(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    # getting backend specific linestyles
+    linestyles = plot_bknd.get_default_aes("linestyle", 4, {})
+    # and default color
+    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
 
     # set plot collection initialization defaults
     if plot_collection is None:
@@ -309,7 +316,7 @@ def plot_ess(
     ess_kwargs = copy(plot_kwargs.get("ess", {}))
 
     if ess_kwargs is not False:
-        ess_dims, _, ess_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
+        ess_dims, ess_aes, ess_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
         if kind == "local":
             probs = np.linspace(0, 1, n_points, endpoint=False)
             ylabel = "{} for small intervals"
@@ -343,70 +350,74 @@ def plot_ess(
             plot_axis=["x", "y"]
         )
 
+        if "color" not in ess_aes:
+            ess_kwargs.setdefault("color", default_color)
+
         plot_collection.map(
             scatter_xy, "ess", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
         )
 
     # plot rug
-    # overlaying divergences(or other 'rug_kind') for each chain
-    if rug:
-        sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-        if (
-            sample_stats is not None
-            and rug_kind in sample_stats.data_vars
-            and np.any(sample_stats[rug_kind])  # 'diverging' by default
-            and rug_kwargs is not False
-        ):
-            rug_mask = dt.sample_stats[rug_kind]  # 'diverging' by default
-            _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
-            if "color" not in div_aes:
-                rug_kwargs.setdefault("color", "black")
-            if "marker" not in div_aes:
-                rug_kwargs.setdefault("marker", "|")
-            if "size" not in div_aes:
-                rug_kwargs.setdefault("size", 30)
-            div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
+    sample_stats = get_group(dt, "sample_stats", allow_missing=True)
+    if (
+        rug
+        and sample_stats is not None
+        and rug_kind in sample_stats.data_vars
+        and np.any(sample_stats[rug_kind])
+    ):
+        rug_mask = dt.sample_stats[rug_kind]
+        _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
+        if "color" not in div_aes:
+            rug_kwargs.setdefault("color", "black")
+        if "marker" not in div_aes:
+            rug_kwargs.setdefault("marker", "|")
+        if "size" not in div_aes:
+            rug_kwargs.setdefault("size", 30)
+        div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
-            values = distribution.azstats.compute_ranks(relative=True)
+        values = distribution.azstats.compute_ranks(dims=sample_dims, relative=True)
 
-            plot_collection.map(
-                trace_rug,
-                "rug",
-                data=values,
-                ignore_aes=div_ignore,
-                y=distribution.min(div_reduce_dims),
-                mask=rug_mask,
-                xname=False,
-                **rug_kwargs,
-            )  # note: after plot_ppc merge, the `trace_rug` function might change
+        plot_collection.map(
+            trace_rug,
+            "rug",
+            data=values,
+            ignore_aes=div_ignore,
+            y=distribution.min(div_reduce_dims),
+            mask=rug_mask,
+            xname=False,
+            **rug_kwargs,
+        )
 
     # defining x_range (used for mean, sd, minimum ess plotting)
-    x_range = [0, 1]
-    x_range = xr.DataArray(x_range)
-
-    # getting backend specific linestyles
-    linestyles = plot_bknd.get_default_aes("linestyle", 4, {})
-    # and default color
-    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
+    x_range = xr.DataArray([0, 1])
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
+        mean_kwargs = copy(plot_kwargs.get("mean", {}))
+        mean_text_kwargs = copy(plot_kwargs.get("mean_text", {}))
+        sd_kwargs = copy(plot_kwargs.get("sd", {}))
+        sd_text_kwargs = copy(plot_kwargs.get("sd_text", {}))
+
         # computing mean_ess
         mean_dims, mean_aes, mean_ignore = filter_aes(plot_collection, aes_map, "mean", sample_dims)
-        mean_ess = distribution.azstats.ess(
-            dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
-        )
+        mean_ess = None
+        if (mean_kwargs is not False) or (mean_text_kwargs is not False):
+            mean_ess = distribution.azstats.ess(
+                dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
+            )
 
         # computing sd_ess
         sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
-        sd_ess = distribution.azstats.ess(
-            dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
-        )
+        sd_ess = None
+        if (sd_kwargs is not False) or (sd_text_kwargs is not False):
+            sd_ess = distribution.azstats.ess(
+                dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
+            )
 
-        mean_kwargs = copy(plot_kwargs.get("mean", {}))
         if mean_kwargs is not False:
             # getting 2nd default linestyle for chosen backend and assigning it by default
-            mean_kwargs.setdefault("linestyle", linestyles[1])
+            if "linestyle" not in mean_aes:
+                mean_kwargs.setdefault("linestyle", linestyles[1])
 
             if "color" not in mean_aes:
                 mean_kwargs.setdefault("color", default_color)
@@ -420,9 +431,9 @@ def plot_ess(
                 **mean_kwargs,
             )
 
-        sd_kwargs = copy(plot_kwargs.get("sd", {}))
         if sd_kwargs is not False:
-            sd_kwargs.setdefault("linestyle", linestyles[2])
+            if "linestyle" not in sd_aes:
+                sd_kwargs.setdefault("linestyle", linestyles[2])
 
             if "color" not in sd_aes:
                 sd_kwargs.setdefault("color", default_color)
@@ -437,10 +448,7 @@ def plot_ess(
             sd_va_align = xr.where(mean_ess < sd_ess, "bottom", "top")
             mean_va_align = xr.where(mean_ess < sd_ess, "top", "bottom")
 
-        mean_text_kwargs = copy(plot_kwargs.get("mean_text", {}))
-        if (
-            mean_text_kwargs is not False and mean_ess is not None
-        ):  # mean_ess has to exist for an annotation to be applied
+        if mean_text_kwargs is not False:
             _, mean_text_aes, mean_text_ignore = filter_aes(
                 plot_collection, aes_map, "mean_text", sample_dims
             )
@@ -467,10 +475,7 @@ def plot_ess(
                 **mean_text_kwargs,
             )
 
-        sd_text_kwargs = copy(plot_kwargs.get("sd_text", {}))
-        if (
-            sd_text_kwargs is not False and sd_ess is not None
-        ):  # sd_ess has to exist for an annotation to be applied
+        if sd_text_kwargs is not False:
             _, sd_text_aes, sd_text_ignore = filter_aes(
                 plot_collection, aes_map, "sd_text", sample_dims
             )
@@ -508,7 +513,8 @@ def plot_ess(
         if relative:
             min_ess = min_ess / n_points
 
-        min_ess_kwargs.setdefault("linestyle", linestyles[3])
+        if "linestyle" not in min_ess_aes:
+            min_ess_kwargs.setdefault("linestyle", linestyles[3])
 
         if "color" not in min_ess_aes:
             min_ess_kwargs.setdefault("color", "gray")

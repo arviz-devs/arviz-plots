@@ -196,11 +196,6 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             assert all(key in child for child in pc.viz.children.values())
 
 
-@st.composite
-def ess_min_ess(draw):
-    return draw(st.integers(min_value=10, max_value=150))  # max samples = 3 x 50 = 150
-
-
 @given(
     plot_kwargs=st.fixed_dictionaries(
         {},
@@ -215,7 +210,6 @@ def ess_min_ess(draw):
             "sd_text": plot_kwargs_value,
             "min_ess": plot_kwargs_value,
             "title": plot_kwargs_value,
-            "remove_axis": st.just(False),
         },
     ),
     kind=ess_kind_value,
@@ -223,7 +217,7 @@ def ess_min_ess(draw):
     rug=st.booleans(),
     n_points=st.integers(min_value=1, max_value=5),
     extra_methods=st.booleans(),
-    min_ess=ess_min_ess(),
+    min_ess=st.integers(min_value=10, max_value=150),
 )
 def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_ess, plot_kwargs):
     pc = plot_ess(
@@ -251,5 +245,5 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
                 assert all(key not in child for child in pc.viz.children.values())
             else:
                 assert all(key in child for child in pc.viz.children.values())
-        elif key != "remove_axis":
+        else:
             assert all(key in child for child in pc.viz.children.values())

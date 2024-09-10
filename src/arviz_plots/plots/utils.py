@@ -37,7 +37,7 @@ def get_group(data, group, allow_missing=False):
     try:
         data = data[group]
     except KeyError:
-        if allow_missing:
+        if not allow_missing:
             raise
         return None
     if isinstance(data, Dataset):

@@ -307,7 +307,6 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         # checking aesthetics
         assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
 
-    a = """
     def test_plot_ess_sample(self, datatree_sample, backend):
         pc = plot_ess(datatree_sample, backend=backend, rug=True, sample_dims="sample")
         assert "chart" in pc.viz.data_vars
@@ -318,10 +317,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "rug" in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
-        assert pc.viz["mu"].trace.shape == ()  # 0 chains here, so no overlay
-    """  # error when running this: ValueError: dims must be of length 2 (from arviz-stats )
-    if a:
-        print("a")  # just to temporarily suspend linting error
+        assert pc.viz["mu"].rug.shape == ()  # 0 chains here, so no overlay
 
     def test_plot_ess_models(self, datatree, datatree2, backend):
         pc = plot_ess({"c": datatree, "n": datatree2}, backend=backend, rug=False)
