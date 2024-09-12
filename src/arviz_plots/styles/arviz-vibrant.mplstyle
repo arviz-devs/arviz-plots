@@ -5,7 +5,7 @@
 figure.facecolor:   white   # broken white outside box
 figure.edgecolor:   None    # broken white outside box
 figure.titleweight: bold    # weight of the figure title
-figure.titlesize:   18
+figure.titlesize:   x-large
 
 figure.figsize:     6, 5
 figure.dpi:         200.0
@@ -15,6 +15,7 @@ figure.constrained_layout.use: True
 ## * FONT                                                                    *
 ## ***************************************************************************
 
+font.size:      12
 font.style:     normal
 font.variant:   normal
 font.weight:    normal
@@ -48,27 +49,26 @@ axes.spines.top:        False       # do not show top spine
 axes.titlesize:         16
 axes.titleweight:       bold        # font weight of title
 
-axes.labelsize:         14
+axes.labelsize:         large
 axes.labelcolor:        .15
 axes.labelweight:       normal      # weight of the x and y labels
 
 # color-blind friendly cycle designed using https://colorcyclepicker.mpetroff.net/
-# see preview and check for colorblindness here https://coolors.co/36acc6-f66d7f-fcc770-96dacb-915ef2-17547d-578629-000000-6f6f6f-b7b7b7
-axes.prop_cycle: cycler(color=["36acc6", "f66d7f", "fcc770", "96dacb", "915ef2", "17547d", "578629", "000000", "6f6f6f", "b7b7b7"])
-
+# see preview and check for colorblindness here https://coolors.co/008b92-f15c58-48cdef-98d81a-997ee5-f5dc9d-c90a4e-145393-323232-616161
+axes.prop_cycle: cycler(color=["008b92", "f15c58", "48cdef", "98d81a", "997ee5", "f5dc9d", "c90a4e", "145393", "323232", "616161"])
 image.cmap: viridis
 
 ## ***************************************************************************
 ## * TICKS                                                                   *
 ## ***************************************************************************
 
-xtick.labelsize:    14
+xtick.labelsize:    large
 xtick.color:        .15
 xtick.top:          False
 xtick.bottom:       True
 xtick.direction:    out
 
-ytick.labelsize:    14
+ytick.labelsize:    large
 ytick.color:        .15
 ytick.left:         True
 ytick.right:        False
@@ -85,4 +85,4 @@ legend.fancybox:    False   # do not round corners
 legend.numpoints: 1
 legend.scatterpoints: 1
 
-legend.fontsize: 14
+legend.fontsize: large
