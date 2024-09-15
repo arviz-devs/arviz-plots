@@ -8,7 +8,7 @@ from arviz_base import from_dict
 from datatree import DataTree
 from hypothesis import given
 
-from arviz_plots import plot_dist, plot_forest, plot_ridge
+from arviz_plots import plot_dist, plot_forest, plot_mcse, plot_ridge
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -191,4 +191,60 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             else:
                 assert all(key in child for child in pc.viz.children.values())
         elif key not in ("remove_axis", "ticklabels"):
+            assert all(key in child for child in pc.viz.children.values())
+
+
+mcse_rug = st.booleans()
+mcse_extra_methods = st.booleans()
+
+
+@st.composite
+def mcse_n_points(draw):
+    return draw(st.integers(min_value=1, max_value=50))  # should this range be changed?
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "mcse": plot_kwargs_value,
+            "rug": st.sampled_from(({}, {"color": "red"})),
+            "xlabel": st.sampled_from(({}, {"color": "red"})),
+            "ylabel": st.sampled_from(({}, {"color": "red"})),
+            "mean": plot_kwargs_value,
+            "mean_text": plot_kwargs_value,
+            "sd": plot_kwargs_value,
+            "sd_text": plot_kwargs_value,
+            "title": plot_kwargs_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    rug=mcse_rug,
+    n_points=mcse_n_points(),
+    extra_methods=mcse_extra_methods,
+)
+def test_plot_mcse(datatree, rug, n_points, extra_methods, plot_kwargs):
+    pc = plot_mcse(
+        datatree,
+        backend="none",
+        rug=rug,
+        n_points=n_points,
+        extra_methods=extra_methods,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key in ["mean", "sd", "mean_text", "sd_text"]:
+            if extra_methods is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
+        elif key == "rug":
+            if rug is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
+        elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())

@@ -271,6 +271,49 @@ def scatter(
     return artist_element
 
 
+def errorbar(
+    x,
+    y,
+    error,
+    target,
+    *,
+    size=unset,
+    marker=unset,
+    color=unset,
+    facecolor=unset,
+    edgecolor=unset,
+    width=unset,
+    **artist_kws,
+):
+    """Interface to an errorbar plot."""
+    if color is not unset:
+        if facecolor is unset and edgecolor is unset:
+            facecolor = color
+            edgecolor = color
+        elif facecolor is unset:
+            facecolor = color
+        elif edgecolor is unset:
+            edgecolor = color
+    kwargs = {
+        "capsize": size,
+        "marker": marker,
+        "markerfacecolor": facecolor,
+        "markeredgecolor": edgecolor,
+        "elinewidth": width,
+    }
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    artist_element = {
+        "function": "errorbar",
+        "x": np.atleast_1d(x),
+        "y": np.atleast_1d(y),
+        "error": np.atleast_1d(error),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 def text(
     x,
     y,
