@@ -67,5 +67,5 @@ contributing/docs
 
 Twitter <https://twitter.com/arviz_devs>
 Mastodon <https://bayes.club/@ArviZ>
-GitHub repository <https://github.com/arviz-devs/xarray-einstats>
+GitHub repository <https://github.com/arviz-devs/arviz-plots>
 ```
