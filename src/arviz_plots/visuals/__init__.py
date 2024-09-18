@@ -17,8 +17,14 @@ def hist(da, target, backend, **kwargs):
     """Plot a histogram bins(as two arrays of left and right bin edges) vs bin_height('y').
 
     The input argument `da` is split into l_e, r_e and y using the dimension ``plot_axis``.
+    If "histogram_bottom" is in plot_axis, this is included in kwargs when calling backend
+    hist plotting functions.
     """
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    # if the 'histogram_bottom' coord is also included in the plot_axis dim, include it in
+    # kwargs
+    if "histogram_bottom" in da.coords["plot_axis"]:
+        kwargs["bottom"] = da.sel(plot_axis="histogram_bottom")
     return plot_backend.hist(
         da.sel(plot_axis="histogram"),
         da.sel(plot_axis="left_edges"),
@@ -60,23 +66,22 @@ def line(da, target, backend, xname=None, **kwargs):
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
-def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
+def trace_rug(da, target, backend, mask=None, xname=None, y=None, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
     xname = xname.item() if hasattr(xname, "item") else xname
     if xname is False:
         xvalues = da
     else:
         if xname is None:
-            if len(da.shape) != 1:
-                raise ValueError(f"Expected unidimensional data but got {da.sizes}")
             xvalues = np.arange(len(da))
         else:
             xvalues = da[xname]
         if y is None:
             y = da.min().item()
-    if len(xvalues.shape) != 1:
-        raise ValueError(f"Expected unidimensional data but got {xvalues.sizes}")
-    return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
+    xvalues = xvalues.values.flatten()  # flatten xvalues by default
+    if mask is not None:
+        xvalues = xvalues[mask]
+    return scatter_x(xvalues, target=target, backend=backend, y=y, **kwargs)
 
 
 def scatter_x(da, target, backend, y=None, **kwargs):
@@ -87,6 +92,18 @@ def scatter_x(da, target, backend, y=None, **kwargs):
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.scatter(da, y, target, **kwargs)
+
+
+def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
+    """Plot a scatter plot x vs y.
+
+    The input argument `da` is split into x and y using the dimension ``plot_axis``.
+    If additional x and y arguments are provided, x and y are added to the values
+    in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    x, y = _process_da_x_y(da, x, y)
+    return plot_backend.scatter(x, y, target, **kwargs)
 
 
 def ecdf_line(values, target, backend, **kwargs):

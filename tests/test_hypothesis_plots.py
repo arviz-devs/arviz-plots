@@ -8,7 +8,7 @@ from arviz_base import from_dict
 from datatree import DataTree
 from hypothesis import given
 
-from arviz_plots import plot_dist, plot_forest, plot_ridge
+from arviz_plots import plot_dist, plot_forest, plot_ridge, plot_rootogram
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -20,13 +20,23 @@ def datatree(seed=31):
     tau = rng.normal(size=(3, 50, 2))
     theta = rng.normal(size=(3, 50, 2, 3))
     diverging = rng.choice([True, False], size=(3, 50), p=[0.1, 0.9])
+    obs = rng.normal(size=(2, 3))  # hierarchy, group dims respectively
+    prior_predictive = rng.normal(size=(1, 20, 2, 3))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(3, 20, 2, 3))  # all chains
 
     dt = from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"]},
+        dims={
+            "theta": ["hierarchy", "group"],
+            "tau": ["hierarchy"],
+            "obs": ["hierarchy", "group"],
+        },
     )
     dt["point_estimate"] = dt.posterior.mean(("chain", "draw"))
     # TODO: should become dt.azstats.eti() after fix in arviz-stats
@@ -40,6 +50,8 @@ kind_value = st.sampled_from(("kde", "ecdf"))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 point_estimate_value = st.sampled_from(("mean", "median"))
 plot_kwargs_value = st.sampled_from(({}, False, {"color": "red"}))
+ppc_root_sample_dims = st.sampled_from((["draw"], ["chain", "draw"]))
+ppc_root_facet_dims = st.sampled_from((["group"], ["hierarchy"], None))
 
 
 @st.composite
@@ -191,4 +203,53 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             else:
                 assert all(key in child for child in pc.viz.children.values())
         elif key not in ("remove_axis", "ticklabels"):
+            assert all(key in child for child in pc.viz.children.values())
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "predictive": plot_kwargs_value,
+            "observed": plot_kwargs_value,  # st.sampled_from(({}, {"color": "red"})),
+            "observed_line": plot_kwargs_value,  # st.sampled_from(({}, {"color": "red"})),
+            "baseline": plot_kwargs_value,
+            "title": st.sampled_from(({}, {"color": "red"})),  # plot_kwargs_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    # group=ppc_group,
+    facet_dims=ppc_root_facet_dims,
+    sample_dims=ppc_root_sample_dims,
+)
+def test_plot_rootogram(
+    datatree,
+    # group,
+    facet_dims,
+    sample_dims,
+    plot_kwargs,
+):
+    pc = plot_rootogram(
+        datatree,
+        backend="none",
+        # group=group,
+        facet_dims=facet_dims,
+        sample_dims=sample_dims,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+
+    # checking presence of dimensions
+
+    if plot_kwargs.get("predictive", {}) is not False:
+        assert all(dim not in pc.viz["obs"]["predictive"].dims for dim in sample_dims)
+    if plot_kwargs.get("observed", {}) is not False:
+        assert all(dim not in pc.viz["obs"]["observed"].dims for dim in sample_dims)
+
+    # checking presence of artists
+
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())
