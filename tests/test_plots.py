@@ -9,6 +9,7 @@ from arviz_plots import (
     plot_compare,
     plot_dist,
     plot_forest,
+    plot_ppc,
     plot_ridge,
     plot_trace,
     plot_trace_dist,
@@ -29,13 +30,19 @@ def datatree(seed=31):
     tau = rng.normal(size=(4, 100))
     theta = rng.normal(size=(4, 100, 7))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
+    obs = rng.normal(size=7)
+    prior_predictive = rng.normal(size=(1, 100, 7))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(4, 100, 7))
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy"]},
+        dims={"theta": ["hierarchy"], "obs": ["hierarchy"]},
     )
 
 
@@ -64,13 +71,19 @@ def datatree_4d(seed=31):
     theta = rng.normal(size=(4, 100, 5))
     eta = rng.normal(size=(4, 100, 5, 3))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
+    obs = rng.normal(size=(5, 3))  # hierarchy, group dims respectively
+    prior_predictive = rng.normal(size=(1, 100, 5, 3))  # assuming 1 chain
+    posterior_predictive = rng.normal(size=(4, 100, 5, 3))  # all chains
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "eta": eta},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
-        dims={"theta": ["hierarchy"], "eta": ["hierarchy", "group"]},
+        dims={"theta": ["hierarchy"], "eta": ["hierarchy", "group"], "obs": ["hierarchy", "group"]},
     )
 
 
@@ -81,11 +94,17 @@ def datatree_sample(seed=31):
     tau = rng.normal(size=100)
     theta = rng.normal(size=(100, 7))
     diverging = rng.choice([True, False], size=100, p=[0.1, 0.9])
+    obs = rng.normal(size=7)
+    prior_predictive = rng.normal(size=(10, 7))  # assuming 10 prior predictive samples
+    posterior_predictive = rng.normal(size=(100, 7))
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
             "sample_stats": {"diverging": diverging},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
         },
         dims={"theta": ["hierarchy"]},
         sample_dims=["sample"],
@@ -110,7 +129,7 @@ def cmp():
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-class TestPlots:
+class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind)
@@ -291,3 +310,48 @@ class TestPlots:
             pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200)}},
             backend=backend,
         )
+
+    @pytest.mark.parametrize("kind", ("kde", "ecdf"))
+    def test_plot_ppc(self, datatree, kind, backend):
+        pc = plot_ppc(datatree, kind=kind, aggregate=True, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "obs" in pc.viz
+        assert "predictive" in pc.viz["obs"]
+        assert "observed" in pc.viz["obs"]
+        assert "aggregate" in pc.viz["obs"]
+        assert "overlay" in pc.aes["obs"].data_vars
+
+    # no stacking of sample_dims into ppc_dim
+    @pytest.mark.parametrize("kind", ("kde", "ecdf"))
+    def test_plot_ppc_sample(self, datatree_sample, kind, backend):
+        pc = plot_ppc(
+            datatree_sample, kind=kind, sample_dims="sample", aggregate=True, backend=backend
+        )
+        assert "chart" in pc.viz.data_vars
+        assert "obs" in pc.viz
+        assert "sample" in pc.viz["obs"].dims
+        assert "predictive" in pc.viz["obs"]
+        assert "observed" in pc.viz["obs"]
+        assert "aggregate" in pc.viz["obs"]
+        assert "overlay" in pc.aes["obs"].data_vars
+
+    @pytest.mark.parametrize("kind", ("kde", "ecdf"))
+    @pytest.mark.parametrize("facet_dims", (["group"], ["hierarchy"], None))
+    def test_plot_ppc_4d(self, datatree_4d, facet_dims, kind, backend):
+        pc = plot_ppc(
+            datatree_4d,
+            facet_dims=facet_dims,
+            kind=kind,
+            observed_rug=True,
+            aggregate=True,
+            backend=backend,
+        )
+        assert "chart" in pc.viz.data_vars
+        assert "obs" in pc.viz
+        assert "predictive" in pc.viz["obs"]
+        assert "observed" in pc.viz["obs"]
+        assert "aggregate" in pc.viz["obs"]
+        assert "overlay" in pc.aes["obs"].data_vars
+        if facet_dims is not None:
+            for dim in facet_dims:
+                assert dim in pc.viz["obs"]["plot"].dims

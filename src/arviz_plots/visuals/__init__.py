@@ -6,6 +6,7 @@ That is, the functions in this module take a set of arguments,
 take care of backend-agnostic processing of those arguments
 and eventually they call the requested plotting backend.
 """
+import warnings
 from importlib import import_module
 
 import numpy as np
@@ -60,23 +61,22 @@ def line(da, target, backend, xname=None, **kwargs):
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
-def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
+def trace_rug(da, target, backend, mask=None, xname=None, y=None, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
     xname = xname.item() if hasattr(xname, "item") else xname
     if xname is False:
         xvalues = da
     else:
         if xname is None:
-            if len(da.shape) != 1:
-                raise ValueError(f"Expected unidimensional data but got {da.sizes}")
             xvalues = np.arange(len(da))
         else:
             xvalues = da[xname]
         if y is None:
             y = da.min().item()
-    if len(xvalues.shape) != 1:
-        raise ValueError(f"Expected unidimensional data but got {xvalues.sizes}")
-    return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
+    xvalues = xvalues.values.flatten()  # flatten xvalues by default
+    if mask is not None:
+        xvalues = xvalues[mask]
+    return scatter_x(xvalues, target=target, backend=backend, y=y, **kwargs)
 
 
 def scatter_x(da, target, backend, y=None, **kwargs):
