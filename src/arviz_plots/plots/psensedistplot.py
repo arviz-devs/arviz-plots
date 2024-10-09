@@ -135,7 +135,11 @@ def plot_psense_dist(
             f"Not enough values provided for color cycle, got {color_cycle} "
             "but at least 3 are needed"
         )
+    import numpy as np
+
     pc_kwargs.setdefault("color", ["k"] + color_cycle)
+    pc_kwargs.setdefault("y", np.linspace(-0.4, -0.05, 3))  # XXX can we use relative values?
+    pc_kwargs.setdefault("aes", {"color": ["chain"], "y": ["chain"]})
 
     if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
@@ -145,7 +149,8 @@ def plot_psense_dist(
             pc_kwargs["plot_grid_kws"]["figsize"] = figsize
             pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
 
-        pc_kwargs["aes"].setdefault("color", ["chain"])
+        pc_kwargs["plot_grid_kws"].setdefault("sharex", "row")
+        pc_kwargs["plot_grid_kws"].setdefault("sharey", "row")
 
         plot_collection = PlotCollection.grid(
             distribution.expand_dims(column=2).assign_coords(column=["prior", "likelihood"]),
@@ -153,13 +158,19 @@ def plot_psense_dist(
             **pc_kwargs,
         )
 
+    if kind == "hist":
+        # XXX probably better to use a "step" histogram
+        plot_kwargs.setdefault("hist", {"alpha": 0.3})
+        # Also we should use the same number of "bins", but compute it from data
+        stats_kwargs.setdefault("density", {"bins": 50, "density": True})
+
     if aes_map is None:
         aes_map = {}
     else:
         aes_map = aes_map.copy()
 
-    aes_map.setdefault("point_estimate", ["color"])
-    aes_map.setdefault("credible_interval", ["color"])
+    aes_map.setdefault("point_estimate", ["color", "y"])
+    aes_map.setdefault("credible_interval", ["color", "y"])
 
     if alphas is None:
         alphas = (0.8, 1.25)
@@ -222,7 +233,9 @@ def new_dt(dt, group, alphas):
 
     for weights in (None, lower_w, upper_w):
         resampled.append(
-            extract(dt, group="posterior", num_samples=s_size, weights=weights).drop("chain")
+            extract(
+                dt, group="posterior", num_samples=s_size, weights=weights, random_seed=42
+            ).drop("chain")
         )
 
     return concat(resampled, dim="chain").rename({"sample": "draw"})
