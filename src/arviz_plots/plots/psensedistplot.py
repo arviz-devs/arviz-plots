@@ -97,7 +97,7 @@ def plot_psense_dist(
     PlotCollection
     """
     if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
+        sample_dims = "sample"
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     if kind is None:
@@ -110,10 +110,6 @@ def plot_psense_dist(
         pc_kwargs = {}
     else:
         pc_kwargs = pc_kwargs.copy()
-
-    # distribution = process_group_variables_coords(
-    #     dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
-    # )
 
     if alphas is None:
         alphas = (0.8, 1.25)
