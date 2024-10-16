@@ -1,6 +1,5 @@
 """PsenseDist plot code."""
 # pylint: disable=too-many-positional-arguments
-from copy import copy
 from importlib import import_module
 
 from arviz_base import extract, rcParams
@@ -10,8 +9,6 @@ from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.distplot import plot_dist
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import labelled_title
 
 
 def plot_psense_dist(
@@ -114,8 +111,20 @@ def plot_psense_dist(
     else:
         pc_kwargs = pc_kwargs.copy()
 
-    distribution = process_group_variables_coords(
-        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
+    # distribution = process_group_variables_coords(
+    #     dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
+    # )
+
+    if alphas is None:
+        alphas = (0.8, 1.25)
+
+    # Here we are generating new datasets for the prior and likelihood
+    # by resampling the original dataset with the power scale weights
+    # Instead we could have weighted KDEs/ecdfs/etc
+    ds_prior = new_ds(dt, "prior", alphas)
+    ds_likelihood = new_ds(dt, "likelihood", alphas)
+    distribution = concat([ds_prior, ds_likelihood], dim="group").assign_coords(
+        {"group": ["prior", "likelihood"]}
     )
 
     if backend is None:
@@ -130,7 +139,7 @@ def plot_psense_dist(
         figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
         figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
         aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
-        pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
+        pc_kwargs.setdefault("rows", ["__variable__"])
         aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
         row_dims = pc_kwargs["rows"]
     else:
@@ -138,7 +147,7 @@ def plot_psense_dist(
         aux_dim_list = list(
             set(
                 dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
-            ).difference({"column"})
+            ).difference({"group"})
         )
         row_dims = ["__variable__"] + aux_dim_list
 
@@ -158,14 +167,14 @@ def plot_psense_dist(
 
     plot_kwargs.setdefault("point_estimate_text", False)
 
-    # Middle chain is the reference chain (alpha == 1)
-    pc_kwargs.setdefault("color", [color_cycle[0], "k", color_cycle[1]])
-    pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])  # XXX can we use relative values?
-    pc_kwargs.setdefault("aes", {"color": ["chain"], "y": ["chain"]})
-
     if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("cols", ["column"])
+        # set alpha == 1 to black
+        pc_kwargs.setdefault("color", [color_cycle[0], "k", color_cycle[1]])
+        pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])  # XXX can we use relative values?
+        pc_kwargs["aes"].setdefault("color", ["alpha"])
+        pc_kwargs["aes"].setdefault("y", ["alpha"])
+        pc_kwargs.setdefault("cols", ["group"])
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         if "figsize" not in pc_kwargs["plot_grid_kws"]:
             pc_kwargs["plot_grid_kws"]["figsize"] = figsize
@@ -175,7 +184,7 @@ def plot_psense_dist(
         pc_kwargs["plot_grid_kws"].setdefault("sharey", "row")
 
         plot_collection = PlotCollection.grid(
-            distribution.expand_dims({"column": ["prior", "likelihood"]}),
+            distribution,
             backend=backend,
             **pc_kwargs,
         )
@@ -200,18 +209,8 @@ def plot_psense_dist(
         plot_kwargs["hist"].setdefault("edgecolor", None)
         stats_kwargs.setdefault("density", {"density": True})
 
-    if alphas is None:
-        alphas = (0.8, 1.25)
-
-    # Here we are generating new datasets for the prior and likelihood
-    # by resampling the original dataset with the power scale weights
-    # Instead we could have weighted KDEs/ecdfs/etc
-    ds_prior = new_ds(dt, "log_prior", alphas)
-    ds_likelihood = new_ds(dt, "log_likelihood", alphas)
-
-    plot_collection.coords = {"column": "prior"}
     plot_dist(
-        ds_prior,
+        distribution,
         var_names=var_names,
         filter_vars=filter_vars,
         group=group,
@@ -227,43 +226,6 @@ def plot_psense_dist(
         plot_kwargs=plot_kwargs,
         stats_kwargs=stats_kwargs,
     )
-    plot_collection.coords = None
-
-    plot_collection.coords = {"column": "likelihood"}
-    plot_dist(
-        ds_likelihood,
-        var_names=var_names,
-        filter_vars=filter_vars,
-        group=group,
-        coords=coords,
-        sample_dims=sample_dims,
-        kind=kind,
-        point_estimate=point_estimate,
-        ci_kind=ci_kind,
-        ci_prob=ci_prob,
-        plot_collection=plot_collection,
-        labeller=labeller,
-        aes_map=aes_map,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
-    )
-    plot_collection.coords = None
-
-    # Overwrite the title from plot_dist to include the prior and likelihood labels
-    title_kwargs = copy(plot_kwargs.get("title", {}))
-    if title_kwargs is not False:
-        _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
-        if "color" not in title_aes:
-            title_kwargs.setdefault("color", "black")
-
-        plot_collection.map(
-            labelled_title,
-            "title",
-            ignore_aes=title_ignore,
-            subset_info=True,
-            labeller=labeller,
-            **title_kwargs,
-        )
 
     return plot_collection
 
