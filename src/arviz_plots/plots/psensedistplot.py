@@ -275,18 +275,17 @@ def new_ds(dt, group, alphas):
     upper_w = upper_w.values.flatten()
     s_size = len(lower_w)
 
-    resampled = [extract(dt, group="posterior").drop("chain")]
-    for weights in (lower_w, upper_w):
-        resampled.append(
-            extract(
-                dt,
-                group="posterior",
-                num_samples=s_size,
-                weights=weights,
-                random_seed=42,
-                resampling_method="stratified",
-            ).drop("chain")
-        )
+    resampled = [
+        extract(
+            dt,
+            group="posterior",
+            num_samples=s_size,
+            weights=weights,
+            random_seed=42,
+            resampling_method="stratified",
+        ).drop_indexes(["sample", "chain", "draw"])
+        for weights in (lower_w, upper_w)
+    ]
+    resampled.insert(1, extract(dt, group="posterior").drop_indexes(["sample", "chain", "draw"]))
 
-    # Middle chain is the reference chain (alpha == 1)
-    return concat(resampled, dim="chain").rename({"sample": "draw"}).sel(chain=[1, 0, 2])
+    return concat(resampled, dim="alpha").assign_coords(alpha=[alphas[0], 1, alphas[1]])
