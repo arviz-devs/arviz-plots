@@ -175,7 +175,7 @@ def plot_psense_dist(
         pc_kwargs["plot_grid_kws"].setdefault("sharey", "row")
 
         plot_collection = PlotCollection.grid(
-            distribution.expand_dims(column=2).assign_coords(column=["prior", "likelihood"]),
+            distribution.expand_dims({"column": ["prior", "likelihood"]}),
             backend=backend,
             **pc_kwargs,
         )
