@@ -1,5 +1,4 @@
 """PsenseDist plot code."""
-# pylint: disable=too-many-positional-arguments
 from importlib import import_module
 
 from arviz_base import extract, rcParams
@@ -96,10 +95,9 @@ def plot_psense_dist(
     -------
     PlotCollection
     """
-    if sample_dims is None:
-        sample_dims = "sample"
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
+    # TODO: handle `sample_dims`, it should be an argument to new_ds passed down to arviz-stats
+    # to specify which dimensions to consider sample_dims when getting the weights.
+    sample_dims = ["chain", "draw"]
     if kind is None:
         kind = rcParams["plot.density_kind"]
     if stats_kwargs is None:
@@ -122,6 +120,10 @@ def plot_psense_dist(
     distribution = concat([ds_prior, ds_likelihood], dim="group").assign_coords(
         {"group": ["prior", "likelihood"]}
     )
+    # TODO: After this whatever sample dims was should have been stacked into `sample` dimension
+    # or alternatively if it was already a sting kept as is, this second case we might want
+    # to handle.
+    sample_dims = ["sample"]
 
     if backend is None:
         if plot_collection is None:
@@ -131,11 +133,11 @@ def plot_psense_dist(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
-    color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 3, {}))
-    if len(color_cycle) <= 2:
+    color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 2, {}))
+    if len(color_cycle) < 2:
         raise ValueError(
             f"Not enough values provided for color cycle, got {color_cycle} "
-            "but at least 3 are needed"
+            "but at least 2 are needed"
         )
 
     if plot_collection is None:
@@ -149,11 +151,14 @@ def plot_psense_dist(
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])
         pc_kwargs.setdefault("cols", ["group"])
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs.setdefault(
+            "rows",
+            ["__variable__"]
+            + [dim for dim in distribution.dims if dim not in sample_dims + ["group", "alpha"]],
+        )
 
-        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
-        pc_kwargs.setdefault("rows", ["__variable__"])
+        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
+        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
         row_dims = pc_kwargs["rows"]
         if figsize is None:
             figsize = plot_bknd.scale_fig_size(
