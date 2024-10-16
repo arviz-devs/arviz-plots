@@ -131,29 +131,6 @@ def plot_psense_dist(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
-    if plot_collection is None:
-        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
-        aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
-        pc_kwargs.setdefault("rows", ["__variable__"])
-        aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
-        row_dims = pc_kwargs["rows"]
-    else:
-        figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
-        aux_dim_list = list(
-            set(
-                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
-            ).difference({"group"})
-        )
-        row_dims = ["__variable__"] + aux_dim_list
-
-    figsize = plot_bknd.scale_fig_size(
-        figsize,
-        rows=process_facet_dims(distribution, row_dims)[0],
-        cols=2,
-        figsize_units=figsize_units,
-    )
-
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 3, {}))
     if len(color_cycle) <= 2:
         raise ValueError(
@@ -161,29 +138,41 @@ def plot_psense_dist(
             "but at least 3 are needed"
         )
 
-    plot_kwargs.setdefault("point_estimate_text", False)
-
     if plot_collection is None:
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["plot_grid_kws"].setdefault("sharex", "row")
+        pc_kwargs["plot_grid_kws"].setdefault("sharey", "row")
+
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        # set alpha == 1 to black
         pc_kwargs.setdefault("color", [color_cycle[0], "k", color_cycle[1]])
         pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])  # XXX can we use relative values?
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])
         pc_kwargs.setdefault("cols", ["group"])
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        if "figsize" not in pc_kwargs["plot_grid_kws"]:
-            pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-            pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
 
-        pc_kwargs["plot_grid_kws"].setdefault("sharex", "row")
-        pc_kwargs["plot_grid_kws"].setdefault("sharey", "row")
+        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
+        pc_kwargs.setdefault("rows", ["__variable__"])
+        row_dims = pc_kwargs["rows"]
+        if figsize is None:
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=process_facet_dims(distribution, row_dims)[0],
+                cols=2,
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
+        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
 
         plot_collection = PlotCollection.grid(
             distribution,
             backend=backend,
             **pc_kwargs,
         )
+
+    plot_kwargs.setdefault("point_estimate_text", False)
 
     if aes_map is None:
         aes_map = {}
