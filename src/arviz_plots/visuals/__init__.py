@@ -79,18 +79,6 @@ def trace_rug(da, target, backend, mask, xname=None, y=None, **kwargs):
     return scatter_x(xvalues[mask], target=target, backend=backend, y=y, **kwargs)
 
 
-def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
-    """Plot a scatter plot x vs y.
-
-    The input argument `da` is split into x and y using the dimension ``plot_axis``.
-    If additional x and y arguments are provided, x and y are added to the values
-    in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
-    """
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    x, y = _process_da_x_y(da, x, y)
-    return plot_backend.scatter(x, y, target, **kwargs)
-
-
 def scatter_x(da, target, backend, y=None, **kwargs):
     """Plot a dot/rug/scatter along the x axis (y constant)."""
     if y is None:
