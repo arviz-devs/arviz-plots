@@ -16,7 +16,6 @@ def plot_psense_dist(
     alphas=None,
     var_names=None,
     filter_vars=None,
-    # group="posterior",
     coords=None,
     sample_dims=None,
     kind=None,
@@ -46,8 +45,6 @@ def plot_psense_dist(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
-    group : str, default "posterior"
-        Group to be plotted.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -166,7 +163,7 @@ def plot_psense_dist(
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("color", [color_cycle[0], "black", color_cycle[1]])
-        pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])  # XXX can we use relative values?
+        pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])
         pc_kwargs.setdefault("cols", ["group"])
@@ -214,9 +211,14 @@ def plot_psense_dist(
         # But "step" histograms may be slightly easier to interpret than bars histograms
         # Using the same number of "bins" should help too
         plot_kwargs.setdefault("hist", {})
-        plot_kwargs["hist"].setdefault("alpha", 0.3)
-        plot_kwargs["hist"].setdefault("edgecolor", None)
-        stats_kwargs.setdefault("density", {"density": True})
+        plot_kwargs.setdefault("remove_axis", True)
+        if plot_kwargs["hist"] is not False:
+            plot_kwargs["hist"].setdefault("alpha", 0.3)
+            plot_kwargs["hist"].setdefault("edgecolor", None)
+            stats_kwargs.setdefault("density", {"density": True})
+
+    if kind == "ecdf" and plot_kwargs.get("ecdf") is False:
+        plot_kwargs.setdefault("remove_axis", True)
 
     plot_dist(
         distribution,
