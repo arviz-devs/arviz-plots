@@ -95,6 +95,16 @@ def plot_psense_dist(
     Returns
     -------
     PlotCollection
+
+    Examples
+    --------
+    TBD: exaples specific to usage of arguments that are unique to plot_psense_dist or behave
+    differently than in the rest of the plots. i.e. we might want to have var_names,
+    prior_var_names and likelihood_var_names or var_names as a dict
+    with posterior, prior and likelihood keys allowed.
+
+    .. minigallery:: plot_psense_dist
+
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
