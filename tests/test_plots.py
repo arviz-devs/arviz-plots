@@ -8,6 +8,7 @@ from arviz_base import from_dict
 from arviz_plots import (
     plot_compare,
     plot_dist,
+    plot_ess,
     plot_forest,
     plot_ridge,
     plot_trace,
@@ -110,7 +111,7 @@ def cmp():
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-class TestPlots:
+class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind)
@@ -291,3 +292,46 @@ class TestPlots:
             pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200)}},
             backend=backend,
         )
+
+    def test_plot_ess(self, datatree, backend):
+        pc = plot_ess(datatree, backend=backend, rug=True)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "ess" in pc.viz["mu"]
+        assert "min_ess" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "rug" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert "chain" in pc.viz["mu"].rug.dims  # checking rug artist overlay
+        # checking aesthetics
+        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+
+    def test_plot_ess_sample(self, datatree_sample, backend):
+        pc = plot_ess(datatree_sample, backend=backend, rug=True, sample_dims="sample")
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "ess" in pc.viz["mu"]
+        assert "min_ess" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "rug" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert pc.viz["mu"].rug.shape == ()  # 0 chains here, so no overlay
+
+    def test_plot_ess_models(self, datatree, datatree2, backend):
+        pc = plot_ess({"c": datatree, "n": datatree2}, backend=backend, rug=False)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "ess" in pc.viz["mu"]
+        assert "min_ess" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "rug" not in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert "model" in pc.viz["mu"].dims
+        # checking aesthetics
+        assert "model" in pc.aes["mu"].dims
+        assert "x" in pc.aes["mu"].data_vars
+        assert "color" in pc.aes["mu"].data_vars
+        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains

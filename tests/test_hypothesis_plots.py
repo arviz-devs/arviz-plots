@@ -8,7 +8,7 @@ from arviz_base import from_dict
 from datatree import DataTree
 from hypothesis import given
 
-from arviz_plots import plot_dist, plot_forest, plot_ridge
+from arviz_plots import plot_dist, plot_ess, plot_forest, plot_ridge
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -37,9 +37,11 @@ def datatree(seed=31):
 
 
 kind_value = st.sampled_from(("kde", "ecdf"))
+ess_kind_value = st.sampled_from(("local", "quantile"))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 point_estimate_value = st.sampled_from(("mean", "median"))
 plot_kwargs_value = st.sampled_from(({}, False, {"color": "red"}))
+plot_kwargs_value_no_false = st.sampled_from(({}, {"color": "red"}))
 
 
 @st.composite
@@ -191,4 +193,57 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
             else:
                 assert all(key in child for child in pc.viz.children.values())
         elif key not in ("remove_axis", "ticklabels"):
+            assert all(key in child for child in pc.viz.children.values())
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "ess": plot_kwargs_value,
+            "rug": plot_kwargs_value_no_false,
+            "xlabel": plot_kwargs_value_no_false,
+            "ylabel": plot_kwargs_value_no_false,
+            "mean": plot_kwargs_value,
+            "mean_text": plot_kwargs_value,
+            "sd": plot_kwargs_value,
+            "sd_text": plot_kwargs_value,
+            "min_ess": plot_kwargs_value,
+            "title": plot_kwargs_value,
+        },
+    ),
+    kind=ess_kind_value,
+    relative=st.booleans(),
+    rug=st.booleans(),
+    n_points=st.integers(min_value=1, max_value=5),
+    extra_methods=st.booleans(),
+    min_ess=st.integers(min_value=10, max_value=150),
+)
+def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_ess, plot_kwargs):
+    pc = plot_ess(
+        datatree,
+        backend="none",
+        kind=kind,
+        relative=relative,
+        rug=rug,
+        n_points=n_points,
+        extra_methods=extra_methods,
+        min_ess=min_ess,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key in ["mean", "sd", "mean_text", "sd_text"]:
+            if extra_methods is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
+        elif key == "rug":
+            if rug is False:
+                assert all(key not in child for child in pc.viz.children.values())
+            else:
+                assert all(key in child for child in pc.viz.children.values())
+        else:
             assert all(key in child for child in pc.viz.children.values())

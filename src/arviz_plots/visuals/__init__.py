@@ -89,6 +89,18 @@ def scatter_x(da, target, backend, y=None, **kwargs):
     return plot_backend.scatter(da, y, target, **kwargs)
 
 
+def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
+    """Plot a scatter plot x vs y.
+
+    The input argument `da` is split into x and y using the dimension ``plot_axis``.
+    If additional x and y arguments are provided, x and y are added to the values
+    in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
+    """
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    x, y = _process_da_x_y(da, x, y)
+    return plot_backend.scatter(x, y, target, **kwargs)
+
+
 def ecdf_line(values, target, backend, **kwargs):
     """Plot an ecdf line."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
@@ -138,6 +150,18 @@ def _process_da_x_y(da, x, y):
 
 def _ensure_scalar(*args):
     return tuple(arg.item() if hasattr(arg, "item") else arg for arg in args)
+
+
+def annotate_xy(da, target, backend, *, text, x=None, y=None, vertical_align=None, **kwargs):
+    """Annotate a point (x, y) in a plot."""
+    if vertical_align is not None:
+        if hasattr(vertical_align, "item"):
+            kwargs["vertical_align"] = vertical_align.item()
+        else:
+            kwargs["vertical_align"] = vertical_align  # if a string and not a dataarray
+    x, y = _process_da_x_y(da, x, y)
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.text(x, y, text, target, **kwargs)
 
 
 def point_estimate_text(
