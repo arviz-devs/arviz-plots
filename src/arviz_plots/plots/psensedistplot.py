@@ -8,6 +8,7 @@ from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.distplot import plot_dist
+from arviz_plots.plots.utils import process_group_variables_coords
 
 
 def plot_psense_dist(
@@ -15,7 +16,7 @@ def plot_psense_dist(
     alphas=None,
     var_names=None,
     filter_vars=None,
-    group="posterior",
+    # group="posterior",
     coords=None,
     sample_dims=None,
     kind=None,
@@ -95,15 +96,21 @@ def plot_psense_dist(
     -------
     PlotCollection
     """
-    # TODO: handle `sample_dims`, it should be an argument to new_ds passed down to arviz-stats
-    # to specify which dimensions to consider sample_dims when getting the weights.
-    sample_dims = ["chain", "draw"]
+    if sample_dims is None:
+        sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
+    sample_dims = list(sample_dims)
     if kind is None:
         kind = rcParams["plot.density_kind"]
     if stats_kwargs is None:
         stats_kwargs = {}
+    else:
+        stats_kwargs = stats_kwargs.copy()
     if plot_kwargs is None:
         plot_kwargs = {}
+    else:
+        plot_kwargs = plot_kwargs.copy()
     if pc_kwargs is None:
         pc_kwargs = {}
     else:
@@ -115,15 +122,17 @@ def plot_psense_dist(
     # Here we are generating new datasets for the prior and likelihood
     # by resampling the original dataset with the power scale weights
     # Instead we could have weighted KDEs/ecdfs/etc
-    ds_prior = new_ds(dt, "prior", alphas)
-    ds_likelihood = new_ds(dt, "likelihood", alphas)
+    ds_prior = new_ds(dt, "prior", alphas, sample_dims=sample_dims)
+    ds_likelihood = new_ds(dt, "likelihood", alphas, sample_dims=sample_dims)
     distribution = concat([ds_prior, ds_likelihood], dim="group").assign_coords(
         {"group": ["prior", "likelihood"]}
     )
-    # TODO: After this whatever sample dims was should have been stacked into `sample` dimension
-    # or alternatively if it was already a sting kept as is, this second case we might want
-    # to handle.
-    sample_dims = ["sample"]
+    distribution = process_group_variables_coords(
+        distribution, group=None, var_names=var_names, filter_vars=filter_vars, coords=coords
+    )
+    if len(sample_dims) > 1:
+        # sample dims will have been stacked and renamed by `new_ds`
+        sample_dims = ["sample"]
 
     if backend is None:
         if plot_collection is None:
@@ -146,7 +155,7 @@ def plot_psense_dist(
         pc_kwargs["plot_grid_kws"].setdefault("sharey", "row")
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("color", [color_cycle[0], "k", color_cycle[1]])
+        pc_kwargs.setdefault("color", [color_cycle[0], "black", color_cycle[1]])
         pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])  # XXX can we use relative values?
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])
@@ -201,10 +210,10 @@ def plot_psense_dist(
 
     plot_dist(
         distribution,
-        var_names=var_names,
-        filter_vars=filter_vars,
-        group=group,
-        coords=coords,
+        var_names=None,
+        filter_vars=None,
+        group=None,
+        coords=None,
         sample_dims=sample_dims,
         kind=kind,
         point_estimate=point_estimate,
@@ -220,24 +229,35 @@ def plot_psense_dist(
     return plot_collection
 
 
-def new_ds(dt, group, alphas):
+def new_ds(dt, group, alphas, sample_dims):
     """Resample the dataset with the power scale weights."""
-    lower_w, upper_w = _get_power_scale_weights(dt, alphas, group=group)
+    lower_w, upper_w = _get_power_scale_weights(dt, alphas, group=group, sample_dims=sample_dims)
     lower_w = lower_w.values.flatten()
     upper_w = upper_w.values.flatten()
     s_size = len(lower_w)
 
+    idxs_to_drop = sample_dims if len(sample_dims) == 1 else ["sample"] + sample_dims
+    idxs_to_drop = set(idxs_to_drop).union(
+        [
+            idx
+            for idx in dt["posterior"].xindexes
+            if any(dim in dt["posterior"][idx].dims for dim in sample_dims)
+        ]
+    )
     resampled = [
         extract(
             dt,
             group="posterior",
+            sample_dims=sample_dims,
             num_samples=s_size,
             weights=weights,
             random_seed=42,
             resampling_method="stratified",
-        ).drop_indexes(["sample", "chain", "draw"])
+        ).drop_indexes(idxs_to_drop)
         for weights in (lower_w, upper_w)
     ]
-    resampled.insert(1, extract(dt, group="posterior").drop_indexes(["sample", "chain", "draw"]))
+    resampled.insert(
+        1, extract(dt, group="posterior", sample_dims=sample_dims).drop_indexes(idxs_to_drop)
+    )
 
     return concat(resampled, dim="alpha").assign_coords(alpha=[alphas[0], 1, alphas[1]])
