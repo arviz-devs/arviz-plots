@@ -18,8 +18,9 @@ azp.style.use("arviz-clean")
 idata = load_arviz_data("rugby")
 pc = azp.plot_psense_dist(
     idata,
-    var_names=["intercept", "home", "defs"],
+    var_names=["defs", "sd_att", "sd_def"],
     coords={"team": ["Scotland", "Wales"]},
+    pc_kwargs={"y": [-2, -1, 0]},
     backend="none",
 )
 pc.show()
