@@ -33,7 +33,7 @@ def combine_color_alpha(color, alpha=1):
     """Combine a color and alpha value into the equivalent rgba."""
     if isinstance(color, str):
         if color.startswith("rgba("):
-            warnings.warning("Found rgba color, value for `alpha` is ignored.")
+            warnings.warn("Found rgba color, value for `alpha` is ignored.")
             return color
         if color.startswith("#"):
             color = hex_to_rgb(color)
