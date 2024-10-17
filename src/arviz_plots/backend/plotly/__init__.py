@@ -189,6 +189,7 @@ def create_plotting_grid(
     number,  # pylint: disable=unused-argument
     rows=1,
     cols=1,
+    *,
     figsize=None,
     figsize_units="inches",
     squeeze=True,
@@ -242,6 +243,9 @@ def create_plotting_grid(
         layout_kwargs["height"] = figsize[1]
 
     kwargs["figure"] = go.Figure(layout=layout_kwargs)
+    share_lookup = {True: "all", "col": "columns", "row": "rows"}
+    sharex = share_lookup.get(sharex, sharex)
+    sharey = share_lookup.get(sharey, sharey)
 
     chart = make_subplots(
         rows=int(rows),

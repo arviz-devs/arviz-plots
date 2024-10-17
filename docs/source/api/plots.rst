@@ -22,6 +22,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_ess
    plot_ess_evolution
    plot_forest
+   plot_psense_dist
    plot_ridge
    plot_trace
    plot_trace_dist

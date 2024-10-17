@@ -115,6 +115,7 @@ def create_plotting_grid(
     number,
     rows=1,
     cols=1,
+    *,
     figsize=None,
     figsize_units="inches",
     squeeze=True,

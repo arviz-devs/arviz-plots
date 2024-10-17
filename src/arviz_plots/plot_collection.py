@@ -527,7 +527,7 @@ class PlotCollection:
                     var_name: set(dims) <= set(da.dims) for var_name, da in self.data.items()
                 }
                 if not any(aes_dims_in_var.values()):
-                    warnings.warning(
+                    warnings.warn(
                         "Provided mapping for {aes_key} will only use the neutral element"
                     )
                 aes_shape = [self.data.sizes[dim] for dim in dims]

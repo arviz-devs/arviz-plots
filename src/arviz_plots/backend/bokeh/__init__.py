@@ -115,6 +115,7 @@ def create_plotting_grid(
     number,
     rows=1,
     cols=1,
+    *,
     figsize=None,
     figsize_units="inches",
     squeeze=True,
@@ -188,21 +189,46 @@ def create_plotting_grid(
         width_ratios /= width_ratios.sum()
         plot_widths = np.ceil(chart_width * width_ratios).astype(int)
 
+    shared_xrange = {}
+    shared_yrange = {}
     for row in range(rows):
         for col in range(cols):
+            subplot_kws_i = subplot_kws.copy()
+            if col != 0 and sharex == "row":
+                subplot_kws_i["x_range"] = shared_xrange[row]
+            if row != 0 and sharex == "col":
+                subplot_kws_i["x_range"] = shared_xrange[col]
+            if col != 0 and sharey == "row":
+                subplot_kws_i["y_range"] = shared_yrange[row]
+            if row != 0 and sharey == "col":
+                subplot_kws_i["y_range"] = shared_yrange[col]
             if width_ratios is not None:
                 subplot_kws["width"] = plot_widths[col]
-            if (row == 0) and (col == 0) and (sharex or sharey):
-                p = figure(**subplot_kws)  # pylint: disable=invalid-name
+            if (row == 0) and (col == 0) and (sharex is True or sharey is True):
+                p = figure(**subplot_kws_i)  # pylint: disable=invalid-name
                 figures[row, col] = p
-                if sharex:
+                if sharex is True:
                     subplot_kws["x_range"] = p.x_range
-                if sharey:
+                if sharey is True:
                     subplot_kws["y_range"] = p.y_range
+            elif col == 0 and (sharex == "row" or sharey == "row"):
+                p = figure(**subplot_kws_i)  # pylint: disable=invalid-name
+                figures[row, col] = p
+                if sharex == "row":
+                    shared_xrange[row] = p.x_range
+                if sharey == "row":
+                    shared_yrange[row] = p.y_range
+            elif row == 0 and (sharex == "col" or sharey == "col"):
+                p = figure(**subplot_kws_i)  # pylint: disable=invalid-name
+                figures[row, col] = p
+                if sharex == "col":
+                    shared_xrange[col] = p.x_range
+                if sharey == "col":
+                    shared_yrange[col] = p.y_range
             elif row * cols + (col + 1) > number:
                 figures[row, col] = None
             else:
-                figures[row, col] = figure(**subplot_kws)
+                figures[row, col] = figure(**subplot_kws_i)
     if squeeze and figures.size == 1:
         return None, figures[0, 0]
     layout = gridplot(figures.tolist(), **kwargs)

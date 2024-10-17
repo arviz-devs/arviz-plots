@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from arviz_base import from_dict
+from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
     plot_compare,
@@ -11,6 +12,7 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_psense_dist,
     plot_ridge,
     plot_trace,
     plot_trace_dist,
@@ -24,20 +26,40 @@ pytestmark = [
 ]
 
 
-@pytest.fixture(scope="module")
-def datatree(seed=31):
+def generate_base_data(seed=31):
     rng = np.random.default_rng(seed)
-    mu = rng.normal(size=(4, 100))
-    tau = rng.normal(size=(4, 100))
-    theta = rng.normal(size=(4, 100, 7))
+    mu = rng.normal(loc=1, size=(4, 100))
+    tau = np.exp(rng.normal(size=(4, 100)))
+    theta_orig = rng.uniform(size=7)
+    theta = rng.normal(theta_orig[None, None, :], scale=1, size=(4, 100, 7))
+    idxs = rng.choice(np.arange(7), size=29)
+    x = np.linspace(0, 1, 29)
+    obs = rng.normal(loc=x + theta_orig[idxs], scale=3)
+    log_lik = norm(mu[:, :, None] * x[None, None, :] + theta[:, :, idxs], tau[:, :, None]).logpdf(
+        obs[None, None, :]
+    )
+    log_lik = log_lik / log_lik.var()
+    mu_prior = norm(0, 3).logpdf(mu)
+    tau_prior = halfnorm(scale=5).logpdf(tau)
+    theta_prior = norm(0, 1).logpdf(theta)
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
 
+    return {
+        "posterior": {"mu": mu, "theta": theta, "tau": tau},
+        "sample_stats": {"diverging": diverging},
+        "observed_data": {"y": obs},
+        "log_likelihood": {"y": log_lik},
+        "log_prior": {"mu": mu_prior, "theta": theta_prior, "tau": tau_prior},
+    }
+
+
+@pytest.fixture(scope="module")
+def datatree(seed=31):
+    base_data = generate_base_data(seed)
+
     return from_dict(
-        {
-            "posterior": {"mu": mu, "theta": theta, "tau": tau},
-            "sample_stats": {"diverging": diverging},
-        },
-        dims={"theta": ["hierarchy"]},
+        base_data,
+        dims={"theta": ["hierarchy"], "y": ["obs_dim"]},
     )
 
 
@@ -78,16 +100,15 @@ def datatree_4d(seed=31):
 
 @pytest.fixture(scope="module")
 def datatree_sample(seed=31):
-    rng = np.random.default_rng(seed)
-    mu = rng.normal(size=100)
-    tau = rng.normal(size=100)
-    theta = rng.normal(size=(100, 7))
-    diverging = rng.choice([True, False], size=100, p=[0.1, 0.9])
+    base_data = generate_base_data(seed)
 
     return from_dict(
         {
-            "posterior": {"mu": mu, "theta": theta, "tau": tau},
-            "sample_stats": {"diverging": diverging},
+            group: {
+                key: values[0] if group != "observed_data" else values
+                for key, values in group_dict.items()
+            }
+            for group, group_dict in base_data.items()
         },
         dims={"theta": ["hierarchy"]},
         sample_dims=["sample"],
@@ -361,4 +382,30 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "min_ess" in pc.viz["mu"]
         assert "title" in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_psense_dist(self, datatree, backend):
+        print(datatree["log_prior"])
+        print(datatree["log_likelihood"])
+        pc = plot_psense_dist(datatree, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "plot" in pc.viz["mu"]
+        assert "group" in pc.viz["mu"]["plot"].dims
+        assert "alpha" not in pc.viz["mu"]["plot"].dims
+        assert "credible_interval" in pc.viz["mu"]
+        assert "group" in pc.viz["mu"]["credible_interval"].dims
+        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_psense_dist_sample(self, datatree_sample, backend):
+        pc = plot_psense_dist(datatree_sample, backend=backend, sample_dims="sample")
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "plot" in pc.viz["mu"]
+        assert "group" in pc.viz["mu"]["plot"].dims
+        assert "alpha" not in pc.viz["mu"]["plot"].dims
+        assert "credible_interval" in pc.viz["mu"]
+        assert "group" in pc.viz["mu"]["credible_interval"].dims
+        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
         assert "hierarchy" in pc.viz["theta"].dims
