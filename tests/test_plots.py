@@ -9,6 +9,7 @@ from arviz_plots import (
     plot_compare,
     plot_dist,
     plot_ess,
+    plot_ess_evolution,
     plot_forest,
     plot_ridge,
     plot_trace,
@@ -335,3 +336,29 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "x" in pc.aes["mu"].data_vars
         assert "color" in pc.aes["mu"].data_vars
         assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+
+    def test_plot_ess_evolution(self, datatree, backend):
+        pc = plot_ess_evolution(datatree, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "ess_bulk" in pc.viz["mu"]
+        assert "ess_tail" in pc.viz["mu"]
+        assert "ess_bulk_line" in pc.viz["mu"]
+        assert "ess_tail_line" in pc.viz["mu"]
+        assert "min_ess" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_ess_evolution_sample(self, datatree_sample, backend):
+        pc = plot_ess_evolution(datatree_sample, backend=backend, sample_dims="sample")
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "ess_bulk" in pc.viz["mu"]
+        assert "ess_tail" in pc.viz["mu"]
+        assert "ess_bulk_line" in pc.viz["mu"]
+        assert "ess_tail_line" in pc.viz["mu"]
+        assert "min_ess" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims

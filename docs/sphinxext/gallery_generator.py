@@ -100,7 +100,7 @@ def main(app):
 
     index_page = ["(example_gallery)=\n# Example gallery"]
     backreferences = defaultdict(list)
-    api_regex = re.compile(r"azp\.(plot_[a-z]+)\(")
+    api_regex = re.compile(r"azp\.(plot_[a-z_]+)\(")
 
     for folder, title in dir_title_map.items():
         category_dir = gallery_dir / folder
