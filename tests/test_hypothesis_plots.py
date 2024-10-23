@@ -7,8 +7,16 @@ import pytest
 from arviz_base import from_dict
 from datatree import DataTree
 from hypothesis import given
+from scipy.stats import halfnorm, norm
 
-from arviz_plots import plot_dist, plot_ess, plot_ess_evolution, plot_forest, plot_ridge
+from arviz_plots import (
+    plot_dist,
+    plot_ess,
+    plot_ess_evolution,
+    plot_forest,
+    plot_psense_dist,
+    plot_ridge,
+)
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
@@ -17,13 +25,28 @@ pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 def datatree(seed=31):
     rng = np.random.default_rng(seed)
     mu = rng.normal(size=(3, 50))
-    tau = rng.normal(size=(3, 50, 2))
+    tau = np.exp(rng.normal(size=(3, 50, 2)))
     theta = rng.normal(size=(3, 50, 2, 3))
+    mu_prior = norm(0, 3).logpdf(mu)
+    tau_prior = halfnorm(scale=5).logpdf(tau)
+    theta_prior = norm(0, 1).logpdf(theta)
+    theta_orig = rng.uniform(size=3)
+    idxs0 = rng.choice(np.arange(2), size=29)
+    idxs1 = rng.choice(np.arange(3), size=29)
+    x = np.linspace(0, 1, 29)
+    obs = rng.normal(loc=x + theta_orig[idxs1], scale=3)
+    log_lik = norm(
+        mu[:, :, None] * x[None, None, :] + theta[:, :, idxs0, idxs1], tau[:, :, idxs0]
+    ).logpdf(obs[None, None, :])
+    log_lik = log_lik / log_lik.var()
     diverging = rng.choice([True, False], size=(3, 50), p=[0.1, 0.9])
 
     dt = from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "tau": tau},
+            "log_prior": {"mu": mu_prior, "theta": theta_prior, "tau": tau_prior},
+            "log_likelihood": {"y": log_lik},
+            "observed_data": {"y": obs},
             "sample_stats": {"diverging": diverging},
         },
         dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"]},
@@ -292,5 +315,43 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
                 assert all(key not in child for child in pc.viz.children.values())
             else:
                 assert all(key in child for child in pc.viz.children.values())
+        elif key != "remove_axis":
+            assert all(key in child for child in pc.viz.children.values())
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "kind": plot_kwargs_value,
+            "credible_interval": plot_kwargs_value,
+            "point_estimate": plot_kwargs_value,
+            "point_estimate_text": plot_kwargs_value,
+            "title": plot_kwargs_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    alphas=st.sampled_from(((0.9, 1.1), None)),
+    kind=kind_value,
+    point_estimate=point_estimate_value,
+    ci_kind=ci_kind_value,
+)
+def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwargs):
+    kind_kwargs = plot_kwargs.pop("kind", None)
+    if kind_kwargs is not None:
+        plot_kwargs[kind] = kind_kwargs
+    pc = plot_psense_dist(
+        datatree,
+        alphas=alphas,
+        backend="none",
+        kind=kind,
+        ci_kind=ci_kind,
+        point_estimate=point_estimate,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
         elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())
