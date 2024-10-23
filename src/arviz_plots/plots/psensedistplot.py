@@ -100,7 +100,7 @@ def plot_psense_dist(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_dist, style
+        >>> from arviz_plots import plot_psense_dist, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
         >>> rugby = load_arviz_data('rugby')
