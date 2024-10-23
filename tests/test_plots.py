@@ -385,8 +385,6 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" in pc.viz["theta"].dims
 
     def test_plot_psense_dist(self, datatree, backend):
-        print(datatree["log_prior"])
-        print(datatree["log_likelihood"])
         pc = plot_psense_dist(datatree, backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
