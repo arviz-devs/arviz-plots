@@ -138,8 +138,8 @@ def plot_psense_dist(
     # Instead we could have weighted KDEs/ecdfs/etc
     ds_prior = new_ds(dt, "prior", alphas, sample_dims=sample_dims)
     ds_likelihood = new_ds(dt, "likelihood", alphas, sample_dims=sample_dims)
-    distribution = concat([ds_prior, ds_likelihood], dim="__group__").assign_coords(
-        {"__group__": ["prior", "likelihood"]}
+    distribution = concat([ds_prior, ds_likelihood], dim="component_group").assign_coords(
+        {"component_group": ["prior", "likelihood"]}
     )
     distribution = process_group_variables_coords(
         distribution, group=None, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -173,11 +173,15 @@ def plot_psense_dist(
         pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])
-        pc_kwargs.setdefault("cols", ["__group__"])
+        pc_kwargs.setdefault("cols", ["component_group"])
         pc_kwargs.setdefault(
             "rows",
             ["__variable__"]
-            + [dim for dim in distribution.dims if dim not in sample_dims + ["__group__", "alpha"]],
+            + [
+                dim
+                for dim in distribution.dims
+                if dim not in sample_dims + ["component_group", "alpha"]
+            ],
         )
 
         figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)

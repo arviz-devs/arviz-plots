@@ -389,10 +389,10 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz["mu"]
-        assert "__group__" in pc.viz["mu"]["plot"].dims
+        assert "component_group" in pc.viz["mu"]["plot"].dims
         assert "alpha" not in pc.viz["mu"]["plot"].dims
         assert "credible_interval" in pc.viz["mu"]
-        assert "__group__" in pc.viz["mu"]["credible_interval"].dims
+        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
         assert "alpha" in pc.viz["mu"]["credible_interval"].dims
         assert "hierarchy" in pc.viz["theta"].dims
 
@@ -401,9 +401,9 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz["mu"]
-        assert "__group__" in pc.viz["mu"]["plot"].dims
+        assert "component_group" in pc.viz["mu"]["plot"].dims
         assert "alpha" not in pc.viz["mu"]["plot"].dims
         assert "credible_interval" in pc.viz["mu"]
-        assert "__group__" in pc.viz["mu"]["credible_interval"].dims
+        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
         assert "alpha" in pc.viz["mu"]["credible_interval"].dims
         assert "hierarchy" in pc.viz["theta"].dims
