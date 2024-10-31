@@ -5,9 +5,9 @@ import hypothesis.strategies as st
 import numpy as np
 import pytest
 from arviz_base import from_dict
-from datatree import DataTree
 from hypothesis import given
 from scipy.stats import halfnorm, norm
+from xarray import DataTree
 
 from arviz_plots import (
     plot_dist,

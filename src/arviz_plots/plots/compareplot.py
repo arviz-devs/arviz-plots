@@ -3,8 +3,7 @@ from importlib import import_module
 
 import numpy as np
 from arviz_base import rcParams
-from datatree import DataTree
-from xarray import Dataset
+from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
 

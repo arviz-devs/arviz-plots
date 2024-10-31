@@ -7,7 +7,6 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.sel_utils import xarray_sel_iter
-from datatree import DataTree
 
 
 def concat_model_dict(data):
@@ -243,7 +242,7 @@ class PlotCollection:
         """
         if self.coords is None:
             return self._aes_dt
-        return DataTree.from_dict(
+        return xr.DataTree.from_dict(
             {
                 group: ds.to_dataset().sel(sel_subset(self.coords, ds.dims))
                 for group, ds in self._aes_dt.children.items()
@@ -286,7 +285,7 @@ class PlotCollection:
         }
         home_ds = self._viz_dt.to_dataset()
         sliced_viz_dict["/"] = home_ds.sel(sel_subset(self.coords, home_ds.dims))
-        return DataTree.from_dict(sliced_viz_dict)
+        return xr.DataTree.from_dict(sliced_viz_dict)
 
     @viz.setter
     def viz(self, value):
@@ -376,22 +375,11 @@ class PlotCollection:
 
         .. jupyter-execute::
 
-            from datatree import DataTree
             from arviz_base import load_arviz_data
             from arviz_plots import PlotCollection
-            from arviz_base.datasets import REMOTE_DATASETS, RemoteFileMetadata
-            # TODO: remove this monkeypatching once the arviz_example_data repo has been updated
-            REMOTE_DATASETS.update({
-                "rugby_field": RemoteFileMetadata(
-                    name="rugby_field",
-                    filename="rugby_field.nc",
-                    url="http://figshare.com/ndownloader/files/44667112",
-                    checksum="53a99da7ac40d82cd01bb0b089263b9633ee016f975700e941b4c6ea289a1fb0",
-                    description="Variant of the rugby model."
-                )
-            })
+            import xarray as xr
             idata = load_arviz_data("rugby_field")
-            pc = PlotCollection(idata.posterior, DataTree(), backend="matplotlib")
+            pc = PlotCollection(idata.posterior, xr.DataTree(), backend="matplotlib")
             pc.generate_aes_dt(
                 aes={
                     "color": ["team"],
@@ -560,7 +548,7 @@ class PlotCollection:
                         ds[aes_key] = aes_da
                     else:
                         ds[aes_key] = neutral_element
-        self._aes_dt = DataTree.from_dict(ds_dict)
+        self._aes_dt = xr.DataTree.from_dict(ds_dict)
 
     def get_aes_as_dataset(self, aes_key):
         """Get the values of the provided aes_key for all variables as a Dataset.
@@ -707,7 +695,7 @@ class PlotCollection:
                 coords={dim: data[dim] for dim in dims},
             )
         else:
-            viz_dict["/"] = xr.Dataset({"chart": xr.DataArray(fig)})
+            viz_dict["/"] = xr.Dataset({"chart": np.array(fig, dtype=object)})
             all_dims = cols
             facet_cumulative = 0
             for var_name, da in data.items():
@@ -736,7 +724,10 @@ class PlotCollection:
                     },
                     coords={dim: da[dim] for dim in dims},
                 )
-        viz_dt = DataTree.from_dict(viz_dict)
+        viz_dt = xr.DataTree(
+            viz_dict["/"],
+            children={key: xr.DataTree(value) for key, value in viz_dict.items() if key != "/"},
+        )
         return cls(data, viz_dt, backend=backend, **kwargs)
 
     @classmethod
@@ -815,7 +806,7 @@ class PlotCollection:
                 coords={dim: data[dim] for dim in dims},
             )
         else:
-            viz_dict["/"] = xr.Dataset({"chart": xr.DataArray(fig)})
+            viz_dict["/"] = xr.Dataset({"chart": np.array(fig, dtype=object)})
             all_dims = tuple((*rows, *cols))  # use provided dim orders, not existing ones
             facet_cumulative = 0
             for var_name, da in data.items():
@@ -852,7 +843,7 @@ class PlotCollection:
                     },
                     coords={dim: da[dim] for dim in dims},
                 )
-        viz_dt = DataTree.from_dict(viz_dict)
+        viz_dt = xr.DataTree.from_dict(viz_dict)
         return cls(data, viz_dt, backend=backend, **kwargs)
 
     def update_aes(self, ignore_aes=frozenset(), coords=None):
@@ -870,7 +861,7 @@ class PlotCollection:
             artist_dims = {}
         for var_name, da in data.items():
             if var_name not in self.viz.children:
-                DataTree(name=var_name, parent=self.viz)
+                xr.DataTree(name=var_name, parent=self.viz)
             inherited_dims = [dim for dim in da.dims if dim in all_loop_dims]
             artist_shape = [da.sizes[dim] for dim in inherited_dims] + list(artist_dims.values())
             all_artist_dims = inherited_dims + list(artist_dims.keys())

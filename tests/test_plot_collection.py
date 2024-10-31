@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 import xarray.testing as xrt
 from arviz_base import dict_to_dataset, load_arviz_data
-from datatree import DataTree
-from xarray import DataArray, Dataset, concat, full_like
+from xarray import DataArray, Dataset, DataTree, concat, full_like
 
 from arviz_plots import PlotCollection
 from arviz_plots.plot_collection import _get_aes_dict_from_dt
