@@ -6,6 +6,7 @@ from .energyplot import plot_energy
 from .essplot import plot_ess
 from .evolutionplot import plot_ess_evolution
 from .forestplot import plot_forest
+from .noseplot import plot_nose
 from .psensedistplot import plot_psense_dist
 from .ridgeplot import plot_ridge
 from .tracedistplot import plot_trace_dist
@@ -22,4 +23,5 @@ __all__ = [
     "plot_ess_evolution",
     "plot_ridge",
     "plot_psense_dist",
+    "plot_nose",
 ]
