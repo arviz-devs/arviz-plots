@@ -35,7 +35,7 @@ def plot_nose(
     dt : DataTree
         Input data
     diagnostics : list of str
-        List of diagnostics to plot. Defaults to ["ess_bulk", "ess_tail", "rhat"].
+        List of diagnostics to plot. Defaults to ["ess_bulk", "ess_tail", "rhat_rank"].
         Valid diagnostics are "rhat_rank", "rhat_folded", "rhat_z_scale", "rhat_split",
         "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd", "ess_quantile",
         "ess_local", "ess_median", "ess_mad", "ess_z_scale", "ess_folded" and "ess_identity".
