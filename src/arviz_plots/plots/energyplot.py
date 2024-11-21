@@ -94,7 +94,7 @@ def plot_energy(
         pc_kwargs = pc_kwargs.copy()
 
     new_ds = _get_energy_ds(dt)
-    pc_kwargs.setdefault("cols", ["__variable__"])
+    pc_kwargs.setdefault("cols", None)
     pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
     pc_kwargs["aes"].setdefault("color", ["energy"])
     plot_kwargs.setdefault("credible_interval", False)
