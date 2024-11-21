@@ -1,4 +1,4 @@
-"""Nose plot code."""
+"""Convergence diagnostic distribution plot code."""
 import warnings
 
 from arviz_base import convert_to_dataset, rcParams
@@ -7,7 +7,7 @@ from arviz_plots.plots.distplot import plot_dist
 from arviz_plots.plots.utils import process_group_variables_coords
 
 
-def plot_nose(
+def plot_convergence_dist(
     dt,
     diagnostics=None,
     ref_line=True,
@@ -28,7 +28,7 @@ def plot_nose(
     stats_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot the distribution of ESS and R-hat.
+    """Plot the distribution of convergence diagnostics (ESS and/or R-hat).
 
     Parameters
     ----------
@@ -92,24 +92,24 @@ def plot_nose(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_nose, style
+        >>> from arviz_plots import plot_convergence_dist, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
         >>> rugby = load_arviz_data('radon')
-        >>> plot_nose(radon, var_names=["za_county"], diagnostics=["rhat", "ess_tail"])
+        >>> plot_convergence_dist(radon, var_names=["za_county"], diagnostics=["rhat", "ess_tail"])
 
      Some ess methods accepts a probability argument
 
     .. plot::
         :context: close-figs
 
-        >>> plot_nose(radon, var_names=["za_county"],
+        >>> plot_convergence_dist(radon, var_names=["za_county"],
                      diagnostics=["ess_tail(0.1, 0.9)",
                                   "ess_local(0.1, 0.9)",
                                   "ess_quantile(0.9)"])
 
 
-    .. minigallery:: plot_nose
+    .. minigallery:: plot_convergence_dist
 
     """
     if sample_dims is None:
