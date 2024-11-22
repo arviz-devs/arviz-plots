@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "arviz-plots"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {file = "LICENSE"}
 authors = [
     {name = "ArviZ team", email = "arvizdevs@gmail.com"}
