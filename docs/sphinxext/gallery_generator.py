@@ -163,6 +163,7 @@ def main(app):
 
             minigalleries = "\n".join(minigallery_in_example.format(fun=fun) for fun in api_funs)
 
+            # pylint: disable=line-too-long
             myst_text = f"""
             ({basename.replace("plot_", "gallery_")})=
             {head_text}
