@@ -7,7 +7,6 @@ import pytest
 from arviz_base import from_dict
 from hypothesis import given
 from scipy.stats import halfnorm, norm
-from xarray import DataTree
 
 from arviz_plots import (
     plot_dist,
