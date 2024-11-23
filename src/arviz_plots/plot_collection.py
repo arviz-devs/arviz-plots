@@ -613,7 +613,7 @@ class PlotCollection:
         """
         viz_dt = self.viz
         for group, child in viz_dt.children.items():
-            viz_dt[group] = child.rename_vars(name_dict, **names)
+            viz_dt[group] = child.dataset.rename_vars(name_dict, **names)
         self.viz = viz_dt
 
     @classmethod
@@ -861,7 +861,7 @@ class PlotCollection:
             artist_dims = {}
         for var_name, da in data.items():
             if var_name not in self.viz.children:
-                xr.DataTree(name=var_name, parent=self.viz)
+                self.viz[var_name] = xr.DataTree()
             inherited_dims = [dim for dim in da.dims if dim in all_loop_dims]
             artist_shape = [da.sizes[dim] for dim in inherited_dims] + list(artist_dims.values())
             all_artist_dims = inherited_dims + list(artist_dims.keys())

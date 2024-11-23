@@ -54,8 +54,8 @@ def datatree(seed=31):
     dt["point_estimate"] = dt.posterior.mean(("chain", "draw"))
     # TODO: should become dt.azstats.eti() after fix in arviz-stats
     post = dt.posterior.ds
-    DataTree(name="trunk", parent=dt, data=post.azstats.eti(prob=0.5))
-    DataTree(name="twig", parent=dt, data=post.azstats.eti(prob=0.9))
+    dt["trunk"] = post.azstats.eti(prob=0.5)
+    dt["twig"] = post.azstats.eti(prob=0.9)
     return dt
 
 
