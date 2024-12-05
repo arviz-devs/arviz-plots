@@ -221,7 +221,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_forest_extendable(self, datatree, backend):
         dt_aux = (
             datatree["posterior"]
-            .expand_dims(column=3)
+            .dataset.expand_dims(column=3)
             .assign_coords(column=["labels", "forest", "ess"])
         )
         pc = plot_forest(dt_aux, combined=True, backend=backend)
@@ -274,7 +274,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_ridge_extendable(self, datatree, backend):
         dt_aux = (
             datatree["posterior"]
-            .expand_dims(column=3)
+            .dataset.expand_dims(column=3)
             .assign_coords(column=["labels", "ridge", "ess"])
         )
         pc = plot_ridge(dt_aux, combined=True, backend=backend)

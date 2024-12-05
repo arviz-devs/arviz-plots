@@ -183,7 +183,7 @@ def plot_ridge(
         >>> from arviz_plots import visuals
         >>> import arviz_stats  # make accessor available
         >>>
-        >>> c_aux = centered["posterior"].expand_dims(
+        >>> c_aux = centered["posterior"].dataset.expand_dims(
         >>>     column=3
         >>> ).assign_coords(column=["labels", "ridge", "ess"])
         >>> pc = plot_ridge(c_aux, combined=True)

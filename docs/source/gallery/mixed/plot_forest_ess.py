@@ -23,7 +23,7 @@ plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 color = plot_bknd.get_default_aes("color", 1, {})[0]
 
 centered = load_arviz_data("centered_eight")
-c_aux = centered["posterior"].expand_dims(
+c_aux = centered["posterior"].dataset.expand_dims(
     column=3
 ).assign_coords(column=["labels", "forest", "ess"])
 pc = azp.plot_forest(c_aux, combined=True, backend=backend)

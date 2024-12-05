@@ -105,7 +105,7 @@ singulars = ("int", "list", "dict", "float")
 numpydoc_xref_aliases = {
     "DataArray": ":class:`xarray.DataArray`",
     "Dataset": ":class:`xarray.Dataset`",
-    "DataTree": ":class:`datatree.DataTree`",
+    "DataTree": ":class:`xarray.DataTree`",
     "mapping": ":term:`python:mapping`",
     "hashable": ":term:`python:hashable`",
     **{f"{singular}s": f":any:`{singular}s <{singular}>`" for singular in singulars},
@@ -113,7 +113,6 @@ numpydoc_xref_aliases = {
 
 intersphinx_mapping = {
     "arviz_org": ("https://www.arviz.org/en/latest/", None),
-    "datatree": ("https://xarray-datatree.readthedocs.io/en/latest/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
