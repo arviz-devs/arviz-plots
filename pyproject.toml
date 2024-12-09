@@ -26,8 +26,8 @@ classifiers = [
 ]
 dynamic = ["version", "description"]
 dependencies = [
-  "arviz-base @ git+https://github.com/arviz-devs/arviz-base@xarray_datatree",
-  "arviz-stats[xarray] @ git+https://github.com/arviz-devs/arviz-stats@xarray_datatree",
+  "arviz-base @ git+https://github.com/arviz-devs/arviz-base",
+  "arviz-stats[xarray] @ git+https://github.com/arviz-devs/arviz-stats",
 ]
 
 [tool.flit.module]
