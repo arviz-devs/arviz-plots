@@ -94,6 +94,11 @@ def plot_energy(
         pc_kwargs = pc_kwargs.copy()
 
     new_ds = _get_energy_ds(dt)
+
+    sample_dims = ["chain", "draw"]
+    if not all(dim in new_ds.dims for dim in sample_dims):
+        raise ValueError("Both 'chain' and 'draw' dimensions must be present in the dataset")
+
     pc_kwargs.setdefault("cols", None)
     pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
     pc_kwargs["aes"].setdefault("color", ["energy"])
@@ -108,7 +113,7 @@ def plot_energy(
         filter_vars=None,
         group=None,
         coords=None,
-        sample_dims=None,
+        sample_dims=sample_dims,
         kind=kind,
         point_estimate=None,
         ci_kind=None,
