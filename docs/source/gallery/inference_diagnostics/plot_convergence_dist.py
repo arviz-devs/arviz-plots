@@ -17,9 +17,9 @@ import arviz_plots as azp
 azp.style.use("arviz-clean")
 
 data = load_arviz_data("radon")
-pc = azp.plot_ess(
-    data,
-    var_names=["za_county"],
-    backend="none",  # change to preferred backend
+pc = azp.plot_convergence_dist(data,
+                               var_names=["za_county"],
+                               backend="none",  # change to preferred backend
 )
+
 pc.show()
