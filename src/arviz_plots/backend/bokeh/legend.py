@@ -61,6 +61,16 @@ def legend(
     for kws in kwarg_list:
         glyph = artist_fun(**{**artist_kwargs, **kws})
         glyph_list.append(glyph)
+
+    # Add automatic legend placement logic
+    if side == "auto":
+        # Place legend outside if there's enough space, inside otherwise
+        plot_width = target_plot.width
+        if plot_width >= 600:  # arbitrary threshold
+            side = "right"
+        else:
+            side = "center"
+    
     leg = Legend(
         items=[(str(label), [glyph]) for label, glyph in zip(label_list, glyph_list)],
         title=title,

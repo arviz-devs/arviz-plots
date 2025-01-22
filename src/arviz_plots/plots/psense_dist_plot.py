@@ -274,4 +274,10 @@ def plot_psense_dist(
         stats_kwargs=stats_kwargs,
     )
 
+    # Add legend for alpha parameter automatically
+    plot_collection.add_legend(
+        "alpha",
+        title="Power Scale Factor",
+    )
+
     return plot_collection
