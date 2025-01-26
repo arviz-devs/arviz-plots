@@ -439,6 +439,28 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
     return second_line_with_fill
 
 
+def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to plotly for a vertical line spanning the whole axes."""
+    artist_kws.setdefault("showlegend", False)
+    line_kwargs = {"color": color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {}).copy()
+    kwargs = {"opacity": alpha}
+    return target.add_vline(
+        x, line=_filter_kwargs(line_kwargs, line_artist_kws), **_filter_kwargs(kwargs, artist_kws)
+    )
+
+
+def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to plotly for a horizontal line spanning the whole axes."""
+    artist_kws.setdefault("showlegend", False)
+    line_kwargs = {"color": color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {}).copy()
+    kwargs = {"opacity": alpha}
+    return target.add_hline(
+        y, line=_filter_kwargs(line_kwargs, line_artist_kws), **_filter_kwargs(kwargs, artist_kws)
+    )
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a title to a plot."""

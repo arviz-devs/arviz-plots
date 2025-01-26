@@ -9,6 +9,7 @@ from hypothesis import given
 from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
+    plot_convergence_dist,
     plot_dist,
     plot_ess,
     plot_ess_evolution,
@@ -352,5 +353,55 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwarg
     for key, value in plot_kwargs.items():
         if value is False:
             assert all(key not in child for child in pc.viz.children.values())
+        elif key != "remove_axis":
+            assert all(key in child for child in pc.viz.children.values())
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "kind": plot_kwargs_value,
+            "ref_line": plot_kwargs_value_no_false,
+            "title": plot_kwargs_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    diagnostics=st.sampled_from(
+        [
+            # fmt: off
+            None, "rhat", "rhat_rank", "rhat_folded", "rhat_z_scale", "rhat_split",
+            "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd", "ess_quantile",
+            "ess_local", "ess_median", "ess_mad", "ess_z_scale", "ess_folded", "ess_identity"
+            # fmt: on
+        ]
+    ),
+    kind=kind_value,
+    ref_line=st.booleans(),
+)
+def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, plot_kwargs):
+    kind_kwargs = plot_kwargs.pop("kind", None)
+    if kind_kwargs is not None:
+        plot_kwargs[kind] = kind_kwargs
+    pc = plot_convergence_dist(
+        datatree,
+        diagnostics=diagnostics,
+        backend="none",
+        kind=kind,
+        ref_line=ref_line,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    if diagnostics is None:
+        diagnostics = ["ess_bulk", "ess_tail", "rhat"]
+    assert [diagnostic in pc.viz.children for diagnostic in diagnostics]
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        elif key == "ref_line":
+            if ref_line:
+                assert all(key in child for child in pc.viz.children.values())
+            else:
+                assert all(key not in child for child in pc.viz.children.values())
         elif key != "remove_axis":
             assert all(key in child for child in pc.viz.children.values())

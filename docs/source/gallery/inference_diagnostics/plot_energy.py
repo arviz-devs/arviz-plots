@@ -6,7 +6,7 @@ Plot transition and marginal energy distributions
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_trace`
+API Documentation: {func}`~arviz_plots.plot_energy`
 :::
 """
 from arviz_base import load_arviz_data
