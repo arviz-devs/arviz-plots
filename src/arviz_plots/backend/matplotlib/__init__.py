@@ -305,6 +305,20 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     return target.fill_between(x, y_bottom, y_top, **artist_kws)
 
 
+def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to matplotlib for a vertical line spanning the whole axes."""
+    artist_kws.setdefault("zorder", 2)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.axvline(x, **_filter_kwargs(kwargs, Line2D, artist_kws))
+
+
+def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to matplotlib for a horizontal line spanning the whole axes."""
+    artist_kws.setdefault("zorder", 2)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.axhline(y, **_filter_kwargs(kwargs, Line2D, artist_kws))
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a title to a plot."""

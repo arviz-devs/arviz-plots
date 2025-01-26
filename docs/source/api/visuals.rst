@@ -17,6 +17,8 @@ Data plotting elements
    scatter_x
    scatter_xy
    ecdf_line
+   vline
+   hline
    hist
 
 Data and axis annotating elements
