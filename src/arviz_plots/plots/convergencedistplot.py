@@ -35,8 +35,8 @@ def plot_convergence_dist(
     dt : DataTree
         Input data
     diagnostics : list of str
-        List of diagnostics to plot. Defaults to ["ess_bulk", "ess_tail", "rhat_rank"].
-        Valid diagnostics are "rhat_rank", "rhat_folded", "rhat_z_scale", "rhat_split",
+        List of diagnostics to plot. Defaults to ["ess_bulk", "ess_tail", "rhat"].
+        Valid diagnostics are "rhat", "rhat_folded", "rhat_z_scale", "rhat_split",
         "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd", "ess_quantile",
         "ess_local", "ess_median", "ess_mad", "ess_z_scale", "ess_folded" and "ess_identity".
     ref_line : bool
@@ -127,7 +127,7 @@ def plot_convergence_dist(
         pc_kwargs = pc_kwargs.copy()
 
     if diagnostics is None:
-        diagnostics = ["ess_bulk", "ess_tail", "rhat_rank"]
+        diagnostics = ["ess_bulk", "ess_tail", "rhat"]
 
     dt = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -193,7 +193,10 @@ def _get_diagnostics(dt, diagnostics):
                 dt.azstats.ess(method=method, prob=prob).to_array().values.reshape(1, -1)
             )
         elif "rhat" in diagnostic:
-            method = diagnostic.split("_", 1)[1]
+            if diagnostic == "rhat":
+                method = "rank"
+            else:
+                method = diagnostic.split("_", 1)[1]
             diagnostic_values[diagnostic] = (
                 dt.azstats.rhat(method=method).to_array().values.reshape(1, -1)
             )
