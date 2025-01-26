@@ -49,11 +49,13 @@ def plot_convergence_dist(
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, optional, default=None
-        If None (default), interpret var_names as the real variables names.
+    filter_vars : {None, “like”, “regex”}, default=None
+        If None, interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
     group : str, default "posterior"
+        Group to be plotted.
+    coords : dict, optional
         The group for which to compute the convergence diagnostics.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
@@ -69,16 +71,22 @@ def plot_convergence_dist(
         By default, no mappings are defined for this plot.
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
+
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+
         * ref_line -> passed to :func:`~arviz_plots.visuals.vline`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
+
     stats_kwargs : mapping, optional
         Valid keys are:
+
         * density -> passed to kde, ecdf, ...
+
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
@@ -107,6 +115,7 @@ def plot_convergence_dist(
 
     .. plot::
         :context: close-figs
+
         >>> plot_convergence_dist(
         >>>     radon,
         >>>     var_names=["za_county"],
