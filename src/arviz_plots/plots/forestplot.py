@@ -2,6 +2,7 @@
 from copy import copy
 from importlib import import_module
 
+import arviz_stats  # pylint: disable=unused-import
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams

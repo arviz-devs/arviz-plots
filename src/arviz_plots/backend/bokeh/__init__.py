@@ -9,7 +9,7 @@ from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
 from ..none import get_default_aes as get_agnostic_default_aes
-from .legend import legend as legend
+from .legend import legend
 
 
 class UnsetDefault:
