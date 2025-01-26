@@ -81,14 +81,18 @@ def plot_convergence_dist(
         * density -> passed to kde, ecdf, ...
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.wrap`
+
     Returns
     -------
     PlotCollection
+
     Examples
     --------
     Select a single variable and specify diagnostics
+
     .. plot::
         :context: close-figs
+
         >>> from arviz_plots import plot_convergence_dist, style
         >>> style.use("arviz-clean")
         >>> from arviz_base import load_arviz_data
@@ -98,7 +102,9 @@ def plot_convergence_dist(
         >>>     var_names=["za_county"],
         >>>     diagnostics=["rhat", "ess_tail"]
         >>> )
+
     Some ess methods accepts a probability argument
+
     .. plot::
         :context: close-figs
         >>> plot_convergence_dist(
@@ -110,7 +116,9 @@ def plot_convergence_dist(
         >>>         "ess_quantile(0.9)"
         >>>     ]
         >>> )
+
     .. minigallery:: plot_convergence_dist
+
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
