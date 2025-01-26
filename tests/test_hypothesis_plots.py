@@ -371,8 +371,9 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwarg
         [
             # fmt: off
             None, "rhat", "rhat_rank", "rhat_folded", "rhat_z_scale", "rhat_split",
-            "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd", "ess_quantile",
-            "ess_local", "ess_median", "ess_mad", "ess_z_scale", "ess_folded", "ess_identity"
+            "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd",
+            "ess_quantile(0.9)", "ess_local(0.1, 0.9)", "ess_median", "ess_mad",
+            "ess_z_scale", "ess_folded", "ess_identity"
             # fmt: on
         ]
     ),
