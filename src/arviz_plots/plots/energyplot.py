@@ -127,7 +127,8 @@ def plot_energy(
         pc_kwargs=pc_kwargs,
     )
 
-    plot_collection.add_legend("energy", loc="outside right upper")
+    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
+        plot_collection.add_legend("energy", loc="outside right upper")
 
     if bfmi:
         raise NotImplementedError("BFMI is not implemented yet")
