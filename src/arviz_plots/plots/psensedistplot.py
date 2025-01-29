@@ -16,6 +16,10 @@ def plot_psense_dist(
     alphas=None,
     var_names=None,
     filter_vars=None,
+    prior_var_names=None,
+    likelihood_var_names=None,
+    prior_coords=None,
+    likelihood_coords=None,
     coords=None,
     sample_dims=None,
     kind=None,
@@ -45,6 +49,16 @@ def plot_psense_dist(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
+    prior_var_names : str, optional
+        Name of the log-prior variables to include in the power scaling sensitivity diagnostic
+    likelihood_var_names : str, optional
+        Name of the log-likelihood variables to include in the power scaling sensitivity diagnostic
+    prior_coords : dict, optional
+        Coordinates defining a subset over the group element for which to
+        compute the log-prior sensitivity diagnostic
+    likelihood_coords : dict, optional
+        Coordinates defining a subset over the group element for which to
+        compute the log-likelihood sensitivity diagnostic
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -136,8 +150,22 @@ def plot_psense_dist(
     # Here we are generating new datasets for the prior and likelihood
     # by resampling the original dataset with the power scale weights
     # Instead we could have weighted KDEs/ecdfs/etc
-    ds_prior = power_scale_dataset(dt, "prior", alphas, sample_dims=sample_dims)
-    ds_likelihood = power_scale_dataset(dt, "likelihood", alphas, sample_dims=sample_dims)
+    ds_prior = power_scale_dataset(
+        dt,
+        group="prior",
+        alphas=alphas,
+        sample_dims=sample_dims,
+        group_var_names=prior_var_names,
+        group_coords=prior_coords,
+    )
+    ds_likelihood = power_scale_dataset(
+        dt,
+        group="likelihood",
+        alphas=alphas,
+        sample_dims=sample_dims,
+        group_var_names=likelihood_var_names,
+        group_coords=likelihood_coords,
+    )
     distribution = concat([ds_prior, ds_likelihood], dim="component_group").assign_coords(
         {"component_group": ["prior", "likelihood"]}
     )
