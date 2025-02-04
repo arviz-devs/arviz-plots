@@ -91,7 +91,8 @@ def plot_psense_quantities(
 
     Examples
     --------
-    Select a single variable and generate a point-interval plot
+    Select a single variable and plot the mean, standard deviation,
+    and 25th and 75th percentiles
 
     .. plot::
         :context: close-figs
@@ -198,7 +199,9 @@ def plot_psense_quantities(
     for val in quantities:
         if val.replace(".", "").isnumeric():
             q = float(val)
-            to_concat_quantities.append(distribution.quantile(q, sample_dims))
+            to_concat_quantities.append(
+                distribution.quantile(q, sample_dims).rename_vars({"quantile": f"q={val}"})
+            )
             if mcse:
                 to_concat_mcse.append(ds_posterior.azstats.mcse(method="quantile", prob=q))
             name_quantities.append(f"q={val}")
