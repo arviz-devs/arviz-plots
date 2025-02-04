@@ -129,7 +129,7 @@ def plot_psense_quantities(
             backend = plot_collection.backend
 
     if alphas is None:
-        alphas = (0.8, 1.25)  ### esto debería estar en un rcParams!!!
+        alphas = (0.8, 1.25)
 
     alphas_p1 = (alphas[0], 1, alphas[1])
 
