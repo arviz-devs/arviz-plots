@@ -269,7 +269,7 @@ def plot_psense_quantities(
         mcse_kwargs = copy(plot_kwargs.get("mcse", {}))
         _, _, mcse_ignore = filter_aes(plot_collection, aes_map, "mcse", sample_dims)
         if mcse_kwargs is not False:
-            mcse_kwargs.setdefault("color", "0.7")
+            mcse_kwargs.setdefault("color", "grey")
             mcse_kwargs.setdefault("linestyle", "--")
 
         plot_collection.map(hline, "mcse", data=min_, ignore_aes=mcse_ignore, **mcse_kwargs)
