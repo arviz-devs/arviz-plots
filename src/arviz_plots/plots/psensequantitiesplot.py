@@ -76,8 +76,10 @@ def plot_psense_quantities(
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * quantities_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-        * quantities_lines -> passed to :func:`~arviz_plots.visuals.line_xy`
+        * prior_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * prior_lines -> passed to :func:`~arviz_plots.visuals.line_xy`
+        * likelihood_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * likelihood_lines -> passed to :func:`~arviz_plots.visuals.line_xy`
         * mcse -> passed to :func:`~arviz_plots.visuals.hline`
         * ticks -> passed to :func:`~arviz_plots.visuals.set_ticks`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -133,6 +135,7 @@ def plot_psense_quantities(
         alphas = (0.8, 1.25)
 
     alphas_p1 = (alphas[0], 1, alphas[1])
+    alphas_p1_labels = [str(val) for val in alphas_p1]
 
     if quantities is None:
         quantities = ["mean", "sd"]
@@ -222,16 +225,15 @@ def plot_psense_quantities(
         max_ = baseline_quantities + mcse_quantities * 2
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    colors = plot_bknd.get_default_aes("color", 5, {})
+    markers = plot_bknd.get_default_aes("marker", 6, {})
+    lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("color", ["C3", "C4"])
-        pc_kwargs.setdefault("marker", ["o", "s"])
-        pc_kwargs["aes"].setdefault("color", ["component_group"])
-        pc_kwargs["aes"].setdefault("marker", ["component_group"])
         pc_kwargs.setdefault("cols", ["quantities"])
         pc_kwargs.setdefault("rows", ["__variable__"])
 
@@ -264,45 +266,89 @@ def plot_psense_quantities(
     aes_map.setdefault("quantities_marker", ["color", "marker"])
     aes_map.setdefault("quantities", ["color"])
 
+    # plot quantities for prior-perturbations
+    ## markers
+    prior_ms_kwargs = copy(plot_kwargs.get("prior_markers", {}))
+
+    if prior_ms_kwargs is not False:
+        _, _, prior_ms_ignore = filter_aes(plot_collection, aes_map, "prior_markers", sample_dims)
+        prior_ms_kwargs.setdefault("marker", markers[0])
+        prior_ms_kwargs.setdefault("color", colors[3])
+
+    plot_collection.map(
+        scatter_xy,
+        "prior_markers",
+        data=quantities_ds.sel(component_group="prior"),
+        x=quantities_ds.alpha,
+        ignore_aes=prior_ms_ignore,
+        **prior_ms_kwargs,
+    )
+    ## lines
+    prior_ls_kwargs = copy(plot_kwargs.get("prior_lines", {}))
+
+    if prior_ls_kwargs is not False:
+        _, _, prior_ms_ignore = filter_aes(plot_collection, aes_map, "prior_lines", sample_dims)
+        prior_ls_kwargs.setdefault("color", colors[3])
+
+    plot_collection.map(
+        line_xy,
+        "prior_lines",
+        data=quantities_ds.sel(component_group="prior"),
+        x=quantities_ds.alpha,
+        ignore_aes=prior_ms_ignore,
+        **prior_ls_kwargs,
+    )
+
+    # plot quantities for likelihood-perturbations
+    ## markers
+    likelihood_ms_kwargs = copy(plot_kwargs.get("likelihood_markers", {}))
+
+    if likelihood_ms_kwargs is not False:
+        _, _, likelihood_ms_ignore = filter_aes(
+            plot_collection, aes_map, "likelihood_markers", sample_dims
+        )
+
+        likelihood_ms_kwargs.setdefault("marker", markers[5])
+        likelihood_ms_kwargs.setdefault("color", colors[4])
+
+    plot_collection.map(
+        scatter_xy,
+        "likelihood_markers",
+        data=quantities_ds.sel(component_group="likelihood"),
+        x=quantities_ds.alpha,
+        ignore_aes=likelihood_ms_ignore,
+        **likelihood_ms_kwargs,
+    )
+    ## lines
+    likelihood_ls_kwargs = copy(plot_kwargs.get("likelihood_lines", {}))
+
+    if likelihood_ls_kwargs is not False:
+        _, _, likelihood_ls_ignore = filter_aes(
+            plot_collection, aes_map, "likelihood_lines", sample_dims
+        )
+
+        likelihood_ls_kwargs.setdefault("color", colors[4])
+
+    plot_collection.map(
+        line_xy,
+        "prior_lines",
+        data=quantities_ds.sel(component_group="likelihood"),
+        x=quantities_ds.alpha,
+        ignore_aes=likelihood_ls_ignore,
+        **likelihood_ls_kwargs,
+    )
+
     # plot mcse
     if mcse:
         mcse_kwargs = copy(plot_kwargs.get("mcse", {}))
         _, _, mcse_ignore = filter_aes(plot_collection, aes_map, "mcse", sample_dims)
         if mcse_kwargs is not False:
             mcse_kwargs.setdefault("color", "grey")
-            mcse_kwargs.setdefault("linestyle", "dashed")
+            mcse_kwargs.setdefault("linestyle", lines[1])
 
         plot_collection.map(hline, "mcse", data=min_, ignore_aes=mcse_ignore, **mcse_kwargs)
 
         plot_collection.map(hline, "mcse", data=max_, ignore_aes=mcse_ignore, **mcse_kwargs)
-
-    # plot quantities
-    quantities_ms_kwargs = copy(plot_kwargs.get("quantities_markers", {}))
-
-    if quantities_ms_kwargs is not False:
-        _, _, quantities_ms_ignore = filter_aes(
-            plot_collection, aes_map, "quantities_markers", sample_dims
-        )
-
-    plot_collection.map(
-        scatter_xy,
-        "quantities_markers",
-        data=quantities_ds,
-        x=quantities_ds.alpha,
-        ignore_aes=quantities_ms_ignore,
-        **quantities_ms_kwargs,
-    )
-
-    quantities_ls_kwargs = copy(plot_kwargs.get("quantities_lines", {}))
-
-    plot_collection.map(
-        line_xy,
-        "quantities_lines",
-        data=quantities_ds,
-        x=quantities_ds.alpha,
-        ignore_aes=[],
-        **quantities_ls_kwargs,
-    )
 
     # set ticks
     ticks_kwargs = copy(plot_kwargs.get("ticks", {}))
@@ -312,7 +358,7 @@ def plot_psense_quantities(
         set_ticks,
         "ticks",
         values=alphas_p1,
-        labels=alphas_p1,
+        labels=alphas_p1_labels,
         ignore_aes=ticks_ignore,
         **ticks_kwargs,
     )

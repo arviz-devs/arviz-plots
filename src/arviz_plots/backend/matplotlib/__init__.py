@@ -48,7 +48,7 @@ def get_default_aes(aes_key, n, kwargs=None):
             vals = ["-", "--", ":", "-."]
             vals = default_prop_cycle.get("linestyle", vals)
         elif aes_key in {"marker", "m"}:
-            vals = ["o", "+", "^", "x", "d"]
+            vals = ["o", "+", "^", "x", "d", "s"]
             vals = default_prop_cycle.get("marker", vals)
         elif aes_key in default_prop_cycle:
             vals = default_prop_cycle[aes_key]
@@ -307,14 +307,14 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
 
 def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to matplotlib for a vertical line spanning the whole axes."""
-    artist_kws.setdefault("zorder", 2)
+    artist_kws.setdefault("zorder", 0)
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.axvline(x, **_filter_kwargs(kwargs, Line2D, artist_kws))
 
 
 def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to matplotlib for a horizontal line spanning the whole axes."""
-    artist_kws.setdefault("zorder", 2)
+    artist_kws.setdefault("zorder", 0)
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.axhline(y, **_filter_kwargs(kwargs, Line2D, artist_kws))
 
