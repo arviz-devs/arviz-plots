@@ -43,3 +43,4 @@ Plot customization elements
    ticklabel_props
    remove_axis
    remove_ticks
+   set_xticks

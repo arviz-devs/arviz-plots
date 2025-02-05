@@ -59,6 +59,7 @@ def plot_psense_dist(
     likelihood_coords : dict, optional
         Coordinates defining a subset over the group element for which to
         compute the log-likelihood sensitivity diagnostic
+    coords : dict, optional
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``

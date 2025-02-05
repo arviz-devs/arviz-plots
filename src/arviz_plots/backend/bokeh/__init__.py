@@ -35,7 +35,7 @@ def get_default_aes(aes_key, n, kwargs=None):
         elif aes_key in {"linestyle", "line_dash"}:
             vals = ["solid", "dashed", "dotted", "dashdot"]
         elif aes_key == "marker":
-            vals = ["circle", "cross", "triangle", "x", "diamond"]
+            vals = ["circle", "cross", "triangle", "x", "diamond", "square"]
         else:
             return get_agnostic_default_aes(aes_key, n)
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
