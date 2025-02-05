@@ -102,7 +102,7 @@ def plot_convergence_dist(
         :context: close-figs
 
         >>> from arviz_plots import plot_convergence_dist, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> radon = load_arviz_data('radon')
         >>> plot_convergence_dist(

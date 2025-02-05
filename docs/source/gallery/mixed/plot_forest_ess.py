@@ -16,7 +16,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 backend="none"  # change to preferred backend
 plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")

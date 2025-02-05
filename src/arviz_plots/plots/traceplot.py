@@ -75,7 +75,7 @@ def plot_trace(
         :context: close-figs
 
         >>> from arviz_plots import plot_trace, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
         >>> plot_trace(centered)

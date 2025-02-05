@@ -116,7 +116,7 @@ def plot_psense_dist(
         :context: close-figs
 
         >>> from arviz_plots import plot_psense_dist, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> rugby = load_arviz_data('rugby')
         >>> plot_psense_dist(rugby, var_names=["sd_att"], plot_kwargs={"kde":False})

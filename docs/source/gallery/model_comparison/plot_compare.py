@@ -13,7 +13,7 @@ import pandas as pd
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 
 cmp_df = pd.DataFrame({"elpd_loo": [-4.5, -14.3, -16.2], 

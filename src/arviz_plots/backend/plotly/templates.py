@@ -1,17 +1,17 @@
 """Plotly templates for ArviZ styles."""
 import plotly.graph_objects as go
 
-arviz_clean_template = go.layout.Template()
+arviz_variat_template = go.layout.Template()
 
-arviz_clean_template.layout.paper_bgcolor = "white"
-arviz_clean_template.layout.plot_bgcolor = "white"
-arviz_clean_template.layout.polar.bgcolor = "white"
-arviz_clean_template.layout.ternary.bgcolor = "white"
+arviz_variat_template.layout.paper_bgcolor = "white"
+arviz_variat_template.layout.plot_bgcolor = "white"
+arviz_variat_template.layout.polar.bgcolor = "white"
+arviz_variat_template.layout.ternary.bgcolor = "white"
 axis_common = {"showgrid": False, "ticks": "outside", "showline": True, "zeroline": False}
-arviz_clean_template.layout.xaxis = axis_common
-arviz_clean_template.layout.yaxis = axis_common
+arviz_variat_template.layout.xaxis = axis_common
+arviz_variat_template.layout.yaxis = axis_common
 
-arviz_clean_template.layout.colorway = [
+arviz_variat_template.layout.colorway = [
     "#36acc6",
     "#f66d7f",
     "#fac364",
