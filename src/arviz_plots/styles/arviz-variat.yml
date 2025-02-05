@@ -1,0 +1,22 @@
+attrs:
+    Plot:
+        background_fill_color: white
+        border_fill_color: white
+        outline_line_color: '#262626'
+        outline_line_width: 0.8
+    Axis:
+        axis_line_color: null
+        major_tick_line_color: '#262626'
+        minor_tick_line_alpha: 0
+    Grid:
+        grid_line_color: null
+    Title:
+        text_color: 'black'
+    Text:
+        color: '#262626'
+        text_font_style: 'bold'
+    Cycler:
+        colors : [
+                '#36acc6', '#f66d7f', '#fac364', '#7c2695', '#228306',
+                '#a252f4', '#63f0ea', '#000000', '#6f6f6f', '#b7b7b7'
+            ]

@@ -1,4 +1,5 @@
 """Bokeh interface layer."""
+# pylint: disable=protected-access
 
 import warnings
 
@@ -32,6 +33,18 @@ def get_default_aes(aes_key, n, kwargs=None):
                 '#a96b59', '#e76300', '#b9ac70', '#717581', '#92dadd'
             ]
             # fmt: on
+            try:
+                from bokeh.io import curdoc
+
+                template_colors = curdoc().theme._json["attrs"][
+                    "Cycler"
+                ][  # pylint: disable=protected-access
+                    "colors"
+                ]
+            except (ImportError, KeyError):
+                template_colors = None
+            vals = vals if template_colors is None else template_colors
+
         elif aes_key in {"linestyle", "line_dash"}:
             vals = ["solid", "dashed", "dotted", "dashdot"]
         elif aes_key == "marker":
