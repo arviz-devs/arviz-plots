@@ -9,7 +9,7 @@ from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import hline, labelled_title, line_xy, scatter_xy, set_ticks
+from arviz_plots.visuals import hline, labelled_title, line_xy, scatter_xy, set_xticks
 
 
 def plot_psense_quantities(
@@ -32,7 +32,7 @@ def plot_psense_quantities(
     plot_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot power scaled posteriors.
+    """Plot power scaled posterior quantities.
 
     Parameters
     ----------
@@ -52,11 +52,11 @@ def plot_psense_quantities(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
-    prior_var_names : str, optional
+    prior_var_names : str, optional.
         Name of the log-prior variables to include in the power scaling sensitivity diagnostic
-    likelihood_var_names : str, optional
+    likelihood_var_names : str, optional.
         Name of the log-likelihood variables to include in the power scaling sensitivity diagnostic
-    prior_coords : dict, optional
+    prior_coords : dict, optional.
         Coordinates defining a subset over the group element for which to
         compute the log-prior sensitivity diagnostic
     likelihood_coords : dict, optional
@@ -81,7 +81,7 @@ def plot_psense_quantities(
         * likelihood_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * likelihood_lines -> passed to :func:`~arviz_plots.visuals.line_xy`
         * mcse -> passed to :func:`~arviz_plots.visuals.hline`
-        * ticks -> passed to :func:`~arviz_plots.visuals.set_ticks`
+        * ticks -> passed to :func:`~arviz_plots.visuals.set_xticks`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
     pc_kwargs : mapping
@@ -93,8 +93,8 @@ def plot_psense_quantities(
 
     Examples
     --------
-    Select a single variable and plot the mean, standard deviation,
-    and 25th and 75th percentiles
+    Select a single parameter, one of the two likelihoods, and plot the mean, standard deviation,
+    and 25th percentile.
 
     .. plot::
         :context: close-figs
@@ -105,7 +105,8 @@ def plot_psense_quantities(
         >>> rugby = load_arviz_data('rugby')
         >>> plot_psense_quantities(rugby,
         >>>                        var_names=["sd_att"],
-        >>>                        quantities=["mean", "sd", "0.25", "0.75"])
+        >>>                        likelihood_var_names=["home_points"],
+        >>>                        quantities=["mean", "sd", "0.25"])
 
 
     .. minigallery:: plot_psense_quantities
@@ -355,7 +356,7 @@ def plot_psense_quantities(
     _, _, ticks_ignore = filter_aes(plot_collection, aes_map, "ticks", sample_dims)
 
     plot_collection.map(
-        set_ticks,
+        set_xticks,
         "ticks",
         values=alphas_p1,
         labels=alphas_p1_labels,

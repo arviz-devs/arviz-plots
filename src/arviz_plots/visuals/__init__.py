@@ -273,7 +273,7 @@ def remove_ticks(da, target, backend, **kwargs):
     plot_backend.remove_ticks(target, **kwargs)
 
 
-def set_ticks(da, target, backend, values, labels, **kwargs):
-    """Dispatch to ``set_ticks`` function in backend."""
+def set_xticks(da, target, backend, values, labels, **kwargs):
+    """Dispatch to ``set_xticks`` function in backend."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_backend.xticks(values, labels, target, **kwargs)
