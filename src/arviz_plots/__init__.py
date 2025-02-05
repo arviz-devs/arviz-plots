@@ -315,9 +315,9 @@ except ImportError:
 # Add ArviZ styles to Plotly styles
 try:
     import plotly.io as pio
-    from arviz_plots.backend.plotly.templates import arviz_clean_template
+    from arviz_plots.backend.plotly.templates import arviz_variat_template
 
-    pio.templates["arviz-clean"] = arviz_clean_template
+    pio.templates["arviz-variat"] = arviz_variat_template
 
 except ImportError:
     pass

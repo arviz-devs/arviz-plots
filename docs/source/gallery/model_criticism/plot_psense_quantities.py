@@ -13,7 +13,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 idata = load_arviz_data("rugby")
 pc = azp.plot_psense_quantities(

@@ -100,7 +100,7 @@ def plot_psense_quantities(
         :context: close-figs
 
         >>> from arviz_plots import plot_psense_quantities, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> rugby = load_arviz_data('rugby')
         >>> plot_psense_quantities(rugby,

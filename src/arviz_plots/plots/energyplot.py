@@ -73,7 +73,7 @@ def plot_energy(
         :context: close-figs
 
         >>> from arviz_plots import plot_energy, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> schools = load_arviz_data('centered_eight')
         >>> plot_energy(schools)

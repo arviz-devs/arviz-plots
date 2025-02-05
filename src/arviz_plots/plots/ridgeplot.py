@@ -135,7 +135,7 @@ def plot_ridge(
         :context: close-figs
 
         >>> from arviz_plots import plot_ridge, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
         >>> non_centered = load_arviz_data('non_centered_eight')
@@ -152,7 +152,7 @@ def plot_ridge(
     Single model ridge plot with color mapped to the variable (mapping which is also applied
     to the labels) and alternate shading per school.
     Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
-    constrained layout (set by the "arviz-clean" theme) and to avoid having the labels
+    constrained layout (set by the "arviz-variat" theme) and to avoid having the labels
     too squished we'll set the ``width_ratios`` for
     :func:`~arviz_plots.backend.create_plotting_grid` via ``pc_kwargs``.
 

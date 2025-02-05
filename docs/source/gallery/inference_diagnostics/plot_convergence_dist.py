@@ -14,7 +14,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 data = load_arviz_data("radon")
 pc = azp.plot_convergence_dist(
