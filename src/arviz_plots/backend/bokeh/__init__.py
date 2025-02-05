@@ -36,11 +36,7 @@ def get_default_aes(aes_key, n, kwargs=None):
             try:
                 from bokeh.io import curdoc
 
-                template_colors = curdoc().theme._json["attrs"][
-                    "Cycler"
-                ][  # pylint: disable=protected-access
-                    "colors"
-                ]
+                template_colors = curdoc().theme._json["attrs"]["Cycler"]["colors"]
             except (ImportError, KeyError):
                 template_colors = None
             vals = vals if template_colors is None else template_colors
