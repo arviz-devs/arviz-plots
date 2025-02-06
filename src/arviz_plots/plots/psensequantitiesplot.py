@@ -236,7 +236,15 @@ def plot_psense_quantities(
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", ["quantities"])
-        pc_kwargs.setdefault("rows", ["__variable__"])
+        pc_kwargs.setdefault(
+            "rows",
+            ["__variable__"]
+            + [
+                dim
+                for dim in distribution.dims
+                if dim not in sample_dims + ["component_group", "alpha"]
+            ],
+        )
 
         figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
         figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
