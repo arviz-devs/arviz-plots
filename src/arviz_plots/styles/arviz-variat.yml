@@ -13,7 +13,7 @@ attrs:
     Title:
         text_color: 'black'
     Text:
-        color: '#262626'
+        text_color: '#262626'
         text_font_style: 'bold'
     Cycler:
         colors : [
