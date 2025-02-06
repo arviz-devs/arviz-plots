@@ -9,7 +9,7 @@ from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import hline, labelled_title, line_xy, scatter_xy, set_xticks
+from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scatter_xy, set_xticks
 
 
 def plot_psense_quantities(
@@ -371,6 +371,23 @@ def plot_psense_quantities(
         ignore_aes=ticks_ignore,
         **ticks_kwargs,
     )
+
+    # set xlabel
+    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
+    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+    if xlabel_kwargs is not False:
+        if "color" not in xlabels_aes:
+            xlabel_kwargs.setdefault("color", "black")
+
+        xlabel_kwargs.setdefault("text", "Power-scaling α")
+
+        plot_collection.map(
+            labelled_x,
+            "xlabel",
+            ignore_aes=xlabels_ignore,
+            subset_info=True,
+            **xlabel_kwargs,
+        )
 
     # title
     title_kwargs = copy(plot_kwargs.get("title", {}))
