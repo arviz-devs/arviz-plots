@@ -107,6 +107,18 @@ def ecdf_line(values, target, backend, **kwargs):
     return plot_backend.line(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
 
 
+def vline(values, target, backend, **kwargs):
+    """Plot a vertical line that spans the whole figure independently of zoom."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.vline(values.item(), target, **kwargs)
+
+
+def hline(values, target, backend, **kwargs):
+    """Plot a horizontal line that spans the whole figure independently of zoom."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.hline(values.item(), target, **kwargs)
+
+
 def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y=None, y_top=None, **kwargs):
     """Fill the region between to given y values."""
     if "kwarg" in da.dims:
@@ -259,3 +271,9 @@ def remove_ticks(da, target, backend, **kwargs):
     """Dispatch to ``remove_axis`` function in backend."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_backend.remove_ticks(target, **kwargs)
+
+
+def set_xticks(da, target, backend, values, labels, **kwargs):
+    """Dispatch to ``set_xticks`` function in backend."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    plot_backend.xticks(values, labels, target, **kwargs)

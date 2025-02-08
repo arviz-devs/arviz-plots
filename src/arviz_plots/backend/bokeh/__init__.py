@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 from bokeh.layouts import GridBox, gridplot
-from bokeh.models import GridPlot, Range1d, Title
+from bokeh.models import GridPlot, Range1d, Span, Title
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
@@ -35,7 +35,7 @@ def get_default_aes(aes_key, n, kwargs=None):
         elif aes_key in {"linestyle", "line_dash"}:
             vals = ["solid", "dashed", "dotted", "dashdot"]
         elif aes_key == "marker":
-            vals = ["circle", "cross", "triangle", "x", "diamond"]
+            vals = ["circle", "cross", "triangle", "x", "diamond", "square"]
         else:
             return get_agnostic_default_aes(aes_key, n)
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
@@ -363,6 +363,22 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     if y_top.size == 1:
         y_top = y_top.item()
     return target.varea(x=x, y1=y_bottom, y2=y_top, **artist_kws)
+
+
+def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to bokeh for a vertical line spanning the whole axes."""
+    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
+    span_element = Span(location=x, dimension="height", **_filter_kwargs(kwargs, artist_kws))
+    target.add_layout(span_element)
+    return span_element
+
+
+def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to bokeh for a horizontal line spanning the whole axes."""
+    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
+    span_element = Span(location=y, dimension="width", **_filter_kwargs(kwargs, artist_kws))
+    target.add_layout(span_element)
+    return span_element
 
 
 # general plot appeareance

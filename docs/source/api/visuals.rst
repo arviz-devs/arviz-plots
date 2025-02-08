@@ -17,6 +17,8 @@ Data plotting elements
    scatter_x
    scatter_xy
    ecdf_line
+   vline
+   hline
    hist
 
 Data and axis annotating elements
@@ -41,3 +43,4 @@ Plot customization elements
    ticklabel_props
    remove_axis
    remove_ticks
+   set_xticks

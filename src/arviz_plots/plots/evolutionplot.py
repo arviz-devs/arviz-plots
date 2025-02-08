@@ -123,7 +123,7 @@ def plot_ess_evolution(
         :context: close-figs
 
         >>> from arviz_plots import plot_ess_evolution, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> non_centered = load_arviz_data('non_centered_eight')
         >>> pc = plot_ess_evolution(
