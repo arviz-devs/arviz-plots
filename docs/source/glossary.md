@@ -32,9 +32,7 @@ faceting
 faceted
   Generate multiple similar {term}`plot` elements with each of them
   referring to a specific property or value of the data.
-
-Faceting is the process of segmenting your plotting area into a grid of smaller plots, each of which shows a distinct subset of the data depending on one or more categorical factors.
-
+  
 :::
 
 ## Equivalences with library specific objects
