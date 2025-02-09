@@ -151,7 +151,7 @@ def remove_row_col_from_doc(docstring):
 class PlotlyPlot:
     """Custom class to represent a :term:`plot` in Plotly.
 
-    Plotly supports :term:`facetting` but it doesn't have any object that represents
+    Plotly supports :term:`faceting` but it doesn't have any object that represents
     a :term:`plot`, instead, plotting happens only though the Plotly figure
     (which represents the :term:`chart`) indicating the row and column indexes
     in case plotting should happen to a single :term:`plot`.

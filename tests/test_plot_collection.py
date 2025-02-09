@@ -26,7 +26,7 @@ def dataset(seed=31):
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly"])
 @pytest.mark.usefixtures("clean_plots")
 @pytest.mark.usefixtures("check_skips")
-class TestFacetting:
+class Testfaceting:
     def test_wrap(self, dataset, backend):
         pc = PlotCollection.wrap(
             dataset[["theta", "eta"]], backend=backend, cols=["hierarchy"], col_wrap=4

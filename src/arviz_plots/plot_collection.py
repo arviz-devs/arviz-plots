@@ -66,7 +66,7 @@ def subset_da(da, sel):
 
 
 def process_facet_dims(data, facet_dims):
-    """Process facetting dimensions.
+    """Process faceting dimensions.
 
     It takes into account the ``__variable__`` "special dimension name" and helps find out
     how many plots are needed.
@@ -87,7 +87,7 @@ def process_facet_dims(data, facet_dims):
         missing_dims = {k: v for k, v in missing_dims.items() if v}
         if any(missing_dims.values()):
             raise ValueError(
-                "All variables must have all facetting dimensions, but found the following "
+                "All variables must have all faceting dimensions, but found the following "
                 f"dims to be missing in these variables: {missing_dims}"
             )
         n_facets = np.prod([data.sizes[dim] for dim in facet_dims])
@@ -369,7 +369,7 @@ class PlotCollection:
         Examples
         --------
         Initialize a `PlotCollection` with the rugby dataset as data.
-        Facetting and aesthetics mapping are independent. Thus, as
+        faceting and aesthetics mapping are independent. Thus, as
         we are limiting ourselves to the use of this method, we can
         provide an empty DataTree as ``viz_dt``.
 
@@ -641,7 +641,7 @@ class PlotCollection:
             it can also be combined with other dimensions.
         col_wrap : int, default 4
             Number of columns in the generated grid. If more than `col_wrap`
-            plots are needed from :term:`facetting` according to `cols`,
+            plots are needed from :term:`faceting` according to `cols`,
             new rows are created.
         backend : str, optional
             Plotting backend.
@@ -959,7 +959,7 @@ class PlotCollection:
             applied exactly once per :term:`plot`. Defaults to the value of `data`.
         coords : mapping, optional
             Dictionary of {coordinate names : coordinate values} that should
-            be used to subset the aes, data and viz objects before any facetting
+            be used to subset the aes, data and viz objects before any faceting
             or aesthetics mapping is applied.
         ignore_aes : set, optional
             Set of aesthetics present in ``aes`` that should be ignore for this
