@@ -1,7 +1,7 @@
 """
 # ESS Quantile plot
 
-Facetted quantile ESS plot
+faceted quantile ESS plot
 
 ---
 

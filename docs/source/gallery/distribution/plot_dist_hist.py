@@ -1,7 +1,7 @@
 """
 # Histogram plot
 
-Facetted histogram plots for 1D marginals of the distribution
+faceted histogram plots for 1D marginals of the distribution
 
 ---
 
