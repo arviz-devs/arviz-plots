@@ -486,7 +486,7 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a label to the y axis."""
     kwargs = {"size": size, "color": color}
     target.update_yaxes(
-        title=str_to_plotly_html(string), titlefont=_filter_kwargs(kwargs, artist_kws)
+        title={"text": str_to_plotly_html(string), "font": _filter_kwargs(kwargs, artist_kws)}
     )
 
 
@@ -494,7 +494,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a label to the y axis."""
     kwargs = {"size": size, "color": color}
     target.update_xaxes(
-        title=str_to_plotly_html(string), titlefont=_filter_kwargs(kwargs, artist_kws)
+        title={"text": str_to_plotly_html(string), "font": _filter_kwargs(kwargs, artist_kws)}
     )
 
 
