@@ -7,6 +7,7 @@ from .energyplot import plot_energy
 from .essplot import plot_ess
 from .evolutionplot import plot_ess_evolution
 from .forestplot import plot_forest
+from .pavacalibrationplot import plot_pava_calibration
 from .psensedistplot import plot_psense_dist
 from .psensequantitiesplot import plot_psense_quantities
 from .ridgeplot import plot_ridge
@@ -24,6 +25,7 @@ __all__ = [
     "plot_ess",
     "plot_ess_evolution",
     "plot_ridge",
+    "plot_pava_calibration",
     "plot_psense_dist",
     "plot_psense_quantities",
 ]
