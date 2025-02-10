@@ -1,7 +1,7 @@
 """
 # ESS Local plot
 
-Facetted local ESS plot
+faceted local ESS plot
 
 ---
 

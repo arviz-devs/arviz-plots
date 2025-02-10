@@ -581,7 +581,7 @@ def plot_ess_evolution(
             **min_ess_kwargs,
         )
 
-    # plot titles for each facetted subplot
+    # plot titles for each faceted subplot
     title_kwargs = copy(plot_kwargs.get("title", {}))
 
     if title_kwargs is not False:

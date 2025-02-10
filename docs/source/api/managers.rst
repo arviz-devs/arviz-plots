@@ -1,10 +1,10 @@
 =============================================
-Managers for facetting and aesthetics mapping
+Managers for faceting and aesthetics mapping
 =============================================
 The classes in this module lay at the core of the library,
 and are consequently available at the ``arviz_plots`` top level namespace.
 
-They abstract all information regarding :term:`facetting` and :term:`aesthetic mapping`
+They abstract all information regarding :term:`faceting` and :term:`aesthetic mapping`
 in our :term:`chart` to prevent duplication and ensure coherence between
 the different functions.
 
@@ -43,7 +43,7 @@ Attributes
    PlotCollection.base_loop_dims
    PlotCollection.data
 
-Facetting and aesthetics mapping
+faceting and aesthetics mapping
 ................................
 
 .. autosummary::

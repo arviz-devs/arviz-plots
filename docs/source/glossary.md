@@ -22,16 +22,17 @@ chart
 plot
 plots
   Area (or areas) where the data will be plotted into. A {term}`chart`
-  can contain multiple {term}`facetted` plots.
+  can contain multiple {term}`faceted` plots.
 
 artist
 artists
   Visual element added by `arviz-plots`
 
-facetting
-facetted
+faceting
+faceted
   Generate multiple similar {term}`plot` elements with each of them
   referring to a specific property or value of the data.
+  
 :::
 
 ## Equivalences with library specific objects

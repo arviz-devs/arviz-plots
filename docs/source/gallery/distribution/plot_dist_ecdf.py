@@ -1,7 +1,7 @@
 """
 # ECDF plot
 
-Facetted ECDF plots for 1D marginals of the distribution
+faceted ECDF plots for 1D marginals of the distribution
 
 ---
 

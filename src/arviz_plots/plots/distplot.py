@@ -43,7 +43,7 @@ def plot_dist(
 ):
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
 
-    Generate :term:`facetted` :term:`plots` with: a graphical representation of 1D marginal
+    Generate :term:`faceted` :term:`plots` with: a graphical representation of 1D marginal
     densities (as KDE, histogram, ECDF or dotplot), a credible interval and a point estimate.
 
     Parameters

@@ -1,7 +1,7 @@
 """
 # Trace plot
 
-Facetted plot with MCMC traces for each variable
+faceted plot with MCMC traces for each variable
 
 ---
 
