@@ -2,14 +2,14 @@
 from copy import copy
 from importlib import import_module
 
-import numpy as np
-from arviz_base import extract, rcParams
+from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import isotonic_fit
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes
 from arviz_plots.visuals import (
+    dline,
     fill_between_y,
     labelled_title,
     labelled_x,
@@ -25,7 +25,7 @@ def plot_pava_calibration(
     ci_prob=None,
     data_pairs=None,
     var_names=None,
-    filter_vars=None,
+    filter_vars=None,  # pylint: disable=unused-argument
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
     plot_collection=None,
@@ -94,7 +94,7 @@ def plot_pava_calibration(
 
     Examples
     --------
-    Plot the PAVA calibration plot for a classification dataset.
+    Plot the PAVA calibration plot for the rugby dataset.
 
     .. plot::
         :context: close-figs
@@ -102,8 +102,8 @@ def plot_pava_calibration(
         >>> from arviz_plots import plot_pava_calibration, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> dt_class = load_arviz_data('classification10d')
-        >>> plot_pava_calibration(dt_class, ci_prob=0.90)
+        >>> dt = load_arviz_data('rugby')
+        >>> plot_pava_calibration(dt, ci_prob=0.90)
 
 
     .. minigallery:: plot_pava_calibration
@@ -136,33 +136,7 @@ def plot_pava_calibration(
     if data_pairs is None:
         data_pairs = (var_names, var_names)
 
-    ds_posterior_predictive = extract(
-        dt,
-        var_names=data_pairs[0],
-        filter_vars=filter_vars,
-        group="posterior_predictive",
-        keep_dataset=True,
-    )
-
-    ds_observed = extract(
-        dt,
-        var_names=data_pairs[1],
-        filter_vars=filter_vars,
-        group="observed_data",
-        combined=False,
-    )
-
-    # We should not do this once isotonic_fit is implemented in arviz_stats as an accessor
-    pp_vars = list(ds_posterior_predictive.data_vars)
-    if len(pp_vars) > 1:
-        raise ValueError(f"Only one variable can be plotted at a time. Choose one of {pp_vars}")
-
-    # We should not do this once isotonic_fit is implemented in arviz_stats as an accessor
-    pred = ds_posterior_predictive.mean(dim="sample").to_dataarray().values.flatten()
-
-    regression_values, unique_pred_sorted, regression_interval = isotonic_fit(
-        pred, ds_observed.values, n_bootstaps, ci_prob
-    )
+    ds_calibration = isotonic_fit(dt, var_names, n_bootstaps, ci_prob)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
@@ -172,16 +146,18 @@ def plot_pava_calibration(
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("cols", None)
         pc_kwargs.setdefault("rows", None)
+        pc_kwargs.setdefault("cols", ["__variable__"])
 
         figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
         figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+        col_dims = pc_kwargs["cols"]
+        row_dims = pc_kwargs["rows"]
         if figsize is None:
             figsize = plot_bknd.scale_fig_size(
                 figsize,
-                rows=2,
-                cols=1,
+                rows=process_facet_dims(ds_calibration, row_dims)[0],
+                cols=process_facet_dims(ds_calibration, col_dims)[0],
                 figsize_units=figsize_units,
             )
             figsize_units = "dots"
@@ -189,7 +165,7 @@ def plot_pava_calibration(
         pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
 
         plot_collection = PlotCollection.grid(
-            ds_posterior_predictive,
+            ds_calibration,
             backend=backend,
             **pc_kwargs,
         )
@@ -209,21 +185,15 @@ def plot_pava_calibration(
         reference_ls_kwargs.setdefault("color", "grey")
         reference_ls_kwargs.setdefault("linestyle", lines[1])
 
-    x_min = regression_values.min()
-    x_max = regression_values.max()
-
-    x_min = min(np.min(unique_pred_sorted), np.min(regression_interval[0]))
-    x_max = max(np.max(unique_pred_sorted), np.max(regression_interval[1]))
-
-    plot_collection.map(
-        line_xy,
-        "reference_line",
-        data=ds_posterior_predictive,
-        x=[x_min, x_max],
-        y=[x_min, x_max],
-        ignore_aes=reference_ls_ignore,
-        **reference_ls_kwargs,
-    )
+        plot_collection.map(
+            dline,
+            "reference_line",
+            data=ds_calibration,
+            x=ds_calibration.sel(plot_axis="x"),
+            # y=ds_calibration.sel(plot_axis="y"),
+            ignore_aes=reference_ls_ignore,
+            **reference_ls_kwargs,
+        )
 
     ## markers
     calibration_ms_kwargs = copy(plot_kwargs.get("calibration_line", {}))
@@ -234,15 +204,13 @@ def plot_pava_calibration(
         )
         calibration_ms_kwargs.setdefault("color", colors[0])
 
-    plot_collection.map(
-        scatter_xy,
-        "calibration_markers",
-        data=ds_posterior_predictive,
-        x=unique_pred_sorted,
-        y=regression_values,
-        ignore_aes=calibration_ms_ignore,
-        **calibration_ms_kwargs,
-    )
+        plot_collection.map(
+            scatter_xy,
+            "calibration_markers",
+            data=ds_calibration,
+            ignore_aes=calibration_ms_ignore,
+            **calibration_ms_kwargs,
+        )
 
     ## lines
     calibration_ls_kwargs = copy(plot_kwargs.get("calibration_line", {}))
@@ -253,15 +221,13 @@ def plot_pava_calibration(
         )
         calibration_ls_kwargs.setdefault("color", colors[0])
 
-    plot_collection.map(
-        line_xy,
-        "calibration_line",
-        data=ds_posterior_predictive,
-        x=unique_pred_sorted,
-        y=regression_values,
-        ignore_aes=calibration_ls_ignore,
-        **calibration_ls_kwargs,
-    )
+        plot_collection.map(
+            line_xy,
+            "calibration_line",
+            data=ds_calibration,
+            ignore_aes=calibration_ls_ignore,
+            **calibration_ls_kwargs,
+        )
 
     ci_kwargs = copy(plot_kwargs.get("ci", {}))
     _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
@@ -269,16 +235,16 @@ def plot_pava_calibration(
         ci_kwargs.setdefault("color", colors[0])
         ci_kwargs.setdefault("alpha", 0.25)
 
-    plot_collection.map(
-        fill_between_y,
-        "ci",
-        data=ds_posterior_predictive,
-        x=unique_pred_sorted,
-        y_bottom=regression_interval[0],
-        y_top=regression_interval[1],
-        ignore_aes=ci_ignore,
-        **ci_kwargs,
-    )
+        plot_collection.map(
+            fill_between_y,
+            "ci",
+            data=ds_calibration,
+            x=ds_calibration.sel(plot_axis="x"),
+            y_bottom=ds_calibration.sel(plot_axis="y_bottom"),
+            y_top=ds_calibration.sel(plot_axis="y_top"),
+            ignore_aes=ci_ignore,
+            **ci_kwargs,
+        )
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
@@ -318,13 +284,14 @@ def plot_pava_calibration(
     title_kwargs = copy(plot_kwargs.get("title", {}))
     _, _, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
 
-    plot_collection.map(
-        labelled_title,
-        "title",
-        ignore_aes=title_ignore,
-        subset_info=True,
-        labeller=labeller,
-        **title_kwargs,
-    )
+    if title_kwargs is not False:
+        plot_collection.map(
+            labelled_title,
+            "title",
+            ignore_aes=title_ignore,
+            subset_info=True,
+            labeller=labeller,
+            **title_kwargs,
+        )
 
     return plot_collection
