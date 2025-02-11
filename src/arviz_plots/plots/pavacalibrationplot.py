@@ -102,8 +102,8 @@ def plot_pava_calibration(
         >>> from arviz_plots import plot_pava_calibration, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> class = load_arviz_data('classification10d')
-        >>> plot_pava_calibration(class, ci_prob=0.90)
+        >>> dt_class = load_arviz_data('classification10d')
+        >>> plot_pava_calibration(dt_class, ci_prob=0.90)
 
 
     .. minigallery:: plot_pava_calibration
