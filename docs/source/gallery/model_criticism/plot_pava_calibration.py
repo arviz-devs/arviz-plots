@@ -15,9 +15,9 @@ import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-idata = load_arviz_data("classification10d")
+dt = load_arviz_data("classification10d")
 pc = azp.plot_pava_calibration(
-    idata,
+    dt,
     backend="none",
 )
 pc.show()
