@@ -53,6 +53,16 @@ def plot_compare(
     -------
     axes :bokeh figure, matplotlib axes or plotly figure
 
+    References
+    ----------
+    .. Vehtari et al. *Practical Bayesian model evaluation using leave-one-out cross-validation
+    and WAIC*. Statistics and Computing. 27(5) (2017). https://doi.org/10.1007/s11222-016-9696-4.
+    Online, arXiv preprint arXiv:1507.04544.
+
+    .. Yao et al. *Using stacking to average Bayesian predictive distributions*
+    Bayesian Analysis, 13, 3 (2018). https://doi.org/10.1214/17-BA1091
+    Online, arXiv preprint arXiv:1704.02030.
+
     See Also
     --------
     plot_elpd : Plot pointwise elpd differences between two or more models.
