@@ -44,6 +44,10 @@ def plot_ess_evolution(
 ):
     """Plot estimated effective sample size plots for increasing number of iterations.
 
+    Roughly speaking, the eﬀective sample size of a quantity of interest captures how
+    many independent draws contain the same amount of information as the dependent sample
+    obtained by the MCMC algorithm. The higher the ESS the better. See [1]_ for more details.
+
     Parameters
     ----------
     dt : DataTree or dict of {str : DataTree}
@@ -196,6 +200,11 @@ def plot_ess_evolution(
 
     .. minigallery:: plot_ess_evolution
 
+    References
+    ----------
+    .. [1] Vehtari et al. *Rank-normalization, folding, and localization: An improved Rhat for
+        assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
+        https://doi.org/10.1214/20-BA1221. arXiv preprint https://arxiv.org/abs/1903.08008
     """
     # initial defaults
     if sample_dims is None:

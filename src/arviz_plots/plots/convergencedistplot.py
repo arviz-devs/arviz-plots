@@ -35,6 +35,8 @@ def plot_convergence_dist(
 ):
     """Plot the distribution of convergence diagnostics (ESS and/or R-hat).
 
+    Information on how the diagnostics are computed can be found in [1]_.
+
     Parameters
     ----------
     dt : DataTree
@@ -128,6 +130,12 @@ def plot_convergence_dist(
 
     .. minigallery:: plot_convergence_dist
 
+
+    References
+    ----------
+    .. [1] Vehtari et al. *Rank-normalization, folding, and localization: An improved Rhat for
+        assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
+        https://doi.org/10.1214/20-BA1221. arXiv preprint https://arxiv.org/abs/1903.08008
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
