@@ -548,7 +548,7 @@ def plot_ess(
     # plot x and y axis labels
     # Add varnames as x and y labels
     _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in labels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -565,7 +565,7 @@ def plot_ess(
         )
 
     _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = plot_kwargs.get("ylabel", {}).copy()
+    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in labels_aes:
             ylabel_kwargs.setdefault("color", "black")
