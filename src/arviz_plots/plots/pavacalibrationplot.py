@@ -92,6 +92,12 @@ def plot_pava_calibration(
     -------
     PlotCollection
 
+    References
+    ----------
+    Dimitriadis, T., Gneiting, T., and Jordan, A. I. (2021).
+    Stable reliability diagrams for probabilistic classifiers.
+    PNAS, 118(8):e2016191118. https://doi.org/10.1073/pnas.2016191118
+
     Examples
     --------
     Plot the PAVA calibration plot for the rugby dataset.
@@ -253,7 +259,7 @@ def plot_pava_calibration(
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "forecasted value")
+        xlabel_kwargs.setdefault("text", "forecast value")
 
         plot_collection.map(
             labelled_x,
