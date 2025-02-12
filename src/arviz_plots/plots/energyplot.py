@@ -81,6 +81,10 @@ def plot_energy(
 
     .. minigallery:: plot_energy
 
+    References
+    ----------
+    .. [1] Betancourt. Diagnosing Suboptimal Cotangent Disintegrations in
+    Hamiltonian Monte Carlo. (2016) https://arxiv.org/abs/1604.00695
     """
     if kind is None:
         kind = rcParams["plot.density_kind"]
