@@ -20,4 +20,3 @@ python:
        - doc
        - matplotlib
        - bokeh
-       - plotly
