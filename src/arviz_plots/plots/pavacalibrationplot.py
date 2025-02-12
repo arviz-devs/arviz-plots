@@ -111,7 +111,7 @@ def plot_pava_calibration(
     References
     ----------
     .. [1] Dimitriadis et al *Stable reliability diagrams for probabilistic classifiers*.
-    PNAS, 118(8) (2021). https://doi.org/10.1073/pnas.2016191118
+        PNAS, 118(8) (2021). https://doi.org/10.1073/pnas.2016191118
 
     """
     if ci_prob is None:

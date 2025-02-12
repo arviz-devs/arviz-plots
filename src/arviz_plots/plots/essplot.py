@@ -208,8 +208,8 @@ def plot_ess(
     References
     ----------
     .. [1] Vehtari et al. *Rank-normalization, folding, and localization: An improved Rhat for
-    assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
-    https://doi.org/doi.org/10.1214/20-BA1221. Online, arXiv preprint arXiv:1903.08008
+        assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
+        https://doi.org/doi.org/10.1214/20-BA1221. Online, arXiv preprint arXiv:1903.08008
     """
     # initial defaults
     if sample_dims is None:
