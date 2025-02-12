@@ -284,14 +284,14 @@ def plot_psense_quantities(
         prior_ms_kwargs.setdefault("marker", markers[0])
         prior_ms_kwargs.setdefault("color", colors[3])
 
-    plot_collection.map(
-        scatter_xy,
-        "prior_markers",
-        data=quantities_ds.sel(component_group="prior"),
-        x=quantities_ds.alpha,
-        ignore_aes=prior_ms_ignore,
-        **prior_ms_kwargs,
-    )
+        plot_collection.map(
+            scatter_xy,
+            "prior_markers",
+            data=quantities_ds.sel(component_group="prior"),
+            x=quantities_ds.alpha,
+            ignore_aes=prior_ms_ignore,
+            **prior_ms_kwargs,
+        )
     ## lines
     prior_ls_kwargs = copy(plot_kwargs.get("prior_lines", {}))
 
@@ -299,14 +299,14 @@ def plot_psense_quantities(
         _, _, prior_ms_ignore = filter_aes(plot_collection, aes_map, "prior_lines", sample_dims)
         prior_ls_kwargs.setdefault("color", colors[3])
 
-    plot_collection.map(
-        line_xy,
-        "prior_lines",
-        data=quantities_ds.sel(component_group="prior"),
-        x=quantities_ds.alpha,
-        ignore_aes=prior_ms_ignore,
-        **prior_ls_kwargs,
-    )
+        plot_collection.map(
+            line_xy,
+            "prior_lines",
+            data=quantities_ds.sel(component_group="prior"),
+            x=quantities_ds.alpha,
+            ignore_aes=prior_ms_ignore,
+            **prior_ls_kwargs,
+        )
 
     # plot quantities for likelihood-perturbations
     ## markers
@@ -320,14 +320,14 @@ def plot_psense_quantities(
         likelihood_ms_kwargs.setdefault("marker", markers[5])
         likelihood_ms_kwargs.setdefault("color", colors[4])
 
-    plot_collection.map(
-        scatter_xy,
-        "likelihood_markers",
-        data=quantities_ds.sel(component_group="likelihood"),
-        x=quantities_ds.alpha,
-        ignore_aes=likelihood_ms_ignore,
-        **likelihood_ms_kwargs,
-    )
+        plot_collection.map(
+            scatter_xy,
+            "likelihood_markers",
+            data=quantities_ds.sel(component_group="likelihood"),
+            x=quantities_ds.alpha,
+            ignore_aes=likelihood_ms_ignore,
+            **likelihood_ms_kwargs,
+        )
     ## lines
     likelihood_ls_kwargs = copy(plot_kwargs.get("likelihood_lines", {}))
 
@@ -338,14 +338,14 @@ def plot_psense_quantities(
 
         likelihood_ls_kwargs.setdefault("color", colors[4])
 
-    plot_collection.map(
-        line_xy,
-        "prior_lines",
-        data=quantities_ds.sel(component_group="likelihood"),
-        x=quantities_ds.alpha,
-        ignore_aes=likelihood_ls_ignore,
-        **likelihood_ls_kwargs,
-    )
+        plot_collection.map(
+            line_xy,
+            "prior_lines",
+            data=quantities_ds.sel(component_group="likelihood"),
+            x=quantities_ds.alpha,
+            ignore_aes=likelihood_ls_ignore,
+            **likelihood_ls_kwargs,
+        )
 
     # plot mcse
     if mcse:
@@ -374,7 +374,7 @@ def plot_psense_quantities(
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -393,13 +393,14 @@ def plot_psense_quantities(
     title_kwargs = copy(plot_kwargs.get("title", {}))
     _, _, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
 
-    plot_collection.map(
-        labelled_title,
-        "title",
-        ignore_aes=title_ignore,
-        subset_info=True,
-        labeller=labeller,
-        **title_kwargs,
-    )
+    if title_kwargs is not False:
+        plot_collection.map(
+            labelled_title,
+            "title",
+            ignore_aes=title_ignore,
+            subset_info=True,
+            labeller=labeller,
+            **title_kwargs,
+        )
 
     return plot_collection
