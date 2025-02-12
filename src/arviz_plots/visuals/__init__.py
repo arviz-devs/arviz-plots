@@ -119,6 +119,18 @@ def hline(values, target, backend, **kwargs):
     return plot_backend.hline(values.item(), target, **kwargs)
 
 
+def dline(da, target, backend, x=None, y=None, **kwargs):
+    """Plot a diagonal line across the x-y range."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    if x is None:
+        x = y
+    if y is None:
+        y = x
+    xy_min = min(np.min(x), np.min(y))
+    xy_max = max(np.max(x), np.max(y))
+    return plot_backend.line([xy_min, xy_max], [xy_min, xy_max], target, **kwargs)
+
+
 def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y=None, y_top=None, **kwargs):
     """Fill the region between to given y values."""
     if "kwarg" in da.dims:
