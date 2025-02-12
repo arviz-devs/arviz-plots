@@ -108,6 +108,11 @@ def plot_pava_calibration(
 
     .. minigallery:: plot_pava_calibration
 
+    References
+    ----------
+    .. [1] Dimitriadis et al *Stable reliability diagrams for probabilistic classifiers*.
+        PNAS, 118(8) (2021). https://doi.org/10.1073/pnas.2016191118
+
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
@@ -248,12 +253,12 @@ def plot_pava_calibration(
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "forecasted value")
+        xlabel_kwargs.setdefault("text", "forecast value")
 
         plot_collection.map(
             labelled_x,
@@ -265,7 +270,7 @@ def plot_pava_calibration(
 
     # set ylabel
     _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = plot_kwargs.get("ylabel", {}).copy()
+    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "black")

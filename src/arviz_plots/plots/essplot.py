@@ -46,6 +46,10 @@ def plot_ess(
 ):
     """Plot effective sample size plots.
 
+    Roughly speaking, the effective sample size of a quantity of interest captures how
+    many independent draws contain the same amount of information as the dependent sample
+    obtained by the MCMC algorithm. The higher the ESS the better. See [1]_ for more details.
+
     Parameters
     ----------
     dt : DataTree or dict of {str : DataTree}
@@ -201,6 +205,11 @@ def plot_ess(
 
     .. minigallery:: plot_ess
 
+    References
+    ----------
+    .. [1] Vehtari et al. *Rank-normalization, folding, and localization: An improved Rhat for
+        assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
+        https://doi.org/10.1214/20-BA1221. arXiv preprint https://arxiv.org/abs/1903.08008
     """
     # initial defaults
     if sample_dims is None:
@@ -548,7 +557,7 @@ def plot_ess(
     # plot x and y axis labels
     # Add varnames as x and y labels
     _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in labels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -565,7 +574,7 @@ def plot_ess(
         )
 
     _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = plot_kwargs.get("ylabel", {}).copy()
+    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in labels_aes:
             ylabel_kwargs.setdefault("color", "black")

@@ -42,7 +42,7 @@ funding = "https://opencollective.com/arviz"
 [project.optional-dependencies]
 matplotlib = ["matplotlib"]
 bokeh = ["bokeh"]
-plotly = ["plotly<6", "webcolors"]
+plotly = ["plotly", "webcolors"]
 test = [
     "hypothesis",
     "pytest",
@@ -59,6 +59,7 @@ doc = [
     "sphinx-design",
     "jupyter-sphinx",
     "h5netcdf",
+    "plotly<6",
 ]
 
 
