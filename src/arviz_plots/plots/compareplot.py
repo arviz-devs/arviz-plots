@@ -62,11 +62,11 @@ def plot_compare(
     ----------
     .. [1] Vehtari et al. *Practical Bayesian model evaluation using leave-one-out cross-validation
         and WAIC*. Statistics and Computing. 27(5) (2017).
-        https://doi.org/10.1007/s11222-016-9696-4. Online, arXiv preprint arXiv:1507.04544.
+        https://doi.org/10.1007/s11222-016-9696-4. arXiv preprint https://arxiv.org/abs/1507.04544.
 
     .. [2] Yao et al. *Using stacking to average Bayesian predictive distributions*
         Bayesian Analysis, 13, 3 (2018). https://doi.org/10.1214/17-BA1091
-        Online, arXiv preprint arXiv:1704.02030.
+        arXiv preprint https://arxiv.org/abs/1704.02030.
     """
     # Check if cmp_df contains the required information criterion
     information_criterion = ["elpd_loo", "elpd_waic"]
