@@ -6,7 +6,7 @@ Plot of the PAV-adjusted calibration for binary classifier.
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_psense_dist`
+API Documentation: {func}`~arviz_plots.plot_pava_calibration`
 :::
 """
 from arviz_base import load_arviz_data
