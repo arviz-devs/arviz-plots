@@ -1,4 +1,4 @@
-"""psense quantities plot code."""
+"""Plot ppc using PAV-adjusted calibration plot."""
 from copy import copy
 from importlib import import_module
 
@@ -19,7 +19,7 @@ from arviz_plots.visuals import (
 )
 
 
-def plot_pava_calibration(
+def plot_ppc_pava(
     dt,
     n_bootstaps=1000,
     ci_prob=None,
@@ -76,8 +76,8 @@ def plot_pava_calibration(
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * calibration_line -> passed to :func:`~arviz_plots.visuals.line_xy`
-        * calibration_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * lines -> passed to :func:`~arviz_plots.visuals.line_xy`
+        * markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * reference_line -> passed to :func:`~arviz_plots.visuals.line_xy`
         * ci -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
@@ -99,14 +99,14 @@ def plot_pava_calibration(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_pava_calibration, style
+        >>> from arviz_plots import plot_ppc_pava, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('rugby')
-        >>> plot_pava_calibration(dt, ci_prob=0.90)
+        >>> plot_ppc_pava(dt, ci_prob=0.90)
 
 
-    .. minigallery:: plot_pava_calibration
+    .. minigallery:: plot_ppc_pava
 
     References
     ----------
@@ -145,6 +145,7 @@ def plot_pava_calibration(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
+    markers = plot_bknd.get_default_aes("marker", 7, {})
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     if plot_collection is None:
@@ -201,34 +202,31 @@ def plot_pava_calibration(
         )
 
     ## markers
-    calibration_ms_kwargs = copy(plot_kwargs.get("calibration_line", {}))
+    calibration_ms_kwargs = copy(plot_kwargs.get("markers", {}))
 
     if calibration_ms_kwargs is not False:
-        _, _, calibration_ms_ignore = filter_aes(
-            plot_collection, aes_map, "calibration_line", sample_dims
-        )
+        _, _, calibration_ms_ignore = filter_aes(plot_collection, aes_map, "lines", sample_dims)
         calibration_ms_kwargs.setdefault("color", colors[0])
+        calibration_ms_kwargs.setdefault("marker", markers[6])
 
         plot_collection.map(
             scatter_xy,
-            "calibration_markers",
+            "markers",
             data=ds_calibration,
             ignore_aes=calibration_ms_ignore,
             **calibration_ms_kwargs,
         )
 
     ## lines
-    calibration_ls_kwargs = copy(plot_kwargs.get("calibration_line", {}))
+    calibration_ls_kwargs = copy(plot_kwargs.get("lines", {}))
 
     if calibration_ls_kwargs is not False:
-        _, _, calibration_ls_ignore = filter_aes(
-            plot_collection, aes_map, "calibration_line", sample_dims
-        )
+        _, _, calibration_ls_ignore = filter_aes(plot_collection, aes_map, "lines", sample_dims)
         calibration_ls_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
             line_xy,
-            "calibration_line",
+            "lines",
             data=ds_calibration,
             ignore_aes=calibration_ls_ignore,
             **calibration_ls_kwargs,
