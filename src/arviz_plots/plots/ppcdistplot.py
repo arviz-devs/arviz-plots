@@ -113,7 +113,7 @@ def plot_ppc_dist(
         >>> from arviz_base import load_arviz_data
         >>> radon = load_arviz_data('radon')
         >>> pc = plot_ppc_dist(
-        >>>     rugby,
+        >>>     radon,
         >>>     kind="ecdf",
         >>>     plot_kwargs={"predictive_density": {"color":"C1"},
         >>>                  "observed_density": {"color":"C3"}},
