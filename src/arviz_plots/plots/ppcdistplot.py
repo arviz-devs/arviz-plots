@@ -155,20 +155,39 @@ def plot_ppc_dist(
         dims for dims in dt.posterior_predictive.dims if dims not in sample_dims
     ]
 
-    distribution = process_group_variables_coords(
+    predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
+    observed_dist = process_group_variables_coords(
+        dt, group="observed_data", var_names=var_names, filter_vars=filter_vars, coords=coords
+    )
+
+    predictive_types = [
+        predictive_dist[var].values.dtype.kind == "i" for var in predictive_dist.data_vars
+    ]
+    observed_types = [
+        observed_dist[var].values.dtype.kind == "i" for var in observed_dist.data_vars
+    ]
+    if any(predictive_types + observed_types):
+        warnings.warn(
+            "Detected at least one discrete variable.\n"
+            "Consider using plot_ppc variants specific for discrete data, "
+            "such as plot_ppc_pava or plot_ppc_rootogram.",
+            UserWarning,
+            stacklevel=2,
+        )
+
     # Select a random subset of samples
     n_pp_samples = np.prod(
-        [distribution.sizes[dim] for dim in sample_dims if dim in distribution.dims]
+        [predictive_dist.sizes[dim] for dim in sample_dims if dim in predictive_dist.dims]
     )
     if num_samples > n_pp_samples:
         num_samples = n_pp_samples
         warnings.warn("num_samples is larger than the number of predictive samples.")
 
     pp_sample_ix = rng.choice(n_pp_samples, size=num_samples, replace=False)
-    distribution = distribution.stack(sample=sample_dims).isel(sample=pp_sample_ix)
+    predictive_dist = predictive_dist.stack(sample=sample_dims).isel(sample=pp_sample_ix)
 
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
@@ -186,8 +205,8 @@ def plot_ppc_dist(
         if figsize is None:
             figsize = plot_bknd.scale_fig_size(
                 figsize,
-                rows=process_facet_dims(distribution, row_dims)[0],
-                cols=process_facet_dims(distribution, col_dims)[0],
+                rows=process_facet_dims(predictive_dist, row_dims)[0],
+                cols=process_facet_dims(predictive_dist, col_dims)[0],
                 figsize_units=figsize_units,
             )
             figsize_units = "dots"
@@ -195,7 +214,7 @@ def plot_ppc_dist(
         pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
 
         plot_collection = PlotCollection.grid(
-            distribution,
+            predictive_dist,
             backend=backend,
             **pc_kwargs,
         )
@@ -223,7 +242,7 @@ def plot_ppc_dist(
                 stats_kwargs.setdefault("density", True)
 
         plot_collection = plot_dist(
-            distribution,
+            predictive_dist,
             group=group,
             sample_dims=pp_dims,
             kind=kind,
@@ -250,7 +269,7 @@ def plot_ppc_dist(
         )
 
         if kind == "kde":
-            dt_observed = dt.observed_data.ds.azstats.kde(dims=pp_dims, **stats_kwargs)
+            dt_observed = observed_dist.azstats.kde(dims=pp_dims, **stats_kwargs)
             plot_collection.map(
                 line_xy,
                 "observe_density",
@@ -260,7 +279,7 @@ def plot_ppc_dist(
             )
 
         if kind == "hist":
-            dt_observed = dt.observed_data.ds.azstats.histogram(dims=pp_dims, **stats_kwargs)
+            dt_observed = observed_dist.azstats.histogram(dims=pp_dims, **stats_kwargs)
             plot_collection.map(
                 hist,
                 "observe_density",
@@ -270,7 +289,7 @@ def plot_ppc_dist(
             )
 
         if kind == "ecdf":
-            dt_observed = dt.observed_data.ds.azstats.ecdf(**stats_kwargs)
+            dt_observed = observed_dist.azstats.ecdf(**stats_kwargs)
             plot_collection.map(
                 ecdf_line,
                 "observe_density",
