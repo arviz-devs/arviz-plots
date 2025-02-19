@@ -48,7 +48,7 @@ def get_default_aes(aes_key, n, kwargs=None):
             vals = ["-", "--", ":", "-."]
             vals = default_prop_cycle.get("linestyle", vals)
         elif aes_key in {"marker", "m"}:
-            vals = ["o", "+", "^", "x", "d", "s"]
+            vals = ["o", "+", "^", "x", "d", "s", "."]
             vals = default_prop_cycle.get("marker", vals)
         elif aes_key in default_prop_cycle:
             vals = default_prop_cycle[aes_key]
