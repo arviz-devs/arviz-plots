@@ -286,12 +286,3 @@ def plot_ppc_dist(
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,
             )
-
-    # if rug:
-    #     plot_collection.map(
-    #     trace_rug,
-    #     data=dt.observed_data.ds,
-    #     y=0,
-    #     mask=None,
-    #     color="black",
-    # )
