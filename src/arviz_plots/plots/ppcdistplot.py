@@ -10,7 +10,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.distplot import plot_dist
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import hist, line_xy
+from arviz_plots.visuals import ecdf_line, hist, line_xy
 
 
 def plot_ppc_dist(
@@ -103,7 +103,7 @@ def plot_ppc_dist(
     Examples
     --------
     Make a plot of the posterior predictive distribution vs the observed data.
-    We used an ECDF representation and mapped the color to the variable name.
+    We used an ECDF representation customized the colors.
 
     .. plot::
         :context: close-figs
@@ -111,12 +111,12 @@ def plot_ppc_dist(
         >>> from arviz_plots import plot_ppc_dist, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> rugby = load_arviz_data('rugby')
+        >>> radon = load_arviz_data('radon')
         >>> pc = plot_ppc_dist(
         >>>     rugby,
         >>>     kind="ecdf",
-        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}}, # map color to variable
-        >>>     aes_map={"title": ["color"]}, # also map color to title
+        >>>     plot_kwargs={"predictive_density": {"color":"C1"},
+        >>>                  "observed_density": {"color":"C3"}},
         >>> )
 
     .. minigallery:: plot_ppc_dist
@@ -207,7 +207,6 @@ def plot_ppc_dist(
     if labeller is None:
         labeller = BaseLabeller()
 
-    print(pc_kwargs)
     # We don't want credible_interval or point_estimate to be mapped to the density representation
     plot_kwargs.setdefault("credible_interval", False)
     plot_kwargs.setdefault("point_estimate", False)
@@ -217,19 +216,13 @@ def plot_ppc_dist(
     pred_density_kwargs = copy(plot_kwargs.get("predictive_density", {}))
     if pred_density_kwargs is not False:
         plot_kwargs.setdefault(kind, pred_density_kwargs)
-
-        if kind == "kde":
-            plot_kwargs[kind].setdefault("alpha", 0.3)
-
+        plot_kwargs[kind].setdefault("alpha", 0.3)
         if kind == "hist":
-            plot_kwargs["hist"].setdefault("alpha", 0.3)
-            plot_kwargs["hist"].setdefault("edgecolor", None)
-            stats_kwargs.setdefault("density", True)
+            if plot_kwargs["hist"] is not False:
+                plot_kwargs["hist"].setdefault("edgecolor", None)
+                stats_kwargs.setdefault("density", True)
 
-        if kind == "ecdf":
-            plot_kwargs["ecdf"].setdefault("alpha", 0.3)
-
-        plot_dist(
+        plot_collection = plot_dist(
             distribution,
             group=group,
             sample_dims=pp_dims,
@@ -245,13 +238,13 @@ def plot_ppc_dist(
         plot_kwargs.get("observed_density", False if group == "prior_predictive" else {})
     )
 
-    if observed_density_kwargs is not False and any(observed_density_kwargs):
-        observed_density_kwargs = copy(plot_kwargs.get("observed_density", copy(plot_kwargs[kind])))
-        if kind in ["kde", "ecdf"]:
-            observed_density_kwargs.setdefault("alpha", 1)
-
     if observed_density_kwargs is not False:
         observed_density_kwargs.setdefault("color", "black")
+        if kind == "hist":
+            observed_density_kwargs.setdefault("alpha", 0.3)
+            observed_density_kwargs.setdefault("edgecolor", None)
+            stats_kwargs.setdefault("density", True)
+
         _, _, observed_ignore = filter_aes(
             plot_collection, aes_map, "observed_density", sample_dims
         )
@@ -277,12 +270,13 @@ def plot_ppc_dist(
             )
 
         if kind == "ecdf":
-            observed_density_kwargs.setdefault("alpha", 1)
             dt_observed = dt.observed_data.ds.azstats.ecdf(**stats_kwargs)
             plot_collection.map(
-                line_xy,
+                ecdf_line,
                 "observe_density",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,
             )
+
+    return plot_collection
