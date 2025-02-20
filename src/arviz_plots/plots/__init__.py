@@ -9,8 +9,8 @@ from .evolutionplot import plot_ess_evolution
 from .forestplot import plot_forest
 from .pavacalibrationplot import plot_ppc_pava
 from .ppcdistplot import plot_ppc_dist
-from .ppcrootogramplot__ import plot_ppc_rootogram
 from .ppcrootogramplot_2 import plot_ppc_rootogram_2
+from .ppcrootogramplot__ import plot_ppc_rootogram
 from .psensedistplot import plot_psense_dist
 from .psensequantitiesplot import plot_psense_quantities
 from .ridgeplot import plot_ridge

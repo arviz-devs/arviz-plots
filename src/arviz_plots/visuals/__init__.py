@@ -44,7 +44,9 @@ def error_line(values, target, backend, **kwargs):
     """Plot an ecdf line."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     x = values.sel(plot_axis="x")
-    return plot_backend.line([x, x], [values.sel(plot_axis="y_bottom"), values.sel(plot_axis="y_top")], target, **kwargs)
+    return plot_backend.line(
+        [x, x], [values.sel(plot_axis="y_bottom"), values.sel(plot_axis="y_top")], target, **kwargs
+    )
 
 
 def line_x(da, target, backend, y=None, **kwargs):

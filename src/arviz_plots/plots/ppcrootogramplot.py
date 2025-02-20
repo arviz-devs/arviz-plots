@@ -1,7 +1,7 @@
 """Plot ppc using PAV-adjusted calibration plot."""
+import warnings
 from copy import copy
 from importlib import import_module
-import warnings
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
@@ -11,12 +11,12 @@ from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     error_line,
-    set_y_scale,
     labelled_title,
     labelled_x,
     labelled_y,
     line_xy,
     scatter_xy,
+    set_y_scale,
 )
 
 
@@ -166,7 +166,6 @@ def plot_ppc_rootogram_2(
     predictive_ds = point_interval_unique(dt, var_names, group, ci_prob)
     observed_ds = point_unique(dt, var_names)
 
-
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
     markers = plot_bknd.get_default_aes("marker", 7, {})
@@ -204,12 +203,13 @@ def plot_ppc_rootogram_2(
     else:
         aes_map = aes_map.copy()
 
-
     ## predictive_markers
     calibration_ms_kwargs = copy(plot_kwargs.get("predictive_markers", {}))
 
     if calibration_ms_kwargs is not False:
-        _, _, calibration_ms_ignore = filter_aes(plot_collection, aes_map, "predictive_markers", sample_dims)
+        _, _, calibration_ms_ignore = filter_aes(
+            plot_collection, aes_map, "predictive_markers", sample_dims
+        )
         calibration_ms_kwargs.setdefault("color", colors[0])
         calibration_ms_kwargs.setdefault("alpha", 0.3)
         calibration_ms_kwargs.setdefault("marker", markers[4])
@@ -259,7 +259,9 @@ def plot_ppc_rootogram_2(
     calibration_ms_kwargs = copy(plot_kwargs.get("observed_markers", {}))
 
     if calibration_ms_kwargs is not False:
-        _, _, calibration_ms_ignore = filter_aes(plot_collection, aes_map, "observed_markers", sample_dims)
+        _, _, calibration_ms_ignore = filter_aes(
+            plot_collection, aes_map, "observed_markers", sample_dims
+        )
         calibration_ms_kwargs.setdefault("color", "black")
         calibration_ms_kwargs.setdefault("marker", markers[6])
 
@@ -270,7 +272,6 @@ def plot_ppc_rootogram_2(
             ignore_aes=calibration_ms_ignore,
             **calibration_ms_kwargs,
         )
-
 
     # set ylabel
     _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
@@ -303,14 +304,13 @@ def plot_ppc_rootogram_2(
             **title_kwargs,
         )
 
-
-    #yscale_kwargs = copy(plot_kwargs.get("yscale", {}))
-    #yscale_kwargs.setdefault("scale", "sqrt")
+    # yscale_kwargs = copy(plot_kwargs.get("yscale", {}))
+    # yscale_kwargs.setdefault("scale", "sqrt")
     plot_collection.map(
         set_y_scale,
         store_artist=False,
         ignore_aes=plot_collection.aes_set,
-        #yscale_kwargs=yscale_kwargs,
+        # yscale_kwargs=yscale_kwargs,
     )
 
     # if plot_kwargs.get("remove_axis", True) is not False:
