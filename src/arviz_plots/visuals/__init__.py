@@ -40,6 +40,13 @@ def line_xy(da, target, backend, x=None, y=None, **kwargs):
     return plot_backend.line(x, y, target, **kwargs)
 
 
+def error_line(values, target, backend, **kwargs):
+    """Plot an ecdf line."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    x = values.sel(plot_axis="x")
+    return plot_backend.line([x, x], [values.sel(plot_axis="y_bottom"), values.sel(plot_axis="y_top")], target, **kwargs)
+
+
 def line_x(da, target, backend, y=None, **kwargs):
     """Plot a line along the x axis (y constant)."""
     if y is None:
@@ -289,3 +296,9 @@ def set_xticks(da, target, backend, values, labels, **kwargs):
     """Dispatch to ``set_xticks`` function in backend."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_backend.xticks(values, labels, target, **kwargs)
+
+
+def set_y_scale(da, target, backend, **kwargs):
+    """Dispatch to ``remove_axis`` function in backend."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    plot_backend.set_y_scale(target, **kwargs)
