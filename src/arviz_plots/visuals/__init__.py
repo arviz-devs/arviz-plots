@@ -9,7 +9,6 @@ and eventually they call the requested plotting backend.
 from importlib import import_module
 
 import numpy as np
-import xarray as xr
 from arviz_base.labels import BaseLabeller
 
 

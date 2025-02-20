@@ -6,12 +6,11 @@ Sets ``zorder`` of all non-text "geoms" to ``2`` so that elements plotted later
 on are on top of previous ones.
 """
 
-import warnings
-from typing import Any, Dict
+# import warnings
+# from typing import Any, Dict
 
 import numpy as np
 from matplotlib.cbook import normalize_kwargs
-from matplotlib.collections import PathCollection
 from matplotlib.lines import Line2D
 from matplotlib.pyplot import rcParams
 from matplotlib.pyplot import show as _show
@@ -19,7 +18,8 @@ from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
 from ..none import get_default_aes as get_agnostic_default_aes
-from .legend import legend
+from .legend import legend as legend
+
 
 
 class UnsetDefault:
