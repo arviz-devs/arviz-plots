@@ -39,6 +39,7 @@ def plot_dist(
     aes_map=None,
     plot_kwargs=None,
     stats_kwargs=None,
+    step_hist=False,
     pc_kwargs=None,
 ):
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
@@ -113,6 +114,11 @@ def plot_dist(
         * density -> passed to kde, ecdf, ...
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
+
+    step_hist : boolean, default False
+            Flag to indicate that the `hist` function should be called with
+            the keyword argument `step_hist=True` if step histogram is required
+            instead of bar histogram.
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -281,7 +287,12 @@ def plot_dist(
             )
 
             plot_collection.map(
-                hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
+                hist,
+                "hist",
+                data=density,
+                ignore_aes=density_ignore,
+                step_hist=step_hist,
+                **density_kwargs,
             )
 
         else:
