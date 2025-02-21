@@ -29,6 +29,7 @@ def plot_ppc_dist(
     aes_map=None,
     plot_kwargs=None,
     stats_kwargs=None,
+    step_hist=False,
     pc_kwargs=None,
 ):
     """
@@ -95,6 +96,11 @@ def plot_ppc_dist(
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
+
+    step_hist : boolean, default False
+            Flag to indicate that the `hist` function should be called with
+            the keyword argument `step_hist=True` if step histogram is required
+            instead of bar histogram.
 
     Returns
     -------
@@ -295,6 +301,7 @@ def plot_ppc_dist(
                 "observe_density",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
+                step_hist=step_hist,
                 **observed_density_kwargs,
             )
 

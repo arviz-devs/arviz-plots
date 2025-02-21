@@ -4,6 +4,7 @@ Notes
 -----
 :term:`artists` are returned, but it seems modifying them won't modify the figure.
 """
+
 import re
 import warnings
 
@@ -286,9 +287,10 @@ def hist(
     alpha=unset,
     facecolor=unset,
     edgecolor=unset,
+    step_hist=False,
     **artist_kws,
 ):
-    """Interface to matplotlib for a histogram bar plot."""
+    """Interface to Plotly for a histogram plot."""
     artist_kws.setdefault("showlegend", False)
     widths = np.asarray(r_e) - np.asarray(l_e)
     if np.any(bottom != 0):
@@ -300,19 +302,48 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    marker_artist_kws = artist_kws.pop("marker", {}).copy()
-    line_kwargs = {"color": edgecolor}
-    line_artist_kws = marker_artist_kws.pop("line", {}).copy()
-    marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
-    marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
-    hist_object = go.Bar(
-        x=(l_e + r_e) / 2,
-        y=height,
-        base=bottom,
-        width=widths,
-        marker=marker_kwargs,
-        **_filter_kwargs({"opacity": alpha}, artist_kws),
-    )
+
+    if step_hist is False:
+        marker_artist_kws = artist_kws.pop("marker", {}).copy()
+        line_kwargs = {"color": edgecolor}
+        line_artist_kws = marker_artist_kws.pop("line", {}).copy()
+        marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
+        marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
+        hist_object = go.Bar(
+            x=(l_e + r_e) / 2,
+            y=height,
+            base=bottom,
+            width=widths,
+            marker=marker_kwargs,
+            **_filter_kwargs({"opacity": alpha}, artist_kws),
+        )
+    elif step_hist is True:
+        if color is unset:
+            color = "black"
+        if alpha is unset:
+            alpha = 1.0
+        if facecolor is unset:
+            facecolor = None
+        if edgecolor is unset:
+            edgecolor = None
+
+        if color is not None:
+            if facecolor is None:
+                facecolor = color
+            if edgecolor is None:
+                edgecolor = color
+
+        step_x = np.repeat(np.concatenate(([l_e[0]], r_e)), 2)[1:-1]
+        step_y = np.repeat(np.concatenate(([0], height)), 2)
+        hist_object = go.Scatter(
+            x=step_x,
+            y=step_y,
+            line={"color": edgecolor, "width": 2, "shape": "hvh"},
+            fill="none",
+            mode="lines",
+            **artist_kws,
+        )
+
     target.add_trace(hist_object)
     return hist_object
 

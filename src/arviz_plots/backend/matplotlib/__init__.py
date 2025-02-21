@@ -272,6 +272,7 @@ def hist(
     alpha=unset,
     facecolor=unset,
     edgecolor=unset,
+    step_hist=False,
     **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""
@@ -286,9 +287,23 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
+    kwargs = {"color": facecolor, "alpha": alpha}
+    if step_hist:
+        return target.step(
+            np.r_[l_e, r_e[-1]],
+            np.r_[y, y[-1]],
+            where="post",
+            **_filter_kwargs(kwargs, None, artist_kws),
+        )
+
     return target.bar(
-        l_e, height, width=widths, align="edge", **_filter_kwargs(kwargs, None, artist_kws)
+        l_e,
+        height,
+        width=widths,
+        align="edge",
+        bottom=bottom,
+        edgecolor=edgecolor,
+        **_filter_kwargs(kwargs, None, artist_kws),
     )
 
 
