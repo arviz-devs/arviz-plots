@@ -18,8 +18,8 @@ dir_title_map = {
     "distribution": "Distribution visualization",
     "distribution_comparison": "Distribution comparison",
     "inference_diagnostics": "Inference diagnostics",
-    "model_criticism": "Model criticism",
-    "model_comparison": "Model comparison",
+    "posterior_predictive_checks": "Posterior predictive checks",
+    "prior_and_likelihood_sensitivity_checks": "Prior and likelihood sensitivity checks",
 }
 
 toctree_template = """
