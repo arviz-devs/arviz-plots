@@ -1,5 +1,5 @@
 """
-# ESS Evolution
+# ESS evolution
 
 faceted plot with ESS 'bulk' and 'tail' for each variable
 
