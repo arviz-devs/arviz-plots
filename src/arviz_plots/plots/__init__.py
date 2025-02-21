@@ -16,6 +16,7 @@ from .ridgeplot import plot_ridge
 from .tracedistplot import plot_trace_dist
 from .traceplot import plot_trace
 
+
 __all__ = [
     "plot_compare",
     "plot_convergence_dist",

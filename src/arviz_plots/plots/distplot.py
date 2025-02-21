@@ -3,7 +3,6 @@ import warnings
 from copy import copy
 from importlib import import_module
 
-import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller

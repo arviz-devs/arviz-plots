@@ -11,7 +11,6 @@ API Documentation: {func}`~arviz_plots.plot_forest`
 """
 from importlib import import_module
 
-import arviz_stats  # make azstats accessor available
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
