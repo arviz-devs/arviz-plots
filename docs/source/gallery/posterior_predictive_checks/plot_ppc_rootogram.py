@@ -1,5 +1,5 @@
 """
-# Rootogram plot
+# Rootogram
 
 Rootogram for the posterior predictive and observed data.
 

@@ -1,5 +1,5 @@
 """
-# Kernel Density Plots
+# Predictive check with KDEs
 
 Plot of samples from the posterior predictive and observed data.
 
