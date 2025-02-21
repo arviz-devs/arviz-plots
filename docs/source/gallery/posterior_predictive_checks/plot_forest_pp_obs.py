@@ -1,5 +1,5 @@
 """
-# Posterior predictive and observations forest plot
+# Posterior predictive forest and observations
 
 Overlay of forest plot for the posterior predictive samples and the actual observations
 

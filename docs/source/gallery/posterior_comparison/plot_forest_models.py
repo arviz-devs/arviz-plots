@@ -1,14 +1,14 @@
 """
-# Comparison using posterior marginals
+# Posterior forest for two models
 
-Full marginal distribution comparison between different models
+Forest plot summaries for 1D marginal distributions
 
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_dist`
+API Documentation: {func}`~arviz_plots.plot_forest`
 
-Other examples comparing marginal distributions: {ref}`gallery_forest_models`
+Other examples comparing marginal distributions: {ref}`gallery_dist_models`
 :::
 """
 from arviz_base import load_arviz_data
@@ -19,7 +19,7 @@ azp.style.use("arviz-variat")
 
 c = load_arviz_data("centered_eight")
 n = load_arviz_data("non_centered_eight")
-pc = azp.plot_dist(
+pc = azp.plot_forest(
     {"Centered": c, "Non Centered": n},
     backend="none"  # change to preferred backend
 )

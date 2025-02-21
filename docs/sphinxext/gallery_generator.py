@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 dir_title_map = {
     "distribution": "Distribution visualization",
-    "distribution_comparison": "Distribution comparison",
+    "posterior_comparison": "Posterior comparison",
     "inference_diagnostics": "Inference diagnostics",
     "posterior_predictive_checks": "Posterior predictive checks",
     "prior_and_likelihood_sensitivity_checks": "Prior and likelihood sensitivity checks",

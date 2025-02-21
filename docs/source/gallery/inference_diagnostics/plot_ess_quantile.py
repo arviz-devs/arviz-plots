@@ -1,5 +1,5 @@
 """
-# ESS Quantile
+# ESS quantile
 
 faceted quantile ESS plot
 
