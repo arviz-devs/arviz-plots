@@ -14,12 +14,13 @@ from sphinx.util import logging
 logger = logging.getLogger(__name__)
 
 dir_title_map = {
-    "mixed": "Mixed plots",
     "distribution": "Distribution visualization",
     "distribution_comparison": "Distribution comparison",
     "inference_diagnostics": "Inference diagnostics",
     "posterior_predictive_checks": "Posterior predictive checks",
     "prior_and_likelihood_sensitivity_checks": "Prior and likelihood sensitivity checks",
+    "model_comparison": "Model Comparison",
+    "mixed": "Mixed plots",
 }
 
 toctree_template = """

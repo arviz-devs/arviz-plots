@@ -1,5 +1,5 @@
 """
-# KDE plot
+# KDE
 
 faceted KDE plots for 1D marginals of the distribution
 

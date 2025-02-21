@@ -1,5 +1,5 @@
 """
-# Forest plot comparison
+# Comparison using forest plot
 
 Forest plot summaries for 1D marginal distributions
 

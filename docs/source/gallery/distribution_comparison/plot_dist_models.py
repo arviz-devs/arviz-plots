@@ -1,5 +1,5 @@
 """
-# Marginal distribution comparison plot
+# Comparison using posterior marginals
 
 Full marginal distribution comparison between different models
 

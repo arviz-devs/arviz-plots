@@ -1,5 +1,5 @@
 """
-# Histogram plot
+# Histogram
 
 faceted histogram plots for 1D marginals of the distribution
 

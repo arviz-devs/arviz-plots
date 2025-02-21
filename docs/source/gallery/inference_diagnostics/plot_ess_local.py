@@ -1,5 +1,5 @@
 """
-# ESS Local plot
+# ESS Local
 
 faceted local ESS plot
 

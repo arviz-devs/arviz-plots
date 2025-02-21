@@ -1,5 +1,5 @@
 """
-# ECDF plot
+# ECDF
 
 faceted ECDF plots for 1D marginals of the distribution
 
