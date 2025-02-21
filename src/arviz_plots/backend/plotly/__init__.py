@@ -462,6 +462,38 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     )
 
 
+def ciliney(
+    x,
+    y_bottom,
+    y_top,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    **artist_kws,
+):
+    """Interface to plotly for a line from y_bottom to y_top at given value of x."""
+    artist_kws.setdefault("showlegend", False)
+    line_kwargs = {"color": color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {}).copy()
+    kwargs = {"opacity": alpha}
+
+    # I was not able to figure it out how to do this withouth a loop
+    # all solutions I tried did not plot the lines or the lines were connected
+    for x_i, y_t, y_b in zip(x, y_top, y_bottom):
+        line_object = go.Scatter(
+            x=[x_i, x_i],
+            y=[y_b, y_t],
+            mode="lines",
+            line=_filter_kwargs(line_kwargs, line_artist_kws),
+            **_filter_kwargs(kwargs, artist_kws),
+        )
+        target.add_trace(line_object)
+    return line_object
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a title to a plot."""
