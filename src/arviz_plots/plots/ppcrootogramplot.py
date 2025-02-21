@@ -103,7 +103,7 @@ def plot_ppc_rootogram(
         >>> from arviz_plots import plot_ppc_rootogram, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('crabs')
+        >>> dt = load_arviz_data('crabs_poisson')
         >>> plot_ppc_rootogram(dt)
 
 
@@ -206,8 +206,6 @@ def plot_ppc_rootogram(
 
     aes_map.setdefault("predictive_markers", plot_collection.aes_set)
     aes_map.setdefault("ci", plot_collection.aes_set)
-    # aes_map.setdefault("predictive_markers", ["color"])
-    # aes_map.setdefault("ci", ["color"])
     ## predictive_markers
     predictive_ms_kwargs = copy(plot_kwargs.get("predictive_markers", {}))
 
