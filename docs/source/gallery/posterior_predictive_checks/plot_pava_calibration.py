@@ -1,5 +1,5 @@
 """
-# PAV-adjusted calibration plot
+# PAV-adjusted calibration
 
 Plot of the PAV-adjusted calibration for binary classifier.
 

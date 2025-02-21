@@ -1,5 +1,5 @@
 """
-# Posterior Predictive Checks
+# Kernel Density Plots
 
 Plot of samples from the posterior predictive and observed data.
 
