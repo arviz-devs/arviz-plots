@@ -7,6 +7,7 @@ from arviz_base import from_dict
 from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
+    plot_bf,
     plot_compare,
     plot_dist,
     plot_ess,
@@ -420,6 +421,30 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_psense_dist_sample(self, datatree_sample, backend):
         pc = plot_psense_dist(datatree_sample, backend=backend, sample_dims="sample")
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "plot" in pc.viz["mu"]
+        assert "component_group" in pc.viz["mu"]["plot"].dims
+        assert "alpha" not in pc.viz["mu"]["plot"].dims
+        assert "credible_interval" in pc.viz["mu"]
+        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
+        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_bf(self, datatree, backend):
+        pc = plot_bf(datatree, var_name="mu", backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "plot" in pc.viz["mu"]
+        assert "component_group" in pc.viz["mu"]["plot"].dims
+        assert "alpha" not in pc.viz["mu"]["plot"].dims
+        assert "credible_interval" in pc.viz["mu"]
+        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
+        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_bf_sample(self, backend):
+        pc = plot_bf(datatree, var_name="mu", backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz["mu"]

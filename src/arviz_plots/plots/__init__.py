@@ -1,5 +1,6 @@
 """Batteries-included ArviZ plots."""
 
+from .bfplot import plot_bf
 from .compareplot import plot_compare
 from .convergencedistplot import plot_convergence_dist
 from .distplot import plot_dist
@@ -15,7 +16,6 @@ from .psensequantitiesplot import plot_psense_quantities
 from .ridgeplot import plot_ridge
 from .tracedistplot import plot_trace_dist
 from .traceplot import plot_trace
-
 
 __all__ = [
     "plot_compare",
@@ -33,4 +33,5 @@ __all__ = [
     "plot_ppc_pava",
     "plot_psense_dist",
     "plot_psense_quantities",
+    "plot_bf",
 ]
