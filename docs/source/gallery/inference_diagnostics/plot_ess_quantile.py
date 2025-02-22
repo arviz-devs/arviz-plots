@@ -1,7 +1,7 @@
 """
-# ESS Quantile plot
+# ESS quantile
 
-Facetted quantile ESS plot
+faceted quantile ESS plot
 
 ---
 
@@ -14,7 +14,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 data = load_arviz_data("centered_eight")
 pc = azp.plot_ess(

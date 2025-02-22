@@ -1,7 +1,7 @@
 """
 # Trace plot
 
-Facetted plot with MCMC traces for each variable
+faceted plot with MCMC traces for each variable
 
 ---
 
@@ -13,7 +13,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 data = load_arviz_data("centered_eight")
 pc = azp.plot_trace(

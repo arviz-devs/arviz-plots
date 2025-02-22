@@ -329,6 +329,61 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
     return artist_element
 
 
+def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to a vertical line spanning the whole axes."""
+    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    artist_element = {
+        "function": "vline",
+        "x": x,
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to a horizontal line spanning the whole axes."""
+    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    artist_element = {
+        "function": "vline",
+        "y": y,
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def ciliney(
+    x,
+    y_bottom,
+    y_top,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    **artist_kws,
+):
+    """Interface to a line from y_bottom to y_top at given value of x."""
+    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    artist_element = {
+        "function": "line",
+        "x": np.atleast_1d(x),
+        "y_bottom": np.atleast_1d(y_bottom),
+        "y_top": np.atleast_1d(y_top),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a title to a plot."""

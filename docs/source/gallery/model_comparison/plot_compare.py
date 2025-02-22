@@ -1,5 +1,5 @@
 """
-# Predicive model comparison plot
+# Predictive model comparison
 
 Compare multiple models using predictive accuracy estimates like  {abbr}`LOO-CV (leave one out cross validation)` or {abbr}`WAIC (widely applicable information criterion)`
 
@@ -13,7 +13,7 @@ import pandas as pd
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 
 cmp_df = pd.DataFrame({"elpd_loo": [-4.5, -14.3, -16.2], 

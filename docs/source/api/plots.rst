@@ -18,11 +18,16 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    :toctree: generated/
 
    plot_compare
+   plot_convergence_dist
    plot_dist
    plot_ess
    plot_ess_evolution
    plot_forest
+   plot_ppc_dist
+   plot_ppc_pava
+   plot_ppc_rootogram
    plot_psense_dist
+   plot_psense_quantities
    plot_ridge
    plot_trace
    plot_trace_dist

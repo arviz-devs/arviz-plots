@@ -1,7 +1,7 @@
 """
-# ESS Evolution plot
+# ESS evolution
 
-Facetted plot with ESS 'bulk' and 'tail' for each variable
+faceted plot with ESS 'bulk' and 'tail' for each variable
 
 ---
 
@@ -14,7 +14,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 data = load_arviz_data("centered_eight")
 pc = azp.plot_ess_evolution(data, backend="none")  # change to preferred backend

@@ -43,7 +43,7 @@ def plot_dist(
 ):
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
 
-    Generate :term:`facetted` :term:`plots` with: a graphical representation of 1D marginal
+    Generate :term:`faceted` :term:`plots` with: a graphical representation of 1D marginal
     densities (as KDE, histogram, ECDF or dotplot), a credible interval and a point estimate.
 
     Parameters
@@ -135,7 +135,7 @@ def plot_dist(
         :context: close-figs
 
         >>> from arviz_plots import plot_dist, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> non_centered = load_arviz_data('non_centered_eight')
         >>> pc = plot_dist(

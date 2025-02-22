@@ -9,6 +9,8 @@ from xarray import DataArray, Dataset, DataTree, concat, full_like
 from arviz_plots import PlotCollection
 from arviz_plots.plot_collection import _get_aes_dict_from_dt
 
+# from datatree import DataTree
+
 
 @pytest.fixture(scope="module")
 def dataset(seed=31):
@@ -26,7 +28,7 @@ def dataset(seed=31):
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly"])
 @pytest.mark.usefixtures("clean_plots")
 @pytest.mark.usefixtures("check_skips")
-class TestFacetting:
+class Testfaceting:
     def test_wrap(self, dataset, backend):
         pc = PlotCollection.wrap(
             dataset[["theta", "eta"]], backend=backend, cols=["hierarchy"], col_wrap=4

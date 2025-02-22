@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use
 """Matplotlib interface layer.
 
 Notes
@@ -9,7 +10,10 @@ on are on top of previous ones.
 import warnings
 from typing import Any, Dict
 
+import matplotlib.scale as mscale
+import matplotlib.transforms as mtransforms
 import numpy as np
+from matplotlib import ticker
 from matplotlib.cbook import normalize_kwargs
 from matplotlib.collections import PathCollection
 from matplotlib.lines import Line2D
@@ -27,6 +31,63 @@ class UnsetDefault:
 
 
 unset = UnsetDefault()
+
+
+class SquareRootScale(mscale.ScaleBase):
+    """ScaleBase class for generating square root scale."""
+
+    name = "sqrt"
+
+    def __init__(self, axis, **kwargs):  # pylint: disable=unused-argument
+        mscale.ScaleBase.__init__(self, axis)
+
+    def set_default_locators_and_formatters(self, axis):
+        """Set the locators and formatters to default."""
+        axis.set_major_locator(ticker.AutoLocator())
+        axis.set_major_formatter(ticker.ScalarFormatter())
+        axis.set_minor_locator(ticker.NullLocator())
+        axis.set_minor_formatter(ticker.NullFormatter())
+
+    def limit_range_for_scale(self, vmin, vmax, minpos):  # pylint: disable=unused-argument
+        """Limit the range of the scale."""
+        return max(0.0, vmin), vmax
+
+    class SquareRootTransform(mtransforms.Transform):
+        """Square root transformation."""
+
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def transform_non_affine(self, values):
+            """Transform the data."""
+            return np.array(values) ** 0.5
+
+        def inverted(self):
+            """Invert the transformation."""
+            return SquareRootScale.InvertedSquareRootTransform()
+
+    class InvertedSquareRootTransform(mtransforms.Transform):
+        """Inverted square root transformation."""
+
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def transform(self, values):
+            """Transform the data."""
+            return np.array(values) ** 2
+
+        def inverted(self):
+            """Invert the transformation."""
+            return SquareRootScale.SquareRootTransform()
+
+    def get_transform(self):
+        """Get the transformation."""
+        return self.SquareRootTransform()
+
+
+mscale.register_scale(SquareRootScale)
 
 
 # generation of default values for aesthetics
@@ -48,7 +109,7 @@ def get_default_aes(aes_key, n, kwargs=None):
             vals = ["-", "--", ":", "-."]
             vals = default_prop_cycle.get("linestyle", vals)
         elif aes_key in {"marker", "m"}:
-            vals = ["o", "+", "^", "x", "d"]
+            vals = ["o", "+", "^", "x", "d", "s", "."]
             vals = default_prop_cycle.get("marker", vals)
         elif aes_key in default_prop_cycle:
             vals = default_prop_cycle[aes_key]
@@ -305,6 +366,38 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     return target.fill_between(x, y_bottom, y_top, **artist_kws)
 
 
+def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to matplotlib for a vertical line spanning the whole axes."""
+    artist_kws.setdefault("zorder", 0)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.axvline(x, **_filter_kwargs(kwargs, Line2D, artist_kws))
+
+
+def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to matplotlib for a horizontal line spanning the whole axes."""
+    artist_kws.setdefault("zorder", 0)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.axhline(y, **_filter_kwargs(kwargs, Line2D, artist_kws))
+
+
+def ciliney(
+    x,
+    y_bottom,
+    y_top,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    **artist_kws,
+):
+    """Interface to matplotlib for a line from y_bottom to y_top at given value of x."""
+    artist_kws.setdefault("zorder", 2)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.plot([x, x], [y_bottom, y_top], **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a title to a plot."""
@@ -373,7 +466,7 @@ def remove_axis(target, axis="y"):
         target.xaxis.set_ticks([])
         target.spines["left"].set_visible(True)
         target.spines["bottom"].set_visible(False)
-        target.xaxis.set_ticks_position("left")
+        target.xaxis.set_ticks_position("bottom")
         target.tick_params(axis="y", direction="out", width=1, length=3)
     elif axis == "both":
         target.xaxis.set_ticks([])
@@ -382,3 +475,8 @@ def remove_axis(target, axis="y"):
         target.spines["bottom"].set_visible(False)
     else:
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+
+
+def set_y_scale(target, scale):
+    """Interface to matplotlib for setting the y scale of a plot."""
+    target.set_yscale(scale)

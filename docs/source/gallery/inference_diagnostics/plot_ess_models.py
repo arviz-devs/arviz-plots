@@ -1,5 +1,5 @@
 """
-# ESS comparison plot
+# ESS comparison
 
 Full ESS (Either local or quantile) comparison between different models
 
@@ -14,7 +14,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 c = load_arviz_data("centered_eight")
 n = load_arviz_data("non_centered_eight")

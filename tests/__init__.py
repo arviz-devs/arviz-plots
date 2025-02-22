@@ -1,3 +1,1 @@
 """ArviZ plots test module."""
-
-

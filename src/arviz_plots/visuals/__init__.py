@@ -39,6 +39,18 @@ def line_xy(da, target, backend, x=None, y=None, **kwargs):
     return plot_backend.line(x, y, target, **kwargs)
 
 
+def ci_line_y(values, target, backend, **kwargs):
+    """Plot a line from y_bottom to y_top at given value of x."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.ciliney(
+        values.sel(plot_axis="x"),
+        values.sel(plot_axis="y_bottom"),
+        values.sel(plot_axis="y_top"),
+        target,
+        **kwargs,
+    )
+
+
 def line_x(da, target, backend, y=None, **kwargs):
     """Plot a line along the x axis (y constant)."""
     if y is None:
@@ -104,6 +116,30 @@ def ecdf_line(values, target, backend, **kwargs):
     """Plot an ecdf line."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.line(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
+
+
+def vline(values, target, backend, **kwargs):
+    """Plot a vertical line that spans the whole figure independently of zoom."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.vline(values.item(), target, **kwargs)
+
+
+def hline(values, target, backend, **kwargs):
+    """Plot a horizontal line that spans the whole figure independently of zoom."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.hline(values.item(), target, **kwargs)
+
+
+def dline(da, target, backend, x=None, y=None, **kwargs):
+    """Plot a diagonal line across the x-y range."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    if x is None:
+        x = y
+    if y is None:
+        y = x
+    xy_min = min(np.min(x), np.min(y))
+    xy_max = max(np.max(x), np.max(y))
+    return plot_backend.line([xy_min, xy_max], [xy_min, xy_max], target, **kwargs)
 
 
 def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y=None, y_top=None, **kwargs):
@@ -258,3 +294,15 @@ def remove_ticks(da, target, backend, **kwargs):
     """Dispatch to ``remove_axis`` function in backend."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_backend.remove_ticks(target, **kwargs)
+
+
+def set_xticks(da, target, backend, values, labels, **kwargs):
+    """Dispatch to ``set_xticks`` function in backend."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    plot_backend.xticks(values, labels, target, **kwargs)
+
+
+def set_y_scale(da, target, backend, scale, **kwargs):
+    """Dispatch to ``remove_axis`` function in backend."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    plot_backend.set_y_scale(target, scale, **kwargs)

@@ -140,7 +140,7 @@ def plot_forest(
     Single model forest plot with color mapped to the variable (mapping which is also applied
     to the labels) and alternate shading per school.
     Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
-    constrained layout (set by the "arviz-clean" theme) and to avoid having the labels
+    constrained layout (set by the "arviz-variat" theme) and to avoid having the labels
     too squished we'll set the ``width_ratios`` for
     :func:`~arviz_plots.backend.none.create_plotting_grid` via ``pc_kwargs``.
 
@@ -148,7 +148,7 @@ def plot_forest(
         :context: close-figs
 
         >>> from arviz_plots import plot_forest, style
-        >>> style.use("arviz-clean")
+        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> non_centered = load_arviz_data('non_centered_eight')
         >>> pc = plot_forest(

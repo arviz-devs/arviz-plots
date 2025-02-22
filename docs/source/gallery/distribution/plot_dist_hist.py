@@ -1,7 +1,7 @@
 """
-# Histogram plot
+# Posterior Histograms
 
-Facetted histogram plots for 1D marginals of the distribution
+faceted histogram plots for 1D marginals of the distribution
 
 ---
 
@@ -13,7 +13,7 @@ from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
-azp.style.use("arviz-clean")
+azp.style.use("arviz-variat")
 
 data = load_arviz_data("centered_eight")
 pc = azp.plot_dist(
