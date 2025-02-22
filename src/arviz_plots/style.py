@@ -1,4 +1,5 @@
 """Style/templating helpers."""
+import os
 
 from arviz_base import rcParams
 
@@ -10,10 +11,6 @@ def use(name):
     ----------
     name : str
         Name of the style to be set as default.
-
-    Notes
-    -----
-    There are some backends where default styles/templates are not supported.
     """
     ok = False
 
@@ -33,6 +30,17 @@ def use(name):
             pio.templates.default = name
             ok = True
     except ImportError:
+        pass
+
+    try:
+        if name in ["arviz-cetrino", "arviz-variat", "arviz-vibrant"]:
+            from bokeh.io import curdoc
+            from bokeh.themes import Theme
+
+            path = os.path.dirname(os.path.abspath(__file__))
+            curdoc().theme = Theme(filename=f"{path}/styles/{name}.yml")
+            ok = True
+    except (ImportError, FileNotFoundError):
         pass
 
     if not ok:

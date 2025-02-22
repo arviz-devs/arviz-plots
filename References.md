@@ -48,5 +48,12 @@ See https://github.com/arviz-devs/arviz-stats/issues/56
 
     References
     ----------
-    .. [1] Betancourt. Diagnosing Suboptimal Cotangent Disintegrations in
-        Hamiltonian Monte Carlo. (2016) https://arxiv.org/abs/1604.00695
+    .. [1] Betancourt. *Diagnosing Suboptimal Cotangent Disintegrations in
+        Hamiltonian Monte Carlo*. (2016) https://arxiv.org/abs/1604.00695
+
+## Rootograms
+
+    References
+    ----------
+    .. [1] Kleiber C, Zeileis A. *Visualizing Count Data Regressions Using Rootograms*. 
+        The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590

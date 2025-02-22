@@ -1,5 +1,5 @@
 """
-# Power scaling prior sensitivity plot
+# Sensitivity posterior marginals
 
 Plot of power scaling prior sensitivity distribution
 

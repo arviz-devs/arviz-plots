@@ -1,4 +1,5 @@
 """Bokeh interface layer."""
+# pylint: disable=protected-access
 
 import warnings
 
@@ -32,10 +33,18 @@ def get_default_aes(aes_key, n, kwargs=None):
                 '#a96b59', '#e76300', '#b9ac70', '#717581', '#92dadd'
             ]
             # fmt: on
+            try:
+                from bokeh.io import curdoc
+
+                template_colors = curdoc().theme._json["attrs"]["Cycler"]["colors"]
+            except (ImportError, KeyError):
+                template_colors = None
+            vals = vals if template_colors is None else template_colors
+
         elif aes_key in {"linestyle", "line_dash"}:
             vals = ["solid", "dashed", "dotted", "dashdot"]
         elif aes_key == "marker":
-            vals = ["circle", "cross", "triangle", "x", "diamond", "square"]
+            vals = ["circle", "cross", "triangle", "x", "diamond", "square", "dot"]
         else:
             return get_agnostic_default_aes(aes_key, n)
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
@@ -381,6 +390,26 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return span_element
 
 
+def ciliney(
+    x,
+    y_bottom,
+    y_top,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    **artist_kws,
+):
+    """Interface to bokeh for a line from y_bottom to y_top at given value of x."""
+    kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
+    x = np.atleast_1d(x)
+    y_bottom = np.atleast_1d(y_bottom)
+    y_top = np.atleast_1d(y_top)
+    return target.segment(x0=x, x1=x, y0=y_bottom, y1=y_top, **_filter_kwargs(kwargs, artist_kws))
+
+
 # general plot appeareance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a title to a plot."""
@@ -464,3 +493,8 @@ def remove_axis(target, axis="y"):
         target.axis.visible = False
     else:
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+
+
+def set_y_scale(target, scale):
+    """Interface to matplotlib for setting the y scale of a plot."""
+    target.set_yscale(scale)

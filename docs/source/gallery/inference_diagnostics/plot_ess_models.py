@@ -1,5 +1,5 @@
 """
-# ESS comparison plot
+# ESS comparison
 
 Full ESS (Either local or quantile) comparison between different models
 

@@ -1,5 +1,5 @@
 """
-# Predicive model comparison plot
+# Predictive model comparison
 
 Compare multiple models using predictive accuracy estimates like  {abbr}`LOO-CV (leave one out cross validation)` or {abbr}`WAIC (widely applicable information criterion)`
 

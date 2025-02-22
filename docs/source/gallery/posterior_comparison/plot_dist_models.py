@@ -1,5 +1,5 @@
 """
-# Marginal distribution comparison plot
+# Posterior KDEs for two models
 
 Full marginal distribution comparison between different models
 

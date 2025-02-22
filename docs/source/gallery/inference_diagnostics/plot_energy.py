@@ -1,5 +1,5 @@
 """
-# Energy plot
+# Energy
 
 Plot transition and marginal energy distributions
 

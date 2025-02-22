@@ -64,7 +64,8 @@ def get_default_aes(aes_key, n, kwargs=None):
         elif aes_key in {"linestyle", "dash"}:
             vals = ["solid", "dash", "dot", "dashdot"]
         elif aes_key in {"marker", "style"}:
-            vals = ["circle", "cross", "triangle-up", "x", "diamond", "square"]
+            # plotly does not have "dot" using "circle-open" instead
+            vals = ["circle", "cross", "triangle-up", "x", "diamond", "square", "circle-open"]
         else:
             return get_agnostic_default_aes(aes_key, n, {})
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
@@ -459,6 +460,38 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return target.add_hline(
         y, line=_filter_kwargs(line_kwargs, line_artist_kws), **_filter_kwargs(kwargs, artist_kws)
     )
+
+
+def ciliney(
+    x,
+    y_bottom,
+    y_top,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    **artist_kws,
+):
+    """Interface to plotly for a line from y_bottom to y_top at given value of x."""
+    artist_kws.setdefault("showlegend", False)
+    line_kwargs = {"color": color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {}).copy()
+    kwargs = {"opacity": alpha}
+
+    # I was not able to figure it out how to do this withouth a loop
+    # all solutions I tried did not plot the lines or the lines were connected
+    for x_i, y_t, y_b in zip(x, y_top, y_bottom):
+        line_object = go.Scatter(
+            x=[x_i, x_i],
+            y=[y_b, y_t],
+            mode="lines",
+            line=_filter_kwargs(line_kwargs, line_artist_kws),
+            **_filter_kwargs(kwargs, artist_kws),
+        )
+        target.add_trace(line_object)
+    return line_object
 
 
 # general plot appeareance

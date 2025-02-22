@@ -1,32 +1,32 @@
-"""Plot ppc using PAV-adjusted calibration plot."""
+"""Plot ppc rootogram for discrete (count) data."""
 from copy import copy
 from importlib import import_module
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
-from arviz_stats.helper_stats import isotonic_fit
+from arviz_stats.helper_stats import point_interval_unique, point_unique
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
-    dline,
-    fill_between_y,
+    ci_line_y,
     labelled_title,
     labelled_x,
     labelled_y,
-    line_xy,
     scatter_xy,
+    set_y_scale,
 )
 
 
-def plot_ppc_pava(
+def plot_ppc_rootogram(
     dt,
-    n_bootstaps=1000,
     ci_prob=None,
+    yscale="sqrt",
     data_pairs=None,
     var_names=None,
-    filter_vars=None,  # pylint: disable=unused-argument
-    coords=None,  # pylint: disable=unused-argument
+    filter_vars=None,
+    group="posterior_predictive",
+    coords=None,
     sample_dims=None,
     plot_collection=None,
     backend=None,
@@ -35,25 +35,28 @@ def plot_ppc_pava(
     plot_kwargs=None,
     pc_kwargs=None,
 ):
-    """PAV-adjusted calibration plot.
+    """Rootogram with confidence intervals per predicted count.
 
-    Uses the pool adjacent violators (PAV) algorithm for isotonic regression.
+    Rootograms are useful to check the calibration of count models.
+    A rootogram shows the difference between observed and predicted counts. The y-axis,
+    showing frequencies, is on the square root scale. This makes easier to compare
+    observed and expected frequencies even for low frequencies [1]_.
+
 
     Parameters
     ----------
     dt : DataTree
         Input data
-    n_bootstaps : int, optional
-        Number of bootstrap samples to use for estimating the confidence intervals.
-        defaults to 1000.
     ci_prob : float, optional
         Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
+    yscale : str, optional
+        Scale for the y-axis. Defaults to "sqrt", pass "linear" for linear scale.
+        Currently only "matplotlib" backend is supported. For "bokeh" and "plotly"
+        the y-axis is linear.
     data_pairs : tuple, optional
-        Tuple of posterior predictive data and observed data variable names.
-        If None, it will assume that the observed data and the posterior
-        predictive data have the same variable name.
-    num_samples : int, optional
-        Number of samples to use for the plot. Defaults to 100.
+        Tuple of prior/posterior predictive data and observed data variable names.
+        If None, it will assume that the observed data and the predictive data have
+        the same variable name.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -62,7 +65,7 @@ def plot_ppc_pava(
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
     coords : dict, optional
-        Coordinates to plot. CURRENTLY NOT IMPLEMENTED
+        Coordinates to plot.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -76,14 +79,12 @@ def plot_ppc_pava(
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * lines -> passed to :func:`~arviz_plots.visuals.line_xy`
-        * markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-        * reference_line -> passed to :func:`~arviz_plots.visuals.line_xy`
-        * ci -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+        * predictive_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
-
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -94,25 +95,22 @@ def plot_ppc_pava(
 
     Examples
     --------
-    Plot the PAVA calibration plot for the rugby dataset.
+    Plot the rootogram for the crabs dataset.
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_ppc_pava, style
+        >>> from arviz_plots import plot_ppc_rootogram, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('rugby')
-        >>> plot_ppc_pava(dt, ci_prob=0.90)
+        >>> dt = load_arviz_data('crabs_poisson')
+        >>> plot_ppc_rootogram(dt)
 
 
-    .. minigallery:: plot_ppc_pava
+    .. minigallery:: plot_ppc_rootogram
 
-    References
-    ----------
-    .. [1] Dimitriadis et al *Stable reliability diagrams for probabilistic classifiers*.
-        PNAS, 118(8) (2021). https://doi.org/10.1073/pnas.2016191118
-
+    .. [1] Kleiber C, Zeileis A. *Visualizing Count Data Regressions Using Rootograms*.
+    The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
@@ -140,20 +138,45 @@ def plot_ppc_pava(
 
     if data_pairs is None:
         data_pairs = (var_names, var_names)
+    else:
+        data_pairs = (list(data_pairs.keys()), list(data_pairs.values()))
 
-    ds_calibration = isotonic_fit(dt, var_names, n_bootstaps, ci_prob)
+    predictive_dist = process_group_variables_coords(
+        dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
+    )
+
+    observed_dist = process_group_variables_coords(
+        dt, group="observed_data", var_names=data_pairs[1], filter_vars=filter_vars, coords=coords
+    )
+
+    predictive_types = [
+        predictive_dist[var].values.dtype.kind == "f" for var in predictive_dist.data_vars
+    ]
+    observed_types = [
+        observed_dist[var].values.dtype.kind == "f" for var in observed_dist.data_vars
+    ]
+
+    if any(predictive_types + observed_types):
+        raise ValueError(
+            "Detected at least one continuous variable.\n"
+            "Use plot_ppc variants specific for continuous data, "
+            "such as plot_ppc_dist.",
+        )
+
+    predictive_ds = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
+    observed_ds = point_unique(dt, observed_dist.data_vars)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
     markers = plot_bknd.get_default_aes("marker", 7, {})
-    lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs.setdefault("col_wrap", 5)
+        pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
-        pc_kwargs.setdefault("cols", ["__variable__"])
 
         figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
         figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
@@ -162,8 +185,8 @@ def plot_ppc_pava(
         if figsize is None:
             figsize = plot_bknd.scale_fig_size(
                 figsize,
-                rows=process_facet_dims(ds_calibration, row_dims)[0],
-                cols=process_facet_dims(ds_calibration, col_dims)[0],
+                rows=process_facet_dims(predictive_ds, row_dims)[0],
+                cols=process_facet_dims(predictive_ds, col_dims)[0],
                 figsize_units=figsize_units,
             )
             figsize_units = "dots"
@@ -171,7 +194,7 @@ def plot_ppc_pava(
         pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
 
         plot_collection = PlotCollection.grid(
-            ds_calibration,
+            predictive_ds,
             backend=backend,
             **pc_kwargs,
         )
@@ -181,72 +204,63 @@ def plot_ppc_pava(
     else:
         aes_map = aes_map.copy()
 
-    ## reference line
-    reference_ls_kwargs = copy(plot_kwargs.get("reference_line", {}))
+    aes_map.setdefault("predictive_markers", plot_collection.aes_set)
+    aes_map.setdefault("ci", plot_collection.aes_set)
+    ## predictive_markers
+    predictive_ms_kwargs = copy(plot_kwargs.get("predictive_markers", {}))
 
-    if reference_ls_kwargs is not False:
-        _, _, reference_ls_ignore = filter_aes(
-            plot_collection, aes_map, "reference_line", sample_dims
+    if predictive_ms_kwargs is not False:
+        _, predictive_ms_aes, predictive_ms_ignore = filter_aes(
+            plot_collection, aes_map, "predictive_markers", sample_dims
         )
-        reference_ls_kwargs.setdefault("color", "grey")
-        reference_ls_kwargs.setdefault("linestyle", lines[1])
+        if "color" not in predictive_ms_aes:
+            predictive_ms_kwargs.setdefault("color", colors[0])
 
-        plot_collection.map(
-            dline,
-            "reference_line",
-            data=ds_calibration,
-            x=ds_calibration.sel(plot_axis="x"),
-            # y=ds_calibration.sel(plot_axis="y"),
-            ignore_aes=reference_ls_ignore,
-            **reference_ls_kwargs,
-        )
-
-    ## markers
-    calibration_ms_kwargs = copy(plot_kwargs.get("markers", {}))
-
-    if calibration_ms_kwargs is not False:
-        _, _, calibration_ms_ignore = filter_aes(plot_collection, aes_map, "lines", sample_dims)
-        calibration_ms_kwargs.setdefault("color", colors[0])
-        calibration_ms_kwargs.setdefault("marker", markers[6])
+        predictive_ms_kwargs.setdefault("marker", markers[4])
 
         plot_collection.map(
             scatter_xy,
-            "markers",
-            data=ds_calibration,
-            ignore_aes=calibration_ms_ignore,
-            **calibration_ms_kwargs,
+            "predictive_markers",
+            data=predictive_ds,
+            ignore_aes=predictive_ms_ignore,
+            **predictive_ms_kwargs,
         )
 
-    ## lines
-    calibration_ls_kwargs = copy(plot_kwargs.get("lines", {}))
-
-    if calibration_ls_kwargs is not False:
-        _, _, calibration_ls_ignore = filter_aes(plot_collection, aes_map, "lines", sample_dims)
-        calibration_ls_kwargs.setdefault("color", colors[0])
-
-        plot_collection.map(
-            line_xy,
-            "lines",
-            data=ds_calibration,
-            ignore_aes=calibration_ls_ignore,
-            **calibration_ls_kwargs,
-        )
-
+    ## confidence intervals
     ci_kwargs = copy(plot_kwargs.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
+    _, ci_aes, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
+
     if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", colors[0])
-        ci_kwargs.setdefault("alpha", 0.25)
+        if "color" not in ci_aes:
+            ci_kwargs.setdefault("color", colors[0])
+
+        ci_kwargs.setdefault("alpha", 0.3)
+        ci_kwargs.setdefault("width", 3)
 
         plot_collection.map(
-            fill_between_y,
+            ci_line_y,
             "ci",
-            data=ds_calibration,
-            x=ds_calibration.sel(plot_axis="x"),
-            y_bottom=ds_calibration.sel(plot_axis="y_bottom"),
-            y_top=ds_calibration.sel(plot_axis="y_top"),
+            data=predictive_ds,
             ignore_aes=ci_ignore,
             **ci_kwargs,
+        )
+
+    ## observed_markers
+    observed_ms_kwargs = copy(plot_kwargs.get("observed_markers", {}))
+
+    if observed_ms_kwargs is not False:
+        _, _, observed_ms_ignore = filter_aes(
+            plot_collection, aes_map, "observed_markers", sample_dims
+        )
+        observed_ms_kwargs.setdefault("color", "black")
+        observed_ms_kwargs.setdefault("marker", markers[6])
+
+        plot_collection.map(
+            scatter_xy,
+            "observed_markers",
+            data=observed_ds,
+            ignore_aes=observed_ms_ignore,
+            **observed_ms_kwargs,
         )
 
     # set xlabel
@@ -256,7 +270,7 @@ def plot_ppc_pava(
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "forecast value")
+        xlabel_kwargs.setdefault("text", "counts")
 
         plot_collection.map(
             labelled_x,
@@ -273,7 +287,7 @@ def plot_ppc_pava(
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "black")
 
-        ylabel_kwargs.setdefault("text", "CEP")
+        ylabel_kwargs.setdefault("text", "frequency")
 
         plot_collection.map(
             labelled_y,
@@ -295,6 +309,14 @@ def plot_ppc_pava(
             subset_info=True,
             labeller=labeller,
             **title_kwargs,
+        )
+
+    if backend == "matplotlib":
+        plot_collection.map(
+            set_y_scale,
+            store_artist=False,
+            ignore_aes=plot_collection.aes_set,
+            scale=yscale,
         )
 
     return plot_collection

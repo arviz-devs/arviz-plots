@@ -1,7 +1,7 @@
 """
-# Power scaling sensitivity quantities plot
+# Sensitivity posterior quantities
 
-Plot of power scaling prior sensitivity quantities
+Plot of power scaling sensitivity quantities
 
 ---
 

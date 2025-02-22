@@ -12,6 +12,7 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_ppc_dist,
     plot_psense_dist,
     plot_ridge,
     plot_trace,
@@ -42,14 +43,18 @@ def generate_base_data(seed=31):
     mu_prior = norm(0, 3).logpdf(mu)
     tau_prior = halfnorm(scale=5).logpdf(tau)
     theta_prior = norm(0, 1).logpdf(theta)
+    prior_predictive = rng.normal(size=(1, 100, 7))
+    posterior_predictive = rng.normal(size=(4, 100, 7))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
 
     return {
         "posterior": {"mu": mu, "theta": theta, "tau": tau},
-        "sample_stats": {"diverging": diverging},
         "observed_data": {"y": obs},
         "log_likelihood": {"y": log_lik},
         "log_prior": {"mu": mu_prior, "theta": theta_prior, "tau": tau_prior},
+        "prior_predictive": {"y": prior_predictive},
+        "posterior_predictive": {"y": posterior_predictive},
+        "sample_stats": {"diverging": diverging},
     }
 
 
@@ -88,10 +93,16 @@ def datatree_4d(seed=31):
     theta = rng.normal(size=(4, 100, 5))
     eta = rng.normal(size=(4, 100, 5, 3))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
+    obs = rng.normal(size=(5, 3))
+    prior_predictive = rng.normal(size=(1, 100, 5, 3))
+    posterior_predictive = rng.normal(size=(4, 100, 5, 3))
 
     return from_dict(
         {
             "posterior": {"mu": mu, "theta": theta, "eta": eta},
+            "observed_data": {"obs": obs},
+            "prior_predictive": {"obs": prior_predictive},
+            "posterior_predictive": {"obs": posterior_predictive},
             "sample_stats": {"diverging": diverging},
         },
         dims={"theta": ["hierarchy"], "eta": ["hierarchy", "group"]},
@@ -371,8 +382,10 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
 
-    def test_plot_ess_evolution_sample(self, datatree_sample, backend):
-        pc = plot_ess_evolution(datatree_sample, backend=backend, sample_dims="sample")
+    def test_plot_ess_evolution_sample(
+        self, datatree_sample, backend
+    ):  # pylint: disable=unused-argument
+        pc = plot_ess_evolution(datatree_sample, sample_dims="sample")
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "ess_bulk" in pc.viz["mu"]
@@ -383,6 +396,15 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "title" in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
+
+    # omitting hist for the moment as I get [hist-none] - ValueError: artist_kws not empty
+    @pytest.mark.parametrize("kind", ["kde", "ecdf"])
+    def test_plot_ppc_dist(self, datatree, kind, backend):
+        pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert pc.aes["y"]
+        assert kind in pc.viz["y"]
+        assert "observe_density" in pc.viz["y"]
 
     def test_plot_psense_dist(self, datatree, backend):
         pc = plot_psense_dist(datatree, backend=backend)
