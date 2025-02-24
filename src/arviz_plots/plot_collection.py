@@ -935,7 +935,6 @@ class PlotCollection:
         subset_info=False,
         store_artist=True,
         artist_dims=None,
-        step_hist=False,
         **kwargs,
     ):
         """Apply the given plotting function to all plots with the corresponding aesthetics.
@@ -975,10 +974,6 @@ class PlotCollection:
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
             ``map`` with functions that return an array of :term:`artist`.
-        step_hist : boolean, default False
-            Flag to indicate that the `hist` function should be called with
-            the keyword argument `step_hist=True` if step histogram is required
-            instead of bar histogram.
         **kwargs : mapping, optional
             Keyword arguments passed as is to `fun`. Values within `**kwargs`
             with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
@@ -1046,10 +1041,7 @@ class PlotCollection:
             if subset_info:
                 fun_kwargs = {**fun_kwargs, "var_name": var_name, "sel": sel, "isel": isel}
 
-            if step_hist:
-                aux_artist = fun(da, target=target, step_hist=True, **fun_kwargs)
-            else:
-                aux_artist = fun(da, target=target, **fun_kwargs)
+            aux_artist = fun(da, target=target, **fun_kwargs)
             if store_artist:
                 if np.size(aux_artist) == 1:
                     aux_artist = np.squeeze(aux_artist)

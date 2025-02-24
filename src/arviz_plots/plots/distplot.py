@@ -1,6 +1,7 @@
 """dist plot code."""
+
 import warnings
-from copy import copy
+from copy import copy, deepcopy
 from importlib import import_module
 
 import arviz_stats  # pylint: disable=unused-import
@@ -39,7 +40,6 @@ def plot_dist(
     aes_map=None,
     plot_kwargs=None,
     stats_kwargs=None,
-    step_hist=False,
     pc_kwargs=None,
 ):
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
@@ -115,11 +115,6 @@ def plot_dist(
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 
-    step_hist : boolean, default False
-            Flag to indicate that the `hist` function should be called with
-            the keyword argument `step_hist=True` if step histogram is required
-            instead of bar histogram.
-
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
@@ -152,11 +147,17 @@ def plot_dist(
         >>> )
 
     .. minigallery:: plot_dist
-
     """
     if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
 
+    # set the value of step_hist according to user preference
+    # or else set it as False
+    step_hist = (
+        plot_kwargs["hist"].pop("step", False)
+        if plot_kwargs is not None and "hist" in plot_kwargs.keys()
+        else False
+    )
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -281,18 +282,23 @@ def plot_dist(
 
         elif kind == "hist":
             stats_kwargs.setdefault("density", {"density": True})
-
             density = distribution.azstats.histogram(
                 dims=density_dims, **stats_kwargs.get("density", {})
             )
+
+            # copying so that `step_hist` key doesn't have any
+            #  conflict with further uses of density_kwargs
+            den_kwrgs = deepcopy(density_kwargs)
+
+            if step_hist:
+                den_kwrgs["step_hist"] = step_hist
 
             plot_collection.map(
                 hist,
                 "hist",
                 data=density,
                 ignore_aes=density_ignore,
-                step_hist=step_hist,
-                **density_kwargs,
+                **den_kwrgs,
             )
 
         else:

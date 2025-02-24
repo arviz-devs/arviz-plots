@@ -200,7 +200,6 @@ def hist(
     color=unset,
     facecolor=unset,
     edgecolor=unset,
-    step_hist="False",
     **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""

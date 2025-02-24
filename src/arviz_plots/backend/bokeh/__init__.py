@@ -275,7 +275,6 @@ def hist(
     facecolor=unset,
     edgecolor=unset,
     alpha=unset,
-    step_hist=False,
     step_mode="center",
     **artist_kws,
 ):
@@ -286,10 +285,8 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    # Ensure alpha and colors have default values
-    alpha = 1.0 if alpha is unset else alpha
-    edgecolor = "black" if edgecolor is unset else edgecolor
-
+    step_hist = artist_kws.pop("step_hist", False)
+    kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
     if step_hist:
         x = [l_e[0], l_e[0]]
         y_step = [0, y[0]]
@@ -299,6 +296,10 @@ def hist(
         x.append(r_e[-1])
         y_step.append(bottom)
 
+        # Ensure alpha and colors have default values .
+        #  values throw error in bokeh.step function
+        alpha = 1.0 if alpha is unset else alpha
+        edgecolor = "black" if edgecolor is unset else edgecolor
         p = target.step(x, y_step, line_color=edgecolor, alpha=alpha, mode=step_mode, **artist_kws)
 
         target.x_range = Range1d(float(l_e[0]), float(r_e[-1]))
@@ -306,7 +307,6 @@ def hist(
 
         return p
 
-    kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
     return target.quad(top=y, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws))
 
 

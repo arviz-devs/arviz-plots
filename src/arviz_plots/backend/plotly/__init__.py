@@ -287,11 +287,11 @@ def hist(
     alpha=unset,
     facecolor=unset,
     edgecolor=unset,
-    step_hist=False,
     **artist_kws,
 ):
     """Interface to Plotly for a histogram plot."""
     artist_kws.setdefault("showlegend", False)
+    step_hist = artist_kws.pop("step_hist", False)
     widths = np.asarray(r_e) - np.asarray(l_e)
     if np.any(bottom != 0):
         height = y - bottom
@@ -303,21 +303,7 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    if step_hist is False:
-        marker_artist_kws = artist_kws.pop("marker", {}).copy()
-        line_kwargs = {"color": edgecolor}
-        line_artist_kws = marker_artist_kws.pop("line", {}).copy()
-        marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
-        marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
-        hist_object = go.Bar(
-            x=(l_e + r_e) / 2,
-            y=height,
-            base=bottom,
-            width=widths,
-            marker=marker_kwargs,
-            **_filter_kwargs({"opacity": alpha}, artist_kws),
-        )
-    elif step_hist is True:
+    if step_hist:
         if color is unset:
             color = "black"
         if alpha is unset:
@@ -342,6 +328,20 @@ def hist(
             fill="none",
             mode="lines",
             **artist_kws,
+        )
+    else:
+        marker_artist_kws = artist_kws.pop("marker", {}).copy()
+        line_kwargs = {"color": edgecolor}
+        line_artist_kws = marker_artist_kws.pop("line", {}).copy()
+        marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
+        marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
+        hist_object = go.Bar(
+            x=(l_e + r_e) / 2,
+            y=height,
+            base=bottom,
+            width=widths,
+            marker=marker_kwargs,
+            **_filter_kwargs({"opacity": alpha}, artist_kws),
         )
 
     target.add_trace(hist_object)

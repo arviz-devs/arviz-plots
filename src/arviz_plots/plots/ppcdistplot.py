@@ -1,6 +1,7 @@
 """Posterior/prior predictive check using densities."""
+
 import warnings
-from copy import copy
+from copy import copy, deepcopy
 from importlib import import_module
 
 import numpy as np
@@ -29,7 +30,6 @@ def plot_ppc_dist(
     aes_map=None,
     plot_kwargs=None,
     stats_kwargs=None,
-    step_hist=False,
     pc_kwargs=None,
 ):
     """
@@ -97,11 +97,6 @@ def plot_ppc_dist(
 
         * density -> passed to kde, ecdf, ...
 
-    step_hist : boolean, default False
-            Flag to indicate that the `hist` function should be called with
-            the keyword argument `step_hist=True` if step histogram is required
-            instead of bar histogram.
-
     Returns
     -------
     PlotCollection
@@ -132,6 +127,14 @@ def plot_ppc_dist(
 
     .. minigallery:: plot_ppc_dist
     """
+    # set value of step_hist according to user preference
+    # or else set default value as False
+    step_hist = (
+        plot_kwargs["hist"].pop("step", False)
+        if plot_kwargs is not None and "hist" in plot_kwargs.keys()
+        else False
+    )
+
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -296,13 +299,20 @@ def plot_ppc_dist(
 
         if kind == "hist":
             dt_observed = observed_dist.azstats.histogram(dims=pp_dims, **stats_kwargs)
+
+            # copying so that `step_hist` key doesn't have any
+            #  conflict with further uses of observed_density_kwargs
+            ob_dens_kwrg = deepcopy(observed_density_kwargs)
+
+            if step_hist:
+                ob_dens_kwrg["step_hist"] = step_hist
+
             plot_collection.map(
                 hist,
                 "observe_density",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
-                step_hist=step_hist,
-                **observed_density_kwargs,
+                **ob_dens_kwrg,
             )
 
         if kind == "ecdf":
