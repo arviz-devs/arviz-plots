@@ -286,9 +286,26 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"bottom": bottom, "color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
+
+    step_hist = artist_kws.pop("step", False)
+    kwargs = {"color": facecolor, "bottom": bottom, "edgecolor": edgecolor, "alpha": alpha}
+    if step_hist:
+        # creating other kwargs for step plot,
+        # because bottom and edgecolor attributes are not supported
+        kwargs_step = {"color": facecolor, "alpha": alpha}
+        return target.step(
+            np.r_[l_e, r_e[-1]],
+            np.r_[y, y[-1]],
+            where="post",
+            **_filter_kwargs(kwargs_step, None, artist_kws),
+        )
+
     return target.bar(
-        l_e, height, width=widths, align="edge", **_filter_kwargs(kwargs, None, artist_kws)
+        l_e,
+        height,
+        width=widths,
+        align="edge",
+        **_filter_kwargs(kwargs, None, artist_kws),
     )
 
 

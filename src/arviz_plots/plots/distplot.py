@@ -1,4 +1,5 @@
 """dist plot code."""
+
 import warnings
 from copy import copy
 from importlib import import_module
@@ -146,7 +147,6 @@ def plot_dist(
         >>> )
 
     .. minigallery:: plot_dist
-
     """
     if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
@@ -275,13 +275,16 @@ def plot_dist(
 
         elif kind == "hist":
             stats_kwargs.setdefault("density", {"density": True})
-
             density = distribution.azstats.histogram(
                 dims=density_dims, **stats_kwargs.get("density", {})
             )
 
             plot_collection.map(
-                hist, "hist", data=density, ignore_aes=density_ignore, **density_kwargs
+                hist,
+                "hist",
+                data=density,
+                ignore_aes=density_ignore,
+                **density_kwargs,
             )
 
         else:

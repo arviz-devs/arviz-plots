@@ -1,4 +1,5 @@
 """Posterior/prior predictive check using densities."""
+
 import warnings
 from copy import copy
 from importlib import import_module
@@ -290,6 +291,7 @@ def plot_ppc_dist(
 
         if kind == "hist":
             dt_observed = observed_dist.azstats.histogram(dims=pp_dims, **stats_kwargs)
+
             plot_collection.map(
                 hist,
                 "observe_density",

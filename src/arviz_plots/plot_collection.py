@@ -1040,8 +1040,11 @@ class PlotCollection:
             fun_kwargs["backend"] = self.backend
             if subset_info:
                 fun_kwargs = {**fun_kwargs, "var_name": var_name, "sel": sel, "isel": isel}
+
             aux_artist = fun(da, target=target, **fun_kwargs)
             if store_artist:
+                if np.size(aux_artist) == 1:
+                    aux_artist = np.squeeze(aux_artist)
                 self.viz[var_name][fun_label].loc[sel] = aux_artist
 
     def add_legend(self, dim, var_name=None, aes=None, artist_kwargs=None, title=None, **kwargs):

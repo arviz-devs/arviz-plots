@@ -155,9 +155,41 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
         assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
 
+    def test_plot_dist_step_hist(self, datatree, backend):
+        if backend == "none":
+            pytest.skip("Step hist test is not required for 'none' backend")
+        kind = "hist"
+        plot_kwargs = {"hist": {"step": True}}
+        pc = plot_dist(datatree, backend=backend, kind=kind, plot_kwargs=plot_kwargs)
+        assert not pc.aes["mu"]
+        assert kind in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
+        assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_sample(self, datatree_sample, backend, kind):
         pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", kind=kind)
+        assert not pc.aes["mu"]
+        assert kind in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
+        assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+
+    def test_plot_dist_sample_step_hist(self, datatree_sample, backend):
+        if backend == "none":
+            pytest.skip("Step hist test is not required for 'none' backend")
+        kind = "hist"
+        plot_kwargs = {"hist": {"step": True}}
+        pc = plot_dist(
+            datatree_sample,
+            backend=backend,
+            sample_dims="sample",
+            kind=kind,
+            plot_kwargs=plot_kwargs,
+        )
         assert not pc.aes["mu"]
         assert kind in pc.viz["mu"]
         assert "hierarchy" not in pc.viz["mu"].dims

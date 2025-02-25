@@ -4,6 +4,7 @@ Notes
 -----
 :term:`artists` are returned, but it seems modifying them won't modify the figure.
 """
+
 import re
 import warnings
 
@@ -288,8 +289,9 @@ def hist(
     edgecolor=unset,
     **artist_kws,
 ):
-    """Interface to matplotlib for a histogram bar plot."""
+    """Interface to Plotly for a histogram plot."""
     artist_kws.setdefault("showlegend", False)
+    step_hist = artist_kws.pop("step", False)
     widths = np.asarray(r_e) - np.asarray(l_e)
     if np.any(bottom != 0):
         height = y - bottom
@@ -300,19 +302,33 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    marker_artist_kws = artist_kws.pop("marker", {}).copy()
-    line_kwargs = {"color": edgecolor}
-    line_artist_kws = marker_artist_kws.pop("line", {}).copy()
-    marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
-    marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
-    hist_object = go.Bar(
-        x=(l_e + r_e) / 2,
-        y=height,
-        base=bottom,
-        width=widths,
-        marker=marker_kwargs,
-        **_filter_kwargs({"opacity": alpha}, artist_kws),
-    )
+
+    if step_hist:
+        step_x = np.repeat(np.concatenate(([l_e[0]], r_e)), 2)[1:-1]
+        step_y = np.repeat(np.concatenate(([0], height)), 2)
+        hist_object = go.Scatter(
+            x=step_x,
+            y=step_y,
+            fill="none",
+            line={"color": edgecolor},
+            mode="lines",
+            **_filter_kwargs({"opacity": alpha}, artist_kws),
+        )
+    else:
+        marker_artist_kws = artist_kws.pop("marker", {}).copy()
+        line_kwargs = {"color": edgecolor}
+        line_artist_kws = marker_artist_kws.pop("line", {}).copy()
+        marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
+        marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
+        hist_object = go.Bar(
+            x=(l_e + r_e) / 2,
+            y=height,
+            base=bottom,
+            width=widths,
+            marker=marker_kwargs,
+            **_filter_kwargs({"opacity": alpha}, artist_kws),
+        )
+
     target.add_trace(hist_object)
     return hist_object
 
