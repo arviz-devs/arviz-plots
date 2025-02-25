@@ -304,30 +304,14 @@ def hist(
             edgecolor = color
 
     if step_hist:
-        if color is unset:
-            color = "black"
-        if alpha is unset:
-            alpha = 1.0
-        if facecolor is unset:
-            facecolor = None
-        if edgecolor is unset:
-            edgecolor = None
-
-        if color is not None:
-            if facecolor is None:
-                facecolor = color
-            if edgecolor is None:
-                edgecolor = color
-
         step_x = np.repeat(np.concatenate(([l_e[0]], r_e)), 2)[1:-1]
         step_y = np.repeat(np.concatenate(([0], height)), 2)
         hist_object = go.Scatter(
             x=step_x,
             y=step_y,
-            line={"color": edgecolor, "width": 2, "shape": "hvh"},
             fill="none",
             mode="lines",
-            **artist_kws,
+            **_filter_kwargs({"opacity": alpha}, artist_kws),
         )
     else:
         marker_artist_kws = artist_kws.pop("marker", {}).copy()

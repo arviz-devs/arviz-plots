@@ -1,7 +1,7 @@
 """dist plot code."""
 
 import warnings
-from copy import copy, deepcopy
+from copy import copy
 from importlib import import_module
 
 import arviz_stats  # pylint: disable=unused-import
@@ -151,13 +151,6 @@ def plot_dist(
     if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
 
-    # set the value of step_hist according to user preference
-    # or else set it as False
-    step_hist = (
-        plot_kwargs["hist"].pop("step", False)
-        if plot_kwargs is not None and "hist" in plot_kwargs.keys()
-        else False
-    )
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -286,19 +279,12 @@ def plot_dist(
                 dims=density_dims, **stats_kwargs.get("density", {})
             )
 
-            # copying so that `step_hist` key doesn't have any
-            #  conflict with further uses of density_kwargs
-            den_kwrgs = deepcopy(density_kwargs)
-
-            if step_hist:
-                den_kwrgs["step_hist"] = step_hist
-
             plot_collection.map(
                 hist,
                 "hist",
                 data=density,
                 ignore_aes=density_ignore,
-                **den_kwrgs,
+                **density_kwargs,
             )
 
         else:

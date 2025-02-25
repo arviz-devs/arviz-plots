@@ -288,6 +288,8 @@ def hist(
     step_hist = artist_kws.pop("step_hist", False)
     kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
     if step_hist:
+        kwargs = {"line_color": edgecolor, "alpha": alpha}
+
         x = [l_e[0], l_e[0]]
         y_step = [0, y[0]]
         for i, y_i in enumerate(y):
@@ -296,11 +298,7 @@ def hist(
         x.append(r_e[-1])
         y_step.append(bottom)
 
-        # Ensure alpha and colors have default values .
-        #  values throw error in bokeh.step function
-        alpha = 1.0 if alpha is unset else alpha
-        edgecolor = "black" if edgecolor is unset else edgecolor
-        p = target.step(x, y_step, line_color=edgecolor, alpha=alpha, mode=step_mode, **artist_kws)
+        p = target.step(x, y_step, mode=step_mode, **_filter_kwargs(kwargs, artist_kws))
 
         target.x_range = Range1d(float(l_e[0]), float(r_e[-1]))
         target.y_range = Range1d(float(bottom), float(max(y)) * 1.2)  # Add padding to y-axis
