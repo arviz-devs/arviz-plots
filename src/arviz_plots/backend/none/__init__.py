@@ -203,9 +203,6 @@ def hist(
     **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""
-    step_hist = artist_kws.pop("step", False)
-    if step_hist:
-        raise ValueError("None type backend can't plot step histograms")
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError("artist_kws not empty")
     if color is not unset:
