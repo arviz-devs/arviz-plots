@@ -287,7 +287,7 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    step_hist = artist_kws.pop("step_hist", False)
+    step_hist = artist_kws.pop("step", False)
     kwargs = {"color": facecolor, "bottom": bottom, "edgecolor": edgecolor, "alpha": alpha}
     if step_hist:
         # creating other kwargs for step plot,

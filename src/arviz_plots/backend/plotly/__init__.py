@@ -291,7 +291,7 @@ def hist(
 ):
     """Interface to Plotly for a histogram plot."""
     artist_kws.setdefault("showlegend", False)
-    step_hist = artist_kws.pop("step_hist", False)
+    step_hist = artist_kws.pop("step", False)
     widths = np.asarray(r_e) - np.asarray(l_e)
     if np.any(bottom != 0):
         height = y - bottom
@@ -310,6 +310,7 @@ def hist(
             x=step_x,
             y=step_y,
             fill="none",
+            line={"color": edgecolor},
             mode="lines",
             **_filter_kwargs({"opacity": alpha}, artist_kws),
         )
