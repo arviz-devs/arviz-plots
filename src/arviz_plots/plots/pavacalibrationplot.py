@@ -48,10 +48,10 @@ def plot_ppc_pava(
         defaults to 1000.
     ci_prob : float, optional
         Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
-    data_pairs : tuple, optional
-        Tuple of posterior predictive data and observed data variable names.
-        If None, it will assume that the observed data and the posterior
-        predictive data have the same variable name.
+    data_pairs : dict, optional
+        Dictionary of keys prior/posterior predictive data and values observed data variable names.
+        If None, it will assume that the observed data and the predictive data have
+        the same variable name.
     num_samples : int, optional
         Number of samples to use for the plot. Defaults to 100.
     var_names : str or list of str, optional
@@ -84,6 +84,8 @@ def plot_ppc_pava(
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
+        markers defaults to False, no markers are plotted.
+        Pass an (empty) mapping to plot markers.
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -138,10 +140,12 @@ def plot_ppc_pava(
 
     labeller = BaseLabeller()
 
-    if data_pairs is None:
-        data_pairs = (var_names, var_names)
+    plot_kwargs.setdefault("markers", False)
 
-    ds_calibration = isotonic_fit(dt, var_names, n_bootstaps, ci_prob)
+    if data_pairs is None:
+        data_pairs = {var_names: var_names}
+
+    ds_calibration = isotonic_fit(dt, data_pairs, n_bootstaps, ci_prob)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
@@ -196,7 +200,6 @@ def plot_ppc_pava(
             "reference_line",
             data=ds_calibration,
             x=ds_calibration.sel(plot_axis="x"),
-            # y=ds_calibration.sel(plot_axis="y"),
             ignore_aes=reference_ls_ignore,
             **reference_ls_kwargs,
         )
@@ -205,7 +208,7 @@ def plot_ppc_pava(
     calibration_ms_kwargs = copy(plot_kwargs.get("markers", {}))
 
     if calibration_ms_kwargs is not False:
-        _, _, calibration_ms_ignore = filter_aes(plot_collection, aes_map, "lines", sample_dims)
+        _, _, calibration_ms_ignore = filter_aes(plot_collection, aes_map, "markers", sample_dims)
         calibration_ms_kwargs.setdefault("color", colors[0])
         calibration_ms_kwargs.setdefault("marker", markers[6])
 

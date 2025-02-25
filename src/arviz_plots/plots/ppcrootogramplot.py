@@ -53,8 +53,8 @@ def plot_ppc_rootogram(
         Scale for the y-axis. Defaults to "sqrt", pass "linear" for linear scale.
         Currently only "matplotlib" backend is supported. For "bokeh" and "plotly"
         the y-axis is linear.
-    data_pairs : tuple, optional
-        Tuple of prior/posterior predictive data and observed data variable names.
+    data_pairs : dict, optional
+        Dictionary of keys prior/posterior predictive data and values observed data variable names.
         If None, it will assume that the observed data and the predictive data have
         the same variable name.
     var_names : str or list of str, optional
