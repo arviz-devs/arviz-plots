@@ -3,9 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from arviz_base import from_dict
-from scipy.stats import halfnorm, norm
-
+from arviz_base import from_dict, load_arviz_data
 from arviz_plots import (
     plot_bf,
     plot_compare,
@@ -20,6 +18,7 @@ from arviz_plots import (
     plot_trace_dist,
     visuals,
 )
+from scipy.stats import halfnorm, norm
 
 pytestmark = [
     pytest.mark.usefixtures("clean_plots"),
@@ -432,25 +431,12 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" in pc.viz["theta"].dims
 
     def test_plot_bf(self, datatree, backend):
+        # The current genrate_base_data() function lacks a "prior" group,
+        # so we're manually loading the data.
+        datatree = load_arviz_data("centered_eight")
         pc = plot_bf(datatree, var_name="mu", backend=backend)
         assert "chart" in pc.viz.data_vars
-        assert "plot" not in pc.viz.data_vars
-        assert "plot" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["plot"].dims
-        assert "alpha" not in pc.viz["mu"]["plot"].dims
-        assert "credible_interval" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
-        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-
-    def test_plot_bf_sample(self, backend):
-        pc = plot_bf(datatree, var_name="mu", backend=backend)
-        assert "chart" in pc.viz.data_vars
-        assert "plot" not in pc.viz.data_vars
-        assert "plot" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["plot"].dims
-        assert "alpha" not in pc.viz["mu"]["plot"].dims
-        assert "credible_interval" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
-        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "plot" in pc.viz.data_vars
+        assert "row" in pc.viz.data_vars
+        assert "col" in pc.viz.data_vars
+        assert "component_group" in pc.viz["mu"].coords
