@@ -9,6 +9,8 @@ from xarray import DataArray, Dataset, DataTree, concat, full_like
 from arviz_plots import PlotCollection
 from arviz_plots.plot_collection import _get_aes_dict_from_dt
 
+# from datatree import DataTree
+
 
 @pytest.fixture(scope="module")
 def dataset(seed=31):
