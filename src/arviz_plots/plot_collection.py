@@ -3,6 +3,7 @@
 import warnings
 from importlib import import_module
 
+import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams
@@ -873,9 +874,26 @@ class PlotCollection:
                 coords={dim: data[dim] for dim in inherited_dims},
             )
 
+    # def get_target(self, var_name, selection):
+    #     """Get the target that corresponds to the given variable and selection."""
+    #     return subset_ds(self.get_viz(var_name), "plot", selection)
+
     def get_target(self, var_name, selection):
         """Get the target that corresponds to the given variable and selection."""
-        return subset_ds(self.get_viz(var_name), "plot", selection)
+        selection_key = tuple(sorted(selection.items()))
+        target = self.viz[var_name].get(selection_key, None)
+        # Ensuring the target is always a Matplotlib Axes object
+        if target is None:
+            print(f"Warning: Selection {selection_key} not found in viz[{var_name}]")
+            fig, target = plt.subplots()  # Creating new figure
+            plt.close(fig)  # Closing figure to prevent display issues
+
+        if not isinstance(target, plt.Axes):
+            print("Warning: Target is not an Axes object. Creating a new figure.")
+            fig, target = plt.subplots()
+            plt.close(fig)
+
+        return target
 
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary.
