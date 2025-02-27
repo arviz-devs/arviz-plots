@@ -15,11 +15,9 @@ import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-dt = load_arviz_data("rugby")
+dt = load_arviz_data("radon")
 pc = azp.plot_ppc_dist(
     dt,
-    pc_kwargs={"aes": {"color": ["__variable__"]}}, # map variable to color
-    aes_map={"title": ["color"]}, # change title's color per variable
     backend="none",
 )
 pc.show()
