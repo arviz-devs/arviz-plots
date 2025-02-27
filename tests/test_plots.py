@@ -429,3 +429,16 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "component_group" in pc.viz["mu"]["credible_interval"].dims
         assert "alpha" in pc.viz["mu"]["credible_interval"].dims
         assert "hierarchy" in pc.viz["theta"].dims
+    
+    def test_yrelative_conversion():
+    test_data = xr.Dataset({
+        "yrelative": xr.DataArray([0.1, 0.5, 1.0]),
+        "density": xr.DataArray([10, 20, 30])
+    })
+    
+    expected_y = test_data["yrelative"] * test_data["density"].max(dim="some_dims")
+    
+    plot_dist(test_data, yrelative=True)
+    
+    assert (test_data["y"] == expected_y).all()
+
