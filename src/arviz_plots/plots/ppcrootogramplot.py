@@ -10,6 +10,7 @@ from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import (
     ci_line_y,
+    grid,
     labelled_title,
     labelled_x,
     labelled_y,
@@ -84,6 +85,7 @@ def plot_ppc_rootogram(
         * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
+        * grid -> passed to :func:`~arviz_plots.visuals.grid`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
     pc_kwargs : mapping
@@ -261,6 +263,21 @@ def plot_ppc_rootogram(
             data=observed_ds,
             ignore_aes=observed_ms_ignore,
             **observed_ms_kwargs,
+        )
+
+    ## grid
+    grid_kwargs = copy(plot_kwargs.get("grid", {}))
+
+    if grid_kwargs is not False:
+        _, _, grid_ignore = filter_aes(plot_collection, aes_map, "grid", sample_dims)
+        grid_kwargs.setdefault("color", "#cccccc")
+        grid_kwargs.setdefault("axis", "y")
+
+        plot_collection.map(
+            grid,
+            "grid",
+            ignore_aes=grid_ignore,
+            **grid_kwargs,
         )
 
     # set xlabel

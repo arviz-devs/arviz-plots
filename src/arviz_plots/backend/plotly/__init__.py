@@ -595,3 +595,12 @@ def remove_axis(target, axis="y"):
         target.update_yaxes(visible=False)
     if axis in ("x", "both"):
         target.update_xaxes(visible=False)
+
+
+def grid(target, axis="both", color=unset, **artist_kws):
+    """Interface to plotly for setting a grid in any axis."""
+    kwargs = {"showgrid": True, "gridcolor": color}
+    if axis in ["y", "both"]:
+        target.update_yaxes(_filter_kwargs(kwargs, artist_kws))
+    if axis in ["x", "both"]:
+        target.update_xaxes(_filter_kwargs(kwargs, artist_kws))

@@ -304,6 +304,12 @@ def set_xticks(da, target, backend, values, labels, **kwargs):
 
 
 def set_y_scale(da, target, backend, scale, **kwargs):
-    """Dispatch to ``remove_axis`` function in backend."""
+    """Set scale for y-axis."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_backend.set_y_scale(target, scale, **kwargs)
+
+
+def grid(da, target, backend, **kwargs):
+    """Dispatch to ``remove_axis`` function in backend."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    plot_backend.grid(target, **kwargs)

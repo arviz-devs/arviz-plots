@@ -517,5 +517,13 @@ def remove_axis(target, axis="y"):
 
 
 def set_y_scale(target, scale):
-    """Interface to matplotlib for setting the y scale of a plot."""
+    """Interface to bokeh for setting the y scale of a plot."""
     target.set_yscale(scale)
+
+
+def grid(target, axis, color):
+    """Interface to bokeh for setting a grid in any axis."""
+    if axis in ["y", "both"]:
+        target.ygrid.grid_line_color = color
+    if axis in ["x", "both"]:
+        target.xgrid.grid_line_color = color

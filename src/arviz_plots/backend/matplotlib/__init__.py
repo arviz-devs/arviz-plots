@@ -497,3 +497,8 @@ def remove_axis(target, axis="y"):
 def set_y_scale(target, scale):
     """Interface to matplotlib for setting the y scale of a plot."""
     target.set_yscale(scale)
+
+
+def grid(target, axis, color):
+    """Interface to matplotlib for setting a grid in any axis."""
+    target.grid(axis=axis, color=color)
