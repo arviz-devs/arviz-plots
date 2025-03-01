@@ -3,10 +3,11 @@
 import numpy as np
 import pandas as pd
 import pytest
-from arviz_base import from_dict
+from arviz_base import from_dict, load_arviz_data
 from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
+    plot_bf,
     plot_compare,
     plot_dist,
     plot_ess,
@@ -461,3 +462,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "component_group" in pc.viz["mu"]["credible_interval"].dims
         assert "alpha" in pc.viz["mu"]["credible_interval"].dims
         assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_bf(self, datatree, backend):
+        # The current genrate_base_data() function lacks a "prior" group,
+        # so we're manually loading the data.
+        datatree = load_arviz_data("centered_eight")
+        pc = plot_bf(datatree, var_name="mu", backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" in pc.viz.data_vars
+        assert "row" in pc.viz.data_vars
+        assert "col" in pc.viz.data_vars
+        assert "Groups" in pc.viz["mu"].coords
