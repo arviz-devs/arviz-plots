@@ -23,9 +23,6 @@ from arviz_plots.visuals import (
 
 
 def plot_dist(
-    data,
-    yrelative=False,
-    **kwags,
     dt,
     var_names=None,
     filter_vars=None,
@@ -44,16 +41,6 @@ def plot_dist(
     stats_kwargs=None,
     pc_kwargs=None,
 ):
-import xarray as xr 
-
-def plot_dist(data, yrelative=False, **kwargs):  
-    if yrelative:
-        density_max = data["density"].max(dim="some_dims")  
-        data["y"] = data["yrelative"] * density_max 
-        data = data.drop_vars("yrelative")  
-    
-    plot_backend_data = data[["x", "y"]]  
-
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
 
     Generate :term:`faceted` :term:`plots` with: a graphical representation of 1D marginal
