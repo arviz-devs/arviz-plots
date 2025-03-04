@@ -25,6 +25,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_forest
    plot_ppc_dist
    plot_ppc_pava
+   plot_ppc_pit
    plot_ppc_rootogram
    plot_psense_dist
    plot_psense_quantities

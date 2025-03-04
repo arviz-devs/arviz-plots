@@ -9,6 +9,7 @@ from .evolutionplot import plot_ess_evolution
 from .forestplot import plot_forest
 from .pavacalibrationplot import plot_ppc_pava
 from .ppcdistplot import plot_ppc_dist
+from .ppcpitplot import plot_ppc_pit
 from .ppcrootogramplot import plot_ppc_rootogram
 from .psensedistplot import plot_psense_dist
 from .psensequantitiesplot import plot_psense_quantities
@@ -30,6 +31,7 @@ __all__ = [
     "plot_ppc_rootogram",
     "plot_ridge",
     "plot_ppc_pava",
+    "plot_ppc_pit",
     "plot_psense_dist",
     "plot_psense_quantities",
 ]
