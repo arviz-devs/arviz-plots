@@ -57,3 +57,11 @@ See https://github.com/arviz-devs/arviz-stats/issues/56
     ----------
     .. [1] Kleiber C, Zeileis A. *Visualizing Count Data Regressions Using Rootograms*. 
         The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
+
+## ECDF-pit
+
+    References
+    ----------
+    .. [1] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
+    its applications in goodness-of-fit evaluation and multiple sample comparison*.
+    Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
