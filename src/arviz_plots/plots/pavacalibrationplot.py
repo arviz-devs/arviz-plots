@@ -259,7 +259,7 @@ def plot_ppc_pava(
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "forecast value")
+        xlabel_kwargs.setdefault("text", "predicted value")
 
         plot_collection.map(
             labelled_x,
