@@ -186,6 +186,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" not in pc.viz.data_vars
         assert pc.viz["mu"].trace.shape == ()
 
+    def test_plot_dist_yrelative():
+        data = np.array([0.1, 0.3, 0.5, 0.7])
+        yrelative = np.array([0.2, 0.4, 0.6, 0.8])
+         y_expected = yrelative * data.max()
+         y_computed = process_aesthetics(data, yrelative=yrelative)
+         assert np.allclose(y_computed, y_expected), "yrelative scaling failed!"
+
+
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_trace_dist(self, datatree, backend, compact, combined):

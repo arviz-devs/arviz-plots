@@ -40,7 +40,14 @@ def plot_dist(
     plot_kwargs=None,
     stats_kwargs=None,
     pc_kwargs=None,
+    yrelative=None,
 ):
+    """
+    Parameters:
+    - dt: Data to be plotted
+    - yrelative: Optional, relative y-values that will be scaled
+    """
+
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
 
     Generate :term:`faceted` :term:`plots` with: a graphical representation of 1D marginal
@@ -171,9 +178,13 @@ def plot_dist(
         pc_kwargs = {}
     else:
         pc_kwargs = pc_kwargs.copy()
-
     if stats_kwargs is None:
         stats_kwargs = {}
+    if yrelative is not None:
+        density_max = dt.max() 
+        y = yrelative * density_max  
+    else:
+        y = None 
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -184,6 +195,10 @@ def plot_dist(
         else:
             backend = plot_collection.backend
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+
+    return plot_bknd.plot_dist(
+    dt, y=y, var_names=var_names, filter_vars=filter_vars, coords=coords, **plot_kwargs
+    )
 
     if plot_collection is None:
         if backend is None:
@@ -396,9 +411,15 @@ def plot_dist(
             labeller=labeller,
             **title_kwargs,
         )
+    if yrelative is not None:
+    plot_collection.map(
+        lambda y: y * dt.max(),  # Scale yrelative values
+        "y",
+        )
+
     if plot_kwargs.get("remove_axis", True) is not False:
-        plot_collection.map(
-            remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
+    plot_collection.map(
+        remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )
 
     return plot_collection
