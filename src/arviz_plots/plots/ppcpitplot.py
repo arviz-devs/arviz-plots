@@ -1,4 +1,4 @@
-"""Plot ppc pit for continuous data."""
+"""Plot ppc pit."""
 import warnings
 from copy import copy
 from importlib import import_module
@@ -6,6 +6,7 @@ from importlib import import_module
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import difference_ecdf_pit
+from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes
@@ -94,7 +95,7 @@ def plot_ppc_pit(
 
     Examples
     --------
-    Plot the ecdf-PIT for the radon dataset.
+    Plot the ecdf-PIT for the crabs hurdle-negative-binomial dataset.
 
     .. plot::
         :context: close-figs
@@ -102,7 +103,7 @@ def plot_ppc_pit(
         >>> from arviz_plots import plot_ppc_pit, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('radon')
+        >>> dt = load_arviz_data('crabs_hurdle_nb')
         >>> plot_ppc_pit(dt)
 
 
@@ -146,21 +147,24 @@ def plot_ppc_pit(
     ]
     observed_types = [dt.observed_data[var].values.dtype.kind == "i" for var in data_pairs.values()]
 
-    # Currently only continuous data is supported
-    if any(predictive_types + observed_types):
-        warnings.warn(
-            "Detected at least one discrete variable.\n"
-            "Consider using plot_ppc variants specific for discrete data, "
-            "such as plot_ppc_pava or plot_ppc_rootogram.",
-            UserWarning,
-            stacklevel=2,
-        )
+    # For discrete data we need to randomize the PIT values
+    randomized = predictive_types + observed_types
+
+    if any(randomized):
+        if any(
+            set(unique(dt.observed_data[var].values)).issubset({0, 1})
+            for var in data_pairs.values()
+        ):
+            warnings.warn(
+                "Observed data is binary. Use plot_ppc_pava instead",
+                stacklevel=2,
+            )
 
     # We should default to use loo when available
     if loo:
         pass
 
-    ds_ecdf = difference_ecdf_pit(dt, data_pairs, ci_prob, method, n_simulations)
+    ds_ecdf = difference_ecdf_pit(dt, data_pairs, ci_prob, randomized, method, n_simulations)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
@@ -237,7 +241,7 @@ def plot_ppc_pit(
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "quantiles")
+        xlabel_kwargs.setdefault("text", "PIT")
 
         plot_collection.map(
             labelled_x,
