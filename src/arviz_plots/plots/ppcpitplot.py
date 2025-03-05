@@ -151,7 +151,10 @@ def plot_ppc_pit(
     randomized = predictive_types + observed_types
 
     if any(randomized):
-        if any(len(unique(dt.observed_data[var].values)) == 2 for var in data_pairs.values()):
+        if any(
+            set(unique(dt.observed_data[var].values)).issubset({0, 1})
+            for var in data_pairs.values()
+        ):
             warnings.warn(
                 "Observed data is binary. Use plot_ppc_pava instead",
                 stacklevel=2,
