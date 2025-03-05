@@ -17,6 +17,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
 .. autosummary::
    :toctree: generated/
 
+   plot_bf
    plot_compare
    plot_convergence_dist
    plot_dist
