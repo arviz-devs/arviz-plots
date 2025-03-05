@@ -397,6 +397,23 @@ def scatter(
     return scatter_object
 
 
+def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to plotly for a step line."""
+    artist_kws.setdefault("showlegend", False)
+    line_kwargs = {"color": color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {"shape": "hv"}).copy()
+    kwargs = {"opacity": alpha}
+    line_object = go.Scatter(
+        x=np.atleast_1d(x),
+        y=np.atleast_1d(y),
+        mode="lines",
+        line=_filter_kwargs(line_kwargs, line_artist_kws),
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+    target.add_trace(line_object)
+    return line_object
+
+
 def text(
     x,
     y,

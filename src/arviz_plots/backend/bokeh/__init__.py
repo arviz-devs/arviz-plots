@@ -354,6 +354,12 @@ def scatter(
     return target.scatter(np.atleast_1d(x), np.atleast_1d(y), **kwargs)
 
 
+def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to bokeh for a step line."""
+    kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
+    return target.step(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
+
+
 def text(
     x,
     y,

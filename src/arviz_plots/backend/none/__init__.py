@@ -281,6 +281,21 @@ def scatter(
     return artist_element
 
 
+def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to a step line."""
+    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    artist_element = {
+        "function": "line",
+        "x": np.atleast_1d(x),
+        "y": np.atleast_1d(y),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 def text(
     x,
     y,
