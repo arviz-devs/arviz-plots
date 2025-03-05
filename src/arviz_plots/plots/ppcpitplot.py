@@ -159,6 +159,7 @@ def plot_ppc_pit(
                 "Observed data is binary. Use plot_ppc_pava instead",
                 stacklevel=2,
             )
+
     # We should default to use loo when available
     if loo:
         pass
