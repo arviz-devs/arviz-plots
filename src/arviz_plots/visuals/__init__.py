@@ -114,7 +114,7 @@ def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
 
 
 def ecdf_line(values, target, backend, **kwargs):
-    """Plot an step line."""
+    """Plot a step line."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.step(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
 
