@@ -10,16 +10,20 @@ Data plotting elements
 .. autosummary::
    :toctree: generated/
 
+   ci_line_y
+   ecdf_line
+   fill_between_y
+   hline
+   hist
    line
    line_xy
    line_x
    scatter_xy
    scatter_x
    scatter_xy
-   ecdf_line
+   trace_rug
    vline
-   hline
-   hist
+   
 
 Data and axis annotating elements
 ---------------------------------
@@ -29,10 +33,10 @@ Data and axis annotating elements
 
    annotate_label
    annotate_xy
-   point_estimate_text
    labelled_title
-   labelled_y
    labelled_x
+   labelled_y
+   point_estimate_text
 
 Plot customization elements
 ---------------------------
@@ -40,7 +44,8 @@ Plot customization elements
 .. autosummary::
    :toctree: generated/
 
-   ticklabel_props
    remove_axis
    remove_ticks
    set_xticks
+   ticklabel_props
+   xticks
