@@ -353,6 +353,13 @@ def scatter(
     return target.scatter(x, y, **_filter_kwargs(kwargs, None, artist_kws))
 
 
+def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+    """Interface to matplotlib for a step line."""
+    artist_kws.setdefault("zorder", 2)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.step(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
+
+
 def text(
     x,
     y,
