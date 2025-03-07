@@ -7,8 +7,8 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.psense import power_scale_dataset
 from xarray import concat
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
 from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scatter_xy, set_xticks
 
 
@@ -219,7 +219,7 @@ def plot_psense_quantities(
                 to_concat_mcse.append(ds_posterior.azstats.mcse(method="quantile", prob=q))
             name_quantities.append(f"q={val}")
 
-    quantities_ds = concat(to_concat_quantities, "quantities").assign_coords(
+    ds_quantities = concat(to_concat_quantities, "quantities").assign_coords(
         quantities=name_quantities
     )
 
@@ -227,7 +227,7 @@ def plot_psense_quantities(
         mcse_quantities = concat(to_concat_mcse, "quantities").assign_coords(
             quantities=name_quantities
         )
-        baseline_quantities = quantities_ds.sel(component_group="prior", alpha=1).drop_vars(
+        baseline_quantities = ds_quantities.sel(component_group="prior", alpha=1).drop_vars(
             ["alpha", "component_group"]
         )
 
@@ -255,23 +255,10 @@ def plot_psense_quantities(
             ],
         )
 
-        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
-        col_dims = pc_kwargs["cols"]
-        row_dims = pc_kwargs["rows"]
-        if figsize is None:
-            figsize = plot_bknd.scale_fig_size(
-                figsize,
-                rows=process_facet_dims(quantities_ds, row_dims)[0],
-                cols=process_facet_dims(quantities_ds, col_dims)[0],
-                figsize_units=figsize_units,
-            )
-            figsize_units = "dots"
-        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, ds_quantities)
 
-        plot_collection = PlotCollection.grid(
-            quantities_ds,
+        plot_collection = PlotCollection.wrap(
+            ds_quantities,
             backend=backend,
             **pc_kwargs,
         )
@@ -296,8 +283,8 @@ def plot_psense_quantities(
         plot_collection.map(
             scatter_xy,
             "prior_markers",
-            data=quantities_ds.sel(component_group="prior"),
-            x=quantities_ds.alpha,
+            data=ds_quantities.sel(component_group="prior"),
+            x=ds_quantities.alpha,
             ignore_aes=prior_ms_ignore,
             **prior_ms_kwargs,
         )
@@ -311,8 +298,8 @@ def plot_psense_quantities(
         plot_collection.map(
             line_xy,
             "prior_lines",
-            data=quantities_ds.sel(component_group="prior"),
-            x=quantities_ds.alpha,
+            data=ds_quantities.sel(component_group="prior"),
+            x=ds_quantities.alpha,
             ignore_aes=prior_ms_ignore,
             **prior_ls_kwargs,
         )
@@ -332,8 +319,8 @@ def plot_psense_quantities(
         plot_collection.map(
             scatter_xy,
             "likelihood_markers",
-            data=quantities_ds.sel(component_group="likelihood"),
-            x=quantities_ds.alpha,
+            data=ds_quantities.sel(component_group="likelihood"),
+            x=ds_quantities.alpha,
             ignore_aes=likelihood_ms_ignore,
             **likelihood_ms_kwargs,
         )
@@ -350,8 +337,8 @@ def plot_psense_quantities(
         plot_collection.map(
             line_xy,
             "prior_lines",
-            data=quantities_ds.sel(component_group="likelihood"),
-            x=quantities_ds.alpha,
+            data=ds_quantities.sel(component_group="likelihood"),
+            x=ds_quantities.alpha,
             ignore_aes=likelihood_ls_ignore,
             **likelihood_ls_kwargs,
         )

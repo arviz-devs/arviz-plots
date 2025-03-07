@@ -3,7 +3,7 @@
 from arviz_base.utils import _var_names
 from xarray import Dataset
 
-from arviz_plots.plot_collection import concat_model_dict
+from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
 
 
 def get_group(data, group, allow_missing=False):
@@ -88,3 +88,41 @@ def filter_aes(pc, aes_map, artist, sample_dims):
     _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)
     artist_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
     return artist_dims, artist_aes, ignore_aes
+
+
+def set_figure_layout(pc_kwargs, plot_bknd, ds):
+    """Set the figure size and handle column wrapping.
+
+    Parameters
+    ----------
+    pc_kwargs : dict
+        Plot collection kwargs
+    plot_bknd : str
+        Backend for plotting
+    ds : Dataset
+        Dataset to be plotted
+    """
+    figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
+    figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+    pc_kwargs.setdefault("col_wrap", 5)
+    col_wrap = pc_kwargs["col_wrap"]
+    if figsize is None:
+        num_plots = process_facet_dims(ds, pc_kwargs["cols"])[0]
+        if num_plots < col_wrap:
+            cols = num_plots
+            rows = 1
+        else:
+            div_mod = divmod(num_plots, col_wrap)
+            rows = div_mod[0] + (div_mod[1] != 0)
+            cols = col_wrap
+        figsize = plot_bknd.scale_fig_size(
+            figsize,
+            rows=rows,
+            cols=cols,
+            figsize_units=figsize_units,
+        )
+        figsize_units = "dots"
+    print(num_plots, rows, cols)
+    pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+    pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+    return pc_kwargs

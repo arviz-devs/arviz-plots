@@ -8,8 +8,8 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import difference_ecdf_pit
 from numpy import unique
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import filter_aes, set_figure_layout
 from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, labelled_x, labelled_y
 
 
@@ -171,27 +171,13 @@ def plot_ppc_pit(
 
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
-        pc_kwargs.setdefault("cols", ["__variable__"])
 
-        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
-        col_dims = pc_kwargs["cols"]
-        row_dims = pc_kwargs["rows"]
-        if figsize is None:
-            figsize = plot_bknd.scale_fig_size(
-                figsize,
-                rows=process_facet_dims(ds_ecdf, row_dims)[0],
-                cols=process_facet_dims(ds_ecdf, col_dims)[0],
-                figsize_units=figsize_units,
-            )
-            figsize_units = "dots"
-        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, ds_ecdf)
 
-        plot_collection = PlotCollection.grid(
+        plot_collection = PlotCollection.wrap(
             ds_ecdf,
             backend=backend,
             **pc_kwargs,

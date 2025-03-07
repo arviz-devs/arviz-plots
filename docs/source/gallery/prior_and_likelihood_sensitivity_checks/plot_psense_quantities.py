@@ -20,6 +20,7 @@ pc = azp.plot_psense_quantities(
     idata,
     var_names=["sd_att", "sd_def"],
     quantities=["mean", "sd", "0.25", "0.75"],
+    pc_kwargs={"col_wrap": 2},
     backend="none",
 )
 pc.show()

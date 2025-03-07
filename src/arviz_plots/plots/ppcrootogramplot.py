@@ -6,8 +6,8 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import point_interval_unique, point_unique
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
 from arviz_plots.visuals import (
     ci_line_y,
     grid,
@@ -165,7 +165,7 @@ def plot_ppc_rootogram(
             "such as plot_ppc_dist.",
         )
 
-    predictive_ds = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
+    ds_predictive = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
     observed_ds = point_unique(dt, observed_dist.data_vars)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
@@ -176,27 +176,13 @@ def plot_ppc_rootogram(
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
 
-        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
-        col_dims = pc_kwargs["cols"]
-        row_dims = pc_kwargs["rows"]
-        if figsize is None:
-            figsize = plot_bknd.scale_fig_size(
-                figsize,
-                rows=process_facet_dims(predictive_ds, row_dims)[0],
-                cols=process_facet_dims(predictive_ds, col_dims)[0],
-                figsize_units=figsize_units,
-            )
-            figsize_units = "dots"
-        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, ds_predictive)
 
-        plot_collection = PlotCollection.grid(
-            predictive_ds,
+        plot_collection = PlotCollection.wrap(
+            ds_predictive,
             backend=backend,
             **pc_kwargs,
         )
@@ -223,7 +209,7 @@ def plot_ppc_rootogram(
         plot_collection.map(
             scatter_xy,
             "predictive_markers",
-            data=predictive_ds,
+            data=ds_predictive,
             ignore_aes=predictive_ms_ignore,
             **predictive_ms_kwargs,
         )
@@ -242,7 +228,7 @@ def plot_ppc_rootogram(
         plot_collection.map(
             ci_line_y,
             "ci",
-            data=predictive_ds,
+            data=ds_predictive,
             ignore_aes=ci_ignore,
             **ci_kwargs,
         )

@@ -11,8 +11,8 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
 from arviz_plots.visuals import (
     annotate_xy,
     labelled_title,
@@ -240,32 +240,14 @@ def plot_ess_evolution(
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
             + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
         )
-        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
-        if figsize is None:
-            n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
-            col_wrap = pc_kwargs["col_wrap"]
-            if n_plots <= col_wrap:
-                n_rows, n_cols = 1, n_plots
-            else:
-                div_mod = divmod(n_plots, col_wrap)
-                n_rows = div_mod[0] + (div_mod[1] != 0)
-                n_cols = col_wrap
-            figsize = plot_bknd.scale_fig_size(
-                figsize,
-                rows=n_rows,
-                cols=n_cols,
-                figsize_units=figsize_units,
-            )
-            figsize_units = "dots"
-        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+
+        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
+
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
