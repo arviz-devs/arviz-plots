@@ -8,9 +8,9 @@ import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
+from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.distplot import plot_dist
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
 from arviz_plots.visuals import ecdf_line, hist, line_xy
 
 
@@ -205,26 +205,12 @@ def plot_ppc_dist(
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs["aes"].setdefault("overlay", ["sample"])
-        pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
 
-        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
-        col_dims = pc_kwargs["cols"]
-        row_dims = pc_kwargs["rows"]
-        if figsize is None:
-            figsize = plot_bknd.scale_fig_size(
-                figsize,
-                rows=process_facet_dims(predictive_dist, row_dims)[0],
-                cols=process_facet_dims(predictive_dist, col_dims)[0],
-                figsize_units=figsize_units,
-            )
-            figsize_units = "dots"
-        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, predictive_dist)
 
-        plot_collection = PlotCollection.grid(
+        plot_collection = PlotCollection.wrap(
             predictive_dist,
             backend=backend,
             **pc_kwargs,

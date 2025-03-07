@@ -6,8 +6,8 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import isotonic_fit
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import filter_aes, set_figure_layout
 from arviz_plots.visuals import (
     dline,
     fill_between_y,
@@ -158,23 +158,9 @@ def plot_ppc_pava(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("rows", None)
         pc_kwargs.setdefault("cols", ["__variable__"])
+        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, ds_calibration)
 
-        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
-        col_dims = pc_kwargs["cols"]
-        row_dims = pc_kwargs["rows"]
-        if figsize is None:
-            figsize = plot_bknd.scale_fig_size(
-                figsize,
-                rows=process_facet_dims(ds_calibration, row_dims)[0],
-                cols=process_facet_dims(ds_calibration, col_dims)[0],
-                figsize_units=figsize_units,
-            )
-            figsize_units = "dots"
-        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
-
-        plot_collection = PlotCollection.grid(
+        plot_collection = PlotCollection.wrap(
             ds_calibration,
             backend=backend,
             **pc_kwargs,
