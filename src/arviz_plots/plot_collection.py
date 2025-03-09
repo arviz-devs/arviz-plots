@@ -1047,7 +1047,16 @@ class PlotCollection:
                     aux_artist = np.squeeze(aux_artist)
                 self.viz[var_name][fun_label].loc[sel] = aux_artist
 
-    def add_legend(self, dim, var_name=None, aes=None, artist_kwargs=None, title=None, **kwargs):
+    def add_legend(
+        self,
+        dim,
+        var_name=None,
+        aes=None,
+        artist_kwargs=None,
+        title=None,
+        text_only=False,
+        **kwargs,
+    ):
         """Add a legend for the given artist/aesthetic to the plot.
 
         Warnings
@@ -1073,6 +1082,8 @@ class PlotCollection:
             generate the miniatures in the legend.
         title : str, optional
             Legend title. Defaults to `dim`.
+        text_only : bool, optional
+            If True, creates a text-only legend without graphical markers.
         **kwargs : mapping, optional
             Keyword arguments passed to the backend function that generates the legend.
 
@@ -1098,18 +1109,28 @@ class PlotCollection:
             if isinstance(aes, str):
                 aes = [aes]
             aes_ds = aes_ds[aes]
+
         label_list = aes_ds[dim].values
         kwarg_list = [
             {k: v.item() for k, v in aes_ds.sel({dim: coord}).items()} for coord in label_list
         ]
+
         for kwarg_dict in kwarg_list:
             kwarg_dict.pop("overlay", None)
+            if text_only:
+                kwarg_dict.pop("color", None)
+
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
+
+        legend_title = None if text_only else title
+
         return plot_bknd.legend(
             self.viz["chart"].item(),
             kwarg_list,
             label_list,
-            title=title,
-            artist_kwargs=artist_kwargs,
+            title=legend_title,
+            artist_kwargs={"linestyle": "none", "linewidth": 0, "color": "none"}
+            if text_only
+            else artist_kwargs,
             **kwargs,
         )
