@@ -122,7 +122,7 @@ def set_figure_layout(pc_kwargs, plot_bknd, ds):
             figsize_units=figsize_units,
         )
         figsize_units = "dots"
-    print(num_plots, rows, cols)
+
     pc_kwargs["plot_grid_kws"]["figsize"] = figsize
     pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
     return pc_kwargs
