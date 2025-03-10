@@ -30,6 +30,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_ppc_rootogram
    plot_psense_dist
    plot_psense_quantities
+   plot_rank
    plot_ridge
    plot_trace
    plot_trace_dist
