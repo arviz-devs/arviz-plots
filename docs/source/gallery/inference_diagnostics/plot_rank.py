@@ -6,7 +6,7 @@ faceted plot with fractional ranks for each variable
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_trace`
+API Documentation: {func}`~arviz_plots.plot_rank`
 :::
 """
 from arviz_base import load_arviz_data

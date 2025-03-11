@@ -14,14 +14,14 @@ from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, label
 
 def plot_rank(
     dt,
-    ci_prob=0.95,
-    n_simulations=1000,
-    method="simulation",
     var_names=None,
     filter_vars=None,
     group="posterior",
     coords=None,
     sample_dims=None,
+    ci_prob=None,
+    n_simulations=1000,
+    method="simulation",
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -43,14 +43,6 @@ def plot_rank(
     ----------
     dt : DataTree
         Input data
-    ci_prob : float, optional
-        Probability for the credible interval. Defaults to 0.95.
-    n_simulations : int, optional
-        Number of simulations to use to compute simultaneous confidence intervals when using the
-        `method="simulation"` ignored if method is "optimized". Defaults to 1000.
-    method : str, optional
-        Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -65,6 +57,15 @@ def plot_rank(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    ci_prob : float, optional
+        Indicates the probability that should be contained within the plotted credible interval.
+        Defaults to ``rcParams["stats.ci_prob"]``
+    n_simulations : int, optional
+        Number of simulations to use to compute simultaneous confidence intervals when using the
+        `method="simulation"` ignored if method is "optimized". Defaults to 1000.
+    method : str, optional
+        Method to compute the confidence intervals. Either "simulation" or "optimized".
+        Defaults to "simulation".
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
