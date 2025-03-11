@@ -147,7 +147,7 @@ def plot_rank(
     # Compute envelope
     # This asumes independence between the ranks
     # But we should consider the jointly rank-transformed values
-    dummy_vals_size = np.prod([len(dt.posterior[dims]) for dims in ecdf_dims])
+    dummy_vals_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     dummy_vals = np.linspace(0, 1, dummy_vals_size)
     x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, method, n_simulations)
     lower_ci = lower_ci - x_ci
