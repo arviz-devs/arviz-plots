@@ -90,12 +90,12 @@ def plot_rank(
 
     Examples
     --------
-    Plot the ecdf-PIT for the crabs hurdle-negative-binomial dataset.
+    Rank plot for the crabs hurdle-negative-binomial dataset.
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_ppc_pit, style
+        >>> from arviz_plots import plot_rank, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('crabs_hurdle_nb')
