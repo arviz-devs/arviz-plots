@@ -4,6 +4,7 @@ from .bfplot import plot_bf
 from .compareplot import plot_compare
 from .convergencedistplot import plot_convergence_dist
 from .distplot import plot_dist
+from .ecdfplot import plot_ecdf_pit
 from .energyplot import plot_energy
 from .essplot import plot_ess
 from .evolutionplot import plot_ess_evolution
@@ -27,6 +28,7 @@ __all__ = [
     "plot_forest",
     "plot_trace",
     "plot_trace_dist",
+    "plot_ecdf_pit",
     "plot_energy",
     "plot_ess",
     "plot_ess_evolution",
