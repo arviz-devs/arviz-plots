@@ -20,6 +20,7 @@ dir_title_map = {
     "posterior_predictive_checks": "Posterior predictive checks",
     "prior_and_likelihood_sensitivity_checks": "Prior and likelihood sensitivity checks",
     "model_comparison": "Model Comparison",
+    "sbc": "Simulation Based Calibration",
     "mixed": "Mixed plots",
 }
 
