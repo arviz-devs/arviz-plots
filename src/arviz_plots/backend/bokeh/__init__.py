@@ -1,11 +1,20 @@
 """Bokeh interface layer."""
 # pylint: disable=protected-access
 
+import math
 import warnings
 
 import numpy as np
 from bokeh.layouts import GridBox, gridplot
-from bokeh.models import GridPlot, Range1d, Span, Title
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJSTickFormatter,
+    FixedTicker,
+    GridPlot,
+    Range1d,
+    Span,
+    Title,
+)
 from bokeh.plotting import figure
 from bokeh.plotting import show as _show
 
@@ -18,6 +27,71 @@ class UnsetDefault:
 
 
 unset = UnsetDefault()
+
+
+def set_sqrt_yscale(target):
+    """Transform existing plots on a figure to use sqrt(y) scale."""
+    max_y = 0
+    for renderer in target.renderers:
+        if isinstance(renderer.data_source, ColumnDataSource):
+            ds = renderer.data_source
+            if "y" in ds.data:
+                current_max = max(ds.data["y"])
+                max_y = max(max_y, current_max)
+            elif "y_top" in ds.data:
+                current_max = max(ds.data["y_top"])
+                max_y = max(max_y, current_max)
+
+    ticks = []
+    if max_y > 0:
+        for i in range(math.ceil(max_y) + 1):
+            ticks.append(np.sqrt(i))
+
+    target.yaxis.formatter = CustomJSTickFormatter(
+        code="""
+        return (tick ** 2).toFixed(0)
+    """
+    )
+    target.yaxis.ticker = FixedTicker(ticks=ticks)
+    target.y_range.start = 0
+    target.y_range.end = ticks[len(ticks) - 1]
+
+    # Transform existing scatter plots
+    for renderer in target.renderers:
+        if hasattr(renderer.glyph, "y") and isinstance(renderer.data_source, ColumnDataSource):
+            ds = renderer.data_source
+            y_field = renderer.glyph.y
+
+            if "original_y" in ds.data:
+                continue
+
+            original_y = ds.data[y_field]
+            ds.data["original_y"] = original_y
+            ds.data["y_sqrt"] = np.sqrt(original_y)
+
+            renderer.glyph.y = "y_sqrt"
+        elif (
+            hasattr(renderer.glyph, "y0")
+            and hasattr(renderer.glyph, "y1")
+            and isinstance(renderer.data_source, ColumnDataSource)
+        ):
+            ds = renderer.data_source
+            y_top_field = renderer.glyph.y1
+            y_bottom_field = renderer.glyph.y0
+
+            if "original_y_top" in ds.data and "original_y_bottom" in ds.data:
+                continue
+
+            original_y_top = ds.data[y_top_field]
+            ds.data["original_y_top"] = original_y_top
+            ds.data["y_top_sqrt"] = np.sqrt(original_y_top)
+
+            original_y_bottom = ds.data[y_bottom_field]
+            ds.data["original_y_bottom"] = original_y_bottom
+            ds.data["y_bottom_sqrt"] = np.sqrt(original_y_bottom)
+
+            renderer.glyph.y0 = "y_bottom_sqrt"
+            renderer.glyph.y1 = "y_top_sqrt"
 
 
 # generation of default values for aesthetics
@@ -351,7 +425,8 @@ def scatter(
         kwargs["marker"] = "dash"
         kwargs["angle"] = np.pi / 2
 
-    return target.scatter(np.atleast_1d(x), np.atleast_1d(y), **kwargs)
+    source = ColumnDataSource(data={"x": np.atleast_1d(x), "y": np.atleast_1d(y)})
+    return target.scatter(x="x", y="y", source=source, **kwargs)
 
 
 def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
@@ -434,7 +509,21 @@ def ciliney(
     x = np.atleast_1d(x)
     y_bottom = np.atleast_1d(y_bottom)
     y_top = np.atleast_1d(y_top)
-    return target.segment(x0=x, x1=x, y0=y_bottom, y1=y_top, **_filter_kwargs(kwargs, artist_kws))
+    source = ColumnDataSource(
+        data={
+            "x": np.atleast_1d(x),
+            "y_bottom": np.atleast_1d(y_bottom),
+            "y_top": np.atleast_1d(y_top),
+        }
+    )
+    return target.segment(
+        x0="x",
+        x1="x",
+        y0="y_bottom",
+        y1="y_top",
+        source=source,
+        **_filter_kwargs(kwargs, artist_kws),
+    )
 
 
 # general plot appeareance
@@ -524,7 +613,10 @@ def remove_axis(target, axis="y"):
 
 def set_y_scale(target, scale):
     """Interface to bokeh for setting the y scale of a plot."""
-    target.set_yscale(scale)
+    if scale == "sqrt":
+        set_sqrt_yscale(target)
+    else:
+        pass
 
 
 def grid(target, axis, color):
