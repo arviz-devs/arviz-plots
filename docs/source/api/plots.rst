@@ -21,6 +21,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_compare
    plot_convergence_dist
    plot_dist
+   plot_energy
    plot_ess
    plot_ess_evolution
    plot_forest

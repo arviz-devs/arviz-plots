@@ -3,13 +3,14 @@
 import numpy as np
 import pandas as pd
 import pytest
-from arviz_base import from_dict, load_arviz_data
+from arviz_base import from_dict
 from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
     plot_bf,
     plot_compare,
     plot_dist,
+    plot_energy,
     plot_ess,
     plot_ess_evolution,
     plot_forest,
@@ -41,21 +42,26 @@ def generate_base_data(seed=31):
         obs[None, None, :]
     )
     log_lik = log_lik / log_lik.var()
-    mu_prior = norm(0, 3).logpdf(mu)
-    tau_prior = halfnorm(scale=5).logpdf(tau)
-    theta_prior = norm(0, 1).logpdf(theta)
+    log_mu_prior = norm(0, 3).logpdf(mu)
+    log_tau_prior = halfnorm(scale=5).logpdf(tau)
+    log_theta_prior = norm(0, 1).logpdf(theta)
     prior_predictive = rng.normal(size=(1, 100, 7))
     posterior_predictive = rng.normal(size=(4, 100, 7))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
+    mu_prior = norm(0, 3).rvs(size=(1, 500), random_state=rng)
+    tau_prior = halfnorm(0, 5).rvs(size=(1, 500), random_state=rng)
+    theta_prior = norm(0, 1).rvs(size=(1, 500, 7), random_state=rng)
+    energy = rng.normal(loc=50, scale=10, size=(4, 100))
 
     return {
         "posterior": {"mu": mu, "theta": theta, "tau": tau},
         "observed_data": {"y": obs},
         "log_likelihood": {"y": log_lik},
-        "log_prior": {"mu": mu_prior, "theta": theta_prior, "tau": tau_prior},
+        "log_prior": {"mu": log_mu_prior, "theta": log_theta_prior, "tau": log_tau_prior},
         "prior_predictive": {"y": prior_predictive},
         "posterior_predictive": {"y": posterior_predictive},
-        "sample_stats": {"diverging": diverging},
+        "sample_stats": {"diverging": diverging, "energy": energy},
+        "prior": {"mu": mu_prior, "theta": theta_prior, "tau": tau_prior},
     }
 
 
@@ -464,12 +470,41 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" in pc.viz["theta"].dims
 
     def test_plot_bf(self, datatree, backend):
-        # The current genrate_base_data() function lacks a "prior" group,
-        # so we're manually loading the data.
-        datatree = load_arviz_data("centered_eight")
         pc = plot_bf(datatree, var_name="mu", backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "plot" in pc.viz.data_vars
         assert "row" in pc.viz.data_vars
         assert "col" in pc.viz.data_vars
         assert "Groups" in pc.viz["mu"].coords
+        assert "BF_type" in pc.aes
+        assert "BF10" in pc.aes["BF_type"].values[0]
+
+    def test_plot_energy_dist(self, datatree, backend):
+        pc = plot_energy(datatree, backend=backend)
+        assert pc is not None
+        assert hasattr(pc, "viz")
+        assert "/energy_" in pc.viz.groups
+        assert "kde" in pc.viz["/energy_"]
+        assert "energy" in pc.viz["/energy_"].coords
+        kde_values = pc.viz["/energy_"]["kde"].values
+        assert kde_values.size > 0
+        assert "component_group" not in pc.viz["/energy_"]["kde"].dims
+        assert "alpha" not in pc.viz["/energy_"]["kde"].dims
+        energy_coords = pc.viz["/energy_"]["kde"].coords["energy"].values
+        assert "marginal" in energy_coords
+        assert "transition" in energy_coords
+
+    def test_plot_energy_dist_sample(self, datatree_sample, backend):
+        pc = plot_energy(datatree_sample, backend=backend)
+        assert pc is not None
+        assert hasattr(pc, "viz")
+        assert "/energy_" in pc.viz.groups
+        assert "kde" in pc.viz["/energy_"]
+        assert "energy" in pc.viz["/energy_"].coords
+        kde_values = pc.viz["/energy_"]["kde"].values
+        assert kde_values.size > 0
+        assert "component_group" not in pc.viz["/energy_"]["kde"].dims
+        assert "alpha" not in pc.viz["/energy_"]["kde"].dims
+        energy_coords = pc.viz["/energy_"]["kde"].coords["energy"].values
+        assert "marginal" in energy_coords
+        assert "transition" in energy_coords
