@@ -16,8 +16,7 @@ def plot_compare(
     Models are compared based on their expected log pointwise predictive density (ELPD).
 
     The ELPD is estimated either by Pareto smoothed importance sampling leave-one-out
-    cross-validation (LOO) or using the widely applicable information criterion (WAIC).
-    We recommend LOO in line with the work presented by [1]_ and [2]_.
+    cross-validation (LOO). Details are presented in [1]_ and [2]_.
 
     Parameters
     ----------
@@ -53,10 +52,9 @@ def plot_compare(
 
     See Also
     --------
-    plot_elpd : Plot pointwise elpd differences between two or more models.
-    compare : Compare models based on PSIS-LOO loo or WAIC waic cross-validation.
-    loo : Compute Pareto-smoothed importance sampling leave-one-out cross-validation (PSIS-LOO-CV).
-    waic : Compute the widely applicable information criterion.
+    :func:`arviz_stats.compare`: Summary plot for model comparison.
+    :func:`arviz_stats.loo` : Compute the ELPD using Pareto smoothed importance sampling
+        Leave-one-out cross-validation method.
 
     References
     ----------
@@ -64,21 +62,14 @@ def plot_compare(
         and WAIC*. Statistics and Computing. 27(5) (2017).
         https://doi.org/10.1007/s11222-016-9696-4. arXiv preprint https://arxiv.org/abs/1507.04544.
 
-    .. [2] Yao et al. *Using stacking to average Bayesian predictive distributions*
-        Bayesian Analysis, 13, 3 (2018). https://doi.org/10.1214/17-BA1091
-        arXiv preprint https://arxiv.org/abs/1704.02030.
+    .. [2] Vehtari et al. *Pareto Smoothed Importance Sampling*.
+        Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
+        arXiv preprint https://arxiv.org/abs/1507.02646
     """
-    # Check if cmp_df contains the required information criterion
-    information_criterion = ["elpd_loo", "elpd_waic"]
+    # Check if cmp_df contains the required information
     column_index = [c.lower() for c in cmp_df.columns]
-    for i_c in information_criterion:
-        if i_c in column_index:
-            break
-    else:
-        raise ValueError(
-            "cmp_df must contain one of the following "
-            f"information criterion: {information_criterion}"
-        )
+    if "elpd" not in column_index:
+        raise ValueError("cmp_df must have been created using the `compare` function from ArviZ.")
 
     # Set default backend
     if backend is None:
@@ -95,8 +86,17 @@ def plot_compare(
 
     # Get figure params and create figure and axis
     pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-    figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", (2000, len(cmp_df) * 200))
-    figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "dots")
+    figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
+    figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+
+    figsize = p_be.scale_fig_size(
+        figsize,
+        rows=int(len(cmp_df) ** 0.5),
+        cols=2,
+        figsize_units=figsize_units,
+    )
+    figsize_units = "dots"
+
     chart, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
 
     # Create plot collection
@@ -115,22 +115,17 @@ def plot_compare(
     # Set scale relative to the best model
     if relative_scale:
         cmp_df = cmp_df.copy()
-        cmp_df[i_c] = cmp_df[i_c] - cmp_df[i_c].iloc[0]
+        cmp_df["elpd"] = cmp_df["elpd"] - cmp_df["elpd"].iloc[0]
 
     # Compute positions of yticks
     yticks_pos = list(range(len(cmp_df), 0, -1))
-
-    # Get scale and adjust it if necessary
-    scale = cmp_df["scale"].iloc[0]
-    if scale == "negative_log":
-        scale = "-log"
 
     # Plot ELPD standard error bars
     if (error_kwargs := plot_kwargs.get("error_bar", {})) is not False:
         error_kwargs.setdefault("color", "black")
 
         # Compute values for standard error bars
-        se_list = list(zip((cmp_df[i_c] - cmp_df["se"]), (cmp_df[i_c] + cmp_df["se"])))
+        se_list = list(zip((cmp_df["elpd"] - cmp_df["se"]), (cmp_df["elpd"] + cmp_df["se"])))
 
         for se_vals, ytick in zip(se_list, yticks_pos):
             p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
@@ -140,7 +135,7 @@ def plot_compare(
         ref_kwargs.setdefault("color", "gray")
         ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
         p_be.line(
-            (cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0]),
+            (cmp_df["elpd"].iloc[0], cmp_df["elpd"].iloc[0]),
             (yticks_pos[0], yticks_pos[-1]),
             target,
             **ref_kwargs,
@@ -149,17 +144,14 @@ def plot_compare(
     # Plot ELPD point estimates
     if (pe_kwargs := plot_kwargs.get("point_estimate", {})) is not False:
         pe_kwargs.setdefault("color", "black")
-        p_be.scatter(cmp_df[i_c], yticks_pos, target, **pe_kwargs)
+        p_be.scatter(cmp_df["elpd"], yticks_pos, target, **pe_kwargs)
 
     # Add shade for statistically undistinguishable models
     if similar_shade and (shade_kwargs := plot_kwargs.get("shade", {})) is not False:
         shade_kwargs.setdefault("color", "black")
         shade_kwargs.setdefault("alpha", 0.1)
 
-        if scale == "log":
-            x_0, x_1 = cmp_df[i_c].iloc[0] - 4, cmp_df[i_c].iloc[0]
-        else:
-            x_0, x_1 = cmp_df[i_c].iloc[0], cmp_df[i_c].iloc[0] + 4
+        x_0, x_1 = cmp_df["elpd"].iloc[0] - 4, cmp_df["elpd"].iloc[0]
 
         padding = (yticks_pos[0] - yticks_pos[-1]) * 0.05
         p_be.fill_between_y(
@@ -173,14 +165,14 @@ def plot_compare(
     # Add title and labels
     if (title_kwargs := plot_kwargs.get("title", {})) is not False:
         p_be.title(
-            f"Model comparison\n{'higher' if scale == 'log' else 'lower'} is better",
+            "Model comparison\nhigher is better",
             target,
             **title_kwargs,
         )
 
     if (labels_kwargs := plot_kwargs.get("labels", {})) is not False:
         p_be.ylabel("ranked models", target, **labels_kwargs)
-        p_be.xlabel(f"ELPD ({scale})", target, **labels_kwargs)
+        p_be.xlabel("ELPD", target, **labels_kwargs)
 
     if (ticklabels_kwargs := plot_kwargs.get("ticklabels", {})) is not False:
         p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)

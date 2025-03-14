@@ -137,14 +137,13 @@ def datatree_sample(seed=31):
 def cmp():
     return pd.DataFrame(
         {
-            "elpd_loo": [-4.5, -14.3, -16.2],
-            "p_loo": [2.6, 2.3, 2.1],
+            "elpd": [-4.5, -14.3, -16.2],
+            "p": [2.6, 2.3, 2.1],
             "elpd_diff": [0, 9.7, 11.3],
             "weight": [0.9, 0.1, 0],
             "se": [2.3, 2.7, 2.3],
             "dse": [0, 2.7, 2.3],
             "warning": [False, False, False],
-            "scale": ["log", "log", "log"],
         },
         index=["Model B", "Model A", "Model C"],
     )
@@ -361,7 +360,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
                 "error_bar": {"color": "gray"},
                 "point_estimate": {"color": "red", "marker": "|"},
             },
-            pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200)}},
+            pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200), "figsize_units": "dots"}},
             backend=backend,
         )
 
