@@ -27,6 +27,10 @@ See https://github.com/arviz-devs/arviz-stats/issues/56
         Bayesian Analysis, 13, 3 (2018). https://doi.org/10.1214/17-BA1091 
         arXiv preprint https://arxiv.org/abs/1704.02030.
 
+    .. [3] Vehtari et al. *Pareto Smoothed Importance Sampling*.
+        Journal of Machine Learning Research, 25(72) (2024). https://jmlr.org/papers/v25/19-556.html.
+        arXiv preprint https://arxiv.org/abs/1507.02646
+
 
 ## R-hat, ESS, MCSE
 
