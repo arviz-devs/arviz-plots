@@ -36,9 +36,9 @@ def plot_convergence_dist(
 ):
     """Plot the distribution of convergence diagnostics (ESS and/or R-hat).
 
-    By default all variables are grouped togehter and one plot per diagnostic is created.
-    If you are interested in representing individual (multidimnesional variables) pass them
-    in `var_names`. Additionally, you will need to specify the
+    By default all variables are grouped together and one plot per diagnostic is created.
+    If you are interested in representing individual (multidimensional variables) pass them
+    in `var_names`.
 
     Information on how the diagnostics are computed can be found in [1]_.
 
@@ -137,7 +137,7 @@ def plot_convergence_dist(
         >>>     ]
         >>> )
 
-    Select two variable and plot them separately
+    Select two variables and plot them separately
 
     .. plot::
         :context: close-figs
@@ -145,7 +145,7 @@ def plot_convergence_dist(
         >>> plot_convergence_dist(
         >>>     radon,
         >>>     var_names=["za_county", "a"],
-        >>>     group_by_dimensions=["County"]
+        >>>     grouped=False,
         >>> )
 
     .. minigallery:: plot_convergence_dist
