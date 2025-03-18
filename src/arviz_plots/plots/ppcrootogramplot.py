@@ -314,7 +314,7 @@ def plot_ppc_rootogram(
             **title_kwargs,
         )
 
-    if backend in ("matplotlib", "bokeh"):
+    if backend in ("matplotlib", "bokeh", "plotly"):
         plot_collection.map(
             set_y_scale,
             store_artist=False,
