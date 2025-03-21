@@ -10,12 +10,20 @@ from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, set_figure_layout
-from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, labelled_x, labelled_y
+from arviz_plots.visuals import (
+    ecdf_line,
+    fill_between_y,
+    labelled_title,
+    labelled_x,
+    labelled_y,
+    set_xticks,
+)
 
 
 def plot_ppc_pit(
     dt,
-    ci_prob=0.95,  # Not sure we need to use rcParams here of if we should just use 0.95
+    ci_prob=None,
+    coverage=False,
     method="simulation",
     n_simulations=1000,
     loo=False,
@@ -31,20 +39,32 @@ def plot_ppc_pit(
     plot_kwargs=None,
     pc_kwargs=None,
 ):
-    """Marginal_p_values with simultaneous confidence envelope.
+    r"""PIT Δ-ECDF values with simultaneous confidence envelope.
 
-    For a calibrated model, the posterior predictive p-values should be uniformly distributed.
-    This plot shows the empirical cumulative distribution function (ECDF) of the p-values.
+    For a calibrated model the Probability Integral Transform (PIT) values,
+    $p(\tilde{y}_i \le y_i \mid y)$, should be uniformly distributed.
+    Where $y_i$ represents the observed data for index $i$ and $\tilde y_i$ represents
+    the posterior predictive sample at index $i$.
+
+    This plot shows the empirical cumulative distribution function (ECDF) of the PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between
     the expected CDF from the observed ECDF. Simultaneous confidence bands are computed using
     the method described in described in [1]_.
+
+    Alternatively, we can visualize the coverage of the central posterior credible intervals by
+    setting ``coverage=True``. This allows us to assess whether the credible intervals includes
+    the observed values. We can obtain the coverage of the central intervals from the PIT by
+    replacing the PIT with two times the absolute difference between the PIT values and 0.5.
 
     Parameters
     ----------
     dt : DataTree
         Input data
     ci_prob : float, optional
-        Probability for the credible interval. Defaults to 0.95.
+        Indicates the probability that should be contained within the plotted credible interval.
+        Defaults to ``rcParams["stats.ci_prob"]``
+    coverage : bool, optional
+        If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     n_simulations : int, optional
         Number of simulations to use to compute simultaneous confidence intervals when using the
         `method="simulation"` ignored if method is "optimized". Defaults to 1000.
@@ -107,6 +127,18 @@ def plot_ppc_pit(
         >>> plot_ppc_pit(dt)
 
 
+    Plot the coverage for the crabs hurdle-negative-binomial dataset.
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_ppc_pit, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('crabs_hurdle_nb')
+        >>> plot_ppc_pit(dt, coverage=True)
+
+
     .. minigallery:: plot_ppc_pit
 
     .. [1] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
@@ -164,7 +196,9 @@ def plot_ppc_pit(
     if loo:
         pass
 
-    ds_ecdf = difference_ecdf_pit(dt, data_pairs, ci_prob, randomized, method, n_simulations)
+    ds_ecdf = difference_ecdf_pit(
+        dt, data_pairs, ci_prob, coverage, randomized, method, n_simulations
+    )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
@@ -203,6 +237,14 @@ def plot_ppc_pit(
             **ecdf_ls_kwargs,
         )
 
+    if coverage:
+        plot_collection.map(
+            set_xticks,
+            "ecdf_xticks",
+            values=[0, 0.25, 0.5, 0.75, 1],
+            labels=["0", "25", "50", "75", "100"],
+        )
+
     ci_kwargs = copy(plot_kwargs.get("ci", {}))
     _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
     if ci_kwargs is not False:
@@ -227,7 +269,10 @@ def plot_ppc_pit(
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "PIT")
+        if coverage:
+            xlabel_kwargs.setdefault("text", "ETI %")
+        else:
+            xlabel_kwargs.setdefault("text", "PIT")
 
         plot_collection.map(
             labelled_x,
