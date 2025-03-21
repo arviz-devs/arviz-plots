@@ -11,6 +11,7 @@ To make the plot easier to interpret, we plot the Δ-ECDF, that is, the differen
 the expected CDF from the observed ECDF. As small deviations from uniformity are expected, 
 the plot also shows the credible envelope. 
 
+---
 
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_ppc_pit`
