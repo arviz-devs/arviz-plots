@@ -5,6 +5,7 @@ Notes
 :term:`artists` are returned, but it seems modifying them won't modify the figure.
 """
 
+import math
 import re
 import warnings
 
@@ -58,8 +59,8 @@ def apply_square_root_scale(plotly_plot):
     y_max = max(y_transformed_all)
 
     tickvals_transformed = []
-    for i in range(int(round(y_max * y_max)) + 1):
-        tickvals_transformed.append(np.sqrt(i))
+    for i in range(int(math.ceil(y_max)) + 1):
+        tickvals_transformed.append(i)
 
     if len(tickvals_transformed) == 0:
         tickvals_transformed = np.array([y_min, y_max])
