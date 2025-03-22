@@ -44,8 +44,8 @@ def set_sqrt_yscale(target):
 
     ticks = []
     if max_y > 0:
-        for i in range(math.ceil(max_y) + 1):
-            ticks.append(np.sqrt(i))
+        for i in range(math.ceil(np.sqrt(max_y)) + 1):
+            ticks.append(i)
 
     target.yaxis.formatter = CustomJSTickFormatter(
         code="""
