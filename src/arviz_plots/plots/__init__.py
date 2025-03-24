@@ -9,6 +9,7 @@ from .energyplot import plot_energy
 from .essplot import plot_ess
 from .evolutionplot import plot_ess_evolution
 from .forestplot import plot_forest
+from .loopitplot import plot_loo_pit
 from .pavacalibrationplot import plot_ppc_pava
 from .ppcdistplot import plot_ppc_dist
 from .ppcpitplot import plot_ppc_pit
@@ -32,6 +33,7 @@ __all__ = [
     "plot_energy",
     "plot_ess",
     "plot_ess_evolution",
+    "plot_loo_pit",
     "plot_ppc_dist",
     "plot_ppc_rootogram",
     "plot_rank",

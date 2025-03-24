@@ -14,6 +14,7 @@ from arviz_plots.visuals import (
     fill_between_y,
     labelled_title,
     labelled_x,
+    labelled_y,
     remove_axis,
     set_xticks,
 )
@@ -93,6 +94,7 @@ def plot_ecdf_pit(
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
         * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
+        * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
@@ -153,6 +155,7 @@ def plot_ecdf_pit(
     )
 
     if coverage:
+        distribution = distribution / distribution.max()
         distribution = 2 * np.abs(distribution - 0.5)
 
     dt_ecdf = distribution.azstats.ecdf(dims=sample_dims, pit=True)
@@ -244,6 +247,23 @@ def plot_ecdf_pit(
             ignore_aes=xlabels_ignore,
             subset_info=True,
             **xlabel_kwargs,
+        )
+
+    # set ylabel
+    _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
+    ylabel_kwargs = copy(plot_kwargs.get("ylabel", False))
+    if ylabel_kwargs is not False:
+        if "color" not in ylabels_aes:
+            ylabel_kwargs.setdefault("color", "black")
+
+        ylabel_kwargs.setdefault("text", "Δ ECDF")
+
+        plot_collection.map(
+            labelled_y,
+            "ylabel",
+            ignore_aes=ylabels_ignore,
+            subset_info=True,
+            **ylabel_kwargs,
         )
 
     # title
