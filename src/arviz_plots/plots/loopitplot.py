@@ -100,7 +100,7 @@ def plot_loo_pit(
         >>> from arviz_plots import plot_loo_pit, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('crabs_hurdle_nb')
+        >>> dt = load_arviz_data('radon')
         >>> plot_loo_pit(dt)
 
 
@@ -109,10 +109,6 @@ def plot_loo_pit(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_loo_pit, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('crabs_hurdle_nb')
         >>> plot_loo_pit(dt, coverage=True)
 
 
@@ -136,7 +132,7 @@ def plot_loo_pit(
     plot_kwargs.setdefault("remove_axis", False)
     plot_kwargs.setdefault("xlabel", {"text": "LOO-PIT"})
 
-    plot_ecdf_pit(
+    plot_collection = plot_ecdf_pit(
         new_dt,
         var_names=var_names,
         filter_vars=filter_vars,
