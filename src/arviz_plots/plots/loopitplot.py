@@ -128,7 +128,6 @@ def plot_loo_pit(
         plot_kwargs = plot_kwargs.copy()
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
 
     lpv = loo_pit(dt)
     new_dt = convert_to_datatree(lpv, group="loo_pit")
