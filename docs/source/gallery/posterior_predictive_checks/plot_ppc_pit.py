@@ -1,5 +1,5 @@
 """
-# Predictive check with pit ECDF
+# PIT ECDF
 
 Plot of $p(\tilde y_i \le y_i \mid y)$, where $y_i$ represents the observed data for index $i$
 and $\tilde y_i$ represents the posterior predictive sample at index $i$.
