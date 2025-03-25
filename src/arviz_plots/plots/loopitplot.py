@@ -27,8 +27,9 @@ def plot_loo_pit(
     For a calibrated model the LOO Probability Integral Transform (PIT) values,
     $p(\tilde{y}_i \le y_i \mid y_{-i})$, should be uniformly distributed.
     Where $y_i$ represents the observed data for index $i$ and $\tilde y_i$ represents
-    the posterior predictive sample at index $i$. LOO-PIT values are computed using the
-    PSIS-LOO-CV method described in [1]_ and [2]_.
+    the posterior predictive sample at index $i$. $y_{-i}$ indicates we have left out the
+    $i$-th observation. LOO-PIT values are computed using the PSIS-LOO-CV method described
+    in [1]_ and [2]_.
 
     This plot shows the empirical cumulative distribution function (ECDF) of the LOO-PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between

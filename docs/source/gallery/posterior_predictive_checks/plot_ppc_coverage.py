@@ -1,5 +1,5 @@
 """
-# Predictive check with coverage plot
+# Coverage ECDF
 
 Coverage refers to the proportion of true values that fall within a given prediction interval.
 For a well-calibrated model, the coverage should match the intended interval width. For example,

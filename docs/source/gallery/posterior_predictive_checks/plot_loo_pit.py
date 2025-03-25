@@ -1,5 +1,5 @@
 """
-# LOO predictive check with pit ECDF
+# LOO-PIT ECDF
 
 Plot of $p(\tilde y_i \le y_i \mid y_{-i})$, where $y_i$ represents the observed data for index $i$
 and $\tilde y_i$ represents the posterior predictive sample at index $i$. $y_{-i}$ indicates we have
