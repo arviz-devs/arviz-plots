@@ -26,7 +26,6 @@ def plot_ppc_pit(
     coverage=False,
     method="simulation",
     n_simulations=1000,
-    loo=False,
     var_names=None,
     data_pairs=None,
     filter_vars=None,  # pylint: disable=unused-argument
@@ -70,10 +69,7 @@ def plot_ppc_pit(
         `method="simulation"` ignored if method is "optimized". Defaults to 1000.
     method : str, optional
         Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".
-    loo : bool, optional
-        If True, use the leave-one-out cross-validation samples. Defaults to False.
-        Requires the `log_likelihood` group to be present in the DataTree.
+        Defaults to "simulation".e.
     data_pairs : dict, optional
         Dictionary of keys prior/posterior predictive data and values observed data variable names.
         If None, it will assume that the observed data and the predictive data have
@@ -181,13 +177,11 @@ def plot_ppc_pit(
     if None in data_pairs.keys():
         data_pairs = dict(zip(dt.posterior_predictive.data_vars, dt.observed_data.data_vars))
 
-    predictive_types = [
-        dt.posterior_predictive[var].values.dtype.kind == "i" for var in data_pairs.keys()
+    randomized = [
+        (dt.posterior_predictive[pred_var].values.dtype.kind == "i")
+        or (dt.observed_data[obs_var].values.dtype.kind == "i")
+        for pred_var, obs_var in data_pairs.items()
     ]
-    observed_types = [dt.observed_data[var].values.dtype.kind == "i" for var in data_pairs.values()]
-
-    # For discrete data we need to randomize the PIT values
-    randomized = predictive_types + observed_types
 
     if any(randomized):
         if any(
@@ -198,10 +192,6 @@ def plot_ppc_pit(
                 "Observed data is binary. Use plot_ppc_pava instead",
                 stacklevel=2,
             )
-
-    # We should default to use loo when available
-    if loo:
-        pass
 
     ds_ecdf = difference_ecdf_pit(
         dt, data_pairs, ci_prob, coverage, randomized, method, n_simulations
