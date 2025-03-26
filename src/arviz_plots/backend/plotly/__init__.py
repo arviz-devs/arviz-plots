@@ -58,9 +58,15 @@ def apply_square_root_scale(plotly_plot):
     y_min = min(y_transformed_all)
     y_max = max(y_transformed_all)
 
+    num_ticks = 5
+    num_ticks = min(num_ticks, math.ceil(((y_max * y_max) - (y_min * y_min)) / 2))
+    step_size = round(((y_max * y_max) - (y_min * y_min)) / num_ticks)
+    start_tick = round(y_min * y_min)
+    end_tick = step_size * num_ticks
+
     tickvals_transformed = []
-    for i in range(int(math.ceil(y_max)) + 1):
-        tickvals_transformed.append(i)
+    for i in range(start_tick, end_tick, step_size):
+        tickvals_transformed.append(math.sqrt(i))
 
     if len(tickvals_transformed) == 0:
         tickvals_transformed = np.array([y_min, y_max])
