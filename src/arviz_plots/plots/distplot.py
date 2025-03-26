@@ -5,6 +5,7 @@ from copy import copy
 from importlib import import_module
 
 import arviz_stats  # pylint: disable=unused-import
+import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
@@ -41,6 +42,9 @@ def plot_dist(
     plot_kwargs=None,
     stats_kwargs=None,
     pc_kwargs=None,
+    rug=False,
+    rug_kind=None,
+    rug_kwargs=None,
 ):
     """Plot 1D marginal densities in the style of John K. Kruschke’s book.
 
@@ -117,6 +121,23 @@ def plot_dist(
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.wrap`
+
+    rug : bool, optional
+        Whether to add a rug plot to the density representation. Rug plots are small vertical lines
+        at the bottom of the plot that indicate individual data points. Defaults to False.
+
+    rug_kind : str, optional
+        Specifies which variable or group to use for the rug plot. If None, no specific group is
+        used, and the rug will be plotted for all relevant data points. Defaults to None.
+
+    rug_kwargs : dict, optional
+        Additional keyword arguments for customizing the rug plot. Valid keys include:
+
+        * "color" -> Color of the rug lines (e.g., "black").
+        * "marker" -> Marker style for the rug lines (e.g., "|").
+        * "size" -> Size of the rug markers (e.g., 15).
+
+        If not provided, default values will be used for these options.
 
     Returns
     -------
@@ -243,6 +264,34 @@ def plot_dist(
             plot_collection.map(
                 line_xy, "kde", data=density, ignore_aes=density_ignore, **density_kwargs
             )
+
+            if rug:
+                if rug_kwargs is None:
+                    rug_kwargs = {}
+
+                if (
+                    distribution is not None
+                    and rug_kind in distribution.data_vars
+                    and np.any(distribution[rug_kind])
+                ):
+                    _, div_aes, div_ignore = filter_aes(
+                        plot_collection, aes_map, "rug", sample_dims
+                    )
+
+                    if "color" not in div_aes:
+                        rug_kwargs.setdefault("color", "black")
+                    if "marker" not in div_aes:
+                        rug_kwargs.setdefault("marker", "|")
+                    if "size" not in div_aes:
+                        rug_kwargs.setdefault("size", 15)
+
+                    plot_collection.map(
+                        scatter_x,
+                        "rug",
+                        data=distribution,
+                        ignore_aes=div_ignore,
+                        **rug_kwargs,
+                    )
 
         elif kind == "ecdf":
             density = distribution.azstats.ecdf(

@@ -31,6 +31,7 @@ def plot_ppc_dist(
     plot_kwargs=None,
     stats_kwargs=None,
     pc_kwargs=None,
+    rug=False,
 ):
     """
     Plot 1D marginals for the posterior/prior predictive distribution and the observed data.
@@ -241,6 +242,8 @@ def plot_ppc_dist(
         plot_collection = plot_dist(
             predictive_dist,
             group=group,
+            rug=rug,
+            rug_kind="y",
             sample_dims=pp_dims,
             kind=kind,
             plot_kwargs=plot_kwargs,
@@ -267,6 +270,7 @@ def plot_ppc_dist(
 
         if kind == "kde":
             dt_observed = observed_dist.azstats.kde(dims=pp_dims, **stats_kwargs)
+
             plot_collection.map(
                 line_xy,
                 "observe_density",
