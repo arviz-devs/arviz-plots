@@ -5,9 +5,12 @@ Plot of $p(\tilde y_i \le y_i \mid y_{-i})$, where $y_i$ represents the observed
 and $\tilde y_i$ represents the posterior predictive sample at index $i$. $y_{-i}$ indicates we have
 left out the $i$-th observation.
 
+The distribution should be uniform if the model is well-calibrated. 
 
-The distribution should be uniform if the model is well-calibrated. As small deviations from
-uniformity are expected, the plot also shows the credible bands. 
+To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between
+the expected CDF from the observed ECDF. As small deviations from uniformity are expected, 
+the plot also shows the credible envelope.
+
 ---
 
 :::{seealso}

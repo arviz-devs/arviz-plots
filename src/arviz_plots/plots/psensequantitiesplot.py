@@ -34,6 +34,10 @@ def plot_psense_quantities(
 ):
     """Plot power scaled posterior quantities.
 
+    The posterior quantities are computed by power-scaling the prior or likelihood and
+    visualizing the resulting changes, using Pareto-smoothed importance sampling to
+    avoid refitting as explained in [1]_.
+
     Parameters
     ----------
     dt : DataTree
@@ -110,6 +114,11 @@ def plot_psense_quantities(
 
 
     .. minigallery:: plot_psense_quantities
+
+    References
+    ----------
+    .. [1] Kallioinen et al, *Detecting and diagnosing prior and likelihood sensitivity with
+        power-scaling*, Stat Comput 34, 57 (2024), https://doi.org/10.1007/s11222-023-10366-5
 
     """
     if sample_dims is None:
