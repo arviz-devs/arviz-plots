@@ -12,7 +12,7 @@ the expected CDF from the observed ECDF. As small deviations from uniformity are
 the plot also shows the credible envelope. 
 
 We can compute the coverage for equal-tailed intervals (ETI) by passing `coverage=True` to the
-`plot_ppc_pit` function. This works because ETI coverage can be derived by transforming the PIT
+`plot_ppc_pit` function. This works because ETI coverage can be obtained by transforming the PIT
 values. However, for other interval types, such as HDI, coverage must be computed explicitly and
 is not supported by this function.
 

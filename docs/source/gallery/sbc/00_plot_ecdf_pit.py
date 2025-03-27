@@ -1,5 +1,5 @@
 """
-# PIT-ECDF difference
+# PIT-ECDF
 
 Faceted plot with PIT Δ-ECDF values for each variable
 
