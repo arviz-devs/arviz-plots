@@ -12,14 +12,14 @@ the expected CDF from the observed ECDF. As small deviations from uniformity are
 the plot also shows the credible envelope. 
 
 We can compute the coverage for equal-tailed intervals (ETI) by passing `coverage=True` to the
-`plot_ppc_pit` function. This works because ETI coverage can be derived by transforming the PIT
+`plot_ecdf_pit` function. This works because ETI coverage can be derived by transforming the PIT
 values. However, for other interval types, such as HDI, coverage must be computed explicitly and
 is not supported by this function.
 
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_ppc_pit`
+API Documentation: {func}`~arviz_plots.plot_ecdf_pit`
 :::
 """
 from arviz_base import load_arviz_data
@@ -28,10 +28,9 @@ import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-dt = load_arviz_data("radon")
-pc = azp.plot_ppc_pit(
-    dt,
-    coverage=True,
-    backend="none",
+data = load_arviz_data("sbc")
+pc = azp.plot_ecdf_pit(
+    data,
+    backend="none"  # change to preferred backend
 )
 pc.show()

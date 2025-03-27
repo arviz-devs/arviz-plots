@@ -1,7 +1,8 @@
 """
 # Predictive model comparison
 
-Compare multiple models using predictive accuracy estimates like  {abbr}`LOO-CV (leave one out cross validation)` or {abbr}`WAIC (widely applicable information criterion)`
+Compare multiple models using predictive accuracy estimated using PSIS-LOO-CV.
+Usually the DataFrame ``cmp_df`` is generated using ArviZ's ```compare` function.
 
 ---
 
@@ -26,5 +27,7 @@ cmp_df = pd.DataFrame({"elpd": [-4.5, -14.3, -16.2],
                        },
                        index=["Model B", "Model A", "Model C"])
 
-pc = azp.plot_compare(cmp_df, backend="none")  # change to preferred backend
+pc = azp.plot_compare(cmp_df,
+                      backend="none",  # change to preferred backend
+                      )
 pc.show()
