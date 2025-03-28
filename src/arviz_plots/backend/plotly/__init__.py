@@ -75,7 +75,7 @@ def apply_square_root_scale(plotly_plot):
         title=chart.layout[layout_yaxis].title,
     )
 
-    chart.layout[layout_yaxis].range = [y_min - 0.5, y_max + 0.5]
+    chart.layout[layout_yaxis].range = [y_min, y_max + 0.5]
 
 
 def str_to_plotly_html(string):
