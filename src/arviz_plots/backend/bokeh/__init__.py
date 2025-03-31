@@ -38,14 +38,15 @@ def set_sqrt_yscale(target):
             if "y" in ds.data:
                 current_max = max(ds.data["y"])
                 max_y = max(max_y, current_max)
+
             elif "y_top" in ds.data:
                 current_max = max(ds.data["y_top"])
                 max_y = max(max_y, current_max)
 
-    ticks = []
-    if max_y > 0:
-        for i in range(math.ceil(max_y) + 1):
-            ticks.append(np.sqrt(i))
+    num_ticks = min(5, math.ceil(max_y / 2))
+    step_size = round(math.ceil(max_y) / num_ticks)
+    end_tick = num_ticks * step_size
+    ticks = [i**0.5 for i in range(0, end_tick + 1, step_size)]
 
     target.yaxis.formatter = CustomJSTickFormatter(
         code="""

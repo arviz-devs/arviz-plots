@@ -51,6 +51,12 @@ gallery/index
 api/index
 glossary
 ```
+```{toctree}
+:hidden:
+:caption: Tutorials
+
+ArviZ in Context <https://arviz-devs.github.io/Exploratory-Analysis-of-Bayesian-Models/>
+```
 
 ```{toctree}
 :hidden:
@@ -65,7 +71,7 @@ contributing/docs
 :caption: About
 :hidden:
 
-Twitter <https://twitter.com/arviz_devs>
+BlueSky <https://bsky.app/profile/arviz.bsky.social>
 Mastodon <https://bayes.club/@ArviZ>
 GitHub repository <https://github.com/arviz-devs/arviz-plots>
 ```

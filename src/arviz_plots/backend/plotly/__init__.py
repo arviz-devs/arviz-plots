@@ -5,6 +5,7 @@ Notes
 :term:`artists` are returned, but it seems modifying them won't modify the figure.
 """
 
+import math
 import re
 import warnings
 
@@ -23,6 +24,58 @@ class UnsetDefault:
 
 unset = UnsetDefault()
 pat = re.compile(r"^(row|col)\s?:")
+
+
+def apply_square_root_scale(plotly_plot):
+    """Apply a square root scale to the y-axis of a PlotlyPlot."""
+    chart = plotly_plot.chart
+    row = plotly_plot.row
+    col = plotly_plot.col
+
+    if not hasattr(chart.layout, "grid") or chart.layout.grid is None:
+        raise ValueError("The chart does not have a grid layout required for faceting.")
+
+    chart_grid = chart.layout.grid
+    num_cols = chart_grid.columns if chart_grid.columns is not None else 1
+    index = (row - 1) * num_cols + col
+
+    yaxis_ref = "y" if index == 1 else f"y{index}"
+    layout_yaxis = "yaxis" if index == 1 else f"yaxis{index}"
+
+    y_transformed_all = []
+    for trace in chart.data:
+        if getattr(trace, "yaxis", None) == yaxis_ref:
+            if hasattr(trace, "y") and trace.y is not None:
+                y_data = np.array(trace.y, dtype=float)
+                y_data = np.maximum(y_data, 0.0)  # Clamp negative values
+                y_transformed = np.sqrt(y_data)
+                trace.y = y_transformed.tolist()
+                y_transformed_all.extend(y_transformed)
+
+    if not y_transformed_all:
+        return
+
+    y_min = min(y_transformed_all)
+    y_max = max(y_transformed_all)
+
+    num_ticks = min(5, math.ceil((y_max**2 - y_min**2) / 2))
+    step_size = math.ceil((y_max**2 - y_min**2) / num_ticks)
+    start_tick = math.ceil(y_min**2)
+    end_tick = step_size * num_ticks
+    tickvals_transformed = [i**0.5 for i in range(start_tick, end_tick + 1, step_size)]
+
+    if len(tickvals_transformed) == 0:
+        tickvals_transformed = np.array([y_min, y_max])
+
+    ticktext_original = [f"{round(tv**2)}" for tv in tickvals_transformed]
+
+    chart.layout[layout_yaxis].update(
+        tickvals=tickvals_transformed,
+        ticktext=ticktext_original,
+        title=chart.layout[layout_yaxis].title,
+    )
+
+    chart.layout[layout_yaxis].range = [y_min, y_max + 0.5]
 
 
 def str_to_plotly_html(string):
@@ -581,6 +634,14 @@ def yticks(ticks, labels, target, **artist_kws):
 def xlim(lims, target, **artist_kws):
     """Interface to plotly for setting limits for the x axis."""
     target.update_xaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
+
+
+def set_y_scale(target, scale):
+    """Interface to bokeh for setting the y scale of a plot."""
+    if scale == "sqrt":
+        apply_square_root_scale(target)
+    else:
+        pass
 
 
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):

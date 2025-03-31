@@ -10,15 +10,22 @@ from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, set_figure_layout
-from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, labelled_x, labelled_y
+from arviz_plots.visuals import (
+    ecdf_line,
+    fill_between_y,
+    labelled_title,
+    labelled_x,
+    labelled_y,
+    set_xticks,
+)
 
 
 def plot_ppc_pit(
     dt,
-    ci_prob=0.95,  # Not sure we need to use rcParams here of if we should just use 0.95
+    ci_prob=None,
+    coverage=False,
     method="simulation",
     n_simulations=1000,
-    loo=False,
     var_names=None,
     data_pairs=None,
     filter_vars=None,  # pylint: disable=unused-argument
@@ -31,29 +38,38 @@ def plot_ppc_pit(
     plot_kwargs=None,
     pc_kwargs=None,
 ):
-    """Marginal_p_values with simultaneous confidence envelope.
+    r"""PIT Δ-ECDF values with simultaneous confidence envelope.
 
-    For a calibrated model, the posterior predictive p-values should be uniformly distributed.
-    This plot shows the empirical cumulative distribution function (ECDF) of the p-values.
+    For a calibrated model the Probability Integral Transform (PIT) values,
+    $p(\tilde{y}_i \le y_i \mid y)$, should be uniformly distributed.
+    Where $y_i$ represents the observed data for index $i$ and $\tilde y_i$ represents
+    the posterior predictive sample at index $i$.
+
+    This plot shows the empirical cumulative distribution function (ECDF) of the PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between
     the expected CDF from the observed ECDF. Simultaneous confidence bands are computed using
     the method described in described in [1]_.
+
+    Alternatively, we can visualize the coverage of the central posterior credible intervals by
+    setting ``coverage=True``. This allows us to assess whether the credible intervals includes
+    the observed values. We can obtain the coverage of the central intervals from the PIT by
+    replacing the PIT with two times the absolute difference between the PIT values and 0.5.
 
     Parameters
     ----------
     dt : DataTree
         Input data
     ci_prob : float, optional
-        Probability for the credible interval. Defaults to 0.95.
+        Indicates the probability that should be contained within the plotted credible interval.
+        Defaults to ``rcParams["stats.ci_prob"]``
+    coverage : bool, optional
+        If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     n_simulations : int, optional
         Number of simulations to use to compute simultaneous confidence intervals when using the
         `method="simulation"` ignored if method is "optimized". Defaults to 1000.
     method : str, optional
         Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".
-    loo : bool, optional
-        If True, use the leave-one-out cross-validation samples. Defaults to False.
-        Requires the `log_likelihood` group to be present in the DataTree.
+        Defaults to "simulation".e.
     data_pairs : dict, optional
         Dictionary of keys prior/posterior predictive data and values observed data variable names.
         If None, it will assume that the observed data and the predictive data have
@@ -107,11 +123,30 @@ def plot_ppc_pit(
         >>> plot_ppc_pit(dt)
 
 
+    Plot the coverage for the crabs hurdle-negative-binomial dataset.
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_ppc_pit, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('crabs_hurdle_nb')
+        >>> plot_ppc_pit(dt, coverage=True)
+
     .. minigallery:: plot_ppc_pit
 
-    .. [1] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
-    its applications in goodness-of-fit evaluation and multiple sample comparison*.
-    Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. [1] Vehtari et al. *Practical Bayesian model evaluation using leave-one-out cross-validation
+        and WAIC*. Statistics and Computing. 27(5) (2017) https://doi.org/10.1007/s11222-016-9696-4
+        arXiv preprint https://arxiv.org/abs/1507.04544.
+
+    .. [2] Vehtari et al. *Pareto Smoothed Importance Sampling*.
+        Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
+        arXiv preprint https://arxiv.org/abs/1507.02646
+
+    .. [3] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
+        its applications in goodness-of-fit evaluation and multiple sample comparison*.
+        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
@@ -142,13 +177,11 @@ def plot_ppc_pit(
     if None in data_pairs.keys():
         data_pairs = dict(zip(dt.posterior_predictive.data_vars, dt.observed_data.data_vars))
 
-    predictive_types = [
-        dt.posterior_predictive[var].values.dtype.kind == "i" for var in data_pairs.keys()
+    randomized = [
+        (dt.posterior_predictive[pred_var].values.dtype.kind == "i")
+        or (dt.observed_data[obs_var].values.dtype.kind == "i")
+        for pred_var, obs_var in data_pairs.items()
     ]
-    observed_types = [dt.observed_data[var].values.dtype.kind == "i" for var in data_pairs.values()]
-
-    # For discrete data we need to randomize the PIT values
-    randomized = predictive_types + observed_types
 
     if any(randomized):
         if any(
@@ -160,11 +193,9 @@ def plot_ppc_pit(
                 stacklevel=2,
             )
 
-    # We should default to use loo when available
-    if loo:
-        pass
-
-    ds_ecdf = difference_ecdf_pit(dt, data_pairs, ci_prob, randomized, method, n_simulations)
+    ds_ecdf = difference_ecdf_pit(
+        dt, data_pairs, ci_prob, coverage, randomized, method, n_simulations
+    )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
@@ -203,11 +234,19 @@ def plot_ppc_pit(
             **ecdf_ls_kwargs,
         )
 
+    if coverage:
+        plot_collection.map(
+            set_xticks,
+            "ecdf_xticks",
+            values=[0, 0.25, 0.5, 0.75, 1],
+            labels=["0", "25", "50", "75", "100"],
+        )
+
     ci_kwargs = copy(plot_kwargs.get("ci", {}))
     _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
     if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", colors[0])
-        ci_kwargs.setdefault("alpha", 0.2)
+        ci_kwargs.setdefault("color", "black")
+        ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
             fill_between_y,
@@ -227,7 +266,10 @@ def plot_ppc_pit(
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "PIT")
+        if coverage:
+            xlabel_kwargs.setdefault("text", "ETI %")
+        else:
+            xlabel_kwargs.setdefault("text", "PIT")
 
         plot_collection.map(
             labelled_x,

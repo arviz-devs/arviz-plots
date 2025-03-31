@@ -9,7 +9,15 @@ from arviz_stats.ecdf_utils import ecdf_pit
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
-from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, labelled_x, remove_axis
+from arviz_plots.visuals import (
+    ecdf_line,
+    fill_between_y,
+    labelled_title,
+    labelled_x,
+    labelled_y,
+    remove_axis,
+    set_xticks,
+)
 
 
 def plot_ecdf_pit(
@@ -20,6 +28,7 @@ def plot_ecdf_pit(
     coords=None,
     sample_dims=None,
     ci_prob=None,
+    coverage=False,
     n_simulations=1000,
     method="simulation",
     plot_collection=None,
@@ -33,9 +42,15 @@ def plot_ecdf_pit(
 
     Plots the Δ-ECDF, that is the difference between the expected empirical CDF an
     the observed empirical ECDF.
-    This plot is useful to assess the goodness of fit of a model for example in SBC analysis.
-    It assumes the values in the DataTree are already transformed to the unit interval.
+    It assumes the values in the DataTree has already been transformed to PIT values,
+    as in the case of SBC analysis or values from ``arviz_base.loo_pit``.
+
     Simultaneous confidence bands are computed using the method described in [1]_.
+
+    Alternatively, we can visualize the coverage of the central posterior credible intervals by
+    setting ``coverage=True``. This allows us to assess whether the credible intervals includes
+    the observed values. We can obtain the coverage of the central intervals from the PIT by
+    replacing the PIT with two times the absolute difference between the PIT values and 0.5.
 
     Parameters
     ----------
@@ -58,6 +73,8 @@ def plot_ecdf_pit(
     ci_prob : float, optional
         Indicates the probability that should be contained within the plotted credible interval.
         Defaults to ``rcParams["stats.ci_prob"]``
+    coverage : bool, optional
+        If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     n_simulations : int, optional
         Number of simulations to use to compute simultaneous confidence intervals when using the
         `method="simulation"` ignored if method is "optimized". Defaults to 1000.
@@ -77,6 +94,7 @@ def plot_ecdf_pit(
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
         * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
+        * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
@@ -136,6 +154,10 @@ def plot_ecdf_pit(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
+    if coverage:
+        distribution = distribution / distribution.max()
+        distribution = 2 * np.abs(distribution - 0.5)
+
     dt_ecdf = distribution.azstats.ecdf(dims=sample_dims, pit=True)
 
     # Compute envelope
@@ -182,6 +204,14 @@ def plot_ecdf_pit(
             **ecdf_ls_kwargs,
         )
 
+    if coverage:
+        plot_collection.map(
+            set_xticks,
+            "ecdf_xticks",
+            values=[0, 0.25, 0.5, 0.75, 1],
+            labels=["0", "25", "50", "75", "100"],
+        )
+
     ci_kwargs = copy(plot_kwargs.get("ci", {}))
     _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
     if ci_kwargs is not False:
@@ -206,7 +236,10 @@ def plot_ecdf_pit(
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
 
-        xlabel_kwargs.setdefault("text", "PIT")
+        if coverage:
+            xlabel_kwargs.setdefault("text", "ETI %")
+        else:
+            xlabel_kwargs.setdefault("text", "PIT")
 
         plot_collection.map(
             labelled_x,
@@ -214,6 +247,23 @@ def plot_ecdf_pit(
             ignore_aes=xlabels_ignore,
             subset_info=True,
             **xlabel_kwargs,
+        )
+
+    # set ylabel
+    _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
+    ylabel_kwargs = copy(plot_kwargs.get("ylabel", False))
+    if ylabel_kwargs is not False:
+        if "color" not in ylabels_aes:
+            ylabel_kwargs.setdefault("color", "black")
+
+        ylabel_kwargs.setdefault("text", "Δ ECDF")
+
+        plot_collection.map(
+            labelled_y,
+            "ylabel",
+            ignore_aes=ylabels_ignore,
+            subset_info=True,
+            **ylabel_kwargs,
         )
 
     # title
