@@ -1,4 +1,5 @@
 """Plot ppc pit."""
+
 import warnings
 from copy import copy
 from importlib import import_module
@@ -47,12 +48,17 @@ def plot_ppc_pit(
 
     This plot shows the empirical cumulative distribution function (ECDF) of the PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between
-    the expected CDF from the observed ECDF. Simultaneous confidence bands are computed using
+    the observed ECDF and the expected CDF. Simultaneous confidence bands are computed using
     the method described in described in [1]_.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
-    the observed values. We can obtain the coverage of the central intervals from the PIT by
+    the observed values.
+
+    If the difference is positive, the model is under-confident: the predictions have a wider spread than the data -- they are too uncertain.
+    If the difference is negative, the model is over-confident: the predictions have a narrower spread than the data -- they are too certain.
+
+    We can obtain the coverage of the central intervals from the PIT by
     replacing the PIT with two times the absolute difference between the PIT values and 0.5.
 
     Parameters
@@ -175,7 +181,9 @@ def plot_ppc_pit(
     if data_pairs is None:
         data_pairs = {var_names: var_names}
     if None in data_pairs.keys():
-        data_pairs = dict(zip(dt.posterior_predictive.data_vars, dt.observed_data.data_vars))
+        data_pairs = dict(
+            zip(dt.posterior_predictive.data_vars, dt.observed_data.data_vars)
+        )
 
     randomized = [
         (dt.posterior_predictive[pred_var].values.dtype.kind == "i")
@@ -223,7 +231,9 @@ def plot_ppc_pit(
     ecdf_ls_kwargs = copy(plot_kwargs.get("ecdf_lines", {}))
 
     if ecdf_ls_kwargs is not False:
-        _, _, ecdf_ls_ignore = filter_aes(plot_collection, aes_map, "ecdf_lines", sample_dims)
+        _, _, ecdf_ls_ignore = filter_aes(
+            plot_collection, aes_map, "ecdf_lines", sample_dims
+        )
         ecdf_ls_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
@@ -260,7 +270,9 @@ def plot_ppc_pit(
         )
 
     # set xlabel
-    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_map, "xlabel", sample_dims
+    )
     xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
@@ -280,7 +292,9 @@ def plot_ppc_pit(
         )
 
     # set ylabel
-    _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
+    _, ylabels_aes, ylabels_ignore = filter_aes(
+        plot_collection, aes_map, "ylabel", sample_dims
+    )
     ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:

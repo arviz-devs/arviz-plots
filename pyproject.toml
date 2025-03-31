@@ -119,3 +119,20 @@ testpaths = [
 
 [tool.coverage.run]
 source = ["arviz_plots"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+arviz-plots = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+bokeh = { features = ["bokeh"], solve-group = "default" }
+doc = { features = ["doc"], solve-group = "default" }
+matplotlib = { features = ["matplotlib"], solve-group = "default" }
+plotly = { features = ["plotly"], solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+
+[tool.pixi.tasks]

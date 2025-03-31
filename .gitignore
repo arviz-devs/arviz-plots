@@ -172,3 +172,7 @@ cython_debug/
 .DS_Store
 
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
+
+# pixi environments
+.pixi
+*.egg-info
