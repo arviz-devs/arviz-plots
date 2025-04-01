@@ -40,9 +40,8 @@ def plot_ecdf_pit(
 ):
     """Plot Δ-ECDF.
 
-    Plots the Δ-ECDF, that is the difference between the expected empirical CDF an
-    the observed empirical ECDF.
-    It assumes the values in the DataTree has already been transformed to PIT values,
+    Plots the Δ-ECDF, that is the difference between the observed ECDF and the expected CDF.
+    It assumes the values in the DataTree have already been transformed to PIT values,
     as in the case of SBC analysis or values from ``arviz_base.loo_pit``.
 
     Simultaneous confidence bands are computed using the method described in [1]_.
@@ -51,6 +50,9 @@ def plot_ecdf_pit(
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
     the observed values. We can obtain the coverage of the central intervals from the PIT by
     replacing the PIT with two times the absolute difference between the PIT values and 0.5.
+
+    For more details on how to interpret this plot, 
+    see https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#pit-ecdfs.
 
     Parameters
     ----------
