@@ -253,23 +253,22 @@ def plot_dist(
                 if not isinstance(rug_kwargs, dict):
                     rug_kwargs = {}
 
-                _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
+                _, rug_aes, rug_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
 
-                if "color" not in div_aes:
+                if "color" not in rug_aes:
                     rug_kwargs.setdefault("color", "black")
-                if "marker" not in div_aes:
+                if "marker" not in rug_aes:
                     rug_kwargs.setdefault("marker", "|")
-                if "size" not in div_aes:
+                if "size" not in rug_aes:
                     rug_kwargs.setdefault("size", 15)
 
                 plot_collection.map(
                     scatter_x,
                     "rug",
                     data=distribution,
-                    ignore_aes=div_ignore,
+                    ignore_aes=rug_ignore,
                     **rug_kwargs,
                 )
-
         elif kind == "ecdf":
             density = distribution.azstats.ecdf(
                 dims=density_dims, **stats_kwargs.get("density", {})
