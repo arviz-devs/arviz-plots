@@ -47,13 +47,16 @@ def plot_ppc_pit(
 
     This plot shows the empirical cumulative distribution function (ECDF) of the PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between
-    the expected CDF from the observed ECDF. Simultaneous confidence bands are computed using
+    the observed ECDF and the expected CDF. Simultaneous confidence bands are computed using
     the method described in described in [1]_.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
     the observed values. We can obtain the coverage of the central intervals from the PIT by
     replacing the PIT with two times the absolute difference between the PIT values and 0.5.
+
+    For more details on how to interpret this plot,
+    see https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#pit-ecdfs.
 
     Parameters
     ----------
