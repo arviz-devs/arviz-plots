@@ -32,8 +32,8 @@ def plot_loo_pit(
     in [1]_ and [2]_.
 
     This plot shows the empirical cumulative distribution function (ECDF) of the LOO-PIT values.
-    To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between the 
-    observed ECDF and the expected CDF. Simultaneous confidence bands are computed using the method 
+    To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between the
+    observed ECDF and the expected CDF. Simultaneous confidence bands are computed using the method
     described in described in [3]_.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
@@ -41,7 +41,7 @@ def plot_loo_pit(
     the observed values. We can obtain the coverage of the central intervals from the LOO-PIT by
     replacing the LOO-PIT with two times the absolute difference between the LOO-PIT values and 0.5.
 
-    For more details on how to interpret this plot, 
+    For more details on how to interpret this plot,
     see https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#pit-ecdfs.
 
     Parameters

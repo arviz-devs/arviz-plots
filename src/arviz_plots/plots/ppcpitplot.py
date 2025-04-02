@@ -55,7 +55,7 @@ def plot_ppc_pit(
     the observed values. We can obtain the coverage of the central intervals from the PIT by
     replacing the PIT with two times the absolute difference between the PIT values and 0.5.
 
-    For more details on how to interpret this plot, 
+    For more details on how to interpret this plot,
     see https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#pit-ecdfs.
 
     Parameters
