@@ -227,6 +227,7 @@ def plot_ppc_dist(
     plot_kwargs.setdefault("credible_interval", False)
     plot_kwargs.setdefault("point_estimate", False)
     plot_kwargs.setdefault("point_estimate_text", False)
+    plot_kwargs.setdefault("rug_plot", False)
 
     # Plot the predictive density
     pred_density_kwargs = copy(plot_kwargs.get("predictive_density", {}))
@@ -267,6 +268,7 @@ def plot_ppc_dist(
 
         if kind == "kde":
             dt_observed = observed_dist.azstats.kde(dims=pp_dims, **stats_kwargs)
+
             plot_collection.map(
                 line_xy,
                 "observe_density",

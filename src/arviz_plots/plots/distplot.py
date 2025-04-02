@@ -244,6 +244,31 @@ def plot_dist(
                 line_xy, "kde", data=density, ignore_aes=density_ignore, **density_kwargs
             )
 
+            if plot_kwargs is None:
+                plot_kwargs = {}
+
+            rug_kwargs = copy(plot_kwargs.get("rug_plot", {}))
+
+            if rug_kwargs is not False:
+                if not isinstance(rug_kwargs, dict):
+                    rug_kwargs = {}
+
+                _, rug_aes, rug_ignore = filter_aes(plot_collection, aes_map, "rug", sample_dims)
+
+                if "color" not in rug_aes:
+                    rug_kwargs.setdefault("color", "black")
+                if "marker" not in rug_aes:
+                    rug_kwargs.setdefault("marker", "|")
+                if "size" not in rug_aes:
+                    rug_kwargs.setdefault("size", 15)
+
+                plot_collection.map(
+                    scatter_x,
+                    "rug",
+                    data=distribution,
+                    ignore_aes=rug_ignore,
+                    **rug_kwargs,
+                )
         elif kind == "ecdf":
             density = distribution.azstats.ecdf(
                 dims=density_dims, **stats_kwargs.get("density", {})
