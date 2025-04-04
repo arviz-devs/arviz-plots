@@ -476,7 +476,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "col" in pc.viz.data_vars
         assert "Groups" in pc.viz["mu"].coords
         assert "BF_type" in pc.aes
-        assert "BF10" in pc.aes["BF_type"].values[0]
+        assert "BF01" in pc.aes["BF_type"].values[0]
 
     def test_plot_energy_dist(self, datatree, backend):
         pc = plot_energy(datatree, backend=backend)
