@@ -106,6 +106,7 @@ def plot_dist(
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * rug -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats_kwargs : mapping, optional
@@ -247,7 +248,7 @@ def plot_dist(
             if plot_kwargs is None:
                 plot_kwargs = {}
 
-            rug_kwargs = copy(plot_kwargs.get("rug_plot", {}))
+            rug_kwargs = copy(plot_kwargs.get("rug", False))
 
             if rug_kwargs is not False:
                 if not isinstance(rug_kwargs, dict):
