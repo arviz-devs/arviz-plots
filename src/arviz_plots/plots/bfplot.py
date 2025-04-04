@@ -27,11 +27,12 @@ def plot_bf(
     stats_kwargs=None,
     pc_kwargs=None,
 ):
-    r"""Approximated Bayes Factor for comparing hypothesis of two nested models.
+    r"""Bayes Factor for comparing hypothesis of two nested models.
 
     The Bayes factor is estimated by comparing a model (H1) against a model
     in which the parameter of interest has been restricted to be a point-null (H0)
-    This computation assumes the models are nested and thus H0 is a special case of H1.
+    This computation assumes H0 is a special case of H1. For more details see here
+    https://arviz-devs.github.io/EABM/Chapters/Model_comparison.html#savagedickey-ratio
 
     Parameters
     ----------
@@ -134,9 +135,9 @@ def plot_bf(
     bf, _ = bayes_factor(dt, var_name, ref_val, return_ref_vals=True)
 
     bf_values = xr.DataArray(
-        [f"BF10: {bf['BF10']:.2f}"],
+        [f"BF01: {bf['BF01']:.2f}"],
         dims=["BF_type"],
-        coords={"BF_type": ["BF10"]},
+        coords={"BF_type": ["BF01"]},
     )
 
     if plot_collection is None:
