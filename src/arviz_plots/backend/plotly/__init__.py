@@ -309,6 +309,7 @@ def create_plotting_grid(
         shared_yaxes=sharey,
         start_cell="top-left",
         horizontal_spacing=plot_hspace,
+        subplot_titles=[" " for i in range(int(rows) * int(cols))],
         column_widths=width_ratios if width_ratios is None else list(width_ratios),
         **kwargs,
     )
