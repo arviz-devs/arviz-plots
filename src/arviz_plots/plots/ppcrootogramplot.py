@@ -65,6 +65,9 @@ def plot_ppc_rootogram(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str,
+        Group to be plotted. Defaults to "posterior_predictive".
+        It could also be "prior_predictive".
     coords : dict, optional
         Coordinates to plot.
     sample_dims : str or sequence of hashable, optional
@@ -81,7 +84,8 @@ def plot_ppc_rootogram(
         Valid keys are:
 
         * predictive_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-        * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`. Defaults to
+            False if group is "prior_predictive" and {} otherwise.
         * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
@@ -234,7 +238,9 @@ def plot_ppc_rootogram(
         )
 
     ## observed_markers
-    observed_ms_kwargs = copy(plot_kwargs.get("observed_markers", {}))
+    observed_ms_kwargs = copy(
+        plot_kwargs.get("observed_markers", False if group == "prior_predictive" else {})
+    )
 
     if observed_ms_kwargs is not False:
         _, _, observed_ms_ignore = filter_aes(
