@@ -26,6 +26,7 @@ def plot_ppc_pava(
     data_pairs=None,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
+    group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
     plot_collection=None,
@@ -61,6 +62,10 @@ def plot_ppc_pava(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str, optional
+        The group from which to get the unique values. Defaults to "posterior_predictive".
+        It could also be "prior_predictive". Notice that this plots always use the "observed_data"
+        so use with extra care if you are using "prior_predictive".
     coords : dict, optional
         Coordinates to plot. CURRENTLY NOT IMPLEMENTED
     sample_dims : str or sequence of hashable, optional
@@ -145,7 +150,7 @@ def plot_ppc_pava(
     if data_pairs is None:
         data_pairs = {var_names: var_names}
 
-    ds_calibration = isotonic_fit(dt, data_pairs, n_bootstaps, ci_prob)
+    ds_calibration = isotonic_fit(dt, data_pairs, group, n_bootstaps, ci_prob)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
