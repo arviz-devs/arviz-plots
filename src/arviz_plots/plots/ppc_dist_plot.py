@@ -9,7 +9,7 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.distplot import plot_dist
+from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
 from arviz_plots.visuals import ecdf_line, hist, line_xy
 

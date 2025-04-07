@@ -2,7 +2,7 @@
 from arviz_base import convert_to_datatree
 from arviz_stats.loo import loo_pit
 
-from arviz_plots.plots.ecdfplot import plot_ecdf_pit
+from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 
 
 def plot_loo_pit(

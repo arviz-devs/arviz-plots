@@ -6,7 +6,7 @@ from importlib import import_module
 import xarray as xr
 from arviz_stats.bayes_factor import bayes_factor
 
-from arviz_plots.plots.priorposteriorplot import plot_prior_posterior
+from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
 from arviz_plots.plots.utils import filter_aes
 from arviz_plots.visuals import vline
 
