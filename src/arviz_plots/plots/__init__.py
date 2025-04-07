@@ -14,6 +14,7 @@ from .pavacalibrationplot import plot_ppc_pava
 from .ppcdistplot import plot_ppc_dist
 from .ppcpitplot import plot_ppc_pit
 from .ppcrootogramplot import plot_ppc_rootogram
+from .priorposteriorplot import plot_prior_posterior
 from .psensedistplot import plot_psense_dist
 from .psensequantitiesplot import plot_psense_quantities
 from .rankplot import plot_rank
@@ -36,6 +37,7 @@ __all__ = [
     "plot_loo_pit",
     "plot_ppc_dist",
     "plot_ppc_rootogram",
+    "plot_prior_posterior",
     "plot_rank",
     "plot_ridge",
     "plot_ppc_pava",
