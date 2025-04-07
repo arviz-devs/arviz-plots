@@ -2,7 +2,7 @@
 import numpy as np
 from arviz_base import convert_to_dataset, rcParams
 
-from arviz_plots.plots.distplot import plot_dist
+from arviz_plots.plots.dist_plot import plot_dist
 
 
 def plot_energy(

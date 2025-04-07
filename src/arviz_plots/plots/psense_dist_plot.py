@@ -7,7 +7,7 @@ from arviz_stats.psense import power_scale_dataset
 from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.distplot import plot_dist
+from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import process_group_variables_coords
 
 

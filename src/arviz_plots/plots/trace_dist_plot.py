@@ -7,8 +7,8 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.distplot import plot_dist
-from arviz_plots.plots.traceplot import plot_trace
+from arviz_plots.plots.dist_plot import plot_dist
+from arviz_plots.plots.trace_plot import plot_trace
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
 from arviz_plots.visuals import labelled_x, labelled_y, ticklabel_props, trace_rug
 

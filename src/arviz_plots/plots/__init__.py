@@ -1,26 +1,26 @@
 """Batteries-included ArviZ plots."""
 
-from .bfplot import plot_bf
-from .compareplot import plot_compare
-from .convergencedistplot import plot_convergence_dist
-from .distplot import plot_dist
-from .ecdfplot import plot_ecdf_pit
-from .energyplot import plot_energy
-from .essplot import plot_ess
-from .evolutionplot import plot_ess_evolution
-from .forestplot import plot_forest
-from .loopitplot import plot_loo_pit
-from .pavacalibrationplot import plot_ppc_pava
-from .ppcdistplot import plot_ppc_dist
-from .ppcpitplot import plot_ppc_pit
-from .ppcrootogramplot import plot_ppc_rootogram
-from .priorposteriorplot import plot_prior_posterior
-from .psensedistplot import plot_psense_dist
-from .psensequantitiesplot import plot_psense_quantities
-from .rankplot import plot_rank
-from .ridgeplot import plot_ridge
-from .tracedistplot import plot_trace_dist
-from .traceplot import plot_trace
+from .bf_plot import plot_bf
+from .compare_plot import plot_compare
+from .convergence_dist_plot import plot_convergence_dist
+from .dist_plot import plot_dist
+from .ecdf_plot import plot_ecdf_pit
+from .energy_plot import plot_energy
+from .ess_plot import plot_ess
+from .evolution_plot import plot_ess_evolution
+from .forest_plot import plot_forest
+from .loo_pit_plot import plot_loo_pit
+from .pava_calibration_plot import plot_ppc_pava
+from .ppc_dist_plot import plot_ppc_dist
+from .ppc_pit_plot import plot_ppc_pit
+from .ppc_rootogram_plot import plot_ppc_rootogram
+from .prior_posterior_plot import plot_prior_posterior
+from .psense_dist_plot import plot_psense_dist
+from .psense_quantities_plot import plot_psense_quantities
+from .rank_plot import plot_rank
+from .ridge_plot import plot_ridge
+from .trace_dist_plot import plot_trace_dist
+from .trace_plot import plot_trace
 
 __all__ = [
     "plot_bf",

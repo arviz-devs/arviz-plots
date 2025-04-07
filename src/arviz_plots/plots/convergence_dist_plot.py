@@ -7,7 +7,7 @@ import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 
-from arviz_plots.plots.distplot import plot_dist
+from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
 from arviz_plots.visuals import vline
 
