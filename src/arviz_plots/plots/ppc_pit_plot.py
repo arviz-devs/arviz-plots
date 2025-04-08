@@ -29,6 +29,7 @@ def plot_ppc_pit(
     var_names=None,
     data_pairs=None,
     filter_vars=None,  # pylint: disable=unused-argument
+    group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
     plot_collection=None,
@@ -84,6 +85,9 @@ def plot_ppc_pit(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str,
+        Group to be plotted. Defaults to "posterior_predictive".
+        It could also be "prior_predictive".
     coords : dict, optional
         Coordinates to plot.
     sample_dims : str or sequence of hashable, optional
@@ -178,10 +182,10 @@ def plot_ppc_pit(
     if data_pairs is None:
         data_pairs = {var_names: var_names}
     if None in data_pairs.keys():
-        data_pairs = dict(zip(dt.posterior_predictive.data_vars, dt.observed_data.data_vars))
+        data_pairs = dict(zip(dt[group].data_vars, dt.observed_data.data_vars))
 
     randomized = [
-        (dt.posterior_predictive[pred_var].values.dtype.kind == "i")
+        (dt[group][pred_var].values.dtype.kind == "i")
         or (dt.observed_data[obs_var].values.dtype.kind == "i")
         for pred_var, obs_var in data_pairs.items()
     ]
@@ -197,7 +201,7 @@ def plot_ppc_pit(
             )
 
     ds_ecdf = difference_ecdf_pit(
-        dt, data_pairs, ci_prob, coverage, randomized, method, n_simulations
+        dt, data_pairs, group, ci_prob, coverage, randomized, method, n_simulations
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
