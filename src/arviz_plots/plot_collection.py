@@ -689,8 +689,8 @@ class PlotCollection:
                 {
                     "chart": np.array(fig, dtype=object),
                     "plot": (dims, flat_ax_ary.reshape(plots_raw_shape)),
-                    "row": (dims, flat_row_id.reshape(plots_raw_shape)),
-                    "col": (dims, flat_col_id.reshape(plots_raw_shape)),
+                    "row_index": (dims, flat_row_id.reshape(plots_raw_shape)),
+                    "col_index": (dims, flat_col_id.reshape(plots_raw_shape)),
                 },
                 coords={dim: data[dim] for dim in dims},
             )
@@ -713,11 +713,11 @@ class PlotCollection:
                             dims,
                             flat_ax_ary[col_slice].reshape(plots_raw_shape),
                         ),
-                        "row": (
+                        "row_index": (
                             dims,
                             flat_row_id[col_slice].reshape(plots_raw_shape),
                         ),
-                        "col": (
+                        "col_index": (
                             dims,
                             flat_col_id[col_slice].reshape(plots_raw_shape),
                         ),
@@ -800,8 +800,8 @@ class PlotCollection:
                 {
                     "chart": np.array(fig, dtype=object),
                     "plot": (dims, ax_ary.flatten().reshape(plots_raw_shape)),
-                    "row": (dims, row_id.flatten().reshape(plots_raw_shape)),
-                    "col": (dims, col_id.flatten().reshape(plots_raw_shape)),
+                    "row_index": (dims, row_id.flatten().reshape(plots_raw_shape)),
+                    "col_index": (dims, col_id.flatten().reshape(plots_raw_shape)),
                 },
                 coords={dim: data[dim] for dim in dims},
             )
@@ -832,11 +832,11 @@ class PlotCollection:
                             dims,
                             ax_ary[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                         ),
-                        "row": (
+                        "row_index": (
                             dims,
                             row_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                         ),
-                        "col": (
+                        "col_index": (
                             dims,
                             col_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                         ),
@@ -1019,8 +1019,11 @@ class PlotCollection:
 
         for var_name, sel, isel in plotters:
             da = data[var_name].sel(sel)
-            if np.all(np.isnan(da)):
-                continue
+            try:
+                if np.all(np.isnan(da)):
+                    continue
+            except TypeError:
+                pass
             sel_plus = {**sel, **coords}
             target = self.get_target(var_name, sel_plus)
 
