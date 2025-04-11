@@ -196,7 +196,7 @@ def hist(
     r_e,
     target,
     *,
-    bottom=None,
+    bottom=0,
     color=unset,
     facecolor=unset,
     edgecolor=unset,
@@ -287,7 +287,7 @@ def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError("artist_kws not empty")
     artist_element = {
-        "function": "line",
+        "function": "step",
         "x": np.atleast_1d(x),
         "y": np.atleast_1d(y),
         **_filter_kwargs(kwargs, artist_kws),
@@ -398,7 +398,7 @@ def ciliney(
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError("artist_kws not empty")
     artist_element = {
-        "function": "line",
+        "function": "ciliney",
         "x": np.atleast_1d(x),
         "y_bottom": np.atleast_1d(y_bottom),
         "y_top": np.atleast_1d(y_top),
@@ -491,6 +491,27 @@ def remove_axis(target, axis="y"):
     artist_element = {
         "function": "remove_axis",
         "axis": axis,
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def set_y_scale(target, scale):
+    """Interface to setting the y scale of a plot."""
+    artist_element = {
+        "function": "set_y_scale",
+        "scale": scale,
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def grid(target, axis, color):
+    """Interface to setting a grid in any axis."""
+    artist_element = {
+        "function": "grid",
+        "axis": axis,
+        "color": color,
     }
     target.append(artist_element)
     return artist_element
