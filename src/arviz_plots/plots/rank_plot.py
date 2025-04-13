@@ -167,7 +167,7 @@ def plot_rank(
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
 
         pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, dt_ecdf_ranks)
-
+        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             dt_ecdf_ranks,
             backend=backend,
@@ -219,7 +219,6 @@ def plot_rank(
             xlabel_kwargs.setdefault("color", "black")
 
         xlabel_kwargs.setdefault("text", "Fractional ranks")
-
         plot_collection.map(
             labelled_x,
             "xlabel",

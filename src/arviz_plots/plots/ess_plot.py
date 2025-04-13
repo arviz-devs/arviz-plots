@@ -277,7 +277,7 @@ def plot_ess(
         aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]
 
         pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
-
+        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,

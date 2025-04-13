@@ -173,6 +173,7 @@ def plot_ecdf_pit(
 
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
