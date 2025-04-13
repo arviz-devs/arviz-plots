@@ -5,15 +5,16 @@ import xarray as xr
 from arviz_base import rcParams
 
 from arviz_plots import PlotCollection
-from arviz_plots.plots.utils import process_group_variables_coords
+from arviz_plots.plots.utils import process_group_variables_coords, set_figure_layout
 
 def get_valid_arg(key, value, backend):
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     key_matcher = "color" if key in {"facecolor", "edgecolor"} else key
-    if isinstance(value, str) and re.match(key_matcher +"_[0-9]+", value):
-        _, index = value.rsplit("_", 1)
-        index = int(index)
-        return plot_backend.get_default_aes(key, index+1)[index]
+    if isinstance(value, str):
+        match = re.match(key_matcher +"_([0-9]+)", value)
+        if match:
+            index = int(match.groups()[0])
+            return plot_backend.get_default_aes(key, index+1)[index]
     return value
 
 
@@ -25,6 +26,7 @@ def render(da, target, backend, **kwargs):
     plot_kwargs = da.item()
     plot_fun_name = plot_kwargs["function"]
     plot_kwargs = backendize_kwargs(plot_kwargs, backend)
+    kwargs = backendize_kwargs(kwargs, backend)
     return getattr(plot_backend, plot_fun_name)(target=target, **{**plot_kwargs, **kwargs})
 
 def combine_plots(
@@ -61,12 +63,14 @@ def combine_plots(
         pc_kwargs["rows"] = ["row"]
         expand_dims = {"row": column_length}
     else:
-        raise ValueError()
+        raise ValueError(f"`expanded_dim` must be 'row' or 'column' but got '{expanded_dim}'")
+    distribution = distribution.expand_dims(**expand_dims).assign_coords({expanded_dim: expanded_coord_names})
 
-    pc_kwargs["plot_grid_kws"]["figsize"] = (12, 3)
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
 
     pc = PlotCollection.grid(
-        distribution.expand_dims(**expand_dims).assign_coords({expanded_dim: expanded_coord_names}),
+        distribution,
         backend=backend,
         **pc_kwargs,
     )
@@ -80,16 +84,18 @@ def combine_plots(
         pc.coords = None
         pc.aes = pc_i.aes
         pc.coords = {expanded_dim: name}
-        inverted_dt = {}
+        inverted_dt_dict = {}
         for viz_group, ds in pc_i.viz.children.items():
             for viz_var_name, da in ds.data_vars.items():
                 if viz_var_name in {"plot", "row_index", "col_index"}:
                     continue
-                if viz_var_name not in inverted_dt:
-                    inverted_dt[viz_var_name] = {}
-                inverted_dt[viz_var_name].update({viz_group: da})
-        inverted_dt = xr.DataTree.from_dict({key: xr.Dataset(values) for key, values in inverted_dt.items()})
-        for viz_group, ds in inverted_dt.children.items():
-            pc.map(render, data=ds.dataset, store_artist=False)
+                if viz_var_name not in inverted_dt_dict:
+                    inverted_dt_dict[viz_var_name] = {}
+                inverted_dt_dict[viz_var_name].update({viz_group: da})
+        inverted_dt_dict = {key: xr.Dataset(values) for key, values in inverted_dt_dict.items()}
+        for viz_group, ds in inverted_dt_dict.items():
+            attrs = ds[list(ds.data_vars)[0]].attrs
+            pc.map(render, fun_label=f"{viz_group}_{name}", data=ds, ignore_aes=attrs.get("ignore_aes", None))
+    pc.coords = None
 
     return pc

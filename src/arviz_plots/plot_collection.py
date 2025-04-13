@@ -855,10 +855,13 @@ class PlotCollection:
         all_loop_dims = self.base_loop_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
 
-    def allocate_artist(self, fun_label, data, all_loop_dims, artist_dims=None):
+    def allocate_artist(self, fun_label, data, all_loop_dims, artist_dims=None, ignore_aes=None):
         """Allocate an artist in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
+        attrs = None
+        if ignore_aes is not None:
+            attrs = {"ignore_aes": ignore_aes}
         for var_name, da in data.items():
             if var_name not in self.viz.children:
                 self.viz[var_name] = xr.DataTree()
@@ -871,6 +874,7 @@ class PlotCollection:
                 np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
                 coords={dim: data[dim] for dim in inherited_dims},
+                attrs=attrs,
             )
 
     def get_target(self, var_name, selection):
@@ -1015,6 +1019,7 @@ class PlotCollection:
                 data=loop_data,
                 all_loop_dims=all_loop_dims,
                 artist_dims=artist_dims,
+                ignore_aes=ignore_aes,
             )
 
         for var_name, sel, isel in plotters:
