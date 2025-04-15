@@ -160,9 +160,9 @@ def fill_between_y(da, target, backend, *, x=None, y_bottom=None, y=None, y_top=
         y_top += y
         y_bottom += y
     if np.ndim(np.squeeze(y_top)) == 0:
-        y_top = np.full_like(x, y_top)
+        y_top = np.broadcast_to(y_top, x.shape)
     if np.ndim(np.squeeze(y_bottom)) == 0:
-        y_bottom = np.full_like(x, y_bottom)
+        y_bottom = np.broadcast_to(y_bottom, x.shape)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.fill_between_y(x, y_bottom, y_top, target, **kwargs)
 

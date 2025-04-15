@@ -510,3 +510,10 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_prior_posterior(datatree, backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "Groups" in pc.viz["mu"].coords
+
+    def test_autocorr(self, datatree, backend):
+        pc = plot_trace(datatree, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
