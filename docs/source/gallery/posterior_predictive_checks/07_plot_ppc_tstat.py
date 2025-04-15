@@ -1,7 +1,7 @@
 """
-# T-Statistics
+# T-Statistic
 
-Test-statistics for the posterior/prior predictive data.
+t-statistic for the posterior/prior predictive data.
 
 ---
 
