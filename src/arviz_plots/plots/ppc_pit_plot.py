@@ -1,36 +1,37 @@
-"""Plot PIT Δ-ECDF."""
+"""Plot ppc pit."""
+import warnings
 from copy import copy
 from importlib import import_module
 
-import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
-from arviz_stats.ecdf_utils import ecdf_pit
+from arviz_stats.ecdf_utils import difference_ecdf_pit
+from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
+from arviz_plots.plots.utils import filter_aes, set_figure_layout
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
     labelled_title,
     labelled_x,
     labelled_y,
-    remove_axis,
     set_xticks,
 )
 
 
-def plot_ecdf_pit(
+def plot_ppc_pit(
     dt,
-    var_names=None,
-    filter_vars=None,
-    group="prior_sbc",
-    coords=None,
-    sample_dims=None,
     ci_prob=None,
     coverage=False,
-    n_simulations=1000,
     method="simulation",
+    n_simulations=1000,
+    var_names=None,
+    data_pairs=None,
+    filter_vars=None,  # pylint: disable=unused-argument
+    group="posterior_predictive",
+    coords=None,  # pylint: disable=unused-argument
+    sample_dims=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -38,13 +39,17 @@ def plot_ecdf_pit(
     plot_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot Δ-ECDF.
+    r"""PIT Δ-ECDF values with simultaneous confidence envelope.
 
-    Plots the Δ-ECDF, that is the difference between the observed ECDF and the expected CDF.
-    It assumes the values in the DataTree have already been transformed to PIT values,
-    as in the case of SBC analysis or values from ``arviz_base.loo_pit``.
+    For a calibrated model the Probability Integral Transform (PIT) values,
+    $p(\tilde{y}_i \le y_i \mid y)$, should be uniformly distributed.
+    Where $y_i$ represents the observed data for index $i$ and $\tilde y_i$ represents
+    the posterior predictive sample at index $i$.
 
-    Simultaneous confidence bands are computed using the method described in [1]_.
+    This plot shows the empirical cumulative distribution function (ECDF) of the PIT values.
+    To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between
+    the observed ECDF and the expected CDF. Simultaneous confidence bands are computed using
+    the method described in described in [1]_.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -58,20 +63,6 @@ def plot_ecdf_pit(
     ----------
     dt : DataTree
         Input data
-    var_names : str or list of str, optional
-        One or more variables to be plotted. Currently only one variable is supported.
-        Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, optional, default=None
-        If None (default), interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
-    group : str, optional
-        Which group to use. Defaults to "prior_sbc".
-    coords : dict, optional
-        Coordinates to plot.
-    sample_dims : str or sequence of hashable, optional
-        Dimensions to reduce unless mapped to an aesthetic.
-        Defaults to ``rcParams["data.sample_dims"]``
     ci_prob : float, optional
         Indicates the probability that should be contained within the plotted credible interval.
         Defaults to ``rcParams["stats.ci_prob"]``
@@ -82,7 +73,26 @@ def plot_ecdf_pit(
         `method="simulation"` ignored if method is "optimized". Defaults to 1000.
     method : str, optional
         Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".
+        Defaults to "simulation".e.
+    data_pairs : dict, optional
+        Dictionary of keys prior/posterior predictive data and values observed data variable names.
+        If None, it will assume that the observed data and the predictive data have
+        the same variable name.
+    var_names : str or list of str, optional
+        One or more variables to be plotted. Currently only one variable is supported.
+        Prefix the variables by ~ when you want to exclude them from the plot.
+    filter_vars : {None, “like”, “regex”}, optional, default=None
+        If None (default), interpret var_names as the real variables names.
+        If “like”, interpret var_names as substrings of the real variables names.
+        If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str,
+        Group to be plotted. Defaults to "posterior_predictive".
+        It could also be "prior_predictive".
+    coords : dict, optional
+        Coordinates to plot.
+    sample_dims : str or sequence of hashable, optional
+        Dimensions to reduce unless mapped to an aesthetic.
+        Defaults to ``rcParams["data.sample_dims"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -98,7 +108,6 @@ def plot_ecdf_pit(
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
-        * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -109,23 +118,42 @@ def plot_ecdf_pit(
 
     Examples
     --------
-    Rank plot for the crabs hurdle-negative-binomial dataset.
+    Plot the ecdf-PIT for the crabs hurdle-negative-binomial dataset.
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_ecdf_pit, style
+        >>> from arviz_plots import plot_ppc_pit, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('sbc')
-        >>> plot_ecdf_pit(dt)
+        >>> dt = load_arviz_data('crabs_hurdle_nb')
+        >>> plot_ppc_pit(dt)
 
 
-    .. minigallery:: plot_ecdf_pit
+    Plot the coverage for the crabs hurdle-negative-binomial dataset.
 
-    .. [1] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
-    its applications in goodness-of-fit evaluation and multiple sample comparison*.
-    Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_ppc_pit, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('crabs_hurdle_nb')
+        >>> plot_ppc_pit(dt, coverage=True)
+
+    .. minigallery:: plot_ppc_pit
+
+    .. [1] Vehtari et al. *Practical Bayesian model evaluation using leave-one-out cross-validation
+        and WAIC*. Statistics and Computing. 27(5) (2017) https://doi.org/10.1007/s11222-016-9696-4
+        arXiv preprint https://arxiv.org/abs/1507.04544.
+
+    .. [2] Vehtari et al. *Pareto Smoothed Importance Sampling*.
+        Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
+        arXiv preprint https://arxiv.org/abs/1507.02646
+
+    .. [3] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
+        its applications in goodness-of-fit evaluation and multiple sample comparison*.
+        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
@@ -138,7 +166,6 @@ def plot_ecdf_pit(
         plot_kwargs = {}
     else:
         plot_kwargs = plot_kwargs.copy()
-    plot_kwargs.setdefault("remove_axis", True)
     if pc_kwargs is None:
         pc_kwargs = {}
     else:
@@ -152,37 +179,45 @@ def plot_ecdf_pit(
 
     labeller = BaseLabeller()
 
-    distribution = process_group_variables_coords(
-        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
+    if data_pairs is None:
+        data_pairs = {var_names: var_names}
+    if None in data_pairs.keys():
+        data_pairs = dict(zip(dt[group].data_vars, dt.observed_data.data_vars))
+
+    randomized = [
+        (dt[group][pred_var].values.dtype.kind == "i")
+        or (dt.observed_data[obs_var].values.dtype.kind == "i")
+        for pred_var, obs_var in data_pairs.items()
+    ]
+
+    if any(randomized):
+        if any(
+            set(unique(dt.observed_data[var].values)).issubset({0, 1})
+            for var in data_pairs.values()
+        ):
+            warnings.warn(
+                "Observed data is binary. Use plot_ppc_pava instead",
+                stacklevel=2,
+            )
+
+    ds_ecdf = difference_ecdf_pit(
+        dt, data_pairs, group, ci_prob, coverage, randomized, method, n_simulations
     )
 
-    if coverage:
-        distribution = distribution / distribution.max()
-        distribution = 2 * np.abs(distribution - 0.5)
-
-    dt_ecdf = distribution.azstats.ecdf(dims=sample_dims, pit=True)
-
-    # Compute envelope
-    dummy_vals_size = np.prod([len(distribution[dims]) for dims in sample_dims])
-    dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, method, n_simulations)
-    lower_ci = lower_ci - x_ci
-    upper_ci = upper_ci - x_ci
-
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    colors = plot_bknd.get_default_aes("color", 1, {})
 
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("col_wrap", 5)
-        pc_kwargs.setdefault(
-            "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
-        )
+        pc_kwargs.setdefault("cols", "__variable__")
+        pc_kwargs.setdefault("rows", None)
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
+        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, ds_ecdf)
 
         plot_collection = PlotCollection.wrap(
-            distribution,
+            ds_ecdf,
             backend=backend,
             **pc_kwargs,
         )
@@ -197,11 +232,12 @@ def plot_ecdf_pit(
 
     if ecdf_ls_kwargs is not False:
         _, _, ecdf_ls_ignore = filter_aes(plot_collection, aes_map, "ecdf_lines", sample_dims)
+        ecdf_ls_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
             ecdf_line,
             "ecdf_lines",
-            data=dt_ecdf,
+            data=ds_ecdf,
             ignore_aes=ecdf_ls_ignore,
             **ecdf_ls_kwargs,
         )
@@ -223,10 +259,10 @@ def plot_ecdf_pit(
         plot_collection.map(
             fill_between_y,
             "ci",
-            data=dt_ecdf,
-            x=x_ci,
-            y_bottom=lower_ci,
-            y_top=upper_ci,
+            data=ds_ecdf,
+            x=ds_ecdf.sel(plot_axis="x"),
+            y_bottom=ds_ecdf.sel(plot_axis="y_bottom"),
+            y_top=ds_ecdf.sel(plot_axis="y_top"),
             ignore_aes=ci_ignore,
             **ci_kwargs,
         )
@@ -253,7 +289,7 @@ def plot_ecdf_pit(
 
     # set ylabel
     _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = copy(plot_kwargs.get("ylabel", False))
+    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "black")
@@ -280,11 +316,6 @@ def plot_ecdf_pit(
             subset_info=True,
             labeller=labeller,
             **title_kwargs,
-        )
-
-    if plot_kwargs.get("remove_axis", True) is not False:
-        plot_collection.map(
-            remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
         )
 
     return plot_collection

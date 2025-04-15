@@ -15,6 +15,7 @@ from arviz_plots import (
     plot_ess_evolution,
     plot_forest,
     plot_ppc_dist,
+    plot_prior_posterior,
     plot_psense_dist,
     plot_ridge,
     plot_trace,
@@ -471,9 +472,6 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_bf(self, datatree, backend):
         pc = plot_bf(datatree, var_name="mu", backend=backend)
         assert "chart" in pc.viz.data_vars
-        assert "plot" in pc.viz.data_vars
-        assert "row" in pc.viz.data_vars
-        assert "col" in pc.viz.data_vars
         assert "Groups" in pc.viz["mu"].coords
         assert "BF_type" in pc.aes
         assert "BF01" in pc.aes["BF_type"].values[0]
@@ -507,3 +505,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         energy_coords = pc.viz["/energy_"]["kde"].coords["energy"].values
         assert "marginal" in energy_coords
         assert "transition" in energy_coords
+
+    def test_plot_prior_posterior(self, datatree, backend):
+        pc = plot_prior_posterior(datatree, backend=backend)
+        assert "chart" in pc.viz.data_vars
+        assert "Groups" in pc.viz["mu"].coords

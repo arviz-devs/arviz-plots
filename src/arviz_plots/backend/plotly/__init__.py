@@ -26,6 +26,28 @@ unset = UnsetDefault()
 pat = re.compile(r"^(row|col)\s?:")
 
 
+def is_shared_x(fig):
+    """Check if all x-axes are shared in the given figure."""
+    x_axes = [fig.layout[key] for key in fig.layout if key.startswith("xaxis")]
+
+    if len(x_axes) <= 1:
+        return True
+
+    master_axis = None
+    for axis in x_axes:
+        if hasattr(axis, "matches"):
+            if master_axis is None:
+                master_axis = axis.matches
+            elif axis.matches is not None and axis.matches != master_axis:
+                return False
+        else:
+            if master_axis is not None and f"xaxis{axis.anchor[1:]}" != master_axis:
+                return False
+    if master_axis is None:
+        return False
+    return True
+
+
 def apply_square_root_scale(plotly_plot):
     """Apply a square root scale to the y-axis of a PlotlyPlot."""
     chart = plotly_plot.chart
@@ -309,6 +331,7 @@ def create_plotting_grid(
         shared_yaxes=sharey,
         start_cell="top-left",
         horizontal_spacing=plot_hspace,
+        subplot_titles=[" " for i in range(int(rows) * int(cols))],
         column_widths=width_ratios if width_ratios is None else list(width_ratios),
         **kwargs,
     )
@@ -612,6 +635,13 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a label to the y axis."""
     kwargs = {"size": size, "color": color}
+
+    # Check if the x axis is shared
+    is_shared_x_val = is_shared_x(target.chart)
+    row, _ = target.chart._get_subplot_rows_columns()  # pylint: disable=protected-access
+    if is_shared_x_val and target.row != row[len(row) - 1]:
+        return
+
     target.update_xaxes(
         title={"text": str_to_plotly_html(string), "font": _filter_kwargs(kwargs, artist_kws)}
     )

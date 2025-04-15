@@ -1,7 +1,7 @@
 """
 # PAV-adjusted calibration
 
-Plot of the PAV-adjusted calibration for binary classifier.
+PAV-adjusted calibration plot for binary predictions.
 
 ---
 
@@ -15,7 +15,7 @@ import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-dt = load_arviz_data("classification10d")
+dt = load_arviz_data("anes")
 pc = azp.plot_ppc_pava(
     dt,
     backend="none",

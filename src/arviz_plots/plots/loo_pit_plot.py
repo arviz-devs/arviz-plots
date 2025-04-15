@@ -2,7 +2,7 @@
 from arviz_base import convert_to_datatree
 from arviz_stats.loo import loo_pit
 
-from arviz_plots.plots.ecdfplot import plot_ecdf_pit
+from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 
 
 def plot_loo_pit(
@@ -13,6 +13,7 @@ def plot_loo_pit(
     n_simulations=1000,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
+    group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
     plot_collection=None,
@@ -128,6 +129,9 @@ def plot_loo_pit(
         plot_kwargs = plot_kwargs.copy()
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
+
+    if group != "posterior_predictive":
+        raise ValueError(f"Group {group} not supported. Only 'posterior_predictive' is supported.")
 
     lpv = loo_pit(dt)
     new_dt = convert_to_datatree(lpv, group="loo_pit")
