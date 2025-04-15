@@ -79,7 +79,7 @@ def plot_autocorr(
 
     Examples
     --------
-    Rank plot for the crabs hurdle-negative-binomial dataset.
+    Autocorrelation plot for mu variable in the centered eight dataset.
 
     .. plot::
         :context: close-figs
