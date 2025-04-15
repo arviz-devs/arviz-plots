@@ -82,7 +82,7 @@ class Testfaceting:
         assert "hierarchy" not in pc.viz["plot"].dims
         assert "group" not in pc.viz["plot"].dims
         assert pc.viz["row_index" if axis == "cols" else "col_index"].max() == 0
-        assert pc.viz[axis[:3]].max() == 2
+        assert pc.viz["col_index" if axis == "cols" else "row_index"].max() == 2
 
     def test_grid_variable(self, dataset, backend):
         pc = PlotCollection.grid(

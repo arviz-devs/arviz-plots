@@ -70,7 +70,7 @@ def combine_plots(
     backend=None,
     pc_kwargs=None,
 ):
-    """Create a grid by combining multiple batteries-included plots in the same :term:`chart`.
+    """Arrange multiple batteries-included plots in a customizable column or row layout.
 
     Parameters
     ----------
