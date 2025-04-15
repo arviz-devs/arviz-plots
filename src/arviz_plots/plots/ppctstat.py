@@ -1,9 +1,13 @@
-from arviz_base import rcParams
+"""ppc t-stat plot code."""
+
 from importlib import import_module
+
+from arviz_base import rcParams
+from arviz_base.labels import BaseLabeller
+
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import set_figure_layout, process_group_variables_coords, filter_aes
-from arviz_base.labels import BaseLabeller
+from arviz_plots.plots.utils import process_group_variables_coords, set_figure_layout
 
 
 def plot_ppc_tstat(
@@ -78,7 +82,9 @@ def plot_ppc_tstat(
 
     """
     if group not in ("posterior_predictive", "prior_predictive"):
-        raise TypeError("`group` argument must be either `posterior_predictive` or `prior_predictive`")
+        raise TypeError(
+            "`group` argument must be either `posterior_predictive` or `prior_predictive`"
+        )
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -130,10 +136,12 @@ def plot_ppc_tstat(
     else:
         try:
             t_stat_float = float(t_stat)
-        except ValueError:
-            raise ValueError(f"T statistics '{t_stat}' not implemented")
+        except ValueError as ve:
+            raise ValueError(f"T statistics '{t_stat}' not implemented") from ve
         if 0 < t_stat_float < 1:
-            return predictive_dist.quantile(q=t_stat_float, dim=list(predictive_dist.dims)[0])
+            predictive_dist = predictive_dist.quantile(
+                q=t_stat_float, dim=list(predictive_dist.dims)[0]
+            )
         else:
             raise ValueError(f"T statistic '{t_stat}' not in valid range (0, 1).")
     if plot_collection is None:
@@ -166,7 +174,7 @@ def plot_ppc_tstat(
         labeller=labeller,
         plot_kwargs=plot_kwargs,
         stats_kwargs=stats_kwargs,
-        pc_kwargs=pc_kwargs
+        pc_kwargs=pc_kwargs,
     )
 
     return plot_collection
