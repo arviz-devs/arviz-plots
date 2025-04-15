@@ -1,7 +1,7 @@
 """
 # Monte Carlo standard error
 
-faceted quantile ESS plot
+faceted quantile MCSE plot
 
 ---
 
