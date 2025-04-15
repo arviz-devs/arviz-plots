@@ -2,7 +2,7 @@
 # Custom diagnostic plots combination 
 
 Arrange three diagnostic plots (ESS evolution plot, rank plot and autocorrelation plot)
-in a custom row layout.
+in a custom column layout.
 
 ---
 
@@ -26,7 +26,6 @@ pc = azp.combine_plots(
     ],
     var_names=["theta", "mu", "tau"],
     coords={"school": ["Hotchkiss", "St. Paul's"]},
-    expand="row",
     backend="none"  # change to preferred backend
 )
 pc.show()
