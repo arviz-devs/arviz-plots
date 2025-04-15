@@ -15,6 +15,7 @@ def plot_prior_posterior(
     dt,
     var_names=None,
     filter_vars=None,
+    group=None,  # pylint: disable=unused-argument
     coords=None,
     sample_dims=None,
     kind=None,
@@ -44,8 +45,8 @@ def plot_prior_posterior(
         If None, interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
-    group : str, default "posterior"
-        Group to be plotted.
+    group : None
+        This argument is ignored. Have it here for compatibility with other plotting functions.
     coords : dict, optional
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
