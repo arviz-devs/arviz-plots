@@ -1,5 +1,5 @@
 """ppc t-stat plot code."""
-
+from copy import copy
 from importlib import import_module
 
 from arviz_base import rcParams
@@ -8,6 +8,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import process_group_variables_coords, set_figure_layout
+from arviz_plots.visuals import scatter_x
 
 
 def plot_ppc_tstat(
@@ -17,6 +18,7 @@ def plot_ppc_tstat(
     var_names=None,
     filter_vars=None,
     sample_dims=None,
+    kind=None,
     plot_collection=None,
     coords=None,
     backend=None,
@@ -51,6 +53,9 @@ def plot_ppc_tstat(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    kind : {"kde", "hist", "dot", "ecdf"}, optional
+        How to represent the marginal density.
+        Defaults to ``rcParams["plot.density_kind"]``
     plot_collection : PlotCollection, optional
     coords : dict, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -65,13 +70,23 @@ def plot_ppc_tstat(
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-            * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
-            * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+
+          * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
+          * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
+        * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
+        * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
+        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * rug -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
+        * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats_kwargs : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde.
+        * density -> passed to kde, ecdf, ...
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -126,13 +141,20 @@ def plot_ppc_tstat(
         dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
     )
 
+    observed_dist = process_group_variables_coords(
+        dt, group="observed_data", var_names=data_pairs[1], filter_vars=filter_vars, coords=coords
+    )
+
     predictive_dist = predictive_dist.stack(sample=sample_dims)
     if t_stat == "median":
         predictive_dist = predictive_dist.median(dim=list(predictive_dist.dims)[0])
+        observed_dist = observed_dist.median()
     elif t_stat == "mean":
         predictive_dist = predictive_dist.mean(dim=list(predictive_dist.dims)[0])
+        observed_dist = observed_dist.mean()
     elif t_stat == "std":
         predictive_dist = predictive_dist.std(dim=list(predictive_dist.dims)[0])
+        observed_dist = observed_dist.std()
     else:
         try:
             t_stat_float = float(t_stat)
@@ -142,6 +164,7 @@ def plot_ppc_tstat(
             predictive_dist = predictive_dist.quantile(
                 q=t_stat_float, dim=list(predictive_dist.dims)[0]
             )
+            observed_dist = observed_dist.quantile(q=t_stat_float)
         else:
             raise ValueError(f"T statistic '{t_stat}' not in valid range (0, 1).")
     if plot_collection is None:
@@ -158,13 +181,18 @@ def plot_ppc_tstat(
             backend=backend,
             **pc_kwargs,
         )
-    # Plot KDE lines
+    # Plot predictive data
+    plot_kwargs.setdefault("credible_interval", False)
+    plot_kwargs.setdefault("point_estimate", False)
+    plot_kwargs.setdefault("point_estimate_text", False)
+
     plot_dist(
         predictive_dist,
         var_names=None,
         group=None,
         coords=None,
         sample_dims=["sample"],
+        kind=kind,
         point_estimate=None,
         ci_kind=None,
         ci_prob=None,
@@ -176,5 +204,11 @@ def plot_ppc_tstat(
         stats_kwargs=stats_kwargs,
         pc_kwargs=pc_kwargs,
     )
+
+    # Plot the observed data
+    observed_data_kwargs = copy(plot_kwargs.get("observed_data", {}))
+    if observed_data_kwargs is not False:
+        observed_data_kwargs.setdefault("color", "black")
+        plot_collection.map(scatter_x, "plot_mean", data=observed_dist, **observed_data_kwargs)
 
     return plot_collection
