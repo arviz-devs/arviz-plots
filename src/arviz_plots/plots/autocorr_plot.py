@@ -84,14 +84,14 @@ def plot_autocorr(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_autocorrelation, style
+        >>> from arviz_plots import plot_autocorr, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
-        >>> plot_autocorrelation(dt, var_names=["mu"])
+        >>> plot_autocorr(dt, var_names=["mu"])
 
 
-    .. minigallery:: plot_autocorrelation
+    .. minigallery:: plot_autocorr
 
     """
     if sample_dims is None:
