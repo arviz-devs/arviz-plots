@@ -20,6 +20,7 @@ from .rankplot import plot_rank
 from .ridgeplot import plot_ridge
 from .tracedistplot import plot_trace_dist
 from .traceplot import plot_trace
+from .ppctstat import plot_ppc_tstat
 
 __all__ = [
     "plot_bf",
@@ -40,6 +41,7 @@ __all__ = [
     "plot_ridge",
     "plot_ppc_pava",
     "plot_ppc_pit",
+    "plot_ppc_tstat",
     "plot_psense_dist",
     "plot_psense_quantities",
 ]
