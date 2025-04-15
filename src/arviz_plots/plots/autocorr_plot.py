@@ -126,7 +126,7 @@ def plot_autocorr(
 
     acf_dataset = distribution.azstats.autocorr(dims=sample_dims).sel(draw=slice(0, max_lag - 1))
     c_i = 1.96 / acf_dataset.sizes["draw"] ** 0.5
-    x_ci = np.arange(0, max_lag)
+    x_ci = np.arange(0, max_lag).astype(float)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     default_linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
