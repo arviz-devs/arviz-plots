@@ -355,7 +355,7 @@ def plot_mcse(
             **rug_kwargs,
         )
 
-    # defining x_range (used for mean, sd, minimum mcse plotting)
+    # defining x_range (used for mean, sd)
     x_range = xr.DataArray([0, 1])
 
     # plot mean and sd and annotate them

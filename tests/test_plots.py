@@ -14,6 +14,7 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_mcse,
     plot_ppc_dist,
     plot_prior_posterior,
     plot_psense_dist,
@@ -517,3 +518,43 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" not in pc.viz.data_vars
         assert "hierarchy" not in pc.viz["mu"].dims
         assert "hierarchy" in pc.viz["theta"].dims
+
+    def test_plot_mcse(self, datatree, backend):
+        pc = plot_mcse(datatree, backend=backend, rug=True)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "mcse" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "rug" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert "chain" in pc.viz["mu"].rug.dims  # checking rug artist overlay
+        # checking aesthetics
+        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+
+    def test_plot_mcse_sample(self, datatree_sample, backend):
+        pc = plot_mcse(datatree_sample, backend=backend, rug=True, sample_dims="sample")
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "mcse" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "rug" in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert pc.viz["mu"].rug.shape == ()  # 0 chains here, so no overlay
+
+    def test_plot_mcse_models(self, datatree, datatree2, backend):
+        pc = plot_mcse({"c": datatree, "n": datatree2}, backend=backend, rug=False)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "mcse" in pc.viz["mu"]
+        assert "title" in pc.viz["mu"]
+        assert "rug" not in pc.viz["mu"]
+        assert "hierarchy" not in pc.viz["mu"].dims
+        assert "hierarchy" in pc.viz["theta"].dims
+        assert "model" in pc.viz["mu"].dims
+        # checking aesthetics
+        assert "model" in pc.aes["mu"].dims
+        assert "x" in pc.aes["mu"].data_vars
+        assert "color" in pc.aes["mu"].data_vars
+        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
