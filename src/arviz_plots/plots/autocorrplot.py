@@ -29,9 +29,6 @@ def plot_autocorr(
     pc_kwargs=None,
 ):
     """Generate autocorrelation plots for the given dataset."""
-    dt = convert_to_dataset(dt, group=group)
-    print("Input dataset:", dt)
-
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -41,7 +38,7 @@ def plot_autocorr(
     if pc_kwargs is None:
         pc_kwargs = {}
 
-    # Default max lag to 100 or max length of chain
+    # Default max lag to 100
     if max_lag is None:
         max_lag = 100
 
