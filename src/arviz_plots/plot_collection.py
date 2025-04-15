@@ -537,7 +537,6 @@ class PlotCollection:
                         total_aes_vals,
                         {aes_key: aes_vals},
                     )
-                    print("aes values : ", aes_vals)
                 aes_da = xr.DataArray(
                     np.array(aes_vals).reshape(aes_shape),
                     dims=dims,
@@ -845,8 +844,6 @@ class PlotCollection:
                     coords={dim: da[dim] for dim in dims},
                 )
         viz_dt = xr.DataTree.from_dict(viz_dict)
-        print("viz_dt is : ", viz_dt)
-        print("grid function output is : ", cls(data, viz_dt, backend=backend, **kwargs))
         return cls(data, viz_dt, backend=backend, **kwargs)
 
     def update_aes(self, ignore_aes=frozenset(), coords=None):

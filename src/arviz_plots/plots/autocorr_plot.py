@@ -188,7 +188,7 @@ def plot_autocorr(
 
         plot_collection.map(
             line,
-            "autocorr",
+            "lines",
             data=acf_dataset,
             ignore_aes=ac_ls_ignore,
             **acf_ls_kwargs,
