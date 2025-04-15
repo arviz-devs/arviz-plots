@@ -395,7 +395,7 @@ def plot_trace_dist(
             coords={"column": "dist"},
             subset_info=True,
             labeller=labeller,
-            store_artist=False,
+            store_artist=backend == "none",
             **label_kwargs,
         )
 
@@ -406,7 +406,7 @@ def plot_trace_dist(
             coords={"column": "trace"},
             subset_info=True,
             labeller=labeller,
-            store_artist=False,
+            store_artist=backend == "none",
             **label_kwargs,
         )
 
@@ -418,7 +418,7 @@ def plot_trace_dist(
             ticklabel_props,
             ignore_aes=ticklabels_ignore,
             axis="both",
-            store_artist=False,
+            store_artist=backend == "none",
             **ticklabels_kwargs,
         )
 

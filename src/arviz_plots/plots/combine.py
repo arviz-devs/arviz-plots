@@ -8,6 +8,7 @@ from arviz_base import rcParams
 from arviz_plots import PlotCollection
 from arviz_plots.plots.utils import process_group_variables_coords, set_figure_layout
 
+
 def get_valid_arg(key, value, backend):
     """Convert none backend aesthetic argument indicator to a valid value for the given backend.
 
@@ -30,16 +31,21 @@ def get_valid_arg(key, value, backend):
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     key_matcher = "color" if key in {"facecolor", "edgecolor"} else key
     if isinstance(value, str):
-        match = re.match(key_matcher +"_([0-9]+)", value)
+        match = re.match(key_matcher + "_([0-9]+)", value)
         if match:
             index = int(match.groups()[0])
-            return plot_backend.get_default_aes(key, index+1)[index]
+            return plot_backend.get_default_aes(key, index + 1)[index]
     return value
 
 
 def backendize_kwargs(kwargs, backend):
     """Process the artist description dictionary from the none backend to valid kwargs."""
-    return {key: get_valid_arg(key, value, backend) for key, value in kwargs.items() if key != "function"}
+    return {
+        key: get_valid_arg(key, value, backend)
+        for key, value in kwargs.items()
+        if key != "function"
+    }
+
 
 def render(da, target, backend, **kwargs):
     """Render artist descriptions from the none backend with a plotting backend."""
@@ -49,6 +55,7 @@ def render(da, target, backend, **kwargs):
     plot_kwargs = backendize_kwargs(plot_kwargs, backend)
     kwargs = backendize_kwargs(kwargs, backend)
     return getattr(plot_backend, plot_fun_name)(target=target, **{**plot_kwargs, **kwargs})
+
 
 def combine_plots(
     dt,
@@ -95,7 +102,7 @@ def combine_plots(
         will be added as a new column, if "row" it will be a new row instead.
     plot_names : list of str, optional
         List of the same length as `plots` with the plot names to use as coordinate values
-        in the returned :class:`~arviz_plots.PlotCollection`. 
+        in the returned :class:`~arviz_plots.PlotCollection`.
     backend : {"matplotlib", "bokeh", "plotly"}, optional
         Plotting backend to use. Defaults to ``rcParams["plot.backend"]``.
     pc_kwargs : mapping, optional
@@ -149,7 +156,11 @@ def combine_plots(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
-    facet_dims = ["__variable__"] + ([] if "predictive" in group else [dim for dim in distribution.dims if dim not in sample_dims])
+    facet_dims = ["__variable__"] + (
+        []
+        if "predictive" in group
+        else [dim for dim in distribution.dims if dim not in sample_dims]
+    )
 
     if pc_kwargs is None:
         pc_kwargs = {}
@@ -179,9 +190,13 @@ def combine_plots(
 
     for name, (plot, kwargs) in zip(plot_names, plots):
         pc_i = plot(
-            dt, backend="none", group=group,
-            var_names=var_names, filter_vars=filter_vars,
-            coords=coords, **kwargs
+            dt,
+            backend="none",
+            group=group,
+            var_names=var_names,
+            filter_vars=filter_vars,
+            coords=coords,
+            **kwargs,
         )
         pc.coords = None
         pc.aes = pc_i.aes
@@ -201,7 +216,7 @@ def combine_plots(
                 render,
                 fun_label=f"{viz_group}_{name}",
                 data=ds,
-                ignore_aes=attrs.get("ignore_aes", None)
+                ignore_aes=attrs.get("ignore_aes", None),
             )
     pc.coords = None
     # TODO: at some point all `pc_i.aes` objects should be merged

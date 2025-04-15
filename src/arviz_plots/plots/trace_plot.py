@@ -121,8 +121,8 @@ def plot_trace(
             n_cols = col_wrap
     else:
         figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
-        n_rows = leaf_dataset(plot_collection.viz, "row").max().to_array().max().item()
-        n_cols = leaf_dataset(plot_collection.viz, "col").max().to_array().max().item()
+        n_rows = leaf_dataset(plot_collection.viz, "row_index").max().to_array().max().item()
+        n_cols = leaf_dataset(plot_collection.viz, "col_index").max().to_array().max().item()
 
     figsize = plot_bknd.scale_fig_size(
         figsize,
@@ -254,7 +254,7 @@ def plot_trace(
             ticklabel_props,
             ignore_aes=ticklabels_ignore,
             axis="both",
-            store_artist=False,
+            store_artist=backend == "none",
             **ticklabels_kwargs,
         )
 

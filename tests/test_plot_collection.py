@@ -33,8 +33,8 @@ class Testfaceting:
         )
         assert "plot" in pc.viz.data_vars
         assert pc.viz["plot"].shape == (7,)
-        assert pc.viz["row"].max() == 1
-        assert pc.viz["col"].max() == 3
+        assert pc.viz["row_index"].max() == 1
+        assert pc.viz["col_index"].max() == 3
 
     def test_wrap_variable(self, dataset, backend):
         pc = PlotCollection.wrap(dataset, backend=backend, cols=["__variable__", "group"])
@@ -81,7 +81,7 @@ class Testfaceting:
         assert pc.viz["plot"].sizes["chain"] == 3
         assert "hierarchy" not in pc.viz["plot"].dims
         assert "group" not in pc.viz["plot"].dims
-        assert pc.viz["row" if axis == "cols" else "col"].max() == 0
+        assert pc.viz["row_index" if axis == "cols" else "col_index"].max() == 0
         assert pc.viz[axis[:3]].max() == 2
 
     def test_grid_variable(self, dataset, backend):

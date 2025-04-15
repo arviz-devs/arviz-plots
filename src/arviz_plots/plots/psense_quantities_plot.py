@@ -377,6 +377,7 @@ def plot_psense_quantities(
         values=alphas_p1,
         labels=alphas_p1_labels,
         ignore_aes=ticks_ignore,
+        store_artist=backend == "none",
         **ticks_kwargs,
     )
 
