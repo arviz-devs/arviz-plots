@@ -30,7 +30,7 @@ def plot_ppc_tstat(
     pc_kwargs=None,
 ):
     """
-    Plot Bayesian t-stat for the posterior/prior predictive distribution.
+    Plot Bayesian t-stat for observed data and posterior/prior predictive.
 
     Parameters
     ----------
