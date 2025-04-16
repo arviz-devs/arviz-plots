@@ -213,6 +213,7 @@ def plot_ecdf_pit(
             "ecdf_xticks",
             values=[0, 0.25, 0.5, 0.75, 1],
             labels=["0", "25", "50", "75", "100"],
+            store_artist=backend == "none",
         )
 
     ci_kwargs = copy(plot_kwargs.get("ci", {}))
@@ -285,7 +286,10 @@ def plot_ecdf_pit(
 
     if plot_kwargs.get("remove_axis", True) is not False:
         plot_collection.map(
-            remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
+            remove_axis,
+            store_artist=backend == "none",
+            axis="y",
+            ignore_aes=plot_collection.aes_set,
         )
 
     return plot_collection

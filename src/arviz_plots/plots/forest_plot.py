@@ -524,7 +524,10 @@ def plot_forest(
 
     if plot_kwargs.get("remove_axis", True) is not False:
         plot_collection.map(
-            remove_axis, store_artist=False, axis="y", ignore_aes=plot_collection.aes_set
+            remove_axis,
+            store_artist=backend == "none",
+            axis="y",
+            ignore_aes=plot_collection.aes_set,
         )
 
     return plot_collection

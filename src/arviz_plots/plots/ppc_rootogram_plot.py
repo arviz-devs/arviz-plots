@@ -322,7 +322,7 @@ def plot_ppc_rootogram(
 
     plot_collection.map(
         set_y_scale,
-        store_artist=False,
+        store_artist=backend == "none",
         ignore_aes=plot_collection.aes_set,
         scale=yscale,
     )

@@ -248,6 +248,7 @@ def plot_ppc_pit(
             "ecdf_xticks",
             values=[0, 0.25, 0.5, 0.75, 1],
             labels=["0", "25", "50", "75", "100"],
+            store_artist=backend == "none",
         )
 
     ci_kwargs = copy(plot_kwargs.get("ci", {}))

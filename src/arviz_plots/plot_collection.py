@@ -689,8 +689,8 @@ class PlotCollection:
                 {
                     "chart": np.array(fig, dtype=object),
                     "plot": (dims, flat_ax_ary.reshape(plots_raw_shape)),
-                    "row": (dims, flat_row_id.reshape(plots_raw_shape)),
-                    "col": (dims, flat_col_id.reshape(plots_raw_shape)),
+                    "row_index": (dims, flat_row_id.reshape(plots_raw_shape)),
+                    "col_index": (dims, flat_col_id.reshape(plots_raw_shape)),
                 },
                 coords={dim: data[dim] for dim in dims},
             )
@@ -713,11 +713,11 @@ class PlotCollection:
                             dims,
                             flat_ax_ary[col_slice].reshape(plots_raw_shape),
                         ),
-                        "row": (
+                        "row_index": (
                             dims,
                             flat_row_id[col_slice].reshape(plots_raw_shape),
                         ),
-                        "col": (
+                        "col_index": (
                             dims,
                             flat_col_id[col_slice].reshape(plots_raw_shape),
                         ),
@@ -800,8 +800,8 @@ class PlotCollection:
                 {
                     "chart": np.array(fig, dtype=object),
                     "plot": (dims, ax_ary.flatten().reshape(plots_raw_shape)),
-                    "row": (dims, row_id.flatten().reshape(plots_raw_shape)),
-                    "col": (dims, col_id.flatten().reshape(plots_raw_shape)),
+                    "row_index": (dims, row_id.flatten().reshape(plots_raw_shape)),
+                    "col_index": (dims, col_id.flatten().reshape(plots_raw_shape)),
                 },
                 coords={dim: data[dim] for dim in dims},
             )
@@ -832,11 +832,11 @@ class PlotCollection:
                             dims,
                             ax_ary[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                         ),
-                        "row": (
+                        "row_index": (
                             dims,
                             row_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                         ),
-                        "col": (
+                        "col_index": (
                             dims,
                             col_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                         ),
@@ -855,10 +855,13 @@ class PlotCollection:
         all_loop_dims = self.base_loop_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
 
-    def allocate_artist(self, fun_label, data, all_loop_dims, artist_dims=None):
+    def allocate_artist(self, fun_label, data, all_loop_dims, artist_dims=None, ignore_aes=None):
         """Allocate an artist in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
+        attrs = None
+        if ignore_aes is not None:
+            attrs = {"ignore_aes": ignore_aes}
         for var_name, da in data.items():
             if var_name not in self.viz.children:
                 self.viz[var_name] = xr.DataTree()
@@ -871,6 +874,7 @@ class PlotCollection:
                 np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
                 coords={dim: data[dim] for dim in inherited_dims},
+                attrs=attrs,
             )
 
     def get_target(self, var_name, selection):
@@ -1015,12 +1019,16 @@ class PlotCollection:
                 data=loop_data,
                 all_loop_dims=all_loop_dims,
                 artist_dims=artist_dims,
+                ignore_aes=ignore_aes,
             )
 
         for var_name, sel, isel in plotters:
             da = data[var_name].sel(sel)
-            if np.all(np.isnan(da)):
-                continue
+            try:
+                if np.all(np.isnan(da)):
+                    continue
+            except TypeError:
+                pass
             sel_plus = {**sel, **coords}
             target = self.get_target(var_name, sel_plus)
 
