@@ -55,7 +55,7 @@ glossary
 :hidden:
 :caption: Tutorials
 
-ArviZ in Context <https://arviz-devs.github.io/Exploratory-Analysis-of-Bayesian-Models/>
+ArviZ in Context <https://arviz-devs.github.io/EABM/>
 ```
 
 ```{toctree}
