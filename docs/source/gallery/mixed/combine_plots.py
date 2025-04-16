@@ -26,6 +26,7 @@ pc = azp.combine_plots(
     ],
     var_names=["theta", "mu", "tau"],
     coords={"school": ["Hotchkiss", "St. Paul's"]},
-    backend="none"  # change to preferred backend
+    backend="none",  # change to preferred backend
+    pc_kwargs={"plot_grid_kws": {"figsize": (10, 7)}}
 )
 pc.show()

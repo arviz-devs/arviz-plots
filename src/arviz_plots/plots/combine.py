@@ -152,6 +152,8 @@ def combine_plots(
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
+    if backend is None:
+        backend = rcParams["plot.backend"]
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
