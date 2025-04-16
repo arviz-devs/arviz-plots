@@ -14,7 +14,7 @@ from arviz_plots.plots.utils import (
     filter_aes,
     get_group,
     process_group_variables_coords,
-    set_figure_layout,
+    set_wrap_layout,
 )
 from arviz_plots.visuals import (
     annotate_xy,
@@ -276,7 +276,7 @@ def plot_ess(
             pc_kwargs["aes"].setdefault("x", ["model"])
         aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             distribution,

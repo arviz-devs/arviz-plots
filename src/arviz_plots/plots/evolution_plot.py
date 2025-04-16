@@ -12,7 +12,7 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import (
     annotate_xy,
     labelled_title,
@@ -246,7 +246,7 @@ def plot_ess_evolution(
             + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
         )
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             distribution,

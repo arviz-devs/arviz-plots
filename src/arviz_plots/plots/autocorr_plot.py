@@ -8,7 +8,7 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import fill_between_y, labelled_title, labelled_x, line, line_xy
 
 
@@ -146,7 +146,7 @@ def plot_autocorr(
             pc_kwargs["aes"].setdefault("color", ["chain"])
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         pc_kwargs["plot_grid_kws"].setdefault("sharey", True)
 

@@ -8,7 +8,7 @@ from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import process_group_variables_coords, set_figure_layout
+from arviz_plots.plots.utils import process_group_variables_coords, set_wrap_layout
 
 
 def plot_prior_posterior(
@@ -178,7 +178,7 @@ def plot_prior_posterior(
             + [dim for dim in distribution.dims if dim not in sample_dims + ["Groups"]],
         )
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
 
         plot_collection = PlotCollection.wrap(
             distribution,

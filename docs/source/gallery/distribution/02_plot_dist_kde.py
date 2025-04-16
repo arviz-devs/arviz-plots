@@ -1,12 +1,14 @@
 """
 # Posterior KDEs
 
-faceted KDE plots for 1D marginals of the distribution
+Faceted KDE plots for 1D marginals of the distribution
 
 ---
 
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_dist`
+
+EABM chapter on [Visualization of Random Variables with ArviZ](https://arviz-devs.github.io/EABM/Chapters/Distributions.html#distributions-in-arviz)
 :::
 """
 from arviz_base import load_arviz_data

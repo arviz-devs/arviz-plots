@@ -48,4 +48,4 @@ Plot customization elements
    remove_ticks
    set_xticks
    ticklabel_props
-   xticks
+   grid
