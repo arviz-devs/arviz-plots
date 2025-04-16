@@ -109,10 +109,11 @@ def main(app):
         files = [filename.stem for filename in sorted(category_dir.glob("*.py"))]
         index_page.append(toctree_template.format(title=title, files="\n".join(files)))
         index_page.append(":::::{grid} 1 2 3 3\n:gutter: 2 2 3 3\n")
-        for basename in files:
+        for fullname in files:
+            basename = fullname[3:]
             logger.info(f"Processing gallery example {basename}")
             # first step: run scripts with matplotlib backend and save png files
-            with open(category_dir / f"{basename}.py", "r", encoding="utf-8") as fp:
+            with open(category_dir / f"{fullname}.py", "r", encoding="utf-8") as fp:
                 text = fp.read()
             _, doc_text, code_text = text.split('"""')
             code_text = code_text.strip("\n")
@@ -166,8 +167,9 @@ def main(app):
             minigalleries = "\n".join(minigallery_in_example.format(fun=fun) for fun in api_funs)
 
             # pylint: disable=line-too-long
+            refname = basename.replace("plot_", "gallery_") if basename.startswith("plot_") else f"gallery_{basename}"
             myst_text = f"""
-            ({basename.replace("plot_", "gallery_")})=
+            ({refname})=
             {head_text}
 
             ::::::{{tab-set}}
