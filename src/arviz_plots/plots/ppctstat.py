@@ -19,6 +19,9 @@ def plot_ppc_tstat(
     filter_vars=None,
     sample_dims=None,
     kind=None,
+    point_estimate=None,
+    ci_kind=None,
+    ci_prob=None,
     plot_collection=None,
     coords=None,
     backend=None,
@@ -39,10 +42,11 @@ def plot_ppc_tstat(
     group : str,
         Group to be plotted. Defaults to "posterior_predictive".
         It could also be "prior_predictive".
-    t_stat : str, float, default "median"
+    t_stat : str, float, or callable() default "median"
         Test statistics to compute from the observations and predictive distributions.
         Allowed strings are “mean”, “median” or “std”. Alternative a quantile can be passed
-        as a float (or str) in the interval (0, 1).
+        as a float (or str) in the interval (0, 1). Finally, a user defined function is also
+        accepted.
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -56,6 +60,13 @@ def plot_ppc_tstat(
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
+    point_estimate : {"mean", "median", "mode"}, optional
+        Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
+    ci_kind : {"eti", "hdi"}, optional
+        Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
+    ci_prob : float, optional
+        Indicates the probability that should be contained within the plotted credible interval.
+        Defaults to ``rcParams["stats.ci_prob"]``
     plot_collection : PlotCollection, optional
     coords : dict, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -76,9 +87,10 @@ def plot_ppc_tstat(
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
-        * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
-        * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`. Defaults to False.
+        * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
+        * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`.
+          Defaults to False.
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * rug -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
@@ -155,6 +167,11 @@ def plot_ppc_tstat(
     elif t_stat == "std":
         predictive_dist = predictive_dist.std(dim=list(predictive_dist.dims)[0])
         observed_dist = observed_dist.std()
+        print(observed_dist.dims)
+    elif hasattr(t_stat, "__call__"):
+        predictive_dist = predictive_dist.map(t_stat)
+        observed_dist = observed_dist.map(t_stat)
+        print(observed_dist.dims)
     else:
         try:
             t_stat_float = float(t_stat)
@@ -193,9 +210,9 @@ def plot_ppc_tstat(
         coords=None,
         sample_dims=["sample"],
         kind=kind,
-        point_estimate=None,
-        ci_kind=None,
-        ci_prob=None,
+        point_estimate=point_estimate,
+        ci_kind=ci_kind,
+        ci_prob=ci_prob,
         plot_collection=plot_collection,
         aes_map=aes_map,
         backend=backend,
@@ -209,6 +226,8 @@ def plot_ppc_tstat(
     observed_data_kwargs = copy(plot_kwargs.get("observed_data", {}))
     if observed_data_kwargs is not False:
         observed_data_kwargs.setdefault("color", "black")
-        plot_collection.map(scatter_x, "plot_mean", data=observed_dist, **observed_data_kwargs)
+        plot_collection.map(
+            scatter_x, "plot_mean", data=observed_dist.mean(), **observed_data_kwargs
+        )
 
     return plot_collection
