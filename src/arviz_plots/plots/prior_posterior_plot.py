@@ -136,16 +136,16 @@ def plot_prior_posterior(
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     prior_size = np.prod([dt.prior.sizes[dim] for dim in sample_dims])
-    posterior_size = np.prod([dt.posterior.dims[dim] for dim in sample_dims])
+    posterior_size = np.prod([dt.posterior.sizes[dim] for dim in sample_dims])
     num_samples = min(prior_size, posterior_size)
 
     ds_prior = (
-        extract(dt, group="prior", num_samples=num_samples, random_seed=0)
+        extract(dt, group="prior", num_samples=num_samples, random_seed=0, keep_dataset=True)
         .drop_vars(sample_dims + ["sample"])
         .assign_coords(sample=("sample", np.arange(num_samples)))
     )
     ds_posterior = (
-        extract(dt, group="posterior", num_samples=num_samples, random_seed=0)
+        extract(dt, group="posterior", num_samples=num_samples, random_seed=0, keep_dataset=True)
         .drop_vars(sample_dims + ["sample"])
         .assign_coords(sample=("sample", np.arange(num_samples)))
     )
