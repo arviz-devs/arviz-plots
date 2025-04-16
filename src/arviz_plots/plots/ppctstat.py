@@ -167,11 +167,9 @@ def plot_ppc_tstat(
     elif t_stat == "std":
         predictive_dist = predictive_dist.std(dim=list(predictive_dist.dims)[0])
         observed_dist = observed_dist.std()
-        print(observed_dist.dims)
     elif hasattr(t_stat, "__call__"):
         predictive_dist = predictive_dist.map(t_stat)
         observed_dist = observed_dist.map(t_stat)
-        print(observed_dist.dims)
     else:
         try:
             t_stat_float = float(t_stat)
