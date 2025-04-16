@@ -121,7 +121,6 @@ def plot_loo_pit(
 
     References
     ----------
-
     .. [1] Vehtari et al. Practical Bayesian model evaluation using leave-one-out cross-validation
        and WAIC. Statistics and Computing. 27(5) (2017) https://doi.org/10.1007/s11222-016-9696-4
 

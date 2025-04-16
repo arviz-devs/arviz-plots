@@ -117,7 +117,6 @@ def plot_ppc_rootogram(
 
     References
     ----------
-
     .. [1] Kleiber C, Zeileis A. *Visualizing Count Data Regressions Using Rootograms*.
        The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
     """

@@ -7,7 +7,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.psense import power_scale_dataset
 from xarray import concat
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
+from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_grid_layout
 from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scatter_xy, set_xticks
 

@@ -127,6 +127,7 @@ def set_wrap_layout(pc_kwargs, plot_bknd, ds):
     pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
     return pc_kwargs
 
+
 def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     """Set the figure size for the given number of rows and columns.
 
