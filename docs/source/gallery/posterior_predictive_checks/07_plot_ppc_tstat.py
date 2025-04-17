@@ -1,12 +1,14 @@
 """
-# T-Statistic
+# PPC with a test statistic
 
-t-statistic for the observed data and posterior/prior predictive data.
+T-statistic for the observed data and posterior predictive data.
 
 ---
 
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_ppc_tstat`
+
+EABM chapter on [Posterior predictive checks with summary statistics](https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#using-summary-statistics)
 :::
 """
 from arviz_base import load_arviz_data

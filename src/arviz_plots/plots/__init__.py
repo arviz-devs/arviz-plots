@@ -17,7 +17,7 @@ from .pava_calibration_plot import plot_ppc_pava
 from .ppc_dist_plot import plot_ppc_dist
 from .ppc_pit_plot import plot_ppc_pit
 from .ppc_rootogram_plot import plot_ppc_rootogram
-from .ppctstat import plot_ppc_tstat
+from .ppc_tstat import plot_ppc_tstat
 from .prior_posterior_plot import plot_prior_posterior
 from .psense_dist_plot import plot_psense_dist
 from .psense_quantities_plot import plot_psense_quantities
