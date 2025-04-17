@@ -1,5 +1,5 @@
 # pylint: disable=too-many-lines, too-many-public-methods
-"""Plot collection classes."""
+"""Plot collection class."""
 import warnings
 from importlib import import_module
 
@@ -1053,7 +1053,11 @@ class PlotCollection:
             if store_artist:
                 if np.size(aux_artist) == 1:
                     aux_artist = np.squeeze(aux_artist)
-                self.viz[var_name][fun_label].loc[sel] = aux_artist
+                self.store_in_artist_da(aux_artist, fun_label, var_name, sel)
+
+    def store_in_artist_da(self, aux_artist, fun_label, var_name, sel):
+        """Store the artist object of `var_name`+`sel` combination in `fun_label` variable."""
+        self.viz[var_name][fun_label].loc[sel] = aux_artist
 
     def add_legend(
         self,
