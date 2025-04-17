@@ -17,7 +17,7 @@ dir_title_map = {
     "distribution": "Distribution visualization",
     "posterior_comparison": "Posterior comparison",
     "inference_diagnostics": "Inference diagnostics",
-    "posterior_predictive_checks": "Posterior predictive checks",
+    "predictive_checks": "Predictive checks",
     "prior_and_likelihood_sensitivity_checks": "Prior and likelihood sensitivity checks",
     "model_comparison": "Model Comparison",
     "sbc": "Simulation Based Calibration",
