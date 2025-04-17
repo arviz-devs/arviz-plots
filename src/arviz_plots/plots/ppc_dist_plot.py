@@ -157,9 +157,7 @@ def plot_ppc_dist(
 
     rng = np.random.default_rng(4214)
 
-    pp_dims = list(sample_dims) + [
-        dims for dims in dt.posterior_predictive.dims if dims not in sample_dims
-    ]
+    pp_dims = list(sample_dims) + [dims for dims in dt[group].dims if dims not in sample_dims]
 
     if data_pairs is None:
         data_pairs = (var_names, var_names)
