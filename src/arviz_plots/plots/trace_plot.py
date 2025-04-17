@@ -6,8 +6,13 @@ import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection, leaf_dataset, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_group,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import labelled_title, labelled_x, line, ticklabel_props, trace_rug
 
 
@@ -105,42 +110,16 @@ def plot_trace(
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     if plot_collection is None:
-        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
-        pc_kwargs.setdefault("col_wrap", 5)
-        pc_kwargs.setdefault(
-            "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
-        )
-        n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
-        col_wrap = pc_kwargs["col_wrap"]
-        if n_plots <= col_wrap:
-            n_rows, n_cols = 1, n_plots
-        else:
-            div_mod = divmod(n_plots, col_wrap)
-            n_rows = div_mod[0] + (div_mod[1] != 0)
-            n_cols = col_wrap
-    else:
-        figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
-        n_rows = leaf_dataset(plot_collection.viz, "row_index").max().to_array().max().item()
-        n_cols = leaf_dataset(plot_collection.viz, "col_index").max().to_array().max().item()
-
-    figsize = plot_bknd.scale_fig_size(
-        figsize,
-        rows=n_rows,
-        cols=n_cols,
-        figsize_units=figsize_units,
-    )
-
-    if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("color", ["chain"])
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
+        pc_kwargs.setdefault(
+            "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
+        )
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        if "figsize" not in pc_kwargs["plot_grid_kws"]:
-            pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-            pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
         aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             distribution,

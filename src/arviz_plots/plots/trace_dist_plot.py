@@ -6,10 +6,15 @@ import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
+from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.trace_plot import plot_trace
-from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_group,
+    process_group_variables_coords,
+    set_grid_layout,
+)
 from arviz_plots.visuals import labelled_x, labelled_y, ticklabel_props, trace_rug
 
 
@@ -183,32 +188,6 @@ def plot_trace_dist(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
-    if plot_collection is None:
-        figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("plot_grid_kws", {}).get("figsize_units", "inches")
-        aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
-        if compact:
-            pc_kwargs["rows"] = ["__variable__"]
-        else:
-            pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
-            aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
-        row_dims = pc_kwargs["rows"]
-    else:
-        figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
-        aux_dim_list = list(
-            set(
-                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
-            ).difference({"column"})
-        )
-        row_dims = ["__variable__"] + aux_dim_list
-
-    figsize = plot_bknd.scale_fig_size(
-        figsize,
-        rows=process_facet_dims(distribution, row_dims)[0],
-        cols=2,
-        figsize_units=figsize_units,
-    )
-
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
     if len(color_cycle) <= 2:
         raise ValueError(
@@ -234,12 +213,15 @@ def plot_trace_dist(
         neutral_linestyle = False
 
     if plot_collection is None:
+        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", ["column"])
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        if "figsize" not in pc_kwargs["plot_grid_kws"]:
-            pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-            pc_kwargs["plot_grid_kws"]["figsize_units"] = "dots"
+        aux_dim_list = [dim for dim in distribution.dims if dim not in sample_dims]
+        if compact:
+            pc_kwargs["rows"] = ["__variable__"]
+        else:
+            pc_kwargs.setdefault("rows", ["__variable__"] + aux_dim_list)
+            aux_dim_list = [dim for dim in pc_kwargs["rows"] if dim != "__variable__"]
         if compact:
             pc_kwargs["aes"].setdefault("color", ["__variable__"] + aux_dim_list)
             if "chain" in distribution.dims:
@@ -250,6 +232,8 @@ def plot_trace_dist(
         elif "chain" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["chain"])
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
+
+        pc_kwargs = set_grid_layout(pc_kwargs, plot_bknd, distribution, num_cols=2)
 
         plot_collection = PlotCollection.grid(
             distribution.expand_dims(column=2).assign_coords(column=["dist", "trace"]),

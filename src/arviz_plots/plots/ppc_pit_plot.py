@@ -9,7 +9,7 @@ from arviz_stats.ecdf_utils import difference_ecdf_pit
 from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, set_figure_layout
+from arviz_plots.plots.utils import filter_aes, set_wrap_layout
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
@@ -143,17 +143,19 @@ def plot_ppc_pit(
 
     .. minigallery:: plot_ppc_pit
 
+    References
+    ----------
     .. [1] Vehtari et al. *Practical Bayesian model evaluation using leave-one-out cross-validation
-        and WAIC*. Statistics and Computing. 27(5) (2017) https://doi.org/10.1007/s11222-016-9696-4
-        arXiv preprint https://arxiv.org/abs/1507.04544.
+       and WAIC*. Statistics and Computing. 27(5) (2017) https://doi.org/10.1007/s11222-016-9696-4
+       arXiv preprint https://arxiv.org/abs/1507.04544.
 
     .. [2] Vehtari et al. *Pareto Smoothed Importance Sampling*.
-        Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
-        arXiv preprint https://arxiv.org/abs/1507.02646
+       Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
+       arXiv preprint https://arxiv.org/abs/1507.02646
 
     .. [3] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
-        its applications in goodness-of-fit evaluation and multiple sample comparison*.
-        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+       its applications in goodness-of-fit evaluation and multiple sample comparison*.
+       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
@@ -214,7 +216,7 @@ def plot_ppc_pit(
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, ds_ecdf)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_ecdf)
 
         plot_collection = PlotCollection.wrap(
             ds_ecdf,

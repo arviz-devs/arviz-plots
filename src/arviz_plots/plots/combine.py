@@ -6,7 +6,7 @@ import xarray as xr
 from arviz_base import rcParams
 
 from arviz_plots import PlotCollection
-from arviz_plots.plots.utils import process_group_variables_coords, set_figure_layout
+from arviz_plots.plots.utils import process_group_variables_coords, set_grid_layout
 
 
 def get_valid_arg(key, value, backend):
@@ -141,7 +141,6 @@ def combine_plots(
 
         >>> pc.viz
 
-
     .. minigallery:: combine_plots
     """
     if plot_names is None:
@@ -182,7 +181,7 @@ def combine_plots(
     distribution = distribution.expand_dims(**expand_kwargs).assign_coords({expand: plot_names})
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, distribution)
+    pc_kwargs = set_grid_layout(pc_kwargs, plot_bknd, distribution)
 
     pc = PlotCollection.grid(
         distribution,

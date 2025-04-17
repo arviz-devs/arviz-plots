@@ -77,7 +77,8 @@ def plot_xyz(
         Defaults to ``rcParams["data.sample_dims"]``
     [[...]]
     plot_collection : PlotCollection, optional
-    backend : {"matplotlib", "bokeh"}, optional
+    backend : {"matplotlib", "bokeh", "plotly", "none"}, optional
+        Plotting backend to use. Defaults to ``rcParams["plot.backend"]``
     labeller : labeller, optional
     aes_map : mapping of {str : sequence of str or False}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
@@ -158,11 +159,19 @@ Finally, _if needed_ we set default arguments for {class}`~arviz_plots.PlotColle
 and create and instance of it. In addition to having to copy `pc_kwargs` when it is
 not `None` following the template above, it might also be necessary to set defaults
 for dictionaries within `pc_kwargs` such as `pc_kwargs["aes"]`.
+
+When creating a `PlotCollection` from scratch, the :term:`chart` size should also be set
+as a function of the grid size that will be needed. `arviz_plots.plots.utils` has two
+functions to this end, depending on wheather `.grid` or `.wrap` methods will be called:
+`set_wrap_layout` and `set_grid_layout`.
+
 Use the following pattern for such cases:
 
 ```python
 pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
 pc_kwargs["aes"].setdefault("color", ["model"])
+[...]
+pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds)
 ```
 
 ## PlotCollection dependent defaults
@@ -206,12 +215,15 @@ Consequently, there are multiple steps that should be followed for each artist:
    particular artist.
 3. (optional) If necessary and particular to this artist, call the stats/summary/diagnostic
    function. Details on this are in the {ref}`new_plot/computation` section.
+   This will often have already happened earlier on in which case these steps might not happen
+   consecutively within the code.
 4. Set default arguments.
    - Check we aren't overriding active aesthetics by setting defaults.
    - Use only properties that are part of the {ref}`common interface <backend_interface_arguments>` for defaults.
      If a setting a default for a property not on the list, open an issue to discuss it.
      This is key to ensure all plotting backends work seamlessly and behave as expected.
-5. Call {meth}`~.PlotCollection.map` to create the artist.
+5. Call {meth}`~.PlotCollection.map` to create the artist. For some "artists" like removing
+   axis, it doesn't make much sense to store them, in such cases, use `store_artist=backend == "none"`.
 
 Here is a general template:
 

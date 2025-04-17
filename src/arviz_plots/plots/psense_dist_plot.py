@@ -6,9 +6,9 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.psense import power_scale_dataset
 from xarray import concat
 
-from arviz_plots.plot_collection import PlotCollection, process_facet_dims
+from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import process_group_variables_coords
+from arviz_plots.plots.utils import process_group_variables_coords, set_grid_layout
 
 
 def plot_psense_dist(
@@ -222,20 +222,7 @@ def plot_psense_dist(
             ],
         )
 
-        figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-        figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
-        row_dims = pc_kwargs["rows"]
-        if figsize is None:
-            figsize = plot_bknd.scale_fig_size(
-                figsize,
-                rows=process_facet_dims(distribution, row_dims)[0],
-                cols=2,
-                figsize_units=figsize_units,
-            )
-            figsize_units = "dots"
-        pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-        pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
-
+        pc_kwargs = set_grid_layout(pc_kwargs, plot_bknd, distribution, num_cols=2)
         plot_collection = PlotCollection.grid(
             distribution,
             backend=backend,

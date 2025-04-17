@@ -90,7 +90,7 @@ def filter_aes(pc, aes_map, artist, sample_dims):
     return artist_dims, artist_aes, ignore_aes
 
 
-def set_figure_layout(pc_kwargs, plot_bknd, ds):
+def set_wrap_layout(pc_kwargs, plot_bknd, ds):
     """Set the figure size and handle column wrapping.
 
     Parameters
@@ -104,7 +104,7 @@ def set_figure_layout(pc_kwargs, plot_bknd, ds):
     """
     figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
     figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
-    pc_kwargs.setdefault("col_wrap", 5)
+    pc_kwargs.setdefault("col_wrap", 4)
     col_wrap = pc_kwargs["col_wrap"]
     if figsize is None:
         num_plots = process_facet_dims(ds, pc_kwargs["cols"])[0]
@@ -119,6 +119,41 @@ def set_figure_layout(pc_kwargs, plot_bknd, ds):
             figsize,
             rows=rows,
             cols=cols,
+            figsize_units=figsize_units,
+        )
+        figsize_units = "dots"
+
+    pc_kwargs["plot_grid_kws"]["figsize"] = figsize
+    pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+    return pc_kwargs
+
+
+def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
+    """Set the figure size for the given number of rows and columns.
+
+    Parameters
+    ----------
+    pc_kwargs : dict
+        Plot collection kwargs
+    plot_bknd : str
+        Backend for plotting
+    ds : Dataset
+        Dataset to be plotted
+    num_rows, num_cols : int, optional
+        Take the number of rows or columns as the provided one irrespective
+        of pc_kwargs
+    """
+    figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
+    figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+    if figsize is None:
+        if num_cols is None:
+            num_cols = process_facet_dims(ds, pc_kwargs["cols"])[0]
+        if num_rows is None:
+            num_rows = process_facet_dims(ds, pc_kwargs["rows"])[0]
+        figsize = plot_bknd.scale_fig_size(
+            figsize,
+            rows=num_rows,
+            cols=num_cols,
             figsize_units=figsize_units,
         )
         figsize_units = "dots"

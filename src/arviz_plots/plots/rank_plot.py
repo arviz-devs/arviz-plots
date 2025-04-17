@@ -8,7 +8,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import ecdf_pit
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, labelled_x, remove_axis
 
 
@@ -105,9 +105,11 @@ def plot_rank(
 
     .. minigallery:: plot_rank
 
+    References
+    ----------
     .. [1] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
-    its applications in goodness-of-fit evaluation and multiple sample comparison*.
-    Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+       its applications in goodness-of-fit evaluation and multiple sample comparison*.
+       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
@@ -166,7 +168,7 @@ def plot_rank(
             pc_kwargs["aes"].setdefault("color", ["chain"])
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, dt_ecdf_ranks)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, dt_ecdf_ranks)
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             dt_ecdf_ranks,

@@ -37,9 +37,8 @@ def plot_bf(
     dt : DataTree or dict of {str : DataTree}
         Input data. In case of dictionary input, the keys are taken to be model names.
         In such cases, a dimension "model" is generated and can be used to map to aesthetics.
-    var_names : str or list of str, optional
-        One or more variables to be plotted.
-        Prefix the variables by ~ when you want to exclude them from the plot.
+    var_name : str, optional
+        Variable to be plotted.
     ref_val : int or float, default 0
         Reference (point-null) value for Bayes factor estimation.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
@@ -89,7 +88,7 @@ def plot_bf(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
-        >>> plot_bf(dt, var_names="mu", kind="hist")
+        >>> plot_bf(dt, var_name="mu", kind="hist")
 
     .. minigallery:: plot_bf
     """

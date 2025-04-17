@@ -7,7 +7,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import point_interval_unique, point_unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_figure_layout
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import (
     ci_line_y,
     grid,
@@ -115,8 +115,10 @@ def plot_ppc_rootogram(
 
     .. minigallery:: plot_ppc_rootogram
 
+    References
+    ----------
     .. [1] Kleiber C, Zeileis A. *Visualizing Count Data Regressions Using Rootograms*.
-    The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
+       The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
@@ -183,7 +185,7 @@ def plot_ppc_rootogram(
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
 
-        pc_kwargs = set_figure_layout(pc_kwargs, plot_bknd, ds_predictive)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_predictive)
 
         plot_collection = PlotCollection.wrap(
             ds_predictive,
