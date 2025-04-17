@@ -202,6 +202,7 @@ def plot_ppc_tstat(
     if t_stat in ["mean", "median", "std", "var", "min", "max"]:
         predictive_dist = getattr(predictive_dist, t_stat)(dim=reduce_dim)
         observed_dist = getattr(observed_dist, t_stat)()
+        plot_kwargs.setdefault("title", {"text": t_stat})
     elif t_stat == "iqr":
 
         def iqr(data, dim):
@@ -211,6 +212,7 @@ def plot_ppc_tstat(
 
         predictive_dist = iqr(predictive_dist, dim=reduce_dim)
         observed_dist = iqr(observed_dist, dim=None)
+        plot_kwargs.setdefault("title", {"text": "IQR"})
     elif t_stat == "mad":
 
         def mad(data, dim):
@@ -219,6 +221,7 @@ def plot_ppc_tstat(
 
         predictive_dist = mad(predictive_dist, dim=reduce_dim)
         observed_dist = mad(observed_dist, dim=None)
+        plot_kwargs.setdefault("title", {"text": "MAD"})
 
     elif t_stat == "cv":
 
@@ -229,6 +232,7 @@ def plot_ppc_tstat(
 
         predictive_dist = cv(predictive_dist, dim=reduce_dim)
         observed_dist = cv(observed_dist, dim=None)
+        plot_kwargs.setdefault("title", {"text": "CV"})
 
     elif hasattr(t_stat, "__call__"):
         predictive_dist = predictive_dist.map(t_stat)
@@ -243,6 +247,7 @@ def plot_ppc_tstat(
                 {"quantile": "t_stat"}
             )
             observed_dist = observed_dist.quantile(q=t_stat_float).rename({"quantile": "t_stat"})
+            plot_kwargs.setdefault("title", {"text": f"q={t_stat}"})
         else:
             raise ValueError(f"T statistic '{t_stat}' not in valid range (0, 1).")
 

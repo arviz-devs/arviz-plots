@@ -260,10 +260,16 @@ def annotate_label(
     )
 
 
-def labelled_title(da, target, backend, *, labeller, var_name, sel, isel, **kwargs):
+def labelled_title(
+    da, target, backend, *, text=None, labeller=None, var_name=None, sel=None, isel=None, **kwargs
+):
     """Add a title label to a plot using an ArviZ labeller."""
+    if text is not None and labeller is not None:
+        text = f"{labeller.make_label_vert(var_name, sel, isel)} ({text})"
+    elif labeller is not None:
+        text = labeller.make_label_vert(var_name, sel, isel)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    return plot_backend.title(labeller.make_label_vert(var_name, sel, isel), target, **kwargs)
+    return plot_backend.title(text, target, **kwargs)
 
 
 def labelled_y(
