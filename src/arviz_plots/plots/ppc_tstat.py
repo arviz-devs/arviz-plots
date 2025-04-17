@@ -2,6 +2,7 @@
 from copy import copy
 from importlib import import_module
 
+import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
@@ -13,11 +14,11 @@ from arviz_plots.visuals import scatter_x
 
 def plot_ppc_tstat(
     dt,
-    group="posterior_predictive",
-    t_stat="median",
     var_names=None,
+    group="posterior_predictive",
     filter_vars=None,
     sample_dims=None,
+    t_stat="median",
     kind=None,
     point_estimate=None,
     ci_kind=None,
@@ -39,17 +40,12 @@ def plot_ppc_tstat(
     ----------
     dt : DataTree
         Input data
-    group : str,
-        Group to be plotted. Defaults to "posterior_predictive".
-        It could also be "prior_predictive".
-    t_stat : str, float, or callable() default "median"
-        Test statistics to compute from the observations and predictive distributions.
-        Allowed strings are “mean”, “median” or “std”. Alternative a quantile can be passed
-        as a float (or str) in the interval (0, 1). Finally, a user defined function is also
-        accepted.
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
+    group : str,
+        Group to be plotted. Defaults to "posterior_predictive".
+        It could also be "prior_predictive".
     filter_vars : {None, “like”, “regex”}, default=None
         If None, interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
@@ -57,6 +53,11 @@ def plot_ppc_tstat(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    t_stat : str, float, or callable() default "median"
+        Test statistics to compute from the observations and predictive distributions.
+        Allowed strings are “mean”, “median” or “std”. Alternative a quantile can be passed
+        as a float (or str) in the interval (0, 1). Finally, a user defined function is also
+        accepted.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
@@ -87,6 +88,7 @@ def plot_ppc_tstat(
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
+        * observed_tstat -> passed to :func:`~arviz_plots.visuals.scatter_x`.
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`. Defaults to False.
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`.
@@ -106,6 +108,44 @@ def plot_ppc_tstat(
     Returns
     -------
     PlotCollection
+
+
+    Examples
+    --------
+    Use 25th percentile (quantile 0.25) as t-statistic
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_ppc_tstat, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('radon')
+        >>> plot_ppc_tstat(dt, t_stat="0.25")
+
+    Define custom t-statistic function and plot histogram
+
+    .. plot::
+        :context: close-figs
+
+        >>> def cv(x):
+        >>>     return np.std(x, axis=0) / np.mean(x, axis=0)
+        >>> plot_ppc_tstat(dt, t_stat=lambda x: cv(x), kind="hist")
+
+
+    Use median as t-statistic and plot point-interval
+
+    .. plot::
+        :context: close-figs
+
+        >>> azp.plot_ppc_tstat(dt,
+        >>>                    plot_kwargs={"kde": False,
+        >>>                                 "credible_interval": {},
+        >>>                                 "point_estimate": {}})
+
+
+    .. minigallery:: plot_ppc_tstat
+
 
     """
     if group not in ("posterior_predictive", "prior_predictive"):
@@ -158,15 +198,38 @@ def plot_ppc_tstat(
     )
 
     predictive_dist = predictive_dist.stack(sample=sample_dims)
-    if t_stat == "median":
-        predictive_dist = predictive_dist.median(dim=list(predictive_dist.dims)[0])
-        observed_dist = observed_dist.median()
-    elif t_stat == "mean":
-        predictive_dist = predictive_dist.mean(dim=list(predictive_dist.dims)[0])
-        observed_dist = observed_dist.mean()
-    elif t_stat == "std":
-        predictive_dist = predictive_dist.std(dim=list(predictive_dist.dims)[0])
-        observed_dist = observed_dist.std()
+    reduce_dim = [dim for dim in predictive_dist.dims if dim != "sample"]
+    if t_stat in ["mean", "median", "std", "var", "min", "max"]:
+        predictive_dist = getattr(predictive_dist, t_stat)(dim=reduce_dim)
+        observed_dist = getattr(observed_dist, t_stat)()
+    elif t_stat == "iqr":
+
+        def iqr(data, dim):
+            q25 = data.quantile(q=0.25, dim=dim)
+            q75 = data.quantile(q=0.75, dim=dim)
+            return q75 - q25
+
+        predictive_dist = iqr(predictive_dist, dim=reduce_dim)
+        observed_dist = iqr(observed_dist, dim=None)
+    elif t_stat == "mad":
+
+        def mad(data, dim):
+            median = data.median(dim=dim)
+            return np.abs((data - median)).median(dim=dim)
+
+        predictive_dist = mad(predictive_dist, dim=reduce_dim)
+        observed_dist = mad(observed_dist, dim=None)
+
+    elif t_stat == "cv":
+
+        def cv(data, dim):
+            mean = data.mean(dim=dim)
+            std = data.std(dim=dim)
+            return std / mean
+
+        predictive_dist = cv(predictive_dist, dim=reduce_dim)
+        observed_dist = cv(observed_dist, dim=None)
+
     elif hasattr(t_stat, "__call__"):
         predictive_dist = predictive_dist.map(t_stat)
         observed_dist = observed_dist.map(t_stat)
@@ -176,12 +239,13 @@ def plot_ppc_tstat(
         except ValueError as ve:
             raise ValueError(f"T statistics '{t_stat}' not implemented") from ve
         if 0 < t_stat_float < 1:
-            predictive_dist = predictive_dist.quantile(
-                q=t_stat_float, dim=list(predictive_dist.dims)[0]
+            predictive_dist = predictive_dist.quantile(q=t_stat_float, dim=reduce_dim).rename(
+                {"quantile": "t_stat"}
             )
-            observed_dist = observed_dist.quantile(q=t_stat_float)
+            observed_dist = observed_dist.quantile(q=t_stat_float).rename({"quantile": "t_stat"})
         else:
             raise ValueError(f"T statistic '{t_stat}' not in valid range (0, 1).")
+
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
 
@@ -221,11 +285,11 @@ def plot_ppc_tstat(
     )
 
     # Plot the observed data
-    observed_data_kwargs = copy(plot_kwargs.get("observed_data", {}))
-    if observed_data_kwargs is not False:
-        observed_data_kwargs.setdefault("color", "black")
+    observed_tstat_kwargs = copy(plot_kwargs.get("observed_tstat", {}))
+    if observed_tstat_kwargs is not False:
+        observed_tstat_kwargs.setdefault("color", "black")
         plot_collection.map(
-            scatter_x, "plot_mean", data=observed_dist.mean(), **observed_data_kwargs
+            scatter_x, "observed_tstat", data=observed_dist.mean(), **observed_tstat_kwargs
         )
 
     return plot_collection
