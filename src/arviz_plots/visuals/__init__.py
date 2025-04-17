@@ -189,13 +189,27 @@ def _ensure_scalar(*args):
     return tuple(arg.item() if hasattr(arg, "item") else arg for arg in args)
 
 
-def annotate_xy(da, target, backend, *, text, x=None, y=None, vertical_align=None, **kwargs):
+def annotate_xy(
+    da,
+    target,
+    backend,
+    *,
+    text,
+    x=None,
+    y=None,
+    vertical_align=None,
+    horizontal_align=None,
+    **kwargs,
+):
     """Annotate a point (x, y) in a plot."""
     if vertical_align is not None:
-        if hasattr(vertical_align, "item"):
-            kwargs["vertical_align"] = vertical_align.item()
-        else:
-            kwargs["vertical_align"] = vertical_align  # if a string and not a dataarray
+        kwargs["vertical_align"] = (
+            vertical_align.item() if hasattr(vertical_align, "item") else vertical_align
+        )
+    if horizontal_align is not None:
+        kwargs["horizontal_align"] = (
+            horizontal_align.item() if hasattr(horizontal_align, "item") else horizontal_align
+        )
     x, y = _process_da_x_y(da, x, y)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     return plot_backend.text(x, y, text, target, **kwargs)
