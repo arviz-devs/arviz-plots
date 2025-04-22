@@ -55,9 +55,10 @@ def plot_ppc_tstat(
         Defaults to ``rcParams["data.sample_dims"]``
     t_stat : str, float, or callable() default "median"
         Test statistics to compute from the observations and predictive distributions.
-        Allowed strings are “mean”, “median” or “std”. Alternative a quantile can be passed
-        as a float (or str) in the interval (0, 1). Finally, a user defined function is also
-        accepted.
+        Allowed strings are “mean”, “median”, “std”, “var”, “min”, “max”, “iqr”
+        (interquartile range) and “mad” (median absolute deviation). Alternative a
+        quantile can be passed as a float (or str) in the interval (0, 1). Finally,
+        a user defined function is also accepted.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
@@ -130,7 +131,7 @@ def plot_ppc_tstat(
 
         >>> def cv(x):
         >>>     return np.std(x, axis=0) / np.mean(x, axis=0)
-        >>> plot_ppc_tstat(dt, t_stat=lambda x: cv(x), kind="hist")
+        >>> plot_ppc_tstat(dt, t_stat=cv, kind="hist")
 
 
     Use median as t-statistic and plot point-interval
@@ -202,6 +203,7 @@ def plot_ppc_tstat(
     if t_stat in ["mean", "median", "std", "var", "min", "max"]:
         predictive_dist = getattr(predictive_dist, t_stat)(dim=reduce_dim)
         observed_dist = getattr(observed_dist, t_stat)()
+        plot_kwargs.setdefault("title", {"text": t_stat})
     elif t_stat == "iqr":
 
         def iqr(data, dim):
@@ -211,6 +213,7 @@ def plot_ppc_tstat(
 
         predictive_dist = iqr(predictive_dist, dim=reduce_dim)
         observed_dist = iqr(observed_dist, dim=None)
+        plot_kwargs.setdefault("title", {"text": "IQR"})
     elif t_stat == "mad":
 
         def mad(data, dim):
@@ -219,20 +222,12 @@ def plot_ppc_tstat(
 
         predictive_dist = mad(predictive_dist, dim=reduce_dim)
         observed_dist = mad(observed_dist, dim=None)
-
-    elif t_stat == "cv":
-
-        def cv(data, dim):
-            mean = data.mean(dim=dim)
-            std = data.std(dim=dim)
-            return std / mean
-
-        predictive_dist = cv(predictive_dist, dim=reduce_dim)
-        observed_dist = cv(observed_dist, dim=None)
+        plot_kwargs.setdefault("title", {"text": "MAD"})
 
     elif hasattr(t_stat, "__call__"):
         predictive_dist = predictive_dist.map(t_stat)
         observed_dist = observed_dist.map(t_stat)
+        plot_kwargs.setdefault("title", {"text": t_stat.__name__})
     else:
         try:
             t_stat_float = float(t_stat)
@@ -243,6 +238,7 @@ def plot_ppc_tstat(
                 {"quantile": "t_stat"}
             )
             observed_dist = observed_dist.quantile(q=t_stat_float).rename({"quantile": "t_stat"})
+            plot_kwargs.setdefault("title", {"text": f"q={t_stat}"})
         else:
             raise ValueError(f"T statistic '{t_stat}' not in valid range (0, 1).")
 
