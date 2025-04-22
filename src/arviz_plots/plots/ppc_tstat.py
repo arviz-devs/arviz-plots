@@ -56,7 +56,7 @@ def plot_ppc_tstat(
     t_stat : str, float, or callable() default "median"
         Test statistics to compute from the observations and predictive distributions.
         Allowed strings are “mean”, “median”, “std”, “var”, “min”, “max”, “iqr”
-        (interquartile range) and “mad” (mean absolute deviation). Alternative a
+        (interquartile range) and “mad” (median absolute deviation). Alternative a
         quantile can be passed as a float (or str) in the interval (0, 1). Finally,
         a user defined function is also accepted.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
