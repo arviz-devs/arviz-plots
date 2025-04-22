@@ -300,17 +300,17 @@ def plot_ppc_dist(
                 **observed_density_kwargs,
             )
     if references is not None:
-        _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "references", "sample")
-        ref_kwargs = {}
+        _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "reference", "sample")
+        ref_kwargs = copy(plot_kwargs.get("reference", {}))
         if "color" not in ref_aes:
             ref_kwargs.setdefault("color", "black")
         if "linestyle" not in ref_aes:
             ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2, {})[1])
         references = [references] if np.isscalar(references) else references
-        for value in references:
-            ref_dt = xr.Dataset({list(observed_dist.data_vars)[0]: xr.DataArray(value)})
+        for i, value in enumerate(references):
+            ref_dt = xr.Dataset({var: xr.DataArray(value) for var in predictive_dist.data_vars})
             plot_collection.map(
-                vline, "reference", data=ref_dt, ignore_aes=ref_ignore, **ref_kwargs
+                vline, f"ref_line_{i}", data=ref_dt, ignore_aes=ref_ignore, **ref_kwargs
             )
 
     return plot_collection
