@@ -5,14 +5,18 @@ from copy import copy
 from importlib import import_module
 
 import numpy as np
-import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
-from arviz_plots.visuals import ecdf_line, hist, line_xy, vline
+from arviz_plots.plots.utils import (
+    filter_aes,
+    plot_references,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
+from arviz_plots.visuals import ecdf_line, hist, line_xy
 
 
 def plot_ppc_dist(
@@ -300,17 +304,13 @@ def plot_ppc_dist(
                 **observed_density_kwargs,
             )
     if references is not None:
-        _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "reference", "sample")
-        ref_kwargs = copy(plot_kwargs.get("reference", {}))
-        if "color" not in ref_aes:
-            ref_kwargs.setdefault("color", "black")
-        if "linestyle" not in ref_aes:
-            ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2, {})[1])
-        references = [references] if np.isscalar(references) else references
-        for i, value in enumerate(references):
-            ref_dt = xr.Dataset({var: xr.DataArray(value) for var in predictive_dist.data_vars})
-            plot_collection.map(
-                vline, f"ref_line_{i}", data=ref_dt, ignore_aes=ref_ignore, **ref_kwargs
-            )
+        plot_references(
+            plot_collection,
+            aes_map,
+            plot_kwargs,
+            plot_bknd,
+            references,
+            data_vars=predictive_dist.data_vars,
+        )
 
     return plot_collection

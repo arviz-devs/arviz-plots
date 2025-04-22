@@ -1,9 +1,13 @@
 """Utilities for batteries included plots."""
 
+from copy import copy
+
+import numpy as np
 from arviz_base.utils import _var_names
-from xarray import Dataset
+from xarray import DataArray, Dataset
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
+from arviz_plots.visuals import vlines
 
 
 def get_group(data, group, allow_missing=False):
@@ -161,3 +165,23 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     pc_kwargs["plot_grid_kws"]["figsize"] = figsize
     pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
     return pc_kwargs
+
+
+def plot_references(plot_collection, aes_map, plot_kwargs, plot_bknd, references, data_vars=None):
+    """Plot reference lines."""
+    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "reference", "sample")
+    ref_kwargs = copy(plot_kwargs.get("reference", {}))
+    if "color" not in ref_aes:
+        ref_kwargs.setdefault("color", "black")
+    if "linestyle" not in ref_aes:
+        ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2, {})[1])
+    if isinstance(references, dict):
+        for key, value in references.items():
+            if key in data_vars:
+                ref_dt = Dataset({key: DataArray(np.asarray(value))})
+                plot_collection.map(
+                    vlines, "ref_lines", data=ref_dt, ignore_aes=ref_ignore, **ref_kwargs
+                )
+    else:
+        ref_dt = Dataset({var: DataArray(np.asarray(references)) for var in data_vars})
+        plot_collection.map(vlines, "ref_lines", data=ref_dt, ignore_aes=ref_ignore, **ref_kwargs)
