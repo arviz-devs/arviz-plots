@@ -11,8 +11,8 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
+    add_reference_lines,
     filter_aes,
-    plot_references,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -304,7 +304,7 @@ def plot_ppc_dist(
                 **observed_density_kwargs,
             )
     if references is not None:
-        plot_references(
+        add_reference_lines(
             plot_collection,
             aes_map,
             plot_kwargs,
