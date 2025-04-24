@@ -199,6 +199,24 @@ def add_reference_lines(
         The backend used for plotting.
     data_vars : list, optional
         A list of data variables to be used for plotting.
+
+    Examples
+    --------
+    Add reference line at value 0.
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_dist, add_reference_lines, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> pc = plot_dist(
+        >>>     dt,
+        >>>     kind="ecdf",
+        >>>     var_names=["mu"],
+        >>> )
+        >>> add_reference_lines(pc, references=0)
     """
     if backend is None:
         backend = plot_collection.backend
