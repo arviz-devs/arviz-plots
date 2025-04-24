@@ -316,11 +316,12 @@ def plot_ppc_dist(
             )
     if references is not None:
         add_reference_lines(
-            plot_collection,
-            aes_map,
-            plot_kwargs,
-            plot_bknd,
-            references,
+            plot_collection=plot_collection,
+            references=references,
+            orientation="vertical",
+            aes_map=aes_map,
+            plot_kwargs=plot_kwargs,
+            backend=backend,
             data_vars=predictive_dist.data_vars,
         )
 
