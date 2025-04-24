@@ -14,7 +14,7 @@ settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "fast"))
 
 
 def pytest_addoption(parser):
-    """Definition for command line option to save figures from tests."""
+    """Definition for command line option to save figures from tests or skip backends."""
     parser.addoption("--save", nargs="?", const="test_images", help="Save images rendered by plot")
     parser.addoption("--skip-mpl", action="store_const", const=True, help="Skip matplotlib tests")
     parser.addoption("--skip-bokeh", action="store_const", const=True, help="Skip bokeh tests")

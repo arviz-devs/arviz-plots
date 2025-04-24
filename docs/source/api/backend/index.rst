@@ -11,46 +11,31 @@ Available backends
     .. grid-item-card::
         :link: matplotlib
         :link-type: doc
-        :link-alt: matplotlib
+        :link-alt: Matplotlib
         :img-background: ../../_static/matplotlib-logo-light.svg
         :class-img-bottom: dark-light
 
     .. grid-item-card::
         :link: bokeh
         :link-type: doc
-        :link-alt: bokeh
+        :link-alt: Bokeh
         :img-background: ../../_static/bokeh-logo-light.svg
         :class-img-bottom: dark-light
 
     .. grid-item-card::
         :link: plotly
         :link-type: doc
-        :link-alt: plotly
+        :link-alt: Plotly
         :img-background: ../../_static/plotly-logo-light.png
         :class-img-bottom: dark-light
 
     .. grid-item-card::
         :link: none
         :link-type: doc
-        :link-alt: none
+        :link-alt: None (no plotting, only data processing)
+        :img-background: ../../_static/none-logo-light.png
+        :class-img-bottom: dark-light
 
-        .. grid:: 3
-
-           .. grid-item::
-              
-              .. image:: ../../_static/no-image.svg
-                 :class: dark-light
-                 :alt:
-
-           .. grid-item::
-
-              Data
-
-           .. grid-item::
-
-              .. raw:: html
-
-                 <s>Viz</s>
 
 .. toctree::
    :maxdepth: 1

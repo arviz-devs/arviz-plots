@@ -14,6 +14,7 @@ _log = logging.getLogger(__name__)
 from arviz_plots._version import __version__
 
 from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_matrix import PlotMatrix
 from arviz_plots.plots import *
 from arviz_plots import style
 

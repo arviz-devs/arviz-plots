@@ -41,8 +41,9 @@ extensions = [
     "jupyter_sphinx",
     "matplotlib.sphinxext.plot_directive",
     "bokeh.sphinxext.bokeh_plot",
-    "gallery_generator",
 ]
+if not os.environ.get("ARVIZDOCS_NOGALLERY", False):
+    extensions.append("gallery_generator")
 
 templates_path = ["_templates"]
 
@@ -54,6 +55,9 @@ exclude_patterns = [
     "**/*.part.rst",
     "**/*.part.md",
 ]
+if not os.environ.get("ARVIZDOCS_NOGALLERY", False):
+    exclude_patterns.extend("gallery/*")
+
 suppress_warnings = ["mystnb.unknown_mime_type"]
 
 backend_modules = ("none", "matplotlib", "bokeh", "plotly")
@@ -113,6 +117,7 @@ numpydoc_xref_aliases = {
 
 intersphinx_mapping = {
     "arviz_org": ("https://www.arviz.org/en/latest/", None),
+    "arviz-base": ("https://arviz-base.readthedocs.io/en/latest/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),

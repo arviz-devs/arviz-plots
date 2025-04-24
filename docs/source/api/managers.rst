@@ -10,6 +10,9 @@ the different functions.
 
 .. currentmodule:: arviz_plots
 
+PlotCollection
+==============
+
 Object creation
 ...............
 
@@ -64,3 +67,37 @@ Other
    PlotCollection.allocate_artist
    PlotCollection.get_viz
    PlotCollection.get_target
+
+PlotMatrix
+==========
+
+Object creation
+...............
+
+.. autosummary::
+   :toctree: generated/
+
+   PlotMatrix
+
+Plotting
+........
+
+.. autosummary::
+   :toctree: generated/
+
+   PlotMatrix.map
+   PlotMatrix.map_triangle
+   PlotMatrix.map_lower
+   PlotMatrix.map_upper
+
+Attributes
+..........
+
+.. autosummary::
+   :toctree: generated/
+
+   PlotMatrix.aes
+   PlotMatrix.viz
+   PlotMatrix.aes_set
+   PlotMatrix.base_loop_dims
+   PlotMatrix.data
