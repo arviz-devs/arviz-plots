@@ -47,7 +47,9 @@ def plot_ppc_rootogram(
     Parameters
     ----------
     dt : DataTree
-        Input data
+        If group is "posterior_predictive", it should contain the ``posterior_predictive`` and
+        ``observed_data`` groups. If group is "prior_predictive", it should contain the
+        ``prior_predictive`` group.
     ci_prob : float, optional
         Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
     yscale : str, optional
@@ -153,16 +155,25 @@ def plot_ppc_rootogram(
         dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
     )
 
-    observed_dist = process_group_variables_coords(
-        dt, group="observed_data", var_names=data_pairs[1], filter_vars=filter_vars, coords=coords
-    )
-
     predictive_types = [
         predictive_dist[var].values.dtype.kind == "f" for var in predictive_dist.data_vars
     ]
-    observed_types = [
-        observed_dist[var].values.dtype.kind == "f" for var in observed_dist.data_vars
-    ]
+
+    if "observed_data" in dt:
+        observed_dist = process_group_variables_coords(
+            dt,
+            group="observed_data",
+            var_names=data_pairs[1],
+            filter_vars=filter_vars,
+            coords=coords,
+        )
+
+        observed_types = [
+            observed_dist[var].values.dtype.kind == "f" for var in observed_dist.data_vars
+        ]
+        observed_ds = point_unique(dt, observed_dist.data_vars)
+    else:
+        observed_types = []
 
     if any(predictive_types + observed_types):
         raise ValueError(
@@ -172,7 +183,6 @@ def plot_ppc_rootogram(
         )
 
     ds_predictive = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
-    observed_ds = point_unique(dt, observed_dist.data_vars)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})

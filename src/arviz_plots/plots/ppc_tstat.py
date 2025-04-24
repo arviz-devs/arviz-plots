@@ -39,7 +39,9 @@ def plot_ppc_tstat(
     Parameters
     ----------
     dt : DataTree
-        Input data
+        If group is "posterior_predictive", it should contain the ``posterior_predictive`` and
+        ``observed_data`` groups. If group is "prior_predictive", it should contain the
+        ``prior_predictive`` group.
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -89,7 +91,8 @@ def plot_ppc_tstat(
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
-        * observed_tstat -> passed to :func:`~arviz_plots.visuals.scatter_x`.
+        * observed_tstat -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to
+        False if group is "prior_predictive".
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`. Defaults to False.
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`.
@@ -194,15 +197,27 @@ def plot_ppc_tstat(
         dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
     )
 
-    observed_dist = process_group_variables_coords(
-        dt, group="observed_data", var_names=data_pairs[1], filter_vars=filter_vars, coords=coords
+    if "observed_data" in dt:
+        observed_dist = process_group_variables_coords(
+            dt,
+            group="observed_data",
+            var_names=data_pairs[1],
+            filter_vars=filter_vars,
+            coords=coords,
+        )
+
+    # we use observed_tstat_kwargs as a flag to indicate if
+    # we should compute and plot the observed t-statistics
+    observed_tstat_kwargs = copy(
+        plot_kwargs.get("observed_tstat", False if group == "prior_predictive" else {})
     )
 
     predictive_dist = predictive_dist.stack(sample=sample_dims)
     reduce_dim = [dim for dim in predictive_dist.dims if dim != "sample"]
     if t_stat in ["mean", "median", "std", "var", "min", "max"]:
         predictive_dist = getattr(predictive_dist, t_stat)(dim=reduce_dim)
-        observed_dist = getattr(observed_dist, t_stat)()
+        if observed_tstat_kwargs is not False:
+            observed_dist = getattr(observed_dist, t_stat)()
         plot_kwargs.setdefault("title", {"text": t_stat})
     elif t_stat == "iqr":
 
@@ -212,7 +227,8 @@ def plot_ppc_tstat(
             return q75 - q25
 
         predictive_dist = iqr(predictive_dist, dim=reduce_dim)
-        observed_dist = iqr(observed_dist, dim=None)
+        if observed_tstat_kwargs is not False:
+            observed_dist = iqr(observed_dist, dim=None)
         plot_kwargs.setdefault("title", {"text": "IQR"})
     elif t_stat == "mad":
 
@@ -221,12 +237,14 @@ def plot_ppc_tstat(
             return np.abs((data - median)).median(dim=dim)
 
         predictive_dist = mad(predictive_dist, dim=reduce_dim)
-        observed_dist = mad(observed_dist, dim=None)
+        if observed_tstat_kwargs is not False:
+            observed_dist = mad(observed_dist, dim=None)
         plot_kwargs.setdefault("title", {"text": "MAD"})
 
     elif hasattr(t_stat, "__call__"):
         predictive_dist = predictive_dist.map(t_stat)
-        observed_dist = observed_dist.map(t_stat)
+        if observed_tstat_kwargs is not False:
+            observed_dist = observed_dist.map(t_stat)
         plot_kwargs.setdefault("title", {"text": t_stat.__name__})
     else:
         try:
@@ -237,7 +255,10 @@ def plot_ppc_tstat(
             predictive_dist = predictive_dist.quantile(q=t_stat_float, dim=reduce_dim).rename(
                 {"quantile": "t_stat"}
             )
-            observed_dist = observed_dist.quantile(q=t_stat_float).rename({"quantile": "t_stat"})
+            if observed_tstat_kwargs is not False:
+                observed_dist = observed_dist.quantile(q=t_stat_float).rename(
+                    {"quantile": "t_stat"}
+                )
             plot_kwargs.setdefault("title", {"text": f"q={t_stat}"})
         else:
             raise ValueError(f"T statistic '{t_stat}' not in valid range (0, 1).")
@@ -281,7 +302,6 @@ def plot_ppc_tstat(
     )
 
     # Plot the observed data
-    observed_tstat_kwargs = copy(plot_kwargs.get("observed_tstat", {}))
     if observed_tstat_kwargs is not False:
         observed_tstat_kwargs.setdefault("color", "black")
         plot_collection.map(

@@ -44,7 +44,9 @@ def plot_ppc_dist(
     Parameters
     ----------
     dt : DataTree
-        Input data
+        If group is "posterior_predictive", it should contain the ``posterior_predictive`` and
+        ``observed_data`` groups. If group is "prior_predictive", it should contain the
+        ``prior_predictive`` group.
     data_pairs : dict, optional
         Dictionary of keys prior/posterior predictive data and values observed data variable names.
         If None, it will assume that the observed data and the predictive data have
@@ -92,10 +94,11 @@ def plot_ppc_dist(
         Valid keys are:
 
         * predictive_density -> passed to a function that depends on the `kind` argument.
-        * observed_density -> passed to a function that depends on the `kind` argument.
-          * `kind="kde"` -> passed to :func:`~arviz_plots.visuals.line_xy`
-          * `kind="ecdf"` -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * `kind="hist"` -> passed to :func: `~arviz_plots.visuals.hist`
+        * observed_density -> passed to a function that depends on the `kind` argument. Defaults to
+        False if group is "prior_predictive".
+        * `kind="kde"` -> passed to :func:`~arviz_plots.visuals.line_xy`
+        * `kind="ecdf"` -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+        * `kind="hist"` -> passed to :func: `~arviz_plots.visuals.hist`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
@@ -175,17 +178,24 @@ def plot_ppc_dist(
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
     )
-
-    observed_dist = process_group_variables_coords(
-        dt, group="observed_data", var_names=data_pairs[1], filter_vars=filter_vars, coords=coords
-    )
-
     predictive_types = [
         predictive_dist[var].values.dtype.kind == "i" for var in predictive_dist.data_vars
     ]
-    observed_types = [
-        observed_dist[var].values.dtype.kind == "i" for var in observed_dist.data_vars
-    ]
+
+    if "observed_data" in dt:
+        observed_dist = process_group_variables_coords(
+            dt,
+            group="observed_data",
+            var_names=data_pairs[1],
+            filter_vars=filter_vars,
+            coords=coords,
+        )
+        observed_types = [
+            observed_dist[var].values.dtype.kind == "i" for var in observed_dist.data_vars
+        ]
+    else:
+        observed_types = []
+
     if any(predictive_types + observed_types):
         warnings.warn(
             "Detected at least one discrete variable.\n"
