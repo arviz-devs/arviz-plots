@@ -86,13 +86,15 @@ def plot_ppc_rootogram(
         Valid keys are:
 
         * predictive_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-        * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`. Defaults to
-            False if group is "prior_predictive" and {} otherwise.
+        * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`.
         * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * grid -> passed to :func:`~arviz_plots.visuals.grid`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+
+        observed_markers defaults to False, no observed data is plotted, if group is
+        "prior_predictive". Pass an (empty) mapping to plot the observed data.
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.grid`

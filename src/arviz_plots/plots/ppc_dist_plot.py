@@ -94,14 +94,15 @@ def plot_ppc_dist(
         Valid keys are:
 
         * predictive_density -> passed to a function that depends on the `kind` argument.
-        * observed_density -> passed to a function that depends on the `kind` argument. Defaults to
-        False if group is "prior_predictive".
+        * observed_density -> passed to a function that depends on the `kind` argument.
         * `kind="kde"` -> passed to :func:`~arviz_plots.visuals.line_xy`
         * `kind="ecdf"` -> passed to :func:`~arviz_plots.visuals.ecdf_line`
         * `kind="hist"` -> passed to :func: `~arviz_plots.visuals.hist`
-
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
+
+        observed_density defaults to False, no observed data is plotted, if group is
+        "prior_predictive". Pass an (empty) mapping to plot the observed data.
 
     stats_kwargs : mapping, optional
         Valid keys are:

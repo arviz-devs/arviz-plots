@@ -91,8 +91,7 @@ def plot_ppc_tstat(
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
-        * observed_tstat -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to
-        False if group is "prior_predictive".
+        * observed_tstat -> passed to :func:`~arviz_plots.visuals.scatter_x`.
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`. Defaults to False.
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`.
@@ -100,6 +99,9 @@ def plot_ppc_tstat(
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * rug -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
+
+        observed_tstat defaults to False, no observed data is plotted, if group is
+        "prior_predictive". Pass an (empty) mapping to plot the observed tstats.
 
     stats_kwargs : mapping, optional
         Valid keys are:
