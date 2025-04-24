@@ -17,7 +17,6 @@ A complementary introduction and guide to ``plot_...`` functions is available at
 .. autosummary::
    :toctree: generated/
 
-   add_reference_lines
    combine_plots
    plot_autocorr
    plot_bf
