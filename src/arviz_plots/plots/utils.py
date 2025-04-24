@@ -187,8 +187,8 @@ def add_reference_lines(
     ----------
     plot_collection : PlotCollection
         Plot collection to which the reference lines will be added.
-    references : list or dict
-        A list or dictionary of reference values to be plotted as lines.
+    references : int, float, tuple, list or dict
+        Reference values to be plotted as lines.
     orientation : str, default "vertical"
         The orientation of the reference lines, either "vertical" or "horizontal".
     aes_map : dict, optional
