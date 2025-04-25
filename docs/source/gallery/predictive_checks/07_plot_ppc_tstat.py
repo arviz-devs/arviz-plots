@@ -1,5 +1,5 @@
 """
-# PPC with a test statistic
+# Test statistics
 
 T-statistic for the observed data and posterior predictive data.
 
