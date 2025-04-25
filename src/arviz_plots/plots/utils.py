@@ -200,6 +200,11 @@ def add_reference_lines(
     data_vars : list, optional
         A list of data variables to be used for plotting.
 
+    Returns
+    -------
+    plot_collection : PlotCollection
+        Plot collection with the reference lines added.
+
     Examples
     --------
     Add reference line at value 0.
@@ -238,16 +243,21 @@ def add_reference_lines(
         ref_kwargs.setdefault("color", "gray")
     if "linestyle" not in ref_aes:
         ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2, {})[1])
-
+    ref_dt, artist_dims = {}, {}
     if isinstance(references, dict):
         for key, value in references.items():
             if key in data_vars:
-                ref_dt = Dataset({key: DataArray(np.asarray(value))})
-                plot_collection.map(
-                    plot_func, "ref_lines", data=ref_dt, ignore_aes=ref_ignore, **ref_kwargs
-                )
+                ref_dt[key] = DataArray(np.asarray(value))
+                artist_dims[key] = np.size(value)
     else:
-        ref_dt = Dataset({var: DataArray(np.asarray(references)) for var in data_vars})
-        plot_collection.map(
-            plot_func, "ref_lines", data=ref_dt, ignore_aes=ref_ignore, **ref_kwargs
-        )
+        ref_dt = {var: DataArray(np.asarray(references)) for var in data_vars}
+        artist_dims = {var: np.size(references) for var in data_vars}
+    plot_collection.map(
+        plot_func,
+        "ref_lines",
+        data=Dataset(ref_dt),
+        ignore_aes=ref_ignore,
+        artist_dims=artist_dims,
+        **ref_kwargs,
+    )
+    return plot_collection

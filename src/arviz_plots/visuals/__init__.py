@@ -127,10 +127,11 @@ def vline(values, target, backend, **kwargs):
 
 def vlines(da, target, backend, **kwargs):
     """Plot multiple vertical lines that spans the whole figure independently of zoom."""
+    v_lines = []
     for x_i in np.atleast_1d(da.values):
         plot_backend = import_module(f"arviz_plots.backend.{backend}")
-        v_line = plot_backend.vline(x_i, target, **kwargs)
-    return v_line
+        v_lines.append(plot_backend.vline(x_i, target, **kwargs))
+    return np.asarray(v_lines)
 
 
 def hline(values, target, backend, **kwargs):
@@ -141,10 +142,11 @@ def hline(values, target, backend, **kwargs):
 
 def hlines(da, target, backend, **kwargs):
     """Plot multiple horizontal lines that spans the whole figure independently of zoom."""
+    h_lines = []
     for y_i in np.atleast_1d(da.values):
         plot_backend = import_module(f"arviz_plots.backend.{backend}")
-        h_line = plot_backend.hline(y_i, target, **kwargs)
-    return h_line
+        h_lines.append(plot_backend.hline(y_i, target, **kwargs))
+    return np.asarray(h_lines)
 
 
 def dline(da, target, backend, x=None, y=None, **kwargs):
