@@ -10,7 +10,7 @@ respect to the observed data using the leave-one-out (LOO) method.
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_ppc_pit`
 
-EABM chapter on [Posterior predictive checks with summary statistics](https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#sec-avoid-double-dipping)
+EABM chapter on [Posterior predictive checks with LOO-PIT ECDFs](https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#sec-avoid-double-dipping)
 :::
 """
 from arviz_base import load_arviz_data

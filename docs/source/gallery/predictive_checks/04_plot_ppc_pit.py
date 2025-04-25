@@ -8,7 +8,7 @@ Plot of the probability integral transform of the posterior predictive distribut
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_ppc_pit`
 
-EABM chapter on [Posterior predictive checks with summary statistics](https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#pit-ecdfs)
+EABM chapter on [Posterior predictive checks with PIT-ECDFs](https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#pit-ecdfs)
 :::
 """
 from arviz_base import load_arviz_data
