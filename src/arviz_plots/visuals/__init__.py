@@ -131,7 +131,7 @@ def vlines(da, target, backend, **kwargs):
     for x_i in np.atleast_1d(da.values):
         plot_backend = import_module(f"arviz_plots.backend.{backend}")
         v_lines.append(plot_backend.vline(x_i, target, **kwargs))
-    return np.asarray(v_lines)
+    return v_lines
 
 
 def hline(values, target, backend, **kwargs):
@@ -146,7 +146,7 @@ def hlines(da, target, backend, **kwargs):
     for y_i in np.atleast_1d(da.values):
         plot_backend = import_module(f"arviz_plots.backend.{backend}")
         h_lines.append(plot_backend.hline(y_i, target, **kwargs))
-    return np.asarray(h_lines)
+    return h_lines
 
 
 def dline(da, target, backend, x=None, y=None, **kwargs):
