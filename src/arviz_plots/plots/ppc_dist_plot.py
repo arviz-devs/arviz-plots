@@ -315,7 +315,7 @@ def plot_ppc_dist(
                 **observed_density_kwargs,
             )
     if references is not None:
-        add_reference_lines(
+        plot_collection = add_reference_lines(
             plot_collection=plot_collection,
             references=references,
             orientation="vertical",
