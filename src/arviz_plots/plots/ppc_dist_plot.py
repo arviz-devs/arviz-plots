@@ -322,7 +322,7 @@ def plot_ppc_dist(
             aes_map=aes_map,
             plot_kwargs=plot_kwargs,
             backend=backend,
-            data_vars=predictive_dist.data_vars,
+            sample_dims=pp_dims + ["sample"],
         )
 
     return plot_collection

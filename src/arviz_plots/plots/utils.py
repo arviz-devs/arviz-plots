@@ -1,11 +1,12 @@
 """Utilities for batteries included plots."""
-
+import warnings
 from copy import copy
 from importlib import import_module
 
 import numpy as np
+import xarray as xr
+from arviz_base import rcParams
 from arviz_base.utils import _var_names
-from xarray import DataArray, Dataset
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
 from arviz_plots.visuals import hlines, vlines
@@ -35,7 +36,7 @@ def get_group(data, group, allow_missing=False):
     KeyError
         If unable to access `group` from `data` and ``allow_missing=False``.
     """
-    if isinstance(data, Dataset):
+    if isinstance(data, xr.Dataset):
         return data
     if hasattr(data, "name") and data.name == group:
         return data.ds
@@ -45,7 +46,7 @@ def get_group(data, group, allow_missing=False):
         if not allow_missing:
             raise
         return None
-    if isinstance(data, Dataset):
+    if isinstance(data, xr.Dataset):
         return data
     return data.ds
 
@@ -168,6 +169,60 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     return pc_kwargs
 
 
+def _references_to_dataset(references, ds, sample_dims):
+    """Generate an :class:`~xarray.Dataset` compatible with `ds` from `references`.
+
+    Parameters
+    ----------
+    references : scalar, array-like, dict, DataArray
+        References to cast into a compatible dataset.
+    ds : Dataset
+    sample_dims : iterable of hashable, optional
+
+    Returns
+    -------
+    Dataset
+        A Dataset with a subset of the variables, dimensions and coordinate names in `ds`,
+        with only an extra dimension "ref_line_dim" added when multiple references are requested
+        for one or some of the variables.
+    """
+    if isinstance(references, xr.Dataset):
+        return references
+    if isinstance(references, xr.DataArray):
+        name = references.name
+        if name is not None:
+            if name not in ds.data_vars:
+                warnings.warn(f"{name} not available in {ds.data_vars}", UserWarning)
+            return references.to_dataset()
+        references = references.values
+    if np.isscalar(references):
+        aux_ds = (
+            ds if not sample_dims else ds.isel({dim: 0 for dim in sample_dims if dim in ds.dims})
+        )
+        return xr.full_like(aux_ds, references, dtype=np.array(references).dtype)
+    if isinstance(references, list | tuple | np.ndarray):
+        references = {var_name: references for var_name in ds.data_vars}
+    if isinstance(references, dict):
+        ref_dict = {}
+        for var_name, da in ds.items():
+            if var_name not in references:
+                continue
+            ref_values = references[var_name]
+            sizes = {dim: length for dim, length in da.sizes.items() if dim not in sample_dims}
+            ref_dict[var_name] = xr.DataArray(
+                np.full(list(sizes.values()) + [np.size(ref_values)], ref_values),
+                dims=list(sizes) + ["ref_line_dim"],
+                coords={"ref_line_dim": np.arange(np.size(ref_values))}
+                | {
+                    coord_name: coord_da
+                    for coord_name, coord_da in da.coords.items()
+                    if coord_da.dims[0] not in sample_dims
+                },
+            )
+        return xr.Dataset(ref_dict)
+    raise TypeError("Unrecognized input type for `references`")
+
+
 def add_reference_lines(
     plot_collection,
     references,
@@ -175,7 +230,7 @@ def add_reference_lines(
     aes_map=None,
     plot_kwargs=None,
     backend=None,
-    data_vars=None,
+    sample_dims=None,
 ):
     """Add reference lines.
 
@@ -197,8 +252,9 @@ def add_reference_lines(
         A dictionary containing the plot arguments.
     backend : str, optional
         The backend used for plotting.
-    data_vars : list, optional
-        A list of data variables to be used for plotting.
+    sample_dims : list, optional
+        Dimensions to reduce unless mapped to an aesthetic.
+        Defaults to ``rcParams["data.sample_dims"]``
 
     Returns
     -------
@@ -229,33 +285,30 @@ def add_reference_lines(
         plot_kwargs = {}
     if aes_map is None:
         aes_map = {}
-    if data_vars is None:
-        data_vars = plot_collection.data.data_vars
+    if sample_dims is None:
+        sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     plot_func = vlines if orientation == "vertical" else hlines
 
-    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "reference", "sample")
+    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "reference", sample_dims)
     ref_kwargs = copy(plot_kwargs.get("reference", {}))
 
     if "color" not in ref_aes:
         ref_kwargs.setdefault("color", "gray")
     if "linestyle" not in ref_aes:
         ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2, {})[1])
-    ref_dt, artist_dims = {}, {}
-    if isinstance(references, dict):
-        for key, value in references.items():
-            if key in data_vars:
-                ref_dt[key] = DataArray(np.asarray(value))
-                artist_dims[key] = np.size(value)
-    else:
-        ref_dt = {var: DataArray(np.asarray(references)) for var in data_vars}
-        artist_dims = {var: np.size(references) for var in data_vars}
+    ref_dt = _references_to_dataset(references, plot_collection.data, sample_dims=sample_dims)
+    artist_dims = (
+        {"ref_line_dim": ref_dt.sizes["ref_line_dim"]} if "ref_line_dim" in ref_dt.sizes else None
+    )
     plot_collection.map(
         plot_func,
         "ref_lines",
-        data=Dataset(ref_dt),
+        data=ref_dt,
         ignore_aes=ref_ignore,
         artist_dims=artist_dims,
         **ref_kwargs,
