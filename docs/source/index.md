@@ -3,7 +3,7 @@ ArviZ plotting elements and batteries included plots.
 
 ## Installation
 
-It currenly can only be installed with pip:
+It currently can only be installed with pip:
 
 ::::{tab-set}
 :::{tab-item} PyPI
