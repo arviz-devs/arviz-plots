@@ -28,6 +28,17 @@ release = version
 
 sys.path.insert(0, os.path.abspath("../sphinxext"))
 
+templates_path = ["_templates"]
+exclude_patterns = [
+    "Thumbs.db",
+    ".DS_Store",
+    ".ipynb_checkpoints",
+    "**/*.template.rst",
+    "**/*.part.rst",
+    "**/*.part.md",
+]
+skip_gallery = os.environ.get("ARVIZDOCS_NOGALLERY", False)
+
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
@@ -42,21 +53,10 @@ extensions = [
     "matplotlib.sphinxext.plot_directive",
     "bokeh.sphinxext.bokeh_plot",
 ]
-if not os.environ.get("ARVIZDOCS_NOGALLERY", False):
+if skip_gallery:
+    exclude_patterns.append("gallery/*")
+else:
     extensions.append("gallery_generator")
-
-templates_path = ["_templates"]
-
-exclude_patterns = [
-    "Thumbs.db",
-    ".DS_Store",
-    ".ipynb_checkpoints",
-    "**/*.template.rst",
-    "**/*.part.rst",
-    "**/*.part.md",
-]
-if not os.environ.get("ARVIZDOCS_NOGALLERY", False):
-    exclude_patterns.extend("gallery/*")
 
 suppress_warnings = ["mystnb.unknown_mime_type"]
 
