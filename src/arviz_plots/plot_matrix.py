@@ -35,10 +35,11 @@ def subset_matrix_da(
         If true, return the subset of a dataarray. Otherwise, the output is a numpy array
         for multidimensional subsets and the stored object itself if the output is a scalar.
     """
-    if var_name_y is None:
+    if (var_name_y is None) and (selection_y is None):
         var_name_y = var_name_x
-    if selection_y is None:
         selection_y = selection_x
+    if any(elem is None for elem in (var_name_x, var_name_y, selection_x, selection_y)):
+        raise ValueError("Invalid values for subset arguments")
     out = (
         da.set_xindex("var_name_x")
         .set_xindex("var_name_y")

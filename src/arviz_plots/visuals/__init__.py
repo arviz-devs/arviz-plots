@@ -113,6 +113,12 @@ def scatter_xy(da, target, backend, x=None, y=None, **kwargs):
     return plot_backend.scatter(x, y, target, **kwargs)
 
 
+def scatter_couple(da_x, da_y, target, backend, **kwargs):
+    """Plot a scatter plot for a pairplot couple."""
+    plot_backend = import_module(f"arviz_plots.backend.{backend}")
+    return plot_backend.scatter(da_x.values, da_y.values, target, **kwargs)
+
+
 def ecdf_line(values, target, backend, **kwargs):
     """Plot a step line."""
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
