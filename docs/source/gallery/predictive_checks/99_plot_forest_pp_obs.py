@@ -9,17 +9,11 @@ Overlay of forest plot for the posterior predictive samples and the actual obser
 API Documentation: {func}`~arviz_plots.plot_forest`
 :::
 """
-from importlib import import_module
-
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
 azp.style.use("arviz-variat")
-
-backend="none"  # change to preferred backend
-plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-color = plot_bknd.get_default_aes("color", 3, {})[-1]
 
 idata = load_arviz_data("non_centered_eight")
 pc = azp.plot_forest(
@@ -27,15 +21,22 @@ pc = azp.plot_forest(
     group="posterior_predictive",
     combined=True,
     labels=["obs_dim_0"],
-    backend=backend,
+    backend = "none",  # change to preferred backend
+
 )
 pc.map(
     azp.visuals.scatter_x,
     "observations",
     data=idata.observed_data.ds,
     coords={"column": "forest"},
-    color=color,
+    color="gray",
 )
-target = pc.viz["plot"].sel(column="forest").item()
-plot_bknd.xlabel("Observations", target)
+
+pc.map(
+    azp.visuals.labelled_x,
+    "xlabel",
+    coords={"column": "forest"},
+    text="Observations",
+    ignore_aes="y",  # we can omit this in matplotlib, but not bokeh, plotly
+)
 pc.show()
