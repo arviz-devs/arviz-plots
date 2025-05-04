@@ -18,14 +18,17 @@ azp.style.use("arviz-variat")
 
 centered = load_arviz_data("centered_eight")
 
-c_aux = (centered["posterior"]
-         .dataset.expand_dims(column=3)
-         .assign_coords(column=["labels", "forest", "ess"]))
+c_aux = (
+    centered["posterior"]
+    .dataset.expand_dims(column=3)
+    .assign_coords(column=["labels", "forest", "ess"])
+)
 
-pc = azp.plot_forest(c_aux,
-                     combined=True,
-                     backend="none",  # change to preferred backend
-                     )
+pc = azp.plot_forest(
+    c_aux,
+    combined=True,
+    backend="none",  # change to preferred backend
+)
 
 pc.map(
     azp.visuals.scatter_x,

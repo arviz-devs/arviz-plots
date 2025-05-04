@@ -37,6 +37,6 @@ pc.map(
     "xlabel",
     coords={"column": "forest"},
     text="Observations",
-    ignore_aes="y",  # we can omit this in matplotlib, but not bokeh, plotly
+    ignore_aes="y",
 )
 pc.show()
