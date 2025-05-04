@@ -21,9 +21,9 @@ pc = azp.plot_forest(
     group="posterior_predictive",
     combined=True,
     labels=["obs_dim_0"],
-    backend = "none",  # change to preferred backend
-
+    backend="bokeh",  # change to preferred backend
 )
+
 pc.map(
     azp.visuals.scatter_x,
     "observations",
