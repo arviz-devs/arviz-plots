@@ -287,6 +287,7 @@ def _compute_diagnostics(dt, diagnostics, sample_dims, grouped):
             method = diagnostic.split("_", 1)[1].split("(", 1)[0]
             if method in {"tail", "quantile", "local"} and "(" in diagnostic:
                 prob = [float(p) for p in diagnostic.split("(", 1)[1].rstrip(")").split(", ")]
+                prob = prob[0] if len(prob) == 1 else prob
 
             diagnostic_dt = dt.azstats.ess(method=method, prob=prob, dims=sample_dims)
             if grouped:
