@@ -32,6 +32,6 @@ pc.map(
     "ess",
     data=centered.posterior.ds.azstats.ess(),
     coords={"column": "ess"},
-    color="#36acc6",
+    color="gray",
 )
 pc.show()
