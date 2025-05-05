@@ -1077,7 +1077,11 @@ class PlotCollection:
             raise TypeError("data argument must be an xarray.Dataset")
 
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
-        dim_to_idx = {data[idx].dims[0]: idx for idx in data.indexes if idx in all_loop_dims}
+        dim_to_idx = {
+            data[idx].dims[0]: idx
+            for idx in data.indexes
+            if (idx in all_loop_dims) and (idx not in data.dims)
+        }
         skip_dims = {
             dim for dim in data.dims if (dim not in all_loop_dims) and (dim not in dim_to_idx)
         }
