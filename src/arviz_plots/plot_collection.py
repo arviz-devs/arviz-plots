@@ -20,17 +20,30 @@ def concat_model_dict(data):
     return data
 
 
-def sel_subset(sel, present_dims):
+def sel_subset(sel, ds_da):
     """Subset a dictionary of dim: coord values.
 
     The returned dictionary contains only the keys that
     are present to ensure we can use the output of this function
     to index correctly using ``.sel``.
+
+    Preference is given to indexers with the same name as the dimension,
+    but
     """
-    return {key: value for key, value in sel.items() if key in present_dims}
+    dim_subset = {key: value for key, value in sel.items() if key in ds_da.dims}
+    dims_with_coords = list(dim_subset)
+    for key in sel:
+        if key in dim_subset:
+            continue
+        if key in ds_da.indexes:
+            da_indexer = ds_da[key]
+            if da_indexer.ndim == 1 and da_indexer.dims[0] not in dims_with_coords:
+                dim_subset[key] = sel[key]
+                dims_with_coords.append(da_indexer.dims[0])
+    return dim_subset
 
 
-def subset_ds(ds, var_name, sel, return_dataarray=False):
+def subset_ds(ds, var_name, sel):
     """Subset a dataset in a potentially non-idempotent way.
 
     Get a subset indicated by `sel` of the variable in the Dataset indicated by `var_names`
@@ -46,24 +59,55 @@ def subset_ds(ds, var_name, sel, return_dataarray=False):
     var_name : hashable
     sel : mapping
     """
-    subset_dict = sel_subset(sel, ds[var_name].dims)
+    subset_dict = sel_subset(sel, ds[var_name])
     if subset_dict:
         out = ds[var_name].sel(subset_dict)
     else:
         out = ds[var_name]
-    if return_dataarray:
-        return out
     if out.size == 1:
         return out.item()
     return out.values
 
 
-def subset_da(da, sel):
-    """Subset a DataArray along present dimensions."""
-    subset_dict = sel_subset(sel, da.dims)
+def try_da_subset(da, sel):
+    """Try subsetting a dataarray with `.sel`.
+
+    There are 3 possible cases:
+
+    * None of the keys in `sel` are dimensions in `da` -> `da` is returned as is
+    * Some (or all) of the keys in `sel` are dimensions in `da`:
+
+      - `.sel` on the subset of dimensions present works -> return `da` subset
+      - `.sel` raises a KeyError -> return ``None``
+    """
+    subset_dict = sel_subset(sel, da)
     if subset_dict:
-        return da.sel(subset_dict)
+        try:
+            da = da.sel(subset_dict)
+        except KeyError:
+            return None
     return da
+
+
+def process_kwargs_subset(value, var_name, sel):
+    """Process kwargs to subset xarray objects if possible.
+
+    Anything not a Dataset or DataArray is returned as is.
+    """
+    if isinstance(value, xr.Dataset):
+        if var_name not in value.data_vars:
+            subset_dict = sel_subset(sel, ds)
+            if subset_dict:
+                try:
+                    ds = value.sel(subset_dict)
+                except KeyError:
+                    return None
+                return ds
+            return value
+        value = value[var_name]
+    if isinstance(value, xr.DataArray):
+        return try_da_subset(value, sel)
+    return value
 
 
 def process_facet_dims(data, facet_dims):
@@ -249,7 +293,7 @@ class PlotCollection:
             return self._aes_dt
         return xr.DataTree.from_dict(
             {
-                group: ds.to_dataset().sel(sel_subset(self.coords, ds.dims))
+                group: ds.to_dataset().sel(sel_subset(self.coords, ds))
                 for group, ds in self._aes_dt.children.items()
             }
         )
@@ -285,11 +329,11 @@ class PlotCollection:
         # TODO: use .loc on DataTree directly (once available), otherwise, changes to
         # .viz aren't stored in the PlotCollection class, same in `aes`
         sliced_viz_dict = {
-            group: ds.to_dataset().sel(sel_subset(self.coords, ds.dims))
+            group: ds.to_dataset().sel(sel_subset(self.coords, ds))
             for group, ds in self._viz_dt.children.items()
         }
-        home_ds = self._viz_dt.to_dataset()
-        sliced_viz_dict["/"] = home_ds.sel(sel_subset(self.coords, home_ds.dims))
+        root_ds = self._viz_dt.to_dataset()
+        sliced_viz_dict["/"] = root_ds.sel(sel_subset(self.coords, root_ds))
         return xr.DataTree.from_dict(sliced_viz_dict)
 
     @viz.setter
@@ -879,25 +923,39 @@ class PlotCollection:
         all_loop_dims = self.base_loop_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
 
-    def allocate_artist(self, fun_label, data, all_loop_dims, artist_dims=None, ignore_aes=None):
+    def allocate_artist(
+        self, fun_label, data, all_loop_dims, dim_to_idx=None, artist_dims=None, ignore_aes=None
+    ):
         """Allocate an artist in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
+        if dim_to_idx is None:
+            dim_to_idx = {}
         attrs = None
         if ignore_aes is not None:
             attrs = {"ignore_aes": ignore_aes}
         for var_name, da in data.items():
             if var_name not in self.viz.children:
                 self.viz[var_name] = xr.DataTree()
-            inherited_dims = [dim for dim in da.dims if dim in all_loop_dims]
-            artist_shape = [da.sizes[dim] for dim in inherited_dims] + list(artist_dims.values())
+            inherited_dims = [
+                dim_to_idx.get(dim, dim)
+                for dim in da.dims
+                if (dim in all_loop_dims) or (dim in dim_to_idx)
+            ]
+            artist_shape = [
+                da.sizes[dim_or_idx] if dim_or_idx in da.sizes else len(np.unique(da[dim_or_idx]))
+                for dim_or_idx in inherited_dims
+            ] + list(artist_dims.values())
             all_artist_dims = inherited_dims + list(artist_dims.keys())
 
             # TODO: once DataTree has a .loc attribute, this should work on .viz instead
             self._viz_dt[var_name][fun_label] = xr.DataArray(
                 np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
-                coords={dim: data[dim] for dim in inherited_dims},
+                coords={
+                    dim: np.unique(da[dim]) if dim in dim_to_idx.values() else da[dim]
+                    for dim in inherited_dims
+                },
                 attrs=attrs,
             )
 
@@ -957,7 +1015,6 @@ class PlotCollection:
         fun_label=None,
         *,
         data=None,
-        loop_data=None,
         coords=None,
         ignore_aes=frozenset(),
         subset_info=False,
@@ -981,17 +1038,14 @@ class PlotCollection:
         data : Dataset, optional
             Data to be subsetted at each iteration and to pass to `fun` as first positional
             argument. Defaults to the data used to initialize the ``PlotCollection``.
-        loop_data : Dataset or str, optional
-            Data which will be used to loop over and generate the information used to subset
-            `data`. It also accepts the value "plots" as a way to indicate `fun` should be
-            applied exactly once per :term:`plot`. Defaults to the value of `data`.
         coords : mapping, optional
             Dictionary of {coordinate names : coordinate values} that should
             be used to subset the aes, data and viz objects before any faceting
             or aesthetics mapping is applied.
-        ignore_aes : set, optional
+        ignore_aes : set or "all", optional
             Set of aesthetics present in ``aes`` that should be ignore for this
-            ``map`` call.
+            ``map`` call. The string "all" is also valid to indicate all aesthetics
+            should be ignored, thus taking only facetting into account.
         subset_info : boolean, default False
             Add the subset info from :func:`arviz_base.xarray_sel_iter` to
             the keyword arguments passed to `fun`. If true, then `fun` must
@@ -1015,28 +1069,25 @@ class PlotCollection:
             coords = {}
         if fun_label is None:
             fun_label = fun.__name__
+        if isinstance(ignore_aes, str) and ignore_aes == "all":
+            ignore_aes = self.aes_set
 
         data = self.data if data is None else data
-        if isinstance(loop_data, str) and loop_data == "plots":
-            if "plot" in self.viz.data_vars:
-                loop_data = xr.Dataset({key: self.viz.ds["plot"] for key in data.data_vars})
-            else:
-                loop_data = xr.Dataset(
-                    {var_name: ds["plot"] for var_name, ds in self.viz.children.items()}
-                )
-        loop_data = data if loop_data is None else loop_data
         if not isinstance(data, xr.Dataset):
             raise TypeError("data argument must be an xarray.Dataset")
 
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
-        plotters = xarray_sel_iter(
-            loop_data, skip_dims={dim for dim in loop_data.dims if dim not in all_loop_dims}
-        )
+        dim_to_idx = {data[idx].dims[0]: idx for idx in data.indexes if idx in all_loop_dims}
+        skip_dims = {
+            dim for dim in data.dims if (dim not in all_loop_dims) and (dim not in dim_to_idx)
+        }
+        plotters = xarray_sel_iter(data, skip_dims=skip_dims, dim_to_idx=dim_to_idx)
         if store_artist:
             self.allocate_artist(
                 fun_label=fun_label,
-                data=loop_data,
+                data=data,
                 all_loop_dims=all_loop_dims,
+                dim_to_idx=dim_to_idx,
                 artist_dims=artist_dims,
                 ignore_aes=ignore_aes,
             )
@@ -1056,11 +1107,7 @@ class PlotCollection:
             fun_kwargs = {
                 **aes_kwargs,
                 **{
-                    key: subset_da(values, sel)
-                    if isinstance(values, xr.DataArray)
-                    else subset_ds(values, var_name, sel, return_dataarray=True)
-                    if isinstance(values, xr.Dataset)
-                    else values
+                    key: process_kwargs_subset(values, var_name, sel)
                     for key, values in kwargs.items()
                 },
             }
