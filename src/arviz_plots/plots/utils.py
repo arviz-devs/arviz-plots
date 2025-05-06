@@ -1,7 +1,6 @@
 """Utilities for batteries included plots."""
 from copy import copy
 from importlib import import_module
-from numbers import Number
 
 import xarray as xr
 from arviz_base import rcParams, references_to_dataset
@@ -175,6 +174,8 @@ def add_reference_lines(
     aes_map=None,
     plot_kwargs=None,
     sample_dims=None,
+    ref_dim="ref_line_dim",
+    **kwargs,
 ):
     """Add reference lines.
 
@@ -190,13 +191,26 @@ def add_reference_lines(
         Reference values to be plotted as lines.
     orientation : str, default "vertical"
         The orientation of the reference lines, either "vertical" or "horizontal".
-    aes_map : dict, optional
-        A dictionary mapping aesthetics to their corresponding variables.
-    plot_kwargs : dict, optional
-        A dictionary containing the plot arguments.
+    aes_map : mapping of {str : sequence of str}, optional
+        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `plot_kwargs`.
+
+        It is possible to request aesthetics without mappings defined in the
+        provided `plot_collection`. In those cases, a mapping of "ref_line_dim" to the requested
+        aesthetic will be automatically added.
+    plot_kwargs : mapping of {str : mapping or False}, optional
+        Valid keys are:
+
+        * "ref_line" -> passed to :func:`~arviz_plots.visuals.vline` for vertical `orientation`
+          and to :func:`~arviz_plots.visuals.hline` for horizontal `orientation`
+        * "ref_text" -> TODO
+
     sample_dims : list, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    **kwargs : mapping of {str : sequence}, optional
+        Mapping of aesthetic keys to the values to be used in their mapping.
+        See :func:`~arviz_plots.PlotCollection.generate_aes_dt` for more details.
 
     Returns
     -------
@@ -205,7 +219,7 @@ def add_reference_lines(
 
     Examples
     --------
-    Add reference line at value 0.
+    Add reference lines at values 0 and 5 for all variables.
 
     .. plot::
         :context: close-figs
@@ -234,36 +248,38 @@ def add_reference_lines(
 
     plot_func = vline if orientation == "vertical" else hline
 
-    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_line", sample_dims)
-    ref_kwargs = copy(plot_kwargs.get("ref_line", {}))
-    if "color" not in ref_aes:
-        ref_kwargs.setdefault("color", "gray")
-    if "linestyle" not in ref_aes:
-        ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2, {})[1])
-    if isinstance(references, Number):
-        references = [references]
-    elif isinstance(references, xr.Dataset):
-        # Convert to dictionary to handle plotting ref_line
-        references = {var: references[var].values for var in references.data_vars}
     ref_ds = references_to_dataset(references, plot_collection.data, sample_dims=sample_dims)
-
-    for idx, data in ref_ds.groupby("ref_line_dim"):
-        for aes_key in ref_aes:
+    requested_aes = (
+        set(aes_map.get("ref_line", []))
+        .union(aes_map.get("ref_text", []))
+        .difference(plot_collection.aes_set)
+    )
+    if ref_dim in ref_ds.dims:
+        for aes_key in requested_aes:
+            aes_values = plot_bknd.get_default_aes(aes_key, ref_ds.sizes[ref_dim], kwargs)
             plot_collection.update_aes_from_dataset(
                 aes_key,
                 xr.Dataset(
                     {
-                        var_name: plot_bknd.get_default_aes(aes_key, ref_ds.sizes["ref_line_dim"])[
-                            idx
-                        ]
+                        var_name: (ref_dim, aes_values)
                         for var_name in plot_collection.data.data_vars
-                    }
+                    },
+                    coords={ref_dim: ref_ds[ref_dim]},
                 ),
             )
+
+    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_line", sample_dims)
+    ref_kwargs = copy(plot_kwargs.get("ref_line", {}))
+    if ref_kwargs is not False:
+        if "color" not in ref_aes:
+            ref_kwargs.setdefault("color", "gray")
+        if "linestyle" not in ref_aes:
+            ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2)[1])
+
         plot_collection.map(
             plot_func,
-            f"ref_line_{idx}",
-            data=data,
+            "ref_line",
+            data=ref_ds,
             ignore_aes=ref_ignore,
             **ref_kwargs,
         )
