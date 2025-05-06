@@ -1,8 +1,8 @@
 """
 # Posterior KDEs
 
-KDE plot of the variable `mu` from the centered eight model. We use
-sample_dims to specify that we want to compute the KDE only along the "draw" dimension.
+KDE plot of the variable `mu` from the centered eight model. The `sample_dims` parameter is
+used to restrict the KDE computation along the `draw` dimension only."
 ---
 
 :::{seealso}
