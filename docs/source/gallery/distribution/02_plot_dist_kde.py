@@ -1,8 +1,8 @@
 """
 # Posterior KDEs
 
-Faceted KDE plots for 1D marginals of the distribution
-
+KDE plot of the variable `mu` from the centered eight model. The `sample_dims` parameter is
+used to restrict the KDE computation along the `draw` dimension only."
 ---
 
 :::{seealso}
@@ -21,6 +21,8 @@ data = load_arviz_data("centered_eight")
 pc = azp.plot_dist(
     data,
     kind="kde",
+    var_names=["mu"],
+    sample_dims=["draw"],    
     backend="none"  # change to preferred backend
 )
 pc.show()
