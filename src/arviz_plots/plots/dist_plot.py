@@ -42,7 +42,7 @@ def plot_dist(
     stats_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot 1D marginal densities in the style of John K. Kruschke’s book.
+    """Plot 1D marginal densities in the style of John K. Kruschke’s book [1]_.
 
     Generate :term:`faceted` :term:`plots` with: a graphical representation of 1D marginal
     densities (as KDE, histogram, ECDF or dotplot), a credible interval and a point estimate.
@@ -148,6 +148,11 @@ def plot_dist(
         >>> )
 
     .. minigallery:: plot_dist
+
+    References
+    ----------
+    .. [1] Kruschke. Doing Bayesian Data Analysis, Second Edition: A Tutorial with R,
+        JAGS, and Stan. Academic Press, 2014. ISBN 978-0-12-405888-0.
     """
     if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
@@ -327,7 +332,7 @@ def plot_dist(
             )
 
         if "color" not in ci_aes:
-            ci_kwargs.setdefault("color", "gray")
+            ci_kwargs.setdefault("color", "#4c4c4c")
         plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
 
     # point estimate
@@ -346,7 +351,7 @@ def plot_dist(
 
     if pe_kwargs is not False:
         if "color" not in pe_aes:
-            pe_kwargs.setdefault("color", "gray")
+            pe_kwargs.setdefault("color", "#4c4c4c")
         plot_collection.map(
             scatter_x,
             "point_estimate",
@@ -354,18 +359,20 @@ def plot_dist(
             ignore_aes=pe_ignore,
             **pe_kwargs,
         )
+
+    # point estimate text
     if pet_kwargs is not False:
         if density_kwargs is False:
-            point_y = xr.ones_like(point)
+            point_y = xr.full_like(point, 0.02)
         elif kind == "kde":
             point_density_diff = [
                 dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
             ]
             point_density_diff = ["kde_dim"] + point_density_diff
-            point_y = 0.04 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
+            point_y = 0.1 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
         elif kind == "ecdf":
             # ecdf max is always 1
-            point_y = xr.full_like(point, 0.04)
+            point_y = xr.full_like(point, 0.1)
         elif kind == "hist":
             point_density_diff = [
                 dim for dim in density.sel(plot_axis="histogram").dims if dim not in point.dims
@@ -373,7 +380,7 @@ def plot_dist(
             point_density_diff = [
                 f"hist_dim_{var_name}" for var_name in density.data_vars
             ] + point_density_diff
-            point_y = 0.04 * density.sel(plot_axis="histogram", drop=True).max(
+            point_y = 0.1 * density.sel(plot_axis="histogram", drop=True).max(
                 dim=point_density_diff
             )
 
@@ -382,7 +389,7 @@ def plot_dist(
             plot_collection, aes_map, "point_estimate_text", sample_dims
         )
         if "color" not in pet_aes:
-            pet_kwargs.setdefault("color", "gray")
+            pet_kwargs.setdefault("color", "#4c4c4c")
         pet_kwargs.setdefault("horizontal_align", "center")
         pet_kwargs.setdefault("point_label", "x")
         plot_collection.map(
