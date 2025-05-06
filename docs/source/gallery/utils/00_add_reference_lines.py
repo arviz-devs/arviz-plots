@@ -2,6 +2,12 @@
 # Add Reference Lines
 
 Draw reference lines on plots to highlight specific thresholds, targets, or important values.
+
+---
+
+:::{seealso}
+API Documentation: {func}`~arviz_plots.add_reference_lines`
+:::
 """
 
 import xarray as xr
