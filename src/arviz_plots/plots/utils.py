@@ -194,8 +194,6 @@ def add_reference_lines(
         A dictionary mapping aesthetics to their corresponding variables.
     plot_kwargs : dict, optional
         A dictionary containing the plot arguments.
-    backend : str, optional
-        The backend used for plotting.
     sample_dims : list, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -221,7 +219,7 @@ def add_reference_lines(
         >>>     kind="ecdf",
         >>>     var_names=["mu"],
         >>> )
-        >>> add_reference_lines(pc, references=[0, 5], aes_map={"ref_line": {"color", "linestyle"}})
+        >>> add_reference_lines(pc, references=[0, 5])
     """
     if plot_kwargs is None:
         plot_kwargs = {}
