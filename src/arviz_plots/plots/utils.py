@@ -195,6 +195,8 @@ def add_reference_lines(
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs`.
 
+        The default is to use an "overlay" aesthetic for all elements.
+
         It is possible to request aesthetics without mappings defined in the
         provided `plot_collection`. In those cases, a mapping of "ref_line_dim" to the requested
         aesthetic will be automatically added.
@@ -239,6 +241,10 @@ def add_reference_lines(
         plot_kwargs = {}
     if aes_map is None:
         aes_map = {}
+    else:
+        aes_map = aes_map.copy()
+    aes_map["ref_line"] = aes_map.get("ref_line", ["overlay"])
+    aes_map["ref_text"] = aes_map.get("ref_text", ["overlay"])
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -250,9 +256,7 @@ def add_reference_lines(
 
     ref_ds = references_to_dataset(references, plot_collection.data, sample_dims=sample_dims)
     requested_aes = (
-        set(aes_map.get("ref_line", []))
-        .union(aes_map.get("ref_text", []))
-        .difference(plot_collection.aes_set)
+        set(aes_map["ref_line"]).union(aes_map["ref_text"]).difference(plot_collection.aes_set)
     )
     if ref_dim in ref_ds.dims:
         for aes_key in requested_aes:
