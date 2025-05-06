@@ -10,12 +10,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import (
-    add_reference_lines,
-    filter_aes,
-    process_group_variables_coords,
-    set_wrap_layout,
-)
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import ecdf_line, hist, line_xy
 
 
@@ -29,7 +24,6 @@ def plot_ppc_dist(
     sample_dims=None,
     kind=None,
     num_samples=50,
-    references=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -70,8 +64,6 @@ def plot_ppc_dist(
         Defaults to ``rcParams["plot.density_kind"]``
     num_samples : int, optional
         Number of samples to plot. Defaults to 100.
-    references : int, float, list, tuple
-        Value(s) used as reference points representing prior knowledge.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
@@ -314,15 +306,5 @@ def plot_ppc_dist(
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,
             )
-    if references is not None:
-        plot_collection = add_reference_lines(
-            plot_collection=plot_collection,
-            references=references,
-            orientation="vertical",
-            aes_map=aes_map,
-            plot_kwargs=plot_kwargs,
-            backend=backend,
-            sample_dims=pp_dims + ["sample"],
-        )
 
     return plot_collection

@@ -439,9 +439,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     # omitting hist for the moment as I get [hist-none] - ValueError: artist_kws not empty
     @pytest.mark.parametrize("kind", ["kde", "ecdf"])
-    @pytest.mark.parametrize("references", [None, (0, 10)])
-    def test_plot_ppc_dist(self, datatree, kind, references, backend):
-        pc = plot_ppc_dist(datatree, kind=kind, references=references, backend=backend)
+    def test_plot_ppc_dist(self, datatree, kind, backend):
+        pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
         assert "chart" in pc.viz.data_vars
         assert pc.aes["y"]
         assert kind in pc.viz["y"]

@@ -22,6 +22,7 @@ dir_title_map = {
     "model_comparison": "Model Comparison",
     "sbc": "Simulation Based Calibration",
     "mixed": "Mixed plots",
+    "utils": "Helper Functions",
 }
 
 toctree_template = """
