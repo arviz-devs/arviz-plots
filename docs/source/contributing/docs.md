@@ -8,7 +8,7 @@ In general the process should follow these three steps in this order:
 
 ```console
 tox -e cleandocs
-tox -e docs
+tox -e docs # or tox -e nogallerydocs
 tox -e viewdocs
 ```
 
@@ -24,6 +24,16 @@ to skip the clean step in order to achieve faster builds. Moreover, if the docum
 page is already open on the browser, there is no need for the viewdocs job because
 the documentation is always rendered on the same path; refreshing the page from the browser
 is enough.
+
+The example gallery requires processing the python scripts in order to execute each
+once per backend in order to generate the png or html+javascript preview.
+Therefore, it is the most time consuming step of generating the documentation.
+As very often we'll work on the part of the docs not related to the example gallery,
+the command `tox -e nogallerydocs` will generate the documentation without the example gallery,
+which allows for much faster iteration when writing documentation.
+This also means for example the `minigallery` directive in the docstrings won't work,
+and sphinx will output warnings about it when using this option.
+
 
 ## How to add examples to the gallery
 Examples in the gallery are written in the form of python scripts.

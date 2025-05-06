@@ -28,6 +28,17 @@ release = version
 
 sys.path.insert(0, os.path.abspath("../sphinxext"))
 
+templates_path = ["_templates"]
+exclude_patterns = [
+    "Thumbs.db",
+    ".DS_Store",
+    ".ipynb_checkpoints",
+    "**/*.template.rst",
+    "**/*.part.rst",
+    "**/*.part.md",
+]
+skip_gallery = os.environ.get("ARVIZDOCS_NOGALLERY", False)
+
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
@@ -41,19 +52,12 @@ extensions = [
     "jupyter_sphinx",
     "matplotlib.sphinxext.plot_directive",
     "bokeh.sphinxext.bokeh_plot",
-    "gallery_generator",
 ]
+if skip_gallery:
+    exclude_patterns.append("gallery/*")
+else:
+    extensions.append("gallery_generator")
 
-templates_path = ["_templates"]
-
-exclude_patterns = [
-    "Thumbs.db",
-    ".DS_Store",
-    ".ipynb_checkpoints",
-    "**/*.template.rst",
-    "**/*.part.rst",
-    "**/*.part.md",
-]
 suppress_warnings = ["mystnb.unknown_mime_type"]
 
 backend_modules = ("none", "matplotlib", "bokeh", "plotly")
@@ -113,6 +117,7 @@ numpydoc_xref_aliases = {
 
 intersphinx_mapping = {
     "arviz_org": ("https://www.arviz.org/en/latest/", None),
+    "arviz-base": ("https://arviz-base.readthedocs.io/en/latest/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),

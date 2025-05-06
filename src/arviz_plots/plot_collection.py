@@ -1,5 +1,5 @@
 # pylint: disable=too-many-lines, too-many-public-methods
-"""Plot collection classes."""
+"""Plot collection class."""
 import warnings
 from importlib import import_module
 
@@ -170,6 +170,10 @@ class PlotCollection:
     ----------
     viz : DataTree
     aes : DataTree
+
+    See Also
+    --------
+    arviz_plots.PlotMatrix : Pairwise facetting manager
     """
 
     def __init__(self, data, viz_dt, aes_dt=None, aes=None, backend=None, **kwargs):
@@ -264,13 +268,13 @@ class PlotCollection:
         otherwise everything is stored in the home group.
         The `viz` DataTree always contains the following leaf variables:
 
-        * ``chart`` (always on the home group): Scalar object containing the highest level
+        * ``chart`` (always on the home group) -> Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
-        * ``plot``: :term:`Plot` objects in this :term:`chart`.
+        * ``plot`` -> :term:`Plot` objects in this :term:`chart`.
           Generally, these are the target where :term:`artists <artist>` are added,
           although it is possible to have artists targetting the chart itself.
-        * ``row``: Integer row indicator
-        * ``col``: Integer column indicator
+        * ``row`` -> Integer row indicator
+        * ``col`` -> Integer column indicator
 
         Plus all the artists that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotCollection.map` for more details.
@@ -594,7 +598,12 @@ class PlotCollection:
 
     @property
     def base_loop_dims(self):
-        """Dimensions over which one should always loop over when using this PlotCollection."""
+        """Dimensions over which one should loop for facetting when using this PlotCollection.
+
+        When adding specific artists, we might need to loop over more dimensions than these ones
+        due to the defined aesthetic mappings.
+
+        """
         if "plot" in self.viz.data_vars:
             return set(self.viz["plot"].dims)
         return set(dim for da in self.viz.children.values() for dim in da["plot"].dims)
@@ -986,11 +995,6 @@ class PlotCollection:
             xarray object so dimensions with mapped asethetics not being present is not an issue.
             However, using Datasets that don't contain all the variable names in `data`
             will raise an error.
-
-
-        See Also
-        --------
-        map_over_plots
         """
         if coords is None:
             coords = {}
@@ -1053,7 +1057,11 @@ class PlotCollection:
             if store_artist:
                 if np.size(aux_artist) == 1:
                     aux_artist = np.squeeze(aux_artist)
-                self.viz[var_name][fun_label].loc[sel] = aux_artist
+                self.store_in_artist_da(aux_artist, fun_label, var_name, sel)
+
+    def store_in_artist_da(self, aux_artist, fun_label, var_name, sel):
+        """Store the artist object of `var_name`+`sel` combination in `fun_label` variable."""
+        self.viz[var_name][fun_label].loc[sel] = aux_artist
 
     def add_legend(
         self,
