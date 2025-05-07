@@ -337,6 +337,13 @@ class PlotCollection:
         else:
             self.viz["plot"].item()
 
+    def savefig(self, *args, **kwargs):
+        """Call the backend function to save this :term:`chart`."""
+        if "chart" not in self.viz:
+            raise ValueError("No plot found to be saved")
+        plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
+        plot_bknd.savefig(self.viz["chart"].item(), *args, **kwargs)
+
     def generate_aes_dt(self, aes=None, **kwargs):
         """Generate the aesthetic mappings.
 

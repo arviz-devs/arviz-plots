@@ -167,6 +167,21 @@ def show(chart):  # pylint: disable=unused-argument
     _show()
 
 
+def savefig(chart, filename, **kwargs):
+    """Save the chart to a file.
+
+    Parameters
+    ----------
+    chart : `~matplotlib.figure.Figure`
+        The chart to save.
+    filename : str
+        The name of the file to save the chart to.
+    **kwargs : dict, optional
+        Additional keyword arguments passed to `matplotlib.pyplot.savefig`.
+    """
+    chart.savefig(filename, **kwargs)
+
+
 def get_figsize(plot_collection):
     """Get the size of the :term:`chart` element and its units."""
     return plot_collection.viz["chart"].item().get_size_inches(), "inches"
