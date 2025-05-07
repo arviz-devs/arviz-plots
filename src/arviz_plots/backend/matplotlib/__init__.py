@@ -276,7 +276,6 @@ def hist(
 ):
     """Interface to matplotlib for a histogram bar plot."""
     artist_kws.setdefault("zorder", 2)
-    widths = np.asarray(r_e) - np.asarray(l_e)
     if np.any(bottom != 0):
         height = y - bottom
     else:
@@ -288,23 +287,19 @@ def hist(
             edgecolor = color
 
     step_hist = artist_kws.pop("step", False)
-    kwargs = {"color": facecolor, "bottom": bottom, "edgecolor": edgecolor, "alpha": alpha}
     if step_hist:
-        # creating other kwargs for step plot,
-        # because bottom and edgecolor attributes are not supported
-        kwargs_step = {"color": facecolor, "alpha": alpha}
+        kwargs = {"color": facecolor, "alpha": alpha}
         return target.step(
             np.r_[l_e, r_e[-1]],
-            np.r_[y, y[-1]],
+            np.r_[height, height[-1]],
             where="post",
-            **_filter_kwargs(kwargs_step, None, artist_kws),
+            **_filter_kwargs(kwargs, None, artist_kws),
         )
-
-    return target.bar(
-        l_e,
-        height,
-        width=widths,
-        align="edge",
+    kwargs = {"color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
+    return target.fill_between(
+        np.r_[l_e, r_e[-1]],
+        np.r_[height, height[-1]],
+        step="post",
         **_filter_kwargs(kwargs, None, artist_kws),
     )
 
