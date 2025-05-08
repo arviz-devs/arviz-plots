@@ -167,19 +167,19 @@ def show(chart):  # pylint: disable=unused-argument
     _show()
 
 
-def savefig(chart, filename, **kwargs):
+def savefig(chart, path, **kwargs):
     """Save the chart to a file.
 
     Parameters
     ----------
     chart : `~matplotlib.figure.Figure`
         The chart to save.
-    filename : str
-        The name of the file to save the chart to.
+    path : pathlib.Path
+        Path to the file where the chart will be saved.
     **kwargs : dict, optional
         Additional keyword arguments passed to `matplotlib.pyplot.savefig`.
     """
-    chart.savefig(filename, **kwargs)
+    chart.savefig(path, **kwargs)
 
 
 def get_figsize(plot_collection):

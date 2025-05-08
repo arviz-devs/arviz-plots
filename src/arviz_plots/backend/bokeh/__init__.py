@@ -177,29 +177,29 @@ def show(chart):
     _show(chart)
 
 
-def savefig(chart, filename, **kwargs):
+def savefig(chart, path, **kwargs):
     """Save the chart to a file.
 
     Parameters
     ----------
     chart : bokeh.plotting.Figure
         The chart to save.
-    filename : str
-        The name of the file to save the chart to.
+    filename : pathlib.Path
+        The path to the file where the chart will be saved.
     **kwargs : dict, optional
         Additional keyword arguments passed to the export or
         save function depending on the file extension.
     """
-    if filename.endswith(".png"):
-        export_png(chart, filename=filename, **kwargs)
-    elif filename.endswith(".svg"):
-        export_svg(chart, filename=filename, **kwargs)
-    elif filename.endswith(".html"):
-        output_file(filename)
+    if path.suffix == ".png":
+        export_png(chart, filename=path, **kwargs)
+    elif path.suffix == ".svg":
+        export_svg(chart, filename=path, **kwargs)
+    elif path.suffix == ".html":
+        output_file(path)
         save(chart, **kwargs)
     else:
         raise ValueError(
-            f"Unsupported file format: {filename}. Supported formats are .png, .svg, and .html."
+            f"Unsupported file format: {path}. Supported formats are .png, .svg, and .html."
         )
 
 

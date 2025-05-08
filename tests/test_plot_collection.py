@@ -315,9 +315,9 @@ class TestSaveFigures:
 
         if backend == "none":
             with pytest.raises(TypeError):
-                pc.savefig(str(file_path))
+                pc.savefig(file_path)
         else:
-            pc.savefig(str(file_path))
+            pc.savefig(file_path)
             assert file_path.exists()
             assert file_path.stat().st_size > 0
 

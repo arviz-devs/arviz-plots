@@ -110,15 +110,15 @@ def show(chart):
     raise TypeError("'none' backend objects can't be shown.")
 
 
-def savefig(chart, filename, **kwargs):
+def savefig(chart, path, **kwargs):
     """Show this :term:`chart`.
 
     Parameters
     ----------
     chart : chart_type
         The chart to save.
-    filename : str
-        The name of the file to save the chart to.
+    path : pathlib.Path
+        The path to save the chart to.
     **kwargs : dict, optional
         Additional keyword arguments.
     """
