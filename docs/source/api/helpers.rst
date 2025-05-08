@@ -13,4 +13,14 @@ An introductory guide to the ``plot_...`` functions is also available at :ref:`p
    :toctree: generated/
 
    add_reference_lines
-   style
+
+Style
+...............
+
+.. autosummary::
+   :toctree: generated/
+
+   style.available
+   style.get
+   style.use 
+
