@@ -39,20 +39,20 @@ class Testfaceting:
     def test_wrap_variable(self, dataset, backend):
         pc = PlotCollection.wrap(dataset, backend=backend, cols=["__variable__", "group"])
         assert "plot" not in pc.viz.data_vars
-        assert all(f"/{var_name}" in pc.viz.groups for var_name in ("mu", "theta", "eta"))
-        assert all("plot" in pc.viz[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.viz["mu"]["plot"].size == 1
-        assert pc.viz["theta"]["plot"].size == 1
-        assert pc.viz["eta"]["plot"].size == 4
+        assert "/plot" in pc.viz.groups
+        assert all(var_name in pc.viz["plot"].data_vars for var_name in ("mu", "theta", "eta"))
+        assert pc.viz["plot"]["mu"].size == 1
+        assert pc.viz["plot"]["theta"].size == 1
+        assert pc.viz["plot"]["eta"].size == 4
 
     def test_wrap_only_variable(self, dataset, backend):
         pc = PlotCollection.wrap(dataset, backend=backend, cols=["__variable__"])
         assert "plot" not in pc.viz.data_vars
-        assert all(f"/{var_name}" in pc.viz.groups for var_name in ("mu", "theta", "eta"))
-        assert all("plot" in pc.viz[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.viz["mu"]["plot"].size == 1
-        assert pc.viz["theta"]["plot"].size == 1
-        assert pc.viz["eta"]["plot"].size == 1
+        assert "/plot" not in pc.viz.groups
+        assert all(var_name in pc.viz["plot"].data_vars for var_name in ("mu", "theta", "eta"))
+        assert pc.viz["plot"]["mu"].size == 1
+        assert pc.viz["plot"]["theta"].size == 1
+        assert pc.viz["plot"]["eta"].size == 1
 
     def test_grid(self, dataset, backend):
         pc = PlotCollection.grid(
@@ -89,8 +89,8 @@ class Testfaceting:
             dataset[["theta", "eta"]], backend=backend, cols=["hierarchy"], rows=["__variable__"]
         )
         assert "plot" not in pc.viz.data_vars
-        assert all(f"/{var_name}" in pc.viz.groups for var_name in ("theta", "eta"))
-        assert all("plot" in pc.viz[var_name].data_vars for var_name in ("theta", "eta"))
+        assert "/plot" not in pc.viz.groups
+        assert all(var_name in pc.viz["plot"].data_vars for var_name in ("theta", "eta"))
 
 
 def test_wrap_missing_dim(dataset):
@@ -106,74 +106,74 @@ def test_grid_repeated_dim(dataset):
 class TestAesthetics:
     def test_no_aes(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt()
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert not any(pc.aes[var_name] for var_name in ("mu", "theta", "eta"))
+        aes_dt = pc.generate_aes_dt()
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert not any(aes_dt[var_name] for var_name in ("mu", "theta", "eta"))
 
     def test_single_1d_aes_neutral(self, dataset):
         pc = PlotCollection(dataset, DataTree())
         colors = np.arange(8)
-        pc.generate_aes_dt(aes={"color": ["hierarchy"]}, color=colors)
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("color" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["color"].size == 1
-        assert pc.aes["mu"]["color"].item() == 0
-        assert pc.aes["theta"]["color"].size == 7
-        assert all(pc.aes["theta"]["color"].to_numpy() == colors[1:])
-        assert pc.aes["eta"]["color"].size == 7
-        assert all(pc.aes["eta"]["color"].to_numpy() == colors[1:])
+        aes_dt = pc.generate_aes_dt(aes={"color": ["hierarchy"]}, color=colors)
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("color" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["color"].size == 1
+        assert aes_dt["mu"]["color"].item() == 0
+        assert aes_dt["theta"]["color"].size == 7
+        assert all(aes_dt["theta"]["color"].to_numpy() == colors[1:])
+        assert aes_dt["eta"]["color"].size == 7
+        assert all(aes_dt["eta"]["color"].to_numpy() == colors[1:])
 
     def test_single_1d_aes_no_neutral(self, dataset):
         pc = PlotCollection(dataset, DataTree())
         colors = np.arange(3)
         var_names = ("mu", "theta", "eta")
-        pc.generate_aes_dt(aes={"color": ["chain"]}, color=colors)
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in var_names)
-        assert all("color" in pc.aes[var_name].data_vars for var_name in var_names)
-        assert all(pc.aes[var_name]["color"].size == 3 for var_name in var_names)
-        assert all(all(pc.aes[var_name]["color"].to_numpy() == colors) for var_name in var_names)
+        aes_dt = pc.generate_aes_dt(aes={"color": ["chain"]}, color=colors)
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in var_names)
+        assert all("color" in aes_dt[var_name].data_vars for var_name in var_names)
+        assert all(aes_dt[var_name]["color"].size == 3 for var_name in var_names)
+        assert all(all(aes_dt[var_name]["color"].to_numpy() == colors) for var_name in var_names)
 
     def test_single_1d_aes_cycle(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(aes={"color": ["hierarchy"]}, color=list(range(3)))
+        aes_dt = pc.generate_aes_dt(aes={"color": ["hierarchy"]}, color=list(range(3)))
         color_cycle = np.array([1, 2, 1, 2, 1, 2, 1])
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("color" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["color"].size == 1
-        assert pc.aes["mu"]["color"].item() == 0
-        assert pc.aes["theta"]["color"].size == 7
-        assert np.allclose(pc.aes["theta"]["color"], color_cycle)
-        assert pc.aes["eta"]["color"].size == 7
-        assert np.allclose(pc.aes["eta"]["color"], color_cycle)
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("color" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["color"].size == 1
+        assert aes_dt["mu"]["color"].item() == 0
+        assert aes_dt["theta"]["color"].size == 7
+        assert np.allclose(aes_dt["theta"]["color"], color_cycle)
+        assert aes_dt["eta"]["color"].size == 7
+        assert np.allclose(aes_dt["eta"]["color"], color_cycle)
 
     def test_single_1d_aes_neutral_element_in_cycle(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(aes={"color": ["hierarchy"]}, color=[0, 0, 1, 2])
+        aes_dt = pc.generate_aes_dt(aes={"color": ["hierarchy"]}, color=[0, 0, 1, 2])
         color_cycle = np.array([0, 1, 2, 0, 1, 2, 0])
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("color" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["color"].size == 1
-        assert pc.aes["mu"]["color"].item() == 0
-        assert pc.aes["theta"]["color"].size == 7
-        assert np.allclose(pc.aes["theta"]["color"], color_cycle)
-        assert pc.aes["theta"]["color"].max() == 2
-        assert pc.aes["eta"]["color"].size == 7
-        assert np.allclose(pc.aes["eta"]["color"], color_cycle)
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("color" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["color"].size == 1
+        assert aes_dt["mu"]["color"].item() == 0
+        assert aes_dt["theta"]["color"].size == 7
+        assert np.allclose(aes_dt["theta"]["color"], color_cycle)
+        assert aes_dt["theta"]["color"].max() == 2
+        assert aes_dt["eta"]["color"].size == 7
+        assert np.allclose(aes_dt["eta"]["color"], color_cycle)
 
     def test_single_1d_aes_variable(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(aes={"color": ["__variable__"]}, color=list(range(3)))
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("color" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert all(pc.aes[var_name]["color"].size == 1 for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["color"].item() == 0
-        assert pc.aes["theta"]["color"].item() == 1
-        assert pc.aes["eta"]["color"].item() == 2
+        aes_dt = pc.generate_aes_dt(aes={"color": ["__variable__"]}, color=list(range(3)))
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("color" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert all(aes_dt[var_name]["color"].size == 1 for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["color"].item() == 0
+        assert aes_dt["theta"]["color"].item() == 1
+        assert aes_dt["eta"]["color"].item() == 2
 
     def test_multiple_1d_aes(self, dataset):
         aes_list = ("color", "linestyle", "y")
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(
+        aes_dt = pc.generate_aes_dt(
             aes={
                 "color": ["hierarchy"],
                 "linestyle": ["group"],
@@ -183,60 +183,60 @@ class TestAesthetics:
             y=np.arange(1 + 7 + 7),
             linestyle=["-", "-.", ":", "--"],
         )
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
         assert all(
-            all(aes in pc.aes[var_name].data_vars for aes in aes_list)
+            all(aes in aes_dt[var_name].data_vars for aes in aes_list)
             for var_name in ("mu", "theta", "eta")
         )
-        assert all(pc.aes["mu"][aes].size == 1 for aes in aes_list)
-        assert pc.aes["mu"]["y"] == 0
-        assert pc.aes["theta"]["color"].size == 7
-        assert pc.aes["theta"]["y"].size == 7
-        assert pc.aes["theta"]["y"].min() == 1
-        assert pc.aes["theta"]["y"].max() == 7
-        assert pc.aes["theta"]["linestyle"].size == 1
-        assert pc.aes["eta"]["color"].size == 7
-        assert pc.aes["eta"]["y"].size == 7
-        assert pc.aes["eta"]["y"].min() == 8
-        assert pc.aes["eta"]["y"].max() == 14
-        assert pc.aes["eta"]["linestyle"].size == 4
+        assert all(aes_dt["mu"][aes].size == 1 for aes in aes_list)
+        assert aes_dt["mu"]["y"] == 0
+        assert aes_dt["theta"]["color"].size == 7
+        assert aes_dt["theta"]["y"].size == 7
+        assert aes_dt["theta"]["y"].min() == 1
+        assert aes_dt["theta"]["y"].max() == 7
+        assert aes_dt["theta"]["linestyle"].size == 1
+        assert aes_dt["eta"]["color"].size == 7
+        assert aes_dt["eta"]["y"].size == 7
+        assert aes_dt["eta"]["y"].min() == 8
+        assert aes_dt["eta"]["y"].max() == 14
+        assert aes_dt["eta"]["linestyle"].size == 4
 
     def test_single_2d_aes(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(
+        aes_dt = pc.generate_aes_dt(
             aes={"color": ["group", "hierarchy"]},
             color=np.arange(7 * 4 + 1),
         )
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("color" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["color"].size == 1
-        assert pc.aes["theta"]["color"].size == 1
-        assert all(pc.aes[var_name]["color"] == 0 for var_name in ("mu", "theta"))
-        assert pc.aes["eta"]["color"].dims == ("group", "hierarchy")
-        assert pc.aes["eta"]["color"].sizes["group"] == 4
-        assert pc.aes["eta"]["color"].sizes["hierarchy"] == 7
-        assert pc.aes["eta"]["color"].min() == 1
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("color" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["color"].size == 1
+        assert aes_dt["theta"]["color"].size == 1
+        assert all(aes_dt[var_name]["color"] == 0 for var_name in ("mu", "theta"))
+        assert aes_dt["eta"]["color"].dims == ("group", "hierarchy")
+        assert aes_dt["eta"]["color"].sizes["group"] == 4
+        assert aes_dt["eta"]["color"].sizes["hierarchy"] == 7
+        assert aes_dt["eta"]["color"].min() == 1
 
     def test_single_3d_aes(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(
+        aes_dt = pc.generate_aes_dt(
             aes={"color": ["group", "chain", "hierarchy"]},
             color=np.arange(7 * 4 * 3 + 1),
         )
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("color" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["color"].size == 1
-        assert pc.aes["theta"]["color"].size == 1
-        assert all(pc.aes[var_name]["color"] == 0 for var_name in ("mu", "theta"))
-        assert pc.aes["eta"]["color"].dims == ("group", "chain", "hierarchy")
-        assert pc.aes["eta"]["color"].sizes["group"] == 4
-        assert pc.aes["eta"]["color"].sizes["chain"] == 3
-        assert pc.aes["eta"]["color"].sizes["hierarchy"] == 7
-        assert pc.aes["eta"]["color"].min() == 1
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("color" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["color"].size == 1
+        assert aes_dt["theta"]["color"].size == 1
+        assert all(aes_dt[var_name]["color"] == 0 for var_name in ("mu", "theta"))
+        assert aes_dt["eta"]["color"].dims == ("group", "chain", "hierarchy")
+        assert aes_dt["eta"]["color"].sizes["group"] == 4
+        assert aes_dt["eta"]["color"].sizes["chain"] == 3
+        assert aes_dt["eta"]["color"].sizes["hierarchy"] == 7
+        assert aes_dt["eta"]["color"].min() == 1
 
     def test_multiple_aes_mix(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(
+        aes_dt = pc.generate_aes_dt(
             aes={
                 "color": ["group", "chain", "hierarchy"],
                 "linestyle": ["chain", "hierarchy"],
@@ -245,49 +245,49 @@ class TestAesthetics:
             color=np.arange(7 * 4 * 3 + 1),
             linestyle=["-", "--", ":"],
         )
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("y" not in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert all("color" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["color"].size == 1
-        assert pc.aes["theta"]["color"].size == 1
-        assert all(pc.aes[var_name]["color"] == 0 for var_name in ("mu", "theta"))
-        assert pc.aes["eta"]["color"].dims == ("group", "chain", "hierarchy")
-        assert pc.aes["eta"]["color"].sizes["group"] == 4
-        assert pc.aes["eta"]["color"].sizes["chain"] == 3
-        assert pc.aes["eta"]["color"].sizes["hierarchy"] == 7
-        assert pc.aes["eta"]["color"].min() == 1
-        assert all("linestyle" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["linestyle"].size == 1
-        assert pc.aes["mu"]["linestyle"] == "-"
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("y" not in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert all("color" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["color"].size == 1
+        assert aes_dt["theta"]["color"].size == 1
+        assert all(aes_dt[var_name]["color"] == 0 for var_name in ("mu", "theta"))
+        assert aes_dt["eta"]["color"].dims == ("group", "chain", "hierarchy")
+        assert aes_dt["eta"]["color"].sizes["group"] == 4
+        assert aes_dt["eta"]["color"].sizes["chain"] == 3
+        assert aes_dt["eta"]["color"].sizes["hierarchy"] == 7
+        assert aes_dt["eta"]["color"].min() == 1
+        assert all("linestyle" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["linestyle"].size == 1
+        assert aes_dt["mu"]["linestyle"] == "-"
         assert all(
-            pc.aes[var_name]["linestyle"].dims == ("chain", "hierarchy")
+            aes_dt[var_name]["linestyle"].dims == ("chain", "hierarchy")
             for var_name in ("theta", "eta")
         )
         assert all(
-            pc.aes[var_name]["linestyle"].sizes["chain"] == 3 for var_name in ("theta", "eta")
+            aes_dt[var_name]["linestyle"].sizes["chain"] == 3 for var_name in ("theta", "eta")
         )
         assert all(
-            pc.aes[var_name]["linestyle"].sizes["hierarchy"] == 7 for var_name in ("theta", "eta")
+            aes_dt[var_name]["linestyle"].sizes["hierarchy"] == 7 for var_name in ("theta", "eta")
         )
-        assert all("-" not in pc.aes[var_name]["linestyle"] for var_name in ("theta", "eta"))
+        assert all("-" not in aes_dt[var_name]["linestyle"] for var_name in ("theta", "eta"))
 
     def test_aes_variable_all_dims(self, dataset):
         pc = PlotCollection(dataset, DataTree())
-        pc.generate_aes_dt(
+        aes_dt = pc.generate_aes_dt(
             aes={"y": ["__variable__", "chain", "group", "hierarchy"]},
             y=np.arange(3 + 3 * 7 + 3 * 7 * 4),
         )
-        assert all(f"/{var_name}" in pc.aes.groups for var_name in ("mu", "theta", "eta"))
-        assert all("y" in pc.aes[var_name].data_vars for var_name in ("mu", "theta", "eta"))
-        assert pc.aes["mu"]["y"].dims == ("chain",)
-        assert pc.aes["mu"]["y"].min() == 0
-        assert pc.aes["mu"]["y"].max() == 2
-        assert pc.aes["theta"]["y"].dims == ("chain", "hierarchy")
-        assert pc.aes["theta"]["y"].min() == 3
-        assert pc.aes["theta"]["y"].max() == (3 + 3 * 7 - 1)
-        assert pc.aes["eta"]["y"].dims == ("chain", "group", "hierarchy")
-        assert pc.aes["eta"]["y"].min() == (3 + 3 * 7)
-        assert pc.aes["eta"]["y"].max() == (3 + 3 * 7 + 3 * 7 * 4 - 1)
+        assert all(f"/{var_name}" in aes_dt.groups for var_name in ("mu", "theta", "eta"))
+        assert all("y" in aes_dt[var_name].data_vars for var_name in ("mu", "theta", "eta"))
+        assert aes_dt["mu"]["y"].dims == ("chain",)
+        assert aes_dt["mu"]["y"].min() == 0
+        assert aes_dt["mu"]["y"].max() == 2
+        assert aes_dt["theta"]["y"].dims == ("chain", "hierarchy")
+        assert aes_dt["theta"]["y"].min() == 3
+        assert aes_dt["theta"]["y"].max() == (3 + 3 * 7 - 1)
+        assert aes_dt["eta"]["y"].dims == ("chain", "group", "hierarchy")
+        assert aes_dt["eta"]["y"].min() == (3 + 3 * 7)
+        assert aes_dt["eta"]["y"].max() == (3 + 3 * 7 + 3 * 7 * 4 - 1)
 
 
 class TestSaveFigures:
@@ -333,9 +333,7 @@ def generate_plot_collection1(data):
     viz_dt = DataTree.from_dict(
         {
             "/": Dataset({"chart": "chart"}),
-            "mu": Dataset({"plot": "mu_plot"}),
-            "theta": Dataset({"plot": "theta_plot"}),
-            "eta": Dataset({"plot": "eta_plot"}),
+            "plot": Dataset({"mu": "mu_plot", "theta": "theta_plot", "eta": "eta_plot"}),
         }
     )
     theta_color = [f"theta_C{i}" for i in range(7)]
@@ -361,10 +359,15 @@ def generate_plot_collection2():
     viz_dt = DataTree.from_dict(
         {
             "/": Dataset({"chart": "chart"}),
-            "mu": Dataset({"plot": "mu_plot"}),
-            "tau": Dataset({"plot": "tau_plot"}),
-            "theta": Dataset({"plot": (("school",), theta_plot)}),
-            "theta_t": Dataset({"plot": (("school",), theta_t_plot)}),
+            "plot": Dataset(
+                {
+                    "mu": "mu_plot",
+                    "tau": "tau_plot",
+                    "theta": (("school",), theta_plot),
+                    "theta_t": (("school",), theta_t_plot),
+                },
+                coords=coords,
+            ),
         }
     )
     theta_color = [f"theta_C{i}" for i in range(8)]
@@ -505,10 +508,10 @@ class TestMap:
         assert [kwargs["color"] for kwargs in kwarg_list] == ["mu_C0"] + theta_color + eta_color
         assert all("chain" in da.dims for da in da_list)
         assert "group" in da_list[-1].dims
-        assert all("mean" in pc.viz[var_name] for var_name in dataset.data_vars)
-        assert pc.viz["mu"]["mean"].dims == ()
-        assert pc.viz["theta"]["mean"].dims == ("hierarchy",)
-        assert pc.viz["eta"]["mean"].dims == ("hierarchy",)
+        assert all(var_name in pc.viz["mean"].data_vars for var_name in dataset.data_vars)
+        assert pc.viz["mean"]["mu"].dims == ()
+        assert pc.viz["mean"]["theta"].dims == ("hierarchy",)
+        assert pc.viz["mean"]["eta"].dims == ("hierarchy",)
 
     def test_map_ignore_aes(self, dataset):
         pc = generate_plot_collection1(dataset)
@@ -530,8 +533,8 @@ class TestMap:
         assert da_list[0].dims == ("chain", "draw")
         assert da_list[1].dims == ("chain", "draw", "hierarchy")
         assert da_list[2].dims == ("chain", "draw", "group", "hierarchy")
-        assert all("mean" in pc.viz[var_name] for var_name in dataset.data_vars)
-        assert all(pc.viz[var_name]["mean"].size == 1 for var_name in dataset.data_vars)
+        assert all(var_name in pc.viz["mean"].data_vars for var_name in dataset.data_vars)
+        assert all(pc.viz["mean"][var_name].size == 1 for var_name in dataset.data_vars)
 
     def test_map_subset_nostore(self, dataset):
         pc = generate_plot_collection1(dataset)
@@ -551,33 +554,7 @@ class TestMap:
         assert all(
             all(key in kwargs for key in ("var_name", "sel", "isel")) for kwargs in kwarg_list
         )
-        assert all("mean" not in pc.viz[var_name] for var_name in dataset.data_vars)
-
-    def test_map_over_plots(self, dataset):
-        pc = generate_plot_collection1(dataset)
-        theta_color = list(pc.aes.theta.color.values)
-        eta_color = list(pc.aes.eta.color.values)
-        da_list = []
-        target_list = []
-        kwarg_list = []
-        pc.map(
-            map_auxiliar,
-            "one_per_plot",
-            loop_data="plots",
-            da_list=da_list,
-            target_list=target_list,
-            kwarg_list=kwarg_list,
-        )
-        assert all(len(aux_list) == 3 for aux_list in (da_list, target_list, kwarg_list))
-        assert target_list == ["mu_plot", "theta_plot", "eta_plot"]
-        assert all("color" in kwargs for kwargs in kwarg_list)
-        assert kwarg_list[0]["color"] == "mu_C0"
-        assert list(kwarg_list[1]["color"]) == theta_color
-        assert list(kwarg_list[2]["color"]) == eta_color
-        xrt.assert_equal(dataset["mu"], da_list[0])
-        xrt.assert_equal(dataset["theta"], da_list[1])
-        xrt.assert_equal(dataset["eta"], da_list[2])
-        assert all("one_per_plot" in pc.viz[var_name] for var_name in dataset.data_vars)
+        assert "/mean" not in pc.viz.groups
 
     def test_map_nan(self):
         pc = generate_plot_collection2()
@@ -592,7 +569,7 @@ class TestMap:
             kwarg_list=kwarg_list,
         )
         assert all(len(aux_list) == 28 for aux_list in (da_list, target_list, kwarg_list))
-        theta_t_line = pc.viz["theta_t"]["mean"]
+        theta_t_line = pc.viz["mean"]["theta_t"]
         assert "model" in theta_t_line.dims
         assert "school" in theta_t_line.dims
         assert all(value is None for value in theta_t_line.sel(model="centered").values.flatten())

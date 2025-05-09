@@ -119,7 +119,7 @@ class PlotMatrix(PlotCollection):
         )
 
     @property
-    def base_loop_dims(self):
+    def facet_dims(self):
         """Facetting dimensions."""
         return set(dim for dim in self._facet_dims if dim != "__variable__")
 
@@ -182,17 +182,19 @@ class PlotMatrix(PlotCollection):
             selection_y=selection_y,
         )
 
-    def allocate_artist(self, fun_label, data, all_loop_dims, artist_dims=None, ignore_aes=None):
+    def allocate_artist(
+        self, fun_label, data, all_loop_dims, dim_to_idx=None, artist_dims=None, ignore_aes=None
+    ):
         """Allocate an artist in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
+        if dim_to_idx:
+            raise ValueError("dim_to_idx not supported yet for PlotMatrix")
         attrs = None
         if ignore_aes is not None:
             attrs = {"ignore_aes": ignore_aes}
         matrix_sizes = self.viz["plot"].sizes
-        aes_dims = [
-            dim for dim in data.dims if dim not in self.base_loop_dims and dim in all_loop_dims
-        ]
+        aes_dims = [dim for dim in data.dims if dim not in self.facet_dims and dim in all_loop_dims]
         artist_shape = (
             list(matrix_sizes.values())
             + [data.sizes[dim] for dim in aes_dims]
@@ -329,9 +331,9 @@ class PlotMatrix(PlotCollection):
         if not isinstance(data, xr.Dataset):
             raise TypeError("data argument must be an xarray.Dataset")
 
-        base_loop_dims = self.base_loop_dims
+        facet_dims = self.facet_dims
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
-        aes_dims = [dim for dim in all_loop_dims if dim not in base_loop_dims]
+        aes_dims = [dim for dim in all_loop_dims if dim not in facet_dims]
         # all variables must have all dimensions with aesthetics mapped to them
         # we only care about the dim+coord combinations
         aes_loopers = list(
@@ -342,7 +344,7 @@ class PlotMatrix(PlotCollection):
         )
         plotters = list(
             xarray_sel_iter(
-                loop_data, skip_dims={dim for dim in loop_data.dims if dim not in base_loop_dims}
+                loop_data, skip_dims={dim for dim in loop_data.dims if dim not in facet_dims}
             )
         )
         if store_artist:

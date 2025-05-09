@@ -211,21 +211,23 @@ def hist(
     r_e,
     target,
     *,
+    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
     edgecolor=unset,
+    alpha=unset,
     **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     if color is not unset:
         if facecolor is unset:
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
+    kwargs = {"step": step, "bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
     artist_element = {
         "function": "hist",
         "l_e": np.atleast_1d(l_e),
@@ -242,7 +244,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to a line plot."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "line",
         "x": np.atleast_1d(x),
@@ -285,7 +287,7 @@ def scatter(
         "width": width,
     }
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "scatter",
         "x": np.atleast_1d(x),
@@ -300,7 +302,7 @@ def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to a step line."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "step",
         "x": np.atleast_1d(x),
@@ -333,7 +335,7 @@ def text(
         "horizontal_align": horizontal_align,
     }
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "text",
         "x": np.atleast_1d(x),
@@ -356,7 +358,7 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
         y_top = y_top.item()
     kwargs = {"color": color, "alpha": alpha}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "fill_between_y",
         "x": x,
@@ -372,7 +374,7 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     """Interface to a vertical line spanning the whole axes."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "vline",
         "x": x,
@@ -386,7 +388,7 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     """Interface to a horizontal line spanning the whole axes."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "vline",
         "y": y,
@@ -411,7 +413,7 @@ def ciliney(
     """Interface to a line from y_bottom to y_top at given value of x."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "ciliney",
         "x": np.atleast_1d(x),
@@ -428,7 +430,7 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a title to a plot."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "title", "string": string, **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)
     return artist_element
@@ -438,7 +440,7 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a label to a plot's y axis."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "ylabel", "string": string, **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)
     return artist_element
@@ -448,7 +450,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a label to a plot's x axis."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xlabel", "string": string, **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)
     return artist_element
@@ -457,7 +459,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
 def xticks(ticks, labels, target, **artist_kws):
     """Interface to setting ticks and tick labels of the x axis."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xticks", "ticks": ticks, "labels": labels, **artist_kws}
     target.append(artist_element)
     return artist_element
@@ -466,7 +468,7 @@ def xticks(ticks, labels, target, **artist_kws):
 def yticks(ticks, labels, target, **artist_kws):
     """Interface to setting ticks and tick labels of the y axis."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "yticks", "ticks": ticks, "labels": labels, **artist_kws}
     target.append(artist_element)
     return artist_element
@@ -475,7 +477,7 @@ def yticks(ticks, labels, target, **artist_kws):
 def xlim(lims, target, **artist_kws):
     """Interface to setting limits for the x axis."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xlim", "lims": lims, **artist_kws}
     target.append(artist_element)
     return artist_element
@@ -484,7 +486,7 @@ def xlim(lims, target, **artist_kws):
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to setting size of tick labels."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     kwargs = {"axis": axis, "size": size, "color": color}
     artist_element = {"function": "ticklabel_props", **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)

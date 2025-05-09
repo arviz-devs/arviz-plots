@@ -377,16 +377,16 @@ def hist(
     r_e,
     target,
     *,
+    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
-    alpha=unset,
     facecolor=unset,
     edgecolor=unset,
+    alpha=unset,
     **artist_kws,
 ):
     """Interface to Plotly for a histogram plot."""
     artist_kws.setdefault("showlegend", False)
-    step_hist = artist_kws.pop("step", False)
     widths = np.asarray(r_e) - np.asarray(l_e)
     if np.any(bottom != 0):
         height = y - bottom
@@ -398,7 +398,7 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    if step_hist:
+    if step:
         step_x = np.repeat(np.concatenate(([l_e[0]], r_e)), 2)[1:-1]
         step_y = np.repeat(np.concatenate(([0], height)), 2)
         hist_object = go.Scatter(

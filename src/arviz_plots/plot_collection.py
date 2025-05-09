@@ -272,7 +272,7 @@ class PlotCollection:
         self._kwargs = kwargs
 
         if self._aes_dt is None:
-            self.generate_aes_dt()
+            self._aes_dt = self.generate_aes_dt()
 
     @property
     def aes(self):
@@ -309,8 +309,10 @@ class PlotCollection:
     def viz(self):
         """Information about the visual elements in the plot as a DataTree.
 
-        If relevant, the variable names in the input Dataset are set as groups,
-        otherwise everything is stored in the home group.
+        Plot elements like :term:`artists`, :term:`plots` and the :term:`chart`
+        are stored at the top level, if possible directly as DataArrays,
+        otherwise as groups whose variables are variable names in the input
+        Dataset.
         The `viz` DataTree always contains the following leaf variables:
 
         * ``chart`` (always on the home group) -> Scalar object containing the highest level
@@ -321,7 +323,6 @@ class PlotCollection:
         * ``row`` -> Integer row indicator
         * ``col`` -> Integer column indicator
 
-        Plus all the artists that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotCollection.map` for more details.
         """
         if self.coords is None:
@@ -396,14 +397,14 @@ class PlotCollection:
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         plot_bknd.savefig(self.viz["chart"].item(), Path(filename), **kwargs)
 
-    def generate_aes_dt(self, aes=None, **kwargs):
+    def generate_aes_dt(self, data=None, aes=None, **kwargs):
         """Generate the aesthetic mappings.
 
         Populate and store the ``DataTree`` attribute ``.aes`` of the ``PlotCollection``.
 
         Parameters
         ----------
-        aes : mapping of {str : list of hashable or False}, optional
+        aes : mapping of {str : list of hashable or False}
             Dictionary with :term:`aesthetics` as keys and as values a list
             of the dimensions it should be mapped to.
             It can also take ``False`` as value to indicate that no mapping
@@ -533,15 +534,15 @@ class PlotCollection:
         if aes is None:
             aes = self._aes
             kwargs = self._kwargs
+        if data is None:
+            data = self.data
         aes = {key: value for key, value in aes.items() if value is not False}
-        self._aes = aes
-        self._kwargs = kwargs
         if not hasattr(self, "backend"):
             plot_bknd = import_module(".backend.none", package="arviz_plots")
         else:
             plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         get_default_aes = plot_bknd.get_default_aes
-        ds_dict = {var_name: xr.Dataset() for var_name in self.data.data_vars}
+        ds_dict = {var_name: xr.Dataset() for var_name in data.data_vars}
         for aes_key, dims in aes.items():
             if "__variable__" in dims:
                 total_aes_vals = int(
@@ -554,7 +555,7 @@ class PlotCollection:
                 )
                 aes_vals = get_default_aes(aes_key, total_aes_vals, kwargs)
                 aes_cumulative = 0
-                for var_name, da in self.data.items():
+                for var_name, da in data.items():
                     ds = ds_dict[var_name]
                     aes_dims = [dim for dim in dims if dim in da.dims]
                     aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
@@ -575,13 +576,13 @@ class PlotCollection:
                     aes_cumulative += n_aes
             else:
                 aes_dims_in_var = {
-                    var_name: set(dims) <= set(da.dims) for var_name, da in self.data.items()
+                    var_name: set(dims) <= set(da.dims) for var_name, da in data.items()
                 }
                 if not any(aes_dims_in_var.values()):
                     warnings.warn(
                         "Provided mapping for {aes_key} will only use the neutral element"
                     )
-                aes_shape = [self.data.sizes[dim] for dim in dims]
+                aes_shape = [data.sizes[dim] for dim in dims]
                 total_aes_vals = int(np.prod(aes_shape))
                 neutral_element_needed = not all(aes_dims_in_var.values())
                 aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
@@ -603,15 +604,15 @@ class PlotCollection:
                 aes_da = xr.DataArray(
                     np.array(aes_vals).reshape(aes_shape),
                     dims=dims,
-                    coords={dim: self.data.coords[dim] for dim in dims if dim in self.data.coords},
+                    coords={dim: data.coords[dim] for dim in dims if dim in data.coords},
                 )
-                for var_name in self.data.data_vars:
+                for var_name in data.data_vars:
                     ds = ds_dict[var_name]
                     if aes_dims_in_var[var_name]:
                         ds[aes_key] = aes_da
                     else:
                         ds[aes_key] = neutral_element
-        self._aes_dt = xr.DataTree.from_dict(ds_dict)
+        return xr.DataTree.from_dict(ds_dict)
 
     def get_aes_as_dataset(self, aes_key):
         """Get the values of the provided aes_key for all variables as a Dataset.
@@ -656,20 +657,39 @@ class PlotCollection:
         self.aes = aes_dt
 
     @property
-    def base_loop_dims(self):
+    def facet_dims(self):
         """Dimensions over which one should loop for facetting when using this PlotCollection.
 
         When adding specific artists, we might need to loop over more dimensions than these ones
         due to the defined aesthetic mappings.
-
         """
-        if "plot" in self.viz.data_vars:
-            return set(self.viz["plot"].dims)
-        return set(dim for da in self.viz.children.values() for dim in da["plot"].dims)
+        return set(self.viz["plot"].dims)
 
-    def get_viz(self, var_name):
-        """Get the ``viz`` Dataset that corresponds to the provided variable."""
-        return self.viz if "plot" in self.viz.data_vars else self.viz[var_name]
+    def get_viz(self, artist_name, var_name=None, sel=None, **sel_kwargs):
+        """Get element from ``.viz`` that corresponds to the provided subset.
+
+        Parameters
+        ----------
+        artist_name : str
+        var_name : str, optional
+        sel : mapping, optional
+        **sel_kwargs : mapping, optional
+            kwargs version of `sel`
+        """
+        if sel is None:
+            sel = {}
+        sel = sel | sel_kwargs
+        out = self.viz[artist_name]
+        if isinstance(out, xr.DataTree):
+            out = out.dataset
+            if var_name is not None:
+                out = out[var_name]
+        subset = sel_subset(sel, out)
+        if subset:
+            out = out.sel(subset)
+        if isinstance(out, xr.DataArray) and out.size == 1:
+            return out.item()
+        return out
 
     def rename_artists(self, name_dict=None, **names):
         """Rename artist data variables in the :attr:`~.PlotCollection.viz` DataTree.
@@ -677,12 +697,19 @@ class PlotCollection:
         Parameters
         ----------
         name_dict, **names : mapping
+            Keys are current artist names and values are desired names.
             At least one of these must be provided.
         """
-        viz_dt = self.viz
-        for group, child in viz_dt.children.items():
-            viz_dt[group] = child.dataset.rename_vars(name_dict, **names)
-        self.viz = viz_dt
+        if name_dict is None:
+            name_dict = names
+        else:
+            name_dict = names | name_dict
+        self.viz = self.viz.assign(
+            {
+                desired_name: self.viz[current_name]
+                for current_name, desired_name in name_dict.items()
+            }
+        ).drop_nodes(list(name_dict.keys()))
 
     @classmethod
     def wrap(
@@ -764,6 +791,9 @@ class PlotCollection:
             )
         else:
             viz_dict["/"] = xr.Dataset({"chart": np.array(fig, dtype=object)})
+            viz_dict["plot"] = {}
+            viz_dict["row_index"] = {}
+            viz_dict["col_index"] = {}
             all_dims = cols
             facet_cumulative = 0
             for var_name, da in data.items():
@@ -775,7 +805,7 @@ class PlotCollection:
                     else slice(facet_cumulative, facet_cumulative + plots_per_var[var_name])
                 )
                 facet_cumulative += plots_per_var[var_name]
-                viz_dict[var_name] = xr.Dataset(
+                aux_ds = xr.Dataset(
                     {
                         "plot": (
                             dims,
@@ -792,9 +822,14 @@ class PlotCollection:
                     },
                     coords={dim: da[dim] for dim in dims},
                 )
+                viz_dict["plot"][var_name] = aux_ds["plot"]
+                viz_dict["row_index"][var_name] = aux_ds["row_index"]
+                viz_dict["col_index"][var_name] = aux_ds["col_index"]
         viz_dt = xr.DataTree(
             viz_dict["/"],
-            children={key: xr.DataTree(value) for key, value in viz_dict.items() if key != "/"},
+            children={
+                key: xr.DataTree(xr.Dataset(value)) for key, value in viz_dict.items() if key != "/"
+            },
         )
         return cls(data, viz_dt, backend=backend, **kwargs)
 
@@ -875,10 +910,17 @@ class PlotCollection:
             )
         else:
             viz_dict["/"] = xr.Dataset({"chart": np.array(fig, dtype=object)})
+            viz_dict["plot"] = {}
+            viz_dict["row_index"] = {}
+            viz_dict["col_index"] = {}
             all_dims = tuple((*rows, *cols))  # use provided dim orders, not existing ones
             facet_cumulative = 0
+            coords = {}
             for var_name, da in data.items():
                 dims = [dim for dim in all_dims if dim in da.dims]
+                for dim in dims:
+                    if dim not in coords:
+                        coords[dim] = data.coords[dim]
                 plots_raw_shape = [data.sizes[dim] for dim in dims]
                 row_slice = (
                     slice(None, None)
@@ -894,23 +936,19 @@ class PlotCollection:
                     facet_cumulative += rows_per_var[var_name]
                 else:
                     facet_cumulative += cols_per_var[var_name]
-                viz_dict[var_name] = xr.Dataset(
-                    {
-                        "plot": (
-                            dims,
-                            ax_ary[row_slice, col_slice].flatten().reshape(plots_raw_shape),
-                        ),
-                        "row_index": (
-                            dims,
-                            row_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
-                        ),
-                        "col_index": (
-                            dims,
-                            col_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
-                        ),
-                    },
-                    coords={dim: da[dim] for dim in dims},
+                viz_dict["plot"][var_name] = (
+                    dims,
+                    ax_ary[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                 )
+                viz_dict["row_index"][var_name] = (
+                    dims,
+                    row_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
+                )
+                viz_dict["col_index"][var_name] = (
+                    dims,
+                    col_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
+                )
+            viz_dict = {key: xr.Dataset(value, coords=coords) for key, value in viz_dict.items()}
         viz_dt = xr.DataTree.from_dict(viz_dict)
         return cls(data, viz_dt, backend=backend, **kwargs)
 
@@ -920,7 +958,7 @@ class PlotCollection:
             coords = {}
         aes = [aes_key for aes_key in self.aes_set if aes_key not in ignore_aes]
         aes_dims = [dim for aes_key in aes for dim in self._aes[aes_key]]
-        all_loop_dims = self.base_loop_dims.union(aes_dims).difference(coords.keys())
+        all_loop_dims = self.facet_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
 
     def allocate_artist(
@@ -934,9 +972,8 @@ class PlotCollection:
         attrs = None
         if ignore_aes is not None:
             attrs = {"ignore_aes": ignore_aes}
+        artist_dt = xr.DataTree()
         for var_name, da in data.items():
-            if var_name not in self.viz.children:
-                self.viz[var_name] = xr.DataTree()
             inherited_dims = [
                 dim_to_idx.get(dim, dim)
                 for dim in da.dims
@@ -949,7 +986,7 @@ class PlotCollection:
             all_artist_dims = inherited_dims + list(artist_dims.keys())
 
             # TODO: once DataTree has a .loc attribute, this should work on .viz instead
-            self._viz_dt[var_name][fun_label] = xr.DataArray(
+            artist_dt[var_name] = xr.DataArray(
                 np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
                 coords={
@@ -958,10 +995,11 @@ class PlotCollection:
                 },
                 attrs=attrs,
             )
+        self._viz_dt[fun_label] = artist_dt
 
     def get_target(self, var_name, selection):
         """Get the target that corresponds to the given variable and selection."""
-        return subset_ds(self.get_viz(var_name), "plot", selection)
+        return self.get_viz("plot", var_name, selection)
 
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary.
@@ -973,10 +1011,12 @@ class PlotCollection:
             from the ``aes`` attribute: `var_name` group, variables as the elements
             in `aes` argument and `selection` coordinate/dimension subset.
 
-            :class:`.PlotCollection` considers "overlay" a special aesthetic keyword to indicate
-            visual elements with potentially identical properties should be overlaid.
-            Thus, if "overlay" is an element of the `aes` argument, it is skipped, no value
-            is attempted to be retrieved and it isn't present as key in the returned output either.
+            :class:`.PlotCollection` considers aesthetics starting with "overlay"
+            a special aesthetic keyword to indicate visual elements with potentially
+            identical properties should be overlaid.
+            Thus, if "overlay" or "overlay_xyz" are an element of the `aes` argument,
+            it is skipped, no value is attempted to be retrieved and it isn't present
+            as key in the returned output either.
         var_name : str
         selection : dict
 
@@ -990,24 +1030,10 @@ class PlotCollection:
         if f"/{var_name}" not in self.aes.groups:
             return aes_kwargs
         for aes_key in aes:
-            if aes_key == "overlay":
+            if aes_key.startswith("overlay"):
                 continue
             aes_kwargs[aes_key] = subset_ds(self.aes[var_name], aes_key, selection)
         return aes_kwargs
-
-    def plot_iterator(self, ignore_aes=frozenset(), coords=None):
-        """Build a generator to loop over all plots in the PlotCollection."""
-        if coords is None:
-            coords = {}
-        aes, all_loop_dims = self.update_aes(ignore_aes, coords)
-        plotters = xarray_sel_iter(
-            self.data, skip_dims={dim for dim in self.data.dims if dim not in all_loop_dims}
-        )
-        for var_name, sel, isel in plotters:
-            sel_plus = {**sel, **coords}
-            target = self.get_target(var_name, sel_plus)
-            aes_kwargs = self.get_aes_kwargs(aes, var_name, sel_plus)
-            yield target, var_name, sel, isel, aes_kwargs
 
     def map(
         self,
@@ -1035,9 +1061,10 @@ class PlotCollection:
         fun_label : str, optional
             Variable name with which to store the object returned by `fun`.
             Defaults to ``fun.__name__``.
-        data : Dataset, optional
+        data : Dataset or DataArray, optional
             Data to be subsetted at each iteration and to pass to `fun` as first positional
-            argument. Defaults to the data used to initialize the ``PlotCollection``.
+            argument. If `data` is a DataArray it must be named.
+            Defaults to the data used to initialize the ``PlotCollection``.
         coords : mapping, optional
             Dictionary of {coordinate names : coordinate values} that should
             be used to subset the aes, data and viz objects before any faceting
@@ -1073,6 +1100,8 @@ class PlotCollection:
             ignore_aes = self.aes_set
 
         data = self.data if data is None else data
+        if isinstance(data, xr.DataArray):
+            data = data.to_dataset()
         if not isinstance(data, xr.Dataset):
             raise TypeError("data argument must be an xarray.Dataset")
 
@@ -1127,7 +1156,7 @@ class PlotCollection:
 
     def store_in_artist_da(self, aux_artist, fun_label, var_name, sel):
         """Store the artist object of `var_name`+`sel` combination in `fun_label` variable."""
-        self.viz[var_name][fun_label].loc[sel] = aux_artist
+        self.viz[fun_label][var_name].loc[sel] = aux_artist
 
     def add_legend(
         self,
@@ -1197,10 +1226,15 @@ class PlotCollection:
             {k: v.item() for k, v in aes_ds.sel({dim: coord}).items()} for coord in label_list
         ]
 
-        for kwarg_dict in kwarg_list:
-            kwarg_dict.pop("overlay", None)
-            if text_only:
-                kwarg_dict.pop("color", None)
+        kwarg_list = [
+            {key: value for key, value in kwarg_dict.items() if not key.startswith("overlay")}
+            for kwarg_dict in kwarg_list
+        ]
+        if text_only:
+            kwarg_list = [
+                {key: value for key, value in kwarg_dict.items() if not key != "color"}
+                for kwarg_dict in kwarg_list
+            ]
 
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
 

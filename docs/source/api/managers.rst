@@ -42,7 +42,7 @@ Attributes
    PlotCollection.aes
    PlotCollection.viz
    PlotCollection.aes_set
-   PlotCollection.base_loop_dims
+   PlotCollection.facet_dims
    PlotCollection.data
 
 Faceting and aesthetics mapping

@@ -372,12 +372,12 @@ def hist(
     r_e,
     target,
     *,
+    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
     edgecolor=unset,
     alpha=unset,
-    step_mode="center",
     **artist_kws,
 ):
     """Interface to Bokeh for a histogram bar or step plot."""
@@ -387,9 +387,9 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    step_hist = artist_kws.pop("step", False)
     kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
-    if step_hist:
+    if step:
+        step_mode = artist_kws.pop("step_mode", "center")
         kwargs = {"line_color": edgecolor, "alpha": alpha}
 
         x = [l_e[0], l_e[0]]

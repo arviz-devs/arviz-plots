@@ -282,11 +282,12 @@ def hist(
     r_e,
     target,
     *,
+    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
-    alpha=unset,
     facecolor=unset,
     edgecolor=unset,
+    alpha=unset,
     **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""
@@ -301,8 +302,7 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    step_hist = artist_kws.pop("step", False)
-    if step_hist:
+    if step:
         kwargs = {"color": facecolor, "alpha": alpha}
         return target.step(
             np.r_[l_e, r_e[-1]],
