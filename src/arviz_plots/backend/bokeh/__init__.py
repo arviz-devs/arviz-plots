@@ -5,6 +5,7 @@ import math
 import warnings
 
 import numpy as np
+from bokeh.io.export import export_png, export_svg
 from bokeh.layouts import GridBox, gridplot
 from bokeh.models import (
     ColumnDataSource,
@@ -15,7 +16,7 @@ from bokeh.models import (
     Span,
     Title,
 )
-from bokeh.plotting import figure
+from bokeh.plotting import figure, output_file, save
 from bokeh.plotting import show as _show
 
 from ..none import get_default_aes as get_agnostic_default_aes
@@ -174,6 +175,32 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 def show(chart):
     """Show the provided bokeh layout."""
     _show(chart)
+
+
+def savefig(chart, path, **kwargs):
+    """Save the chart to a file.
+
+    Parameters
+    ----------
+    chart : bokeh.plotting.Figure
+        The chart to save.
+    filename : pathlib.Path
+        The path to the file where the chart will be saved.
+    **kwargs : dict, optional
+        Additional keyword arguments passed to the export or
+        save function depending on the file extension.
+    """
+    if path.suffix == ".png":
+        export_png(chart, filename=path, **kwargs)
+    elif path.suffix == ".svg":
+        export_svg(chart, filename=path, **kwargs)
+    elif path.suffix == ".html":
+        output_file(path)
+        save(chart, **kwargs)
+    else:
+        raise ValueError(
+            f"Unsupported file format: {path}. Supported formats are .png, .svg, and .html."
+        )
 
 
 def get_figsize(plot_collection):

@@ -110,6 +110,21 @@ def show(chart):
     raise TypeError("'none' backend objects can't be shown.")
 
 
+def savefig(chart, path, **kwargs):
+    """Show this :term:`chart`.
+
+    Parameters
+    ----------
+    chart : chart_type
+        The chart to save.
+    path : pathlib.Path
+        The path to save the chart to.
+    **kwargs : dict, optional
+        Additional keyword arguments.
+    """
+    raise TypeError("'none' backend charts can't be saved.")
+
+
 def get_figsize(plot_collection):
     """Get the size of the :term:`chart` element and its units."""
     chart_element = plot_collection.viz["chart"].item()

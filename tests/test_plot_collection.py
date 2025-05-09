@@ -290,6 +290,38 @@ class TestAesthetics:
         assert pc.aes["eta"]["y"].max() == (3 + 3 * 7 + 3 * 7 * 4 - 1)
 
 
+class TestSaveFigures:
+    @pytest.mark.parametrize(
+        "backend",
+        [
+            pytest.param("matplotlib", id="matplotlib"),
+            # See https://github.com/plotly/Kaleido/issues/194
+            pytest.param(
+                "plotly",
+                marks=pytest.mark.skip(reason="plotly savefig is not working with pytest"),
+                id="plotly",
+            ),
+            pytest.param("bokeh", id="bokeh"),
+            pytest.param("none", id="none"),
+        ],
+    )
+    def test_save_figures(self, dataset, backend, tmp_path):
+        pc = PlotCollection.grid(dataset, backend=backend)
+        if backend == "bokeh":
+            ext = "html"
+        else:
+            ext = "png"
+        file_path = tmp_path / f"test_savefig_{backend}.{ext}"
+
+        if backend == "none":
+            with pytest.raises(TypeError):
+                pc.savefig(file_path)
+        else:
+            pc.savefig(file_path)
+            assert file_path.exists()
+            assert file_path.stat().st_size > 0
+
+
 def map_auxiliar(da, target, da_list, target_list, kwarg_list, **kwargs):
     da_list.append(da)
     target_list.append(target)

@@ -262,6 +262,25 @@ def show(chart):
     chart.show()
 
 
+def savefig(chart, path, **kwargs):
+    """Save the chart to a file.
+
+    Parameters
+    ----------
+    chart : `~plotly.graph_objects.Figure`
+        Plotly chart to save.
+    path : pathlib.Path
+        Path to save the chart to.
+    **kwargs: dict, optional
+        Additional arguments passed to `plotly.io.write_image` or
+        `plotly.io.write_html` depending on the file extension.
+    """
+    if path.suffix == ".html":
+        chart.write_html(path, **kwargs)
+    else:
+        chart.write_image(path, **kwargs)
+
+
 def create_plotting_grid(
     number,  # pylint: disable=unused-argument
     rows=1,
