@@ -339,7 +339,14 @@ class PlotCollection:
             self.viz["plot"].item()
 
     def savefig(self, filename, **kwargs):
-        """Call the backend function to save this :term:`chart`."""
+        """Call the backend function to save this :term:`chart`.
+
+        Parameters
+        ----------
+        filename : str or `~pathlib.Path`
+        **kwargs
+            Passed as is to the respective backend function
+        """
         if "chart" not in self.viz:
             raise ValueError("No plot found to be saved")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")

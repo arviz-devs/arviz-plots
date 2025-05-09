@@ -32,7 +32,6 @@ Plotting
    PlotCollection.add_legend
    PlotCollection.map
    PlotCollection.plot_iterator
-   PlotCollection.show
 
 Attributes
 ..........
@@ -46,7 +45,7 @@ Attributes
    PlotCollection.base_loop_dims
    PlotCollection.data
 
-faceting and aesthetics mapping
+Faceting and aesthetics mapping
 ................................
 
 .. autosummary::
@@ -67,6 +66,8 @@ Other
    PlotCollection.allocate_artist
    PlotCollection.get_viz
    PlotCollection.get_target
+   PlotCollection.show
+   PlotCollection.savefig
 
 PlotMatrix
 ==========
