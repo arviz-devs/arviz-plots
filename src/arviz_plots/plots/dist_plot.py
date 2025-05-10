@@ -310,7 +310,7 @@ def plot_dist(
         and (plot_collection.coords is None)
     ):
         reduce_dim_map = {"kde": "kde_dim", "ecdf": "quantile"}
-        y_ds = plot_collection.get_aes_as_dataset("y")
+        y_ds = plot_collection.get_aes_as_dataset("y")["mapping"]
         y_ds = (
             0.15 * y_ds * density.sel(plot_axis="y", drop=True).max([reduce_dim_map[kind], "model"])
         )

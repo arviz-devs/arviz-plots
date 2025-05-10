@@ -154,56 +154,6 @@ def leaf_dataset(dt, leaf_name):
     return xr.Dataset({var_name: values[leaf_name] for var_name, values in dt.children.items()})
 
 
-def _get_aes_dict_from_dt(aes_dt):
-    """Generate the aesthetic dictionary from a full DataTree.
-
-    PlotCollection uses an aesthetic dictionary with keys as asethetics
-    and values lists of dimensions as base mapping information.
-    :meth:`arviz_plots.PlotCollection.generate_aes_dt` combines this
-    aes dict and the Dataset in the `data` attribute to generate
-    the full DataTree with aesthetics mapping information that is
-    available in the `aes` attribute.
-
-    It is also possible however to skip the aes dictionary and provide
-    an aes DataTree directly when initializating a PlotCollection object.
-    This method is used to generate the more basic dictionary from the DataTree.
-    """
-    child_list = list(aes_dt.children.values())
-    aes = {}
-    aes_in_all_vars = set.intersection(*[set(child.data_vars) for child in child_list])
-    for aes_key in aes_in_all_vars:
-        dims = [child[aes_key].dims for child in child_list]
-        dims_set = set(dims)
-        scalar_values = [
-            child[aes_key].item() for dims, child in zip(dims, child_list) if dims == ()
-        ]
-        array_values = [
-            child[aes_key].values for dims, child in zip(dims, child_list) if dims != ()
-        ]
-        if (len(dims_set) == 2) and (() in dims):
-            neutral_element = scalar_values[0]
-            all_scalar_is_neutral = all(neutral_element == vals for vals in scalar_values)
-            all_array_equal = all(all(array_values[0] == vals) for vals in array_values)
-            no_neutral_in_array = all(neutral_element not in vals for vals in array_values)
-            dims_list = list(dims_set)
-            dims_list.remove(())
-            if all_scalar_is_neutral and all_array_equal and no_neutral_in_array:
-                aes[aes_key] = list(dims_list[0])
-            else:
-                aes[aes_key] = ["__variable__"] + list(dims_list[0])
-            continue
-        if (len(dims_set) == 1) and (() not in dims):
-            all_array_equal = all(all(array_values[0] == vals) for vals in array_values)
-            if all_array_equal:
-                aes[aes_key] = list(list(dims_set)[0])
-            else:
-                aes[aes_key] = ["__variable__"] + list(list(dims_set)[0])
-            continue
-        all_dims_in_aes = set((elem for da_dims in dims_set for elem in da_dims))
-        aes[aes_key] = ["__variable__"] + list(all_dims_in_aes)
-    return aes
-
-
 class PlotCollection:
     """Low level base class for plotting with xarray Datasets.
 
@@ -263,31 +213,33 @@ class PlotCollection:
         elif "chart" in viz_dt:
             self.backend = viz_dt["chart"].item().__module__.split(".")[0]
 
-        if aes is None and aes_dt is not None:
-            aes = _get_aes_dict_from_dt(aes_dt)
-        elif aes is None:
+        if aes is None:
             aes = {}
 
-        self._aes = aes
-        self._kwargs = kwargs
-
         if self._aes_dt is None:
-            self._aes_dt = self.generate_aes_dt()
+            self._aes_dt = self.generate_aes_dt(aes, data, **kwargs)
 
     @property
     def aes(self):
         """Information about :term:`aesthetic mapping` as a DataTree.
 
-        A subset of the input dataset ``ds[var_name].sel(**kwargs)``
-        is associated the aesthetics in ``aes[var_name].sel(**kwargs)``.
-        Note that here `aes` is a DataTree so ``aes[var_name]`` is a Dataset.
-        There can be as many aesthetic mappings as desired,
-        and they can map to any dimensions *independently from one another*
-        and also independently between variables (even if not recommended).
+        For aesthetics where the variable is used to encode information
+        (that is, "__variable__" was used, a subset of the input dataset
+        ``ds[var_name].sel(**kwargs)`` is associated the aesthetics in
+        ``aes[aes_key][var_name].sel(**kwargs)``.
+
+        For aesthetics mappping that only use dimensions for mapping the dataset
+        will have a variable "mapping" with shape inherited from the mapped dimensions
+        in the original data, and might also have a "neutral_element" scalar
+        variable.
+
+        The docstring for :meth:`arviz_plots.PlotCollection.generate_aes_dt`
+        has examples and covers the "neutral element" concept in more detail.
 
         See Also
         --------
         .PlotCollection.generate_aes_dt
+        .PlotCollection.get_aes_kwargs
         """
         if self.coords is None:
             return self._aes_dt
@@ -302,7 +254,6 @@ class PlotCollection:
     def aes(self, value):
         if self.coords is not None:
             raise ValueError("Can't modify `aes` DataTree while `coords` is set")
-        self._aes = _get_aes_dict_from_dt(value)
         self._aes_dt = value
 
     @property
@@ -370,7 +321,7 @@ class PlotCollection:
     @property
     def aes_set(self):
         """Return all aesthetics with a mapping defined as a set."""
-        return set(self._aes.keys())
+        return set(self.aes.children)
 
     def show(self):
         """Call the backend function to show this :term:`chart`."""
@@ -397,7 +348,7 @@ class PlotCollection:
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         plot_bknd.savefig(self.viz["chart"].item(), Path(filename), **kwargs)
 
-    def generate_aes_dt(self, data=None, aes=None, **kwargs):
+    def generate_aes_dt(self, aes, data=None, **kwargs):
         """Generate the aesthetic mappings.
 
         Populate and store the ``DataTree`` attribute ``.aes`` of the ``PlotCollection``.
@@ -406,9 +357,14 @@ class PlotCollection:
         ----------
         aes : mapping of {str : list of hashable or False}
             Dictionary with :term:`aesthetics` as keys and as values a list
-            of the dimensions it should be mapped to.
+            of the dimensions it should be mapped to. The pseudo-dimension
+            ``__variable__`` is also valid to indicate the variable should be
+            part of the aesthetic mapping.
+
             It can also take ``False`` as value to indicate that no mapping
             should be considered for that aesthetic key.
+        data : Dataset, optional
+            Data for which to generate the aesthetic mappings.
         **kwargs : mapping, optional
             Dictionary with :term:`aesthetics` as keys and as values a list
             of the values that should be taken by that aesthetic.
@@ -444,9 +400,9 @@ class PlotCollection:
             import xarray as xr
             idata = load_arviz_data("rugby_field")
             pc = PlotCollection(idata.posterior, xr.DataTree(), backend="matplotlib")
-            pc.generate_aes_dt(
+            aes_dt = pc.generate_aes_dt(
                 aes={
-                    "color": ["team"],
+                    "color": ["__variable__", "team"],
                     "y": ["field", "team"],
                     "marker": ["field"],
                     "linestyle": ["chain"],
@@ -455,85 +411,59 @@ class PlotCollection:
                 y=list(range(13)),
                 linestyle=["-", ":", "--", "-."],
             )
-            pc.aes
 
-        The generated `aes_dt` has one group per variable in the posterior group
-        in the provided data. Each group in the `aes_dt` DataTree is a Dataset
-        with the aesthetics that apply to that variable and the required shape
-        for all values that aesthetic needs to take.
+        The generated `aes_dt` has one group per aesthetic. Within each group
+        There can be the variables from the Dataset used to initialize the
+        PlotCollection or the variables "mapping" and "neutral_element".
 
-        Thus, when we subset the data for plotting with
-        ``ds[var_name].sel(**kwargs)`` we can get its aesthetics with
-        ``aes_dt[var_name].sel(**kwargs)``.
-
-        Let's inspect its contents for some variables. We'll start with the intercept,
-        which has dimensions ``chain, draw, field``.
+        Let's inspect its contents for each aesthetic.
+        We'll start with the color which had ``__variable__, team`` as dimensions
+        to encode.
 
         .. jupyter-execute::
 
-            pc.aes["intercept"]
+            aes_dt["color"]
 
-        In this case, only the marker and linestyle mappings can be applied, so these
-        two get arrays storing the values for the different coordinate values whereas
-        the other two properties color and y get a scalar that corresponds to the neutral
-        element.
+        In this case, each unique combination of variable and coordinate value of the
+        team dimension gets a different color. They only end up being repeated once
+        the provided cycler runs out of elements. In the cases where ``__variable__``
+        is used, the data subset ``ds[var_name].sel(coords)`` gets the aesthetic
+        values in `aes_dt[aes_key][var_name].sel(coords)`, however, this isn't
+        always as straightforward; thus, the recommended way to get the corresponding
+        aes for a specific subset is using :meth:`~arviz_plots.PlotCollection.get_aes_kwargs`
 
-        We didn't provide any defaults for the marker, but as we specified the backend,
-        some default values were generated for us. We did provide 4 values for the linestyle
-        and we get these for values in the mapped values storage.
-
-        Let's move on to the sd_att variable, which in this case had dimensions ``chain, draw``:
-
-        .. jupyter-execute::
-
-            pc.aes["sd_att"]
-
-        Now only the linestyle mapping can be applied, so we get an array of values for them,
-        scalar values for the others. It is worth noting that the value of the marker is
-        different from the 2 we saw before for the intercept.
-
-        This is the neutral element. As we didn't provide any values for the marker,
-        3 default values were set, one for each coordinate value of the team dimension
-        and an extra one to act as neutral element, for those variables where the mapping
-        does not apply. In fact, the values we have seen so far for color and y are also
-        the ones corresponding to the neutral element.
-
-        The only mapping without neutral element is the linestyle one because the
-        chain dimension is present in all variables, and so all variables will have
-        an array with its 4 values.
-
-        Next let's check atts_team variable, now with shape ``chain, draw, team``:
+        Next let's look at the marker. We didn't provide any defaults for the marker,
+        but as we specified the backend, some default values were generated for us.
+        Here, we asked to encode the "field" dimension information only:
 
         .. jupyter-execute::
 
-            pc.aes["atts_team"]
+            aes_dt["marker"]
 
-        This case is similar to the intercept, changing linestyle and color. However,
-        we manually provided values for the color cycle and we only gave 6 values.
-        Thus, when the 1st one was taken as neutral element and excluded we end up having
-        the same color (the 2nd in the cycle) for both the 1st and last teams (according
-        the order defined in the team coordinate values).
+        We have a "neutral_element" variable which will be used for variables
+        where the field dimension is not present and a "mapping" variable
+        with a different marker value per coordinate in the field dimension,
+        with all these values being different to the "neutral_element" one.
+        The "y" aesthetic is very similar.
 
-        Note however that if we had sliced the posterior to keep only variables with the
-        ``team`` dimension there would be no need for the neutral element (like it currently
-        happens with linestyle) and there wouldn't be any repeated elements in the color cycle.
-
-        To finish, let's check the atts variable where all mappings can be applied because
-        it has ``chain, draw, field, team`` dimensions.
+        Lastly, the "linestyle" aesthetic, which we asked to use to encode the
+        chain information.
 
         .. jupyter-execute::
 
-            pc.aes["atts"]
+            aes_dt["linestyle"]
 
-        Consequently, you can see all aesthetics have arrays storing their values,
-        and that all values differ from the neutral element in case there is one.
-        Moreover, we gave 13 values for y which is one more than the unique combinations
-        of field and team so there aren't repeated values in the y cycle either even
-        after excluding the neutral element.
+        As all variables have the "chain" dimension, there is no "neutral_element"
+        here, and the first element in the property cycle (here the solid line "-")
+        is used as part of the "chain" mapping instead of being reserved for
+        variables without a "chain" dimension. Note that in such cases,
+        trying to use a data variable without "chain" as dimension would
+        result in an error, the mapping is not defined.
+
+        See Also
+        --------
+        .PlotCollection.get_aes_kwargs
         """
-        if aes is None:
-            aes = self._aes
-            kwargs = self._kwargs
         if data is None:
             data = self.data
         aes = {key: value for key, value in aes.items() if value is not False}
@@ -542,7 +472,7 @@ class PlotCollection:
         else:
             plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         get_default_aes = plot_bknd.get_default_aes
-        ds_dict = {var_name: xr.Dataset() for var_name in data.data_vars}
+        ds_dict = {aes_key: xr.Dataset() for aes_key in aes}
         for aes_key, dims in aes.items():
             if "__variable__" in dims:
                 total_aes_vals = int(
@@ -556,17 +486,16 @@ class PlotCollection:
                 aes_vals = get_default_aes(aes_key, total_aes_vals, kwargs)
                 aes_cumulative = 0
                 for var_name, da in data.items():
-                    ds = ds_dict[var_name]
                     aes_dims = [dim for dim in dims if dim in da.dims]
                     aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
                     if not aes_raw_shape:
-                        ds[aes_key] = np.asarray(aes_vals)[
+                        ds_dict[aes_key][var_name] = np.asarray(aes_vals)[
                             aes_cumulative : aes_cumulative + 1
                         ].squeeze()
                         aes_cumulative += 1
                         continue
                     n_aes = np.prod(aes_raw_shape)
-                    ds[aes_key] = xr.DataArray(
+                    ds_dict[aes_key][var_name] = xr.DataArray(
                         np.array(aes_vals[aes_cumulative : aes_cumulative + n_aes]).reshape(
                             aes_raw_shape
                         ),
@@ -580,7 +509,7 @@ class PlotCollection:
                 }
                 if not any(aes_dims_in_var.values()):
                     warnings.warn(
-                        "Provided mapping for {aes_key} will only use the neutral element"
+                        f"Provided mapping for {aes_key} will only use the neutral element"
                     )
                 aes_shape = [data.sizes[dim] for dim in dims]
                 total_aes_vals = int(np.prod(aes_shape))
@@ -588,6 +517,7 @@ class PlotCollection:
                 aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
                 if neutral_element_needed:
                     neutral_element = aes_vals[0]
+                    ds_dict[aes_key]["neutral_element"] = neutral_element
                     aes_vals_no_neutral = [val for val in aes_vals if val != neutral_element]
                     if aes_vals_no_neutral[0] in aes_vals_no_neutral[1:]:
                         cycle_repeat_index = aes_vals_no_neutral[1:].index(aes_vals_no_neutral[0])
@@ -601,17 +531,11 @@ class PlotCollection:
                         total_aes_vals,
                         {aes_key: aes_vals},
                     )
-                aes_da = xr.DataArray(
+                ds_dict[aes_key]["mapping"] = xr.DataArray(
                     np.array(aes_vals).reshape(aes_shape),
                     dims=dims,
                     coords={dim: data.coords[dim] for dim in dims if dim in data.coords},
                 )
-                for var_name in data.data_vars:
-                    ds = ds_dict[var_name]
-                    if aes_dims_in_var[var_name]:
-                        ds[aes_key] = aes_da
-                    else:
-                        ds[aes_key] = neutral_element
         return xr.DataTree.from_dict(ds_dict)
 
     def get_aes_as_dataset(self, aes_key):
@@ -631,7 +555,7 @@ class PlotCollection:
         --------
         arviz_plots.PlotCollection.update_aes_from_dataset
         """
-        return leaf_dataset(self.aes, aes_key)
+        return self.aes[aes_key].dataset
 
     def update_aes_from_dataset(self, aes_key, dataset):
         """Update the values of aes_key with those in the provided Dataset.
@@ -651,10 +575,7 @@ class PlotCollection:
         --------
         arviz_plots.PlotCollection.get_aes_as_dataset
         """
-        aes_dt = self.aes
-        for var_name, child in aes_dt.children.items():
-            child[aes_key] = dataset[var_name]
-        self.aes = aes_dt
+        self._aes_dt[aes_key] = dataset
 
     @property
     def facet_dims(self):
@@ -957,22 +878,27 @@ class PlotCollection:
         if coords is None:
             coords = {}
         aes = [aes_key for aes_key in self.aes_set if aes_key not in ignore_aes]
-        aes_dims = [dim for aes_key in aes for dim in self._aes[aes_key]]
+        aes_dims = [dim for aes_key in aes for dim in self.aes[aes_key].dims]
         all_loop_dims = self.facet_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
 
     def allocate_artist(
-        self, fun_label, data, all_loop_dims, dim_to_idx=None, artist_dims=None, ignore_aes=None
+        self,
+        fun_label,
+        data,
+        all_loop_dims,
+        dim_to_idx=None,
+        artist_dims=None,
+        ignore_aes=frozenset(),
     ):
         """Allocate an artist in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
         if dim_to_idx is None:
             dim_to_idx = {}
-        attrs = None
-        if ignore_aes is not None:
-            attrs = {"ignore_aes": ignore_aes}
         artist_dt = xr.DataTree()
+        if ignore_aes:
+            artist_dt.attrs = {"ignore_aes": ignore_aes}
         for var_name, da in data.items():
             inherited_dims = [
                 dim_to_idx.get(dim, dim)
@@ -993,7 +919,6 @@ class PlotCollection:
                     dim: np.unique(da[dim]) if dim in dim_to_idx.values() else da[dim]
                     for dim in inherited_dims
                 },
-                attrs=attrs,
             )
         self._viz_dt[fun_label] = artist_dt
 
@@ -1008,8 +933,9 @@ class PlotCollection:
         ----------
         aes : list
             List of aesthetic keywords whose values should be retrieved. Values are taken
-            from the ``aes`` attribute: `var_name` group, variables as the elements
-            in `aes` argument and `selection` coordinate/dimension subset.
+            from the ``aes`` attribute: groups as the elements in `aes` argument,
+            variable `var_name` argument if present, otherwise "mapping" or "neutral_element"
+            and `selection` coordinate/dimension subset.
 
             :class:`.PlotCollection` considers aesthetics starting with "overlay"
             a special aesthetic keyword to indicate visual elements with potentially
@@ -1025,14 +951,28 @@ class PlotCollection:
         dict
             Mapping of aesthetic keywords to the values corresponding to the provided
             `var_name` and `selection`.
+
+        See Also
+        --------
+        .PlotCollection.generate_aes_dt
         """
         aes_kwargs = {}
-        if f"/{var_name}" not in self.aes.groups:
-            return aes_kwargs
         for aes_key in aes:
             if aes_key.startswith("overlay"):
                 continue
-            aes_kwargs[aes_key] = subset_ds(self.aes[var_name], aes_key, selection)
+            aes_ds = self.aes[aes_key]
+            if var_name in aes_ds.data_vars:
+                aes_kwargs[aes_key] = subset_ds(aes_ds, var_name, selection)
+            else:
+                if all(dim in selection for dim in aes_ds["mapping"].dims):
+                    aes_kwargs[aes_key] = subset_ds(aes_ds, "mapping", selection)
+                elif "neutral_element" in aes_ds.data_vars:
+                    aes_kwargs[aes_key] = subset_ds(aes_ds, "neutral_element", {})
+                else:
+                    raise ValueError(
+                        f"{aes_key} has no neutral element initialized but "
+                        f"{var_name} needs a neutral element."
+                    )
         return aes_kwargs
 
     def map(
@@ -1158,7 +1098,7 @@ class PlotCollection:
         """Store the artist object of `var_name`+`sel` combination in `fun_label` variable."""
         self.viz[fun_label][var_name].loc[sel] = aux_artist
 
-    def add_legend(
+    def add_legend(  # pylint: disable=unreachable
         self,
         dim,
         var_name=None,
@@ -1203,6 +1143,8 @@ class PlotCollection:
         legend : object
             The corresponding legend object for the backend of the ``PlotCollection``.
         """
+        # TODO: adapt legend to updated aesthetics datatree
+        return None
         if title is None:
             title = dim
         if var_name is None:

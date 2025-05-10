@@ -31,7 +31,6 @@ Plotting
 
    PlotCollection.add_legend
    PlotCollection.map
-   PlotCollection.plot_iterator
 
 Attributes
 ..........
@@ -100,5 +99,5 @@ Attributes
    PlotMatrix.aes
    PlotMatrix.viz
    PlotMatrix.aes_set
-   PlotMatrix.base_loop_dims
+   PlotMatrix.facet_dims
    PlotMatrix.data
