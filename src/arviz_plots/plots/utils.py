@@ -2,6 +2,7 @@
 from copy import copy
 from importlib import import_module
 
+import numpy as np
 import xarray as xr
 from arviz_base import rcParams, references_to_dataset
 from arviz_base.utils import _var_names
@@ -260,7 +261,7 @@ def add_reference_lines(
     )
     if ref_dim in ref_ds.dims:
         for aes_key in requested_aes:
-            aes_values = plot_bknd.get_default_aes(aes_key, ref_ds.sizes[ref_dim], kwargs)
+            aes_values = np.array(plot_bknd.get_default_aes(aes_key, ref_ds.sizes[ref_dim], kwargs))
             plot_collection.update_aes_from_dataset(
                 aes_key,
                 xr.Dataset(
