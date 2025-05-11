@@ -7,6 +7,7 @@ from arviz_base import from_dict
 from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
+    add_reference_lines,
     plot_bf,
     plot_compare,
     plot_dist,
@@ -439,9 +440,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     # omitting hist for the moment as I get [hist-none] - ValueError: artist_kws not empty
     @pytest.mark.parametrize("kind", ["kde", "ecdf"])
-    @pytest.mark.parametrize("references", [None, (0, 10)])
-    def test_plot_ppc_dist(self, datatree, kind, references, backend):
-        pc = plot_ppc_dist(datatree, kind=kind, references=references, backend=backend)
+    def test_plot_ppc_dist(self, datatree, kind, backend):
+        pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
         assert "chart" in pc.viz.data_vars
         assert pc.aes["y"]
         assert kind in pc.viz["y"]
@@ -559,3 +559,41 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "x" in pc.aes["mu"].data_vars
         assert "color" in pc.aes["mu"].data_vars
         assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+
+    def test_add_references_scalar(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_lines(pc, 0)
+        assert "ref_line" in pc.viz["mu"]
+        assert "ref_line_dim" not in pc.viz["mu"]["ref_line"].dims
+
+    def test_add_references_array(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_lines(pc, [0, 1])
+        assert "ref_line" in pc.viz["mu"]
+        assert "ref_line_dim" in pc.viz["mu"]["ref_line"].dims
+
+    def test_add_references_dict(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_lines(pc, {"mu": [0, 1]})
+        assert "ref_line" in pc.viz["mu"]
+        assert "ref_line" not in pc.viz["theta"]
+        assert "ref_line_dim" in pc.viz["mu"]["ref_line"].dims
+
+    def test_add_references_ds(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_lines(
+            pc,
+            datatree.posterior.dataset.quantile((0.1, 0.5, 0.9), dim=["chain", "draw"]),
+            ref_dim="quantile",
+        )
+        assert "ref_line" in pc.viz["mu"]
+        assert "ref_line" in pc.viz["theta"]
+        assert "quantile" in pc.viz["mu"]["ref_line"].dims
+
+    def test_add_references_aes(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_lines(pc, [0, 1], aes_map={"ref_line": ["color"]})
+        assert "ref_line" in pc.viz["mu"]
+        assert "ref_line_dim" in pc.viz["mu"]["ref_line"].dims
+        assert "color" in pc.aes["mu"]
+        assert "ref_line_dim" in pc.aes["mu"]["color"].dims
