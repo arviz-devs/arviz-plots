@@ -4,7 +4,7 @@ from importlib import import_module
 
 import numpy as np
 import xarray as xr
-from arviz_base import rcParams, references_to_dataset
+from arviz_base import references_to_dataset
 from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
@@ -196,7 +196,7 @@ def add_reference_lines(
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs`.
 
-        The default is to use an "overlay" aesthetic for all elements.
+        The default is to use an "overlay_ref" aesthetic for all elements.
 
         It is possible to request aesthetics without mappings defined in the
         provided `plot_collection`. In those cases, a mapping of "ref_dim" to the requested
@@ -209,8 +209,9 @@ def add_reference_lines(
         * "ref_text" -> TODO
 
     sample_dims : list, optional
-        Dimensions to reduce unless mapped to an aesthetic.
-        Defaults to ``rcParams["data.sample_dims"]``
+        Dimensions that should not be added to the Dataset generated from
+        `refereces` via :func:`arviz_base.references_to_dataset`.
+        Defaults to all dimensions in ``plot_collection.data`` that are not ``facet_dims``
     ref_dim : str, optional
         Specifies the name of the reference dimension for reference values.
         Defaults to "ref_dim".
@@ -247,10 +248,10 @@ def add_reference_lines(
         aes_map = {}
     else:
         aes_map = aes_map.copy()
-    aes_map["ref_line"] = aes_map.get("ref_line", ["overlay"])
-    aes_map["ref_text"] = aes_map.get("ref_text", ["overlay"])
+    aes_map["ref_line"] = aes_map.get("ref_line", ["overlay_ref"])
+    aes_map["ref_text"] = aes_map.get("ref_text", ["overlay_ref"])
     if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
+        sample_dims = list(set(plot_collection.data.dims).difference(plot_collection.facet_dims))
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
 
