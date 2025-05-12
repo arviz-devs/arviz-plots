@@ -101,7 +101,12 @@ def main(app):
     if not scripts_dir.is_dir():
         os.makedirs(scripts_dir)
 
-    index_page = ["(example_gallery)=\n# Example gallery"]
+    index_page = [
+        "(example_gallery)=\n# Example gallery",
+        "\n:::{seealso}\n{ref}`plots_intro`: A general overview of batteries-included plotting "
+        "functions, their common use cases, and the underlying logic.\n:::",
+    ]
+
     backreferences = defaultdict(list)
     api_regex = re.compile(r"azp\.(plot_[a-z_]+|combine_plots)\(")
 
