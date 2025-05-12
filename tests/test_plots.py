@@ -159,7 +159,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind)
-        assert not pc.aes["mu"]
+        assert not pc.aes
         assert "mu" in pc.viz[kind].data_vars
         artists = ("plot", kind, "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
@@ -168,7 +168,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_dist_step_hist(self, datatree, backend):
         plot_kwargs = {"hist": {"step": True}}
         pc = plot_dist(datatree, backend=backend, kind="hist", plot_kwargs=plot_kwargs)
-        assert not pc.aes["mu"]
+        assert not pc.aes
         assert "mu" in pc.viz["hist"].data_vars
         artists = ("plot", "hist", "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
@@ -177,7 +177,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_sample(self, datatree_sample, backend, kind):
         pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", kind=kind)
-        assert not pc.aes["mu"]
+        assert not pc.aes
         assert "mu" in pc.viz[kind].data_vars
         artists = ("plot", kind, "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
@@ -192,7 +192,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             kind="hist",
             plot_kwargs=plot_kwargs,
         )
-        assert not pc.aes["mu"]
+        assert not pc.aes
         assert "mu" in pc.viz["hist"].data_vars
         artists = ("plot", "hist", "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
@@ -201,7 +201,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
         pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
-        assert "/mu" in pc.aes.groups
+        assert "/color" in pc.aes.groups
+        assert tuple(pc.aes["color"].dims) == ("model",)
         assert kind in pc.viz.children
         assert "mu" in pc.viz[kind].data_vars
         assert "hierarchy" not in pc.viz[kind]["mu"].dims
@@ -273,7 +274,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_forest(self, datatree, backend, combined):
         pc = plot_forest(datatree, backend=backend, combined=combined)
         assert "plot" in pc.viz.data_vars
-        assert all("y" in child.data_vars for child in pc.aes.children.values())
+        assert "/y" in pc.aes.groups
+        assert all(var_name in pc.aes["y"].data_vars for var_name in datatree.posterior.data_vars)
 
     def test_plot_forest_sample(self, datatree_sample, backend):
         pc = plot_forest(datatree_sample, backend=backend, sample_dims="sample")
@@ -308,14 +310,16 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" in pc.viz.data_vars
         assert "shade" in pc.viz.children
         if pseudo_dim != "__variable__":
-            assert all(0 in child["alpha"] for child in pc.aes.children.values())
+            assert pc.aes["alpha"]["neutral_element"].item() == 0
+            assert 0 in pc.aes["alpha"]["mapping"].values
             assert pseudo_dim in pc.viz["shade"].dims
 
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_ridge(self, datatree, backend, combined):
         pc = plot_ridge(datatree, backend=backend, combined=combined)
         assert "plot" in pc.viz.data_vars
-        assert all("y" in child.data_vars for child in pc.aes.children.values())
+        assert "/y" in pc.aes.groups
+        assert all(var_name in pc.aes["y"].data_vars for var_name in datatree.posterior.data_vars)
         assert "edge" in pc.viz.children
         assert "mu" in pc.viz["edge"]
         assert "hierarchy" not in pc.viz["edge"]["mu"].dims
@@ -332,7 +336,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_ridge_models(self, datatree, datatree2, backend):
         pc = plot_ridge({"c": datatree, "n": datatree2}, backend=backend)
         assert "plot" in pc.viz.data_vars
-        assert "/mu" in pc.aes.groups
+        assert "/color" in pc.aes.groups
         assert "/edge" in pc.viz.groups
         assert "mu" in pc.viz["edge"].data_vars
         assert "hierarchy" not in pc.viz["edge"]["mu"].dims
@@ -364,7 +368,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" in pc.viz.data_vars
         assert "shade" in pc.viz.children
         if pseudo_dim != "__variable__":
-            assert all(0 in child["alpha"] for child in pc.aes.children.values())
+            assert pc.aes["alpha"]["neutral_element"].item() == 0
+            assert 0 in pc.aes["alpha"]["mapping"].values
             assert pseudo_dim in pc.viz["shade"].dims
 
     def test_plot_compare(self, cmp, backend):
@@ -396,7 +401,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
         assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug artist overlay
         # checking aesthetics
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "mapping" in pc.aes["overlay"]
+        assert "chain" in pc.aes["overlay"]["mapping"].dims
 
     def test_plot_ess_sample(self, datatree_sample, backend):
         pc = plot_ess(datatree_sample, backend=backend, rug=True, sample_dims="sample")
@@ -422,10 +428,9 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
         assert "model" in pc.viz["ess"]["mu"].dims
         # checking aesthetics
-        assert "model" in pc.aes["mu"].dims
-        assert "x" in pc.aes["mu"].data_vars
-        assert "color" in pc.aes["mu"].data_vars
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "/color" in pc.aes.groups
+        assert "model" in pc.aes["color"].dims
+        assert "/x" in pc.aes.groups
 
     def test_plot_ess_evolution(self, datatree, backend):
         pc = plot_ess_evolution(datatree, backend=backend)
@@ -459,7 +464,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_ppc_dist(self, datatree, kind, backend):
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
         assert "chart" in pc.viz.data_vars
-        assert pc.aes["y"]
+        assert "/overlay_ppc" in pc.aes.groups
         assert "y" in pc.viz[kind]
         assert "y" in pc.viz["observed_density"]
 
@@ -491,8 +496,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_bf(datatree, var_names="mu", backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "Groups" in pc.viz["kde"].coords
+<<<<<<< HEAD
         assert "BF_type" in pc.aes
         assert "mu" in pc.aes["BF_type"]
+=======
+        assert "/color" in pc.aes.groups
+        assert "BF01" in pc.aes["BF_type"].values[0]
+>>>>>>> ad3dacc (fix tests)
 
     def test_plot_energy_dist(self, datatree, backend):
         pc = plot_energy(datatree, backend=backend)
@@ -548,7 +558,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" in pc.viz["mcse"]["theta"].dims
         assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug artist overlay
         # checking aesthetics
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "/overlay" in pc.aes.groups  # overlay of chains
 
     def test_plot_mcse_sample(self, datatree_sample, backend):
         pc = plot_mcse(datatree_sample, backend=backend, rug=True, sample_dims="sample")
@@ -572,29 +582,28 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" in pc.viz["mcse"]["theta"].dims
         assert "model" in pc.viz["mcse"]["mu"].dims
         # checking aesthetics
-        assert "model" in pc.aes["mu"].dims
-        assert "x" in pc.aes["mu"].data_vars
-        assert "color" in pc.aes["mu"].data_vars
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "/color" in pc.aes.groups
+        assert "model" in pc.aes["color"].dims
+        assert "/x" in pc.aes.groups
 
     def test_add_references_scalar(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, 0)
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_dim" not in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "ref_dim" not in pc.viz["ref_line"]["mu"].dims
 
     def test_add_references_array(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, [0, 1])
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_dim" in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
 
     def test_add_references_dict(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, {"mu": [0, 1]})
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_line" not in pc.viz["theta"]
-        assert "ref_dim" in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "theta" not in pc.viz["ref_line"]
+        assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
 
     def test_add_references_ds(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
@@ -603,14 +612,15 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             datatree.posterior.dataset.quantile((0.1, 0.5, 0.9), dim=["chain", "draw"]),
             ref_dim="quantile",
         )
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_line" in pc.viz["theta"]
-        assert "quantile" in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "theta" in pc.viz["ref_line"]
+        assert "ref_dim" not in pc.viz["ref_line"].dims
+        assert "quantile" in pc.viz["ref_line"].dims
 
     def test_add_references_aes(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, [0, 1], aes_map={"ref_line": ["color"]})
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_dim" in pc.viz["mu"]["ref_line"].dims
-        assert "color" in pc.aes["mu"]
-        assert "ref_dim" in pc.aes["mu"]["color"].dims
+        assert "mu" in pc.viz["ref_line"].data_vars
+        assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
+        assert "/color" in pc.aes.groups
+        assert "ref_dim" in pc.aes["color"].dims

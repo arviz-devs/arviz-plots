@@ -109,7 +109,7 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, plot_kwargs):
     for artist, value in plot_kwargs.items():
         if value is False:
             assert artist not in pc.viz.children
-        elif artist != "remove_axis":
+        else:
             assert artist in pc.viz.children
             assert all(
                 var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
@@ -170,7 +170,7 @@ def test_plot_forest(
                 assert artist not in pc.viz.children
             else:
                 assert artist in pc.viz.children
-        elif artist not in ("remove_axis", "ticklabels"):
+        elif artist != "ticklabels":
             assert artist in pc.viz.children
             assert all(
                 var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
@@ -214,7 +214,7 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
                 assert artist not in pc.viz.children
             else:
                 assert artist in pc.viz.children
-        elif artist not in ("remove_axis", "ticklabels"):
+        elif artist != "ticklabels":
             assert artist in pc.viz.children
             assert all(
                 var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
@@ -317,7 +317,7 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
                 assert artist not in pc.viz.children
             else:
                 assert artist in pc.viz.children
-        elif artist != "remove_axis":
+        else:
             assert artist in pc.viz.children
 
 
@@ -355,7 +355,7 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwarg
     for artist, value in plot_kwargs.items():
         if value is False:
             assert artist not in pc.viz.children
-        elif artist != "remove_axis":
+        else:
             assert artist in pc.viz.children
 
 
@@ -412,7 +412,7 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, plot_kwarg
                 assert artist in pc.viz.children
             else:
                 assert artist not in pc.viz.children
-        elif key != "remove_axis":
+        else:
             assert artist in pc.viz.children
 
 
@@ -444,6 +444,4 @@ def test_plot_rank_dist(datatree, kind, compact, combined, plot_kwargs):
         if value is False:
             assert artist not in pc.viz.children
         else:
-            assert artist in pc.viz.children
-        elif artist != "remove_axis":
             assert artist in pc.viz.children

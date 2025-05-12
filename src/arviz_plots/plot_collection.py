@@ -206,18 +206,18 @@ class PlotCollection:
         self._data = data
         self._coords = None
         self._viz_dt = viz_dt
-        self._aes_dt = aes_dt
 
         if backend is not None:
             self.backend = backend
         elif "chart" in viz_dt:
             self.backend = viz_dt["chart"].item().__module__.split(".")[0]
 
-        if aes is None:
-            aes = {}
-
-        if self._aes_dt is None:
+        if aes_dt is None:
+            if aes is None:
+                aes = {}
             self._aes_dt = self.generate_aes_dt(aes, data, **kwargs)
+        else:
+            self._aes_dt = aes_dt
 
     @property
     def aes(self):
@@ -555,7 +555,7 @@ class PlotCollection:
         --------
         arviz_plots.PlotCollection.update_aes_from_dataset
         """
-        return self.aes[aes_key].dataset
+        return self.aes[aes_key].to_dataset()
 
     def update_aes_from_dataset(self, aes_key, dataset):
         """Update the values of aes_key with those in the provided Dataset.
