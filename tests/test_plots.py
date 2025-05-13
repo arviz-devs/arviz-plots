@@ -19,6 +19,7 @@ from arviz_plots import (
     plot_ppc_dist,
     plot_prior_posterior,
     plot_psense_dist,
+    plot_rank_dist,
     plot_ridge,
     plot_trace,
     plot_trace_dist,
@@ -251,6 +252,23 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         )
         assert "chart" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
+        if compact:
+            assert "hierarchy" not in pc.viz["theta"]["plot"].dims
+        else:
+            assert "hierarchy" in pc.viz["theta"]["plot"].dims
+
+    @pytest.mark.parametrize("compact", (True, False))
+    @pytest.mark.parametrize("combined", (True, False))
+    def test_plot_rank_dist(self, datatree, backend, compact, combined):
+        kind = "kde"
+        pc = plot_rank_dist(datatree, backend=backend, compact=compact, combined=combined)
+        assert "chart" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "chain" in pc.viz["theta"]["ecdf_lines"].dims
+        if combined:
+            assert "chain" not in pc.viz["theta"][kind].dims
+        else:
+            assert "chain" in pc.viz["theta"][kind].dims
         if compact:
             assert "hierarchy" not in pc.viz["theta"]["plot"].dims
         else:

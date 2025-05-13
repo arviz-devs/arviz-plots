@@ -21,6 +21,7 @@ from .ppc_tstat import plot_ppc_tstat
 from .prior_posterior_plot import plot_prior_posterior
 from .psense_dist_plot import plot_psense_dist
 from .psense_quantities_plot import plot_psense_quantities
+from .rank_dist_plot import plot_rank_dist
 from .rank_plot import plot_rank
 from .ridge_plot import plot_ridge
 from .trace_dist_plot import plot_trace_dist
@@ -47,6 +48,7 @@ __all__ = [
     "plot_ppc_rootogram",
     "plot_prior_posterior",
     "plot_rank",
+    "plot_rank_dist",
     "plot_ridge",
     "plot_ppc_pava",
     "plot_ppc_pit",

@@ -15,6 +15,7 @@ from arviz_plots import (
     plot_ess_evolution,
     plot_forest,
     plot_psense_dist,
+    plot_rank_dist,
     plot_ridge,
 )
 
@@ -405,4 +406,35 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, plot_kwarg
             else:
                 assert all(key not in child for child in pc.viz.children.values())
         elif key != "remove_axis":
+            assert all(key in child for child in pc.viz.children.values())
+
+
+@given(
+    plot_kwargs=st.fixed_dictionaries(
+        {},
+        optional={
+            "kind": plot_kwargs_value,
+        },
+    ),
+    kind=kind_value,
+    compact=st.booleans(),
+    combined=st.booleans(),
+)
+def test_plot_rank_dist(datatree, kind, compact, combined, plot_kwargs):
+    kind_kwargs = plot_kwargs.pop("kind", None)
+    if kind_kwargs is not None:
+        plot_kwargs[kind] = kind_kwargs
+    pc = plot_rank_dist(
+        datatree,
+        backend="none",
+        kind=kind,
+        compact=compact,
+        combined=combined,
+        plot_kwargs=plot_kwargs,
+    )
+    assert all("plot" in child for child in pc.viz.children.values())
+    for key, value in plot_kwargs.items():
+        if value is False:
+            assert all(key not in child for child in pc.viz.children.values())
+        else:
             assert all(key in child for child in pc.viz.children.values())
