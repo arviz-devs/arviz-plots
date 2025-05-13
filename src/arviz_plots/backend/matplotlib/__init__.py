@@ -162,29 +162,29 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
 
 # object creation and i/o
-def show(chart):  # pylint: disable=unused-argument
+def show(figure):  # pylint: disable=unused-argument
     """Show all existing matplotlib figures."""
     _show()
 
 
-def savefig(chart, path, **kwargs):
-    """Save the chart to a file.
+def savefig(figure, path, **kwargs):
+    """Save the figure to a file.
 
     Parameters
     ----------
-    chart : `~matplotlib.figure.Figure`
-        The chart to save.
+    figure : `~matplotlib.figure.Figure`
+        The figure to save.
     path : pathlib.Path
-        Path to the file where the chart will be saved.
+        Path to the file where the figure will be saved.
     **kwargs : dict, optional
         Additional keyword arguments passed to `matplotlib.pyplot.savefig`.
     """
-    chart.savefig(path, **kwargs)
+    figure.savefig(path, **kwargs)
 
 
 def get_figsize(plot_collection):
-    """Get the size of the :term:`chart` element and its units."""
-    return plot_collection.viz["chart"].item().get_size_inches(), "inches"
+    """Get the size of the :term:`figure` element and its units."""
+    return plot_collection.viz["figure"].item().get_size_inches(), "inches"
 
 
 def create_plotting_grid(
@@ -203,7 +203,7 @@ def create_plotting_grid(
     subplot_kws=None,
     **kwargs,
 ):
-    """Create a chart with a grid of plotting targets in it.
+    """Create a figure with a grid of plotting targets in it.
 
     Parameters
     ----------

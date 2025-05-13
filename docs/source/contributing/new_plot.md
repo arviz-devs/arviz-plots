@@ -160,7 +160,7 @@ and create and instance of it. In addition to having to copy `pc_kwargs` when it
 not `None` following the template above, it might also be necessary to set defaults
 for dictionaries within `pc_kwargs` such as `pc_kwargs["aes"]`.
 
-When creating a `PlotCollection` from scratch, the :term:`chart` size should also be set
+When creating a `PlotCollection` from scratch, the :term:`figure` size should also be set
 as a function of the grid size that will be needed. `arviz_plots.plots.utils` has two
 functions to this end, depending on wheather `.grid` or `.wrap` methods will be called:
 `set_wrap_layout` and `set_grid_layout`.

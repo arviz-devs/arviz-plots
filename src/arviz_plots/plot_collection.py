@@ -157,7 +157,7 @@ def leaf_dataset(dt, leaf_name):
 class PlotCollection:
     """Low level base class for plotting with xarray Datasets.
 
-    This class instantiates a chart with multiple plots in it and provides methods to loop
+    This class instantiates a figure with multiple plots in it and provides methods to loop
     over these plots and the provided data syncing each plot and data subset to
     user given aesthetics.
 
@@ -209,8 +209,8 @@ class PlotCollection:
 
         if backend is not None:
             self.backend = backend
-        elif "chart" in viz_dt:
-            self.backend = viz_dt["chart"].item().__module__.split(".")[0]
+        elif "figure" in viz_dt:
+            self.backend = viz_dt["figure"].item().__module__.split(".")[0]
 
         if aes_dt is None:
             if aes is None:
@@ -260,17 +260,17 @@ class PlotCollection:
     def viz(self):
         """Information about the visual elements in the plot as a DataTree.
 
-        Plot elements like :term:`artists`, :term:`plots` and the :term:`chart`
+        Plot elements like :term:`artists`, :term:`plots` and the :term:`figure`
         are stored at the top level, if possible directly as DataArrays,
         otherwise as groups whose variables are variable names in the input
         Dataset.
         The `viz` DataTree always contains the following leaf variables:
 
-        * ``chart`` (always on the home group) -> Scalar object containing the highest level
+        * ``figure`` (always on the home group) -> Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
-        * ``plot`` -> :term:`Plot` objects in this :term:`chart`.
+        * ``plot`` -> :term:`Plot` objects in this :term:`figure`.
           Generally, these are the target where :term:`artists <artist>` are added,
-          although it is possible to have artists targetting the chart itself.
+          although it is possible to have artists targetting the figure itself.
         * ``row`` -> Integer row indicator
         * ``col`` -> Integer column indicator
 
@@ -324,18 +324,18 @@ class PlotCollection:
         return set(self.aes.children)
 
     def show(self):
-        """Call the backend function to show this :term:`chart`."""
-        if "chart" not in self.viz:
+        """Call the backend function to show this :term:`figure`."""
+        if "figure" not in self.viz:
             raise ValueError("No plot found to be shown")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        chart = self.viz["chart"].item()
-        if chart is not None:
-            plot_bknd.show(chart)
+        figure = self.viz["figure"].item()
+        if figure is not None:
+            plot_bknd.show(figure)
         else:
             self.viz["plot"].item()
 
     def savefig(self, filename, **kwargs):
-        """Call the backend function to save this :term:`chart`.
+        """Call the backend function to save this :term:`figure`.
 
         Parameters
         ----------
@@ -343,10 +343,10 @@ class PlotCollection:
         **kwargs
             Passed as is to the respective backend function
         """
-        if "chart" not in self.viz:
+        if "figure" not in self.viz:
             raise ValueError("No plot found to be saved")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        plot_bknd.savefig(self.viz["chart"].item(), Path(filename), **kwargs)
+        plot_bknd.savefig(self.viz["figure"].item(), Path(filename), **kwargs)
 
     def generate_aes_dt(self, aes, data=None, **kwargs):
         """Generate the aesthetic mappings.
@@ -703,7 +703,7 @@ class PlotCollection:
             plots_raw_shape = [data.sizes[dim] for dim in dims]
             viz_dict["/"] = xr.Dataset(
                 {
-                    "chart": np.array(fig, dtype=object),
+                    "figure": np.array(fig, dtype=object),
                     "plot": (dims, flat_ax_ary.reshape(plots_raw_shape)),
                     "row_index": (dims, flat_row_id.reshape(plots_raw_shape)),
                     "col_index": (dims, flat_col_id.reshape(plots_raw_shape)),
@@ -711,7 +711,7 @@ class PlotCollection:
                 coords={dim: data[dim] for dim in dims},
             )
         else:
-            viz_dict["/"] = xr.Dataset({"chart": np.array(fig, dtype=object)})
+            viz_dict["/"] = xr.Dataset({"figure": np.array(fig, dtype=object)})
             viz_dict["plot"] = {}
             viz_dict["row_index"] = {}
             viz_dict["col_index"] = {}
@@ -822,7 +822,7 @@ class PlotCollection:
             plots_raw_shape = [data.sizes[dim] for dim in dims]
             viz_dict["/"] = xr.Dataset(
                 {
-                    "chart": np.array(fig, dtype=object),
+                    "figure": np.array(fig, dtype=object),
                     "plot": (dims, ax_ary.flatten().reshape(plots_raw_shape)),
                     "row_index": (dims, row_id.flatten().reshape(plots_raw_shape)),
                     "col_index": (dims, col_id.flatten().reshape(plots_raw_shape)),
@@ -830,7 +830,7 @@ class PlotCollection:
                 coords={dim: data[dim] for dim in dims},
             )
         else:
-            viz_dict["/"] = xr.Dataset({"chart": np.array(fig, dtype=object)})
+            viz_dict["/"] = xr.Dataset({"figure": np.array(fig, dtype=object)})
             viz_dict["plot"] = {}
             viz_dict["row_index"] = {}
             viz_dict["col_index"] = {}
@@ -1183,7 +1183,7 @@ class PlotCollection:
         legend_title = None if text_only else title
 
         return plot_bknd.legend(
-            self.viz["chart"].item(),
+            self.viz["figure"].item(),
             kwarg_list,
             label_list,
             title=legend_title,

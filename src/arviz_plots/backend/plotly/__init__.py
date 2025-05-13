@@ -50,22 +50,22 @@ def is_shared_x(fig):
 
 def apply_square_root_scale(plotly_plot):
     """Apply a square root scale to the y-axis of a PlotlyPlot."""
-    chart = plotly_plot.chart
+    figure = plotly_plot.figure
     row = plotly_plot.row
     col = plotly_plot.col
 
-    if not hasattr(chart.layout, "grid") or chart.layout.grid is None:
-        raise ValueError("The chart does not have a grid layout required for faceting.")
+    if not hasattr(figure.layout, "grid") or figure.layout.grid is None:
+        raise ValueError("The figure does not have a grid layout required for faceting.")
 
-    chart_grid = chart.layout.grid
-    num_cols = chart_grid.columns if chart_grid.columns is not None else 1
+    figure_grid = figure.layout.grid
+    num_cols = figure_grid.columns if figure_grid.columns is not None else 1
     index = (row - 1) * num_cols + col
 
     yaxis_ref = "y" if index == 1 else f"y{index}"
     layout_yaxis = "yaxis" if index == 1 else f"yaxis{index}"
 
     y_transformed_all = []
-    for trace in chart.data:
+    for trace in figure.data:
         if getattr(trace, "yaxis", None) == yaxis_ref:
             if hasattr(trace, "y") and trace.y is not None:
                 y_data = np.array(trace.y, dtype=float)
@@ -91,13 +91,13 @@ def apply_square_root_scale(plotly_plot):
 
     ticktext_original = [f"{round(tv**2)}" for tv in tickvals_transformed]
 
-    chart.layout[layout_yaxis].update(
+    figure.layout[layout_yaxis].update(
         tickvals=tickvals_transformed,
         ticktext=ticktext_original,
-        title=chart.layout[layout_yaxis].title,
+        title=figure.layout[layout_yaxis].title,
     )
 
-    chart.layout[layout_yaxis].range = [y_min, y_max + 0.5]
+    figure.layout[layout_yaxis].range = [y_min, y_max + 0.5]
 
 
 def str_to_plotly_html(string):
@@ -193,12 +193,12 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
 
 def get_figsize(plot_collection):
-    """Get the size of the :term:`chart` element and its units."""
-    chart = plot_collection.viz["chart"].item()
-    if chart is None:
-        chart = plot_collection.viz["plot"].item()
-    height = chart.layout.height
-    width = chart.layout.width
+    """Get the size of the :term:`figure` element and its units."""
+    figure = plot_collection.viz["figure"].item()
+    if figure is None:
+        figure = plot_collection.viz["plot"].item()
+    height = figure.layout.height
+    width = figure.layout.width
     return (800 if width is None else width, 800 if height is None else height), "dots"
 
 
@@ -230,7 +230,7 @@ class PlotlyPlot:
 
     Plotly supports :term:`faceting` but it doesn't have any object that represents
     a :term:`plot`, instead, plotting happens only though the Plotly figure
-    (which represents the :term:`chart`) indicating the row and column indexes
+    (which represents the :term:`figure`) indicating the row and column indexes
     in case plotting should happen to a single :term:`plot`.
 
     This class is initialized with the plotly figure and the row and col indexes,
@@ -238,15 +238,15 @@ class PlotlyPlot:
     arguments already set.
     """
 
-    def __init__(self, chart, row, col):
+    def __init__(self, figure, row, col):
         self.row = row
         self.col = col
-        self.chart = chart
+        self.figure = figure
 
     def __getattr__(self, name):
         """Expose all methods of the plotly figure with row and col arguments set."""
-        if hasattr(self.chart, name):
-            original_fun = getattr(self.chart, name)
+        if hasattr(self.figure, name):
+            original_fun = getattr(self.figure, name)
 
             def aux_fun(*args, **kwargs):
                 return original_fun(*args, **kwargs, row=self.row, col=self.col)
@@ -257,28 +257,28 @@ class PlotlyPlot:
 
 
 # object creation and i/o
-def show(chart):
+def show(figure):
     """Show the provided plotly layout."""
-    chart.show()
+    figure.show()
 
 
-def savefig(chart, path, **kwargs):
-    """Save the chart to a file.
+def savefig(figure, path, **kwargs):
+    """Save the figure to a file.
 
     Parameters
     ----------
-    chart : `~plotly.graph_objects.Figure`
-        Plotly chart to save.
+    figure : `~plotly.graph_objects.Figure`
+        Plotly figure to save.
     path : pathlib.Path
-        Path to save the chart to.
+        Path to save the figure to.
     **kwargs: dict, optional
         Additional arguments passed to `plotly.io.write_image` or
         `plotly.io.write_html` depending on the file extension.
     """
     if path.suffix == ".html":
-        chart.write_html(path, **kwargs)
+        figure.write_html(path, **kwargs)
     else:
-        chart.write_image(path, **kwargs)
+        figure.write_image(path, **kwargs)
 
 
 def create_plotting_grid(
@@ -297,7 +297,7 @@ def create_plotting_grid(
     subplot_kws=None,  # pylint: disable=unused-argument
     **kwargs,
 ):
-    """Create a chart with a grid of plotting targets in it.
+    """Create a figure with a grid of plotting targets in it.
 
     Parameters
     ----------
@@ -343,7 +343,7 @@ def create_plotting_grid(
     sharex = share_lookup.get(sharex, sharex)
     sharey = share_lookup.get(sharey, sharey)
 
-    chart = make_subplots(
+    figure = make_subplots(
         rows=int(rows),
         cols=int(cols),
         shared_xaxes=sharex,
@@ -357,10 +357,10 @@ def create_plotting_grid(
 
     for row in range(rows):
         for col in range(cols):
-            plots[row, col] = PlotlyPlot(chart, row + 1, col + 1)
+            plots[row, col] = PlotlyPlot(figure, row + 1, col + 1)
     if squeeze and plots.size == 1:
-        return chart, plots[0, 0]
-    return chart, plots.squeeze() if squeeze else plots
+        return figure, plots[0, 0]
+    return figure, plots.squeeze() if squeeze else plots
 
 
 # helper functions
@@ -656,8 +656,8 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     kwargs = {"size": size, "color": color}
 
     # Check if the x axis is shared
-    is_shared_x_val = is_shared_x(target.chart)
-    row, _ = target.chart._get_subplot_rows_columns()  # pylint: disable=protected-access
+    is_shared_x_val = is_shared_x(target.figure)
+    row, _ = target.figure._get_subplot_rows_columns()  # pylint: disable=protected-access
     if is_shared_x_val and target.row != row[len(row) - 1]:
         return
 

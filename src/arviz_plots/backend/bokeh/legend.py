@@ -28,7 +28,7 @@ def legend(
     ----------
     legend_target : (int, int), default (0, -1)
         Row and colum indicators of the :term:`plot` where the legend will be placed.
-        Bokeh does not support :term:`chart` level legend.
+        Bokeh does not support :term:`figure` level legend.
     side : str, optional
         Side of the plot on which to place the legend. Use "center" to put the legend
         inside the plotting area.
@@ -37,7 +37,7 @@ def legend(
         artist_kwargs = {}
     if legend_target is None:
         legend_target = (0, -1)
-    # TODO: improve selection of Figure object from what is stored as "chart"
+    # TODO: improve selection of Figure object from what is stored as "figure"
     children = target.children
     if not isinstance(children[0], tuple):
         children = children[1].children

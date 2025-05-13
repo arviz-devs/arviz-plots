@@ -100,35 +100,35 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
 
 # object creation and i/o
-def show(chart):
-    """Show this :term:`chart`.
+def show(figure):
+    """Show this :term:`figure`.
 
     Parameters
     ----------
-    chart : chart_type
+    figure : figure_type
     """
     raise TypeError("'none' backend objects can't be shown.")
 
 
-def savefig(chart, path, **kwargs):
-    """Show this :term:`chart`.
+def savefig(figure, path, **kwargs):
+    """Show this :term:`figure`.
 
     Parameters
     ----------
-    chart : chart_type
-        The chart to save.
+    figure : figure_type
+        The figure to save.
     path : pathlib.Path
-        The path to save the chart to.
+        The path to save the figure to.
     **kwargs : dict, optional
         Additional keyword arguments.
     """
-    raise TypeError("'none' backend charts can't be saved.")
+    raise TypeError("'none' backend figures can't be saved.")
 
 
 def get_figsize(plot_collection):
-    """Get the size of the :term:`chart` element and its units."""
-    chart_element = plot_collection.viz["chart"].item()
-    return chart_element["figsize"], chart_element["figsize_units"]
+    """Get the size of the :term:`figure` element and its units."""
+    figure_element = plot_collection.viz["figure"].item()
+    return figure_element["figsize"], figure_element["figsize_units"]
 
 
 def create_plotting_grid(
@@ -147,7 +147,7 @@ def create_plotting_grid(
     subplot_kws=None,
     **kwargs,
 ):
-    """Create a :term:`chart` with a grid of :term:`plots` in it.
+    """Create a :term:`figure` with a grid of :term:`plots` in it.
 
     Parameters
     ----------
@@ -172,7 +172,7 @@ def create_plotting_grid(
 
     Returns
     -------
-    chart : False
+    figure : False
     plots : [] or ndarray of []
     """
     plots = np.empty((rows, cols), dtype=object)
@@ -185,7 +185,7 @@ def create_plotting_grid(
             raise ValueError("'subplot_kws' is not empty")
         if kwargs:
             raise ValueError("kwargs are not empty")
-    chart_element = {
+    figure_element = {
         "figsize": figsize,
         "figsize_units": figsize_units,
         "sharex": sharex,
@@ -196,7 +196,7 @@ def create_plotting_grid(
         "subplot_kws": subplot_kws,
         **kwargs,
     }
-    return np.array(chart_element, dtype=object), plots
+    return np.array(figure_element, dtype=object), plots
 
 
 def _filter_kwargs(kwargs, artist_kws):

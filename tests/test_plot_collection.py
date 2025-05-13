@@ -300,7 +300,7 @@ def map_auxiliar(da, target, da_list, target_list, kwarg_list, **kwargs):
 def generate_plot_collection1(data):
     viz_dt = DataTree.from_dict(
         {
-            "/": Dataset({"chart": "chart"}),
+            "/": Dataset({"figure": "figure"}),
             "plot": Dataset({"mu": "mu_plot", "theta": "theta_plot", "eta": "eta_plot"}),
         }
     )
@@ -330,7 +330,7 @@ def generate_plot_collection2():
     theta_t_plot = [f"theta_t_plot{i}" for i in range(8)]
     viz_dt = DataTree.from_dict(
         {
-            "/": Dataset({"chart": "chart"}),
+            "/": Dataset({"figure": "figure"}),
             "plot": Dataset(
                 {
                     "mu": "mu_plot",

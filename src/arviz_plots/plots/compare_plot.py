@@ -97,13 +97,13 @@ def plot_compare(
     )
     figsize_units = "dots"
 
-    chart, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
+    figure, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
 
     # Create plot collection
     plot_collection = PlotCollection(
         Dataset({}),
         viz_dt=DataTree.from_dict(
-            {"/": Dataset({"chart": np.array(chart, dtype=object), "plot": target})}
+            {"/": Dataset({"figure": np.array(figure, dtype=object), "plot": target})}
         ),
         backend=backend,
         **pc_kwargs,

@@ -210,14 +210,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_trace(self, datatree, backend):
         pc = plot_trace(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert pc.viz["trace"]["mu"].shape == (4,)
 
     def test_plot_trace_sample(self, datatree_sample, backend):
         pc = plot_trace(datatree_sample, sample_dims="sample", backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert pc.viz["trace"]["mu"].shape == ()
@@ -227,7 +227,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_trace_dist(self, datatree, backend, compact, combined):
         kind = "kde"
         pc = plot_trace_dist(datatree, backend=backend, compact=compact, combined=combined)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert "chain" in pc.viz["trace"]["theta"].dims
@@ -245,7 +245,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_trace_dist(
             datatree_sample, backend=backend, sample_dims="sample", compact=compact
         )
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         if compact:
@@ -391,7 +391,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_ess(self, datatree, backend):
         pc = plot_ess(datatree, backend=backend, rug=True)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["ess"]
         assert "mu" in pc.viz["min_ess"]
@@ -406,7 +406,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_ess_sample(self, datatree_sample, backend):
         pc = plot_ess(datatree_sample, backend=backend, rug=True, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["ess"]
         assert "mu" in pc.viz["min_ess"]
@@ -418,7 +418,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_ess_models(self, datatree, datatree2, backend):
         pc = plot_ess({"c": datatree, "n": datatree2}, backend=backend, rug=False)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["ess"]
         assert "mu" in pc.viz["min_ess"]
@@ -434,7 +434,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_ess_evolution(self, datatree, backend):
         pc = plot_ess_evolution(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["ess_bulk"]
         assert "mu" in pc.viz["ess_tail"]
@@ -449,7 +449,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         self, datatree_sample, backend
     ):  # pylint: disable=unused-argument
         pc = plot_ess_evolution(datatree_sample, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["ess_bulk"]
         assert "mu" in pc.viz["ess_tail"]
@@ -463,14 +463,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "/overlay_ppc" in pc.aes.groups
         assert "y" in pc.viz[kind]
         assert "y" in pc.viz["observed_density"]
 
     def test_plot_psense_dist(self, datatree, backend):
         pc = plot_psense_dist(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert "component_group" in pc.viz["plot"]["mu"].dims
@@ -482,7 +482,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_psense_dist_sample(self, datatree_sample, backend):
         pc = plot_psense_dist(datatree_sample, backend=backend, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert "component_group" in pc.viz["plot"]["mu"].dims
@@ -494,15 +494,10 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_bf(self, datatree, backend):
         pc = plot_bf(datatree, var_names="mu", backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "Groups" in pc.viz["kde"].coords
-<<<<<<< HEAD
-        assert "BF_type" in pc.aes
-        assert "mu" in pc.aes["BF_type"]
-=======
         assert "/color" in pc.aes.groups
         assert "BF01" in pc.aes["BF_type"].values[0]
->>>>>>> ad3dacc (fix tests)
 
     def test_plot_energy_dist(self, datatree, backend):
         pc = plot_energy(datatree, backend=backend)
@@ -536,20 +531,20 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_prior_posterior(self, datatree, backend):
         pc = plot_prior_posterior(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "Groups" not in pc.viz["plot"].coords
         assert "Groups" in pc.viz["kde"].coords
 
     def test_autocorr(self, datatree, backend):
         pc = plot_autocorr(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "hierarchy" not in pc.viz["lines"]["mu"].dims
         assert "hierarchy" in pc.viz["lines"]["theta"].dims
 
     def test_plot_mcse(self, datatree, backend):
         pc = plot_mcse(datatree, backend=backend, rug=True)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["mcse"]
         assert "mu" in pc.viz["title"]
@@ -562,7 +557,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_mcse_sample(self, datatree_sample, backend):
         pc = plot_mcse(datatree_sample, backend=backend, rug=True, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["mcse"]
         assert "mu" in pc.viz["title"]
@@ -573,7 +568,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_plot_mcse_models(self, datatree, datatree2, backend):
         pc = plot_mcse({"c": datatree, "n": datatree2}, backend=backend, rug=False)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["mcse"]
         assert "mu" in pc.viz["title"]

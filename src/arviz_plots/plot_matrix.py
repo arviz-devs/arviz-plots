@@ -151,7 +151,7 @@ class PlotMatrix(PlotCollection):
         return xr.DataTree(
             xr.Dataset(
                 {
-                    "chart": np.array(fig, dtype=object),
+                    "figure": np.array(fig, dtype=object),
                     "plot": (("row_index", "col_index"), ax_ary),
                 },
                 coords=coords,
@@ -498,11 +498,11 @@ class PlotMatrix(PlotCollection):
         ``col_index`` has coordinates with the ``_x`` suffix.
         The `viz` DataTree always contains the following variables:
 
-        * ``chart`` (always on the home group) -> Scalar object containing the highest level
+        * ``figure`` (always on the home group) -> Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
-        * ``plot`` -> :term:`Plot` objects in this :term:`chart`.
+        * ``plot`` -> :term:`Plot` objects in this :term:`figure`.
           Generally, these are the target where :term:`artists <artist>` are added,
-          although it is possible to have artists targetting the chart itself.
+          although it is possible to have artists targetting the figure itself.
 
         Plus all the artists that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotMatrix.map` and :meth:`arviz_plots.PlotMatrix.map_triangle`

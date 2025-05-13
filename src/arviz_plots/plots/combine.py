@@ -1,4 +1,4 @@
-"""Elements to combine multiple batteries-included plots into a single chart."""
+"""Elements to combine multiple batteries-included plots into a single figure."""
 import re
 from importlib import import_module
 
