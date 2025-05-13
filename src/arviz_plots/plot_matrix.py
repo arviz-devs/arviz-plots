@@ -385,7 +385,6 @@ class PlotMatrix(PlotCollection):
 
                     aes_kwargs = self.get_aes_kwargs(aes, var_name_x, aes_sel)
                     fun_kwargs = {**aes_kwargs, **kwargs}
-                    fun_kwargs["backend"] = self.backend
                     if subset_info:
                         fun_kwargs = {
                             **fun_kwargs,

@@ -10,6 +10,36 @@ from arviz_base import rcParams
 from arviz_base.sel_utils import xarray_sel_iter
 
 
+def backend_from_object(obj, return_module=True):
+    """Get the backend string or module that corresponds to a given object.
+
+    Parameters
+    ----------
+    obj
+        The object to get its corresponding backend for.
+    return_module : bool, default True
+        Return the module from ``arviz_plots.backend` after importing it
+
+    Returns
+    -------
+    backend : module or str
+    """
+    # cover none backend first, the figure object is a dictionary,
+    # and the plot objects are lists
+    if isinstance(obj, list | dict):
+        backend = "none"
+    else:
+        lib, *_, leaf = obj.__module__.split(".")
+        # for plotly, the target will actually be an arviz_plots.backend.plotly.PlotlyPlot
+        if lib == "arviz_plots":
+            backend = leaf
+        else:
+            backend = lib
+    if return_module:
+        return import_module(f"arviz_plots.backend.{backend}")
+    return backend
+
+
 def concat_model_dict(data):
     """Merge multiple Datasets into a single one along a new model dimension."""
     if isinstance(data, dict):
@@ -96,7 +126,7 @@ def process_kwargs_subset(value, var_name, sel):
     """
     if isinstance(value, xr.Dataset):
         if var_name not in value.data_vars:
-            subset_dict = sel_subset(sel, ds)
+            subset_dict = sel_subset(sel, value)
             if subset_dict:
                 try:
                     ds = value.sel(subset_dict)
@@ -210,7 +240,7 @@ class PlotCollection:
         if backend is not None:
             self.backend = backend
         elif "figure" in viz_dt:
-            self.backend = viz_dt["figure"].item().__module__.split(".")[0]
+            self.backend = backend_from_object(self.viz_dt["figure"].item(), return_module=False)
 
         if aes_dt is None:
             if aes is None:
@@ -1084,7 +1114,6 @@ class PlotCollection:
                     for key, values in kwargs.items()
                 },
             }
-            fun_kwargs["backend"] = self.backend
             if subset_info:
                 fun_kwargs = {**fun_kwargs, "var_name": var_name, "sel": sel, "isel": isel}
 
