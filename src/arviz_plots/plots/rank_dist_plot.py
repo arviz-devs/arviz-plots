@@ -1,3 +1,4 @@
+# pylint: disable=R0801
 """rankDist plot code."""
 from copy import copy
 from importlib import import_module
@@ -28,12 +29,14 @@ def plot_rank_dist(
     compact=True,
     combined=False,
     kind=None,
+    ci_prob=None,
     plot_collection=None,
     backend=None,
     labeller=None,
     aes_map=None,
     plot_kwargs=None,
-    stats_kwargs=None,
+    stats_dist_kwargs=None,
+    stats_rank_kwargs=None,
     pc_kwargs=None,
 ):
     """Plot 1D marginal distributions and fractional rank Δ-ECDF plots.
@@ -68,7 +71,12 @@ def plot_rank_dist(
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
-        How to represent the marginal distribution.
+        How to represent the marginal density.
+        Defaults to ``rcParams["plot.density_kind"]``
+    ci_prob : float, optional
+        Indicates the probability that should be contained within the plotted credible interval for
+        the fractional ranks.
+        Defaults to ``rcParams["stats.ci_prob"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
@@ -84,17 +92,24 @@ def plot_rank_dist(
 
           * "kde" -> :func:`~.visuals.line_xy`
           * "ecdf" -> :func:`~.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
-        * "rank" -> passed to :func:`~.visuals.line`
+        * "rank" -> passed to :func:`~.visuals.ecdf_line`
         * "label" -> :func:`~.visuals.labelled_x` and :func:`~.visuals.labelled_y`
         * "ticklabels" -> :func:`~.visuals.ticklabel_props`
         * "xlabel_rank" -> :func:`~.visuals.labelled_x`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats_kwargs : mapping, optional
+    stats_dist_kwargs : mapping, optional
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
+
+    stats_rank_kwargs : mapping, optional
+        Valid keys are:
+
+        * n_simulations -> passed to ecdf_pit
+        * method -> passed to ecdf_pit
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection`
@@ -178,8 +193,10 @@ def plot_rank_dist(
         sample_dims = [sample_dims]
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if stats_kwargs is None:
-        stats_kwargs = {}
+    if stats_dist_kwargs is None:
+        stats_dist_kwargs = {}
+    if stats_rank_kwargs is None:
+        stats_rank_kwargs = {}
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -314,7 +331,7 @@ def plot_rank_dist(
         labeller=labeller,
         aes_map={key: value for key, value in aes_map.items() if key == kind},
         plot_kwargs=plot_kwargs_dist,
-        stats_kwargs=stats_kwargs,
+        stats_kwargs=stats_dist_kwargs,
     )
     plot_collection.coords = None
 
@@ -338,10 +355,12 @@ def plot_rank_dist(
         group=group,
         coords=coords,
         sample_dims=sample_dims,
+        ci_prob=ci_prob,
         plot_collection=plot_collection,
         labeller=labeller,
         aes_map=aes_map_rank,
         plot_kwargs=plot_kwargs_rank,
+        stats_kwargs=stats_rank_kwargs,
     )
     plot_collection.coords = None
     if xlabel_kwargs is not False:

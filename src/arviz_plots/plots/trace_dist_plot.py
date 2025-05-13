@@ -61,6 +61,7 @@ def plot_trace_dist(
         is not present.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal distribution.
+        Defaults to ``rcParams["plot.density_kind"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
@@ -76,6 +77,7 @@ def plot_trace_dist(
 
           * "kde" -> :func:`~.visuals.line_xy`
           * "ecdf" -> :func:`~.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * "trace" -> passed to :func:`~.visuals.line`
         * "divergence" -> passed to :func:`~.visuals.trace_rug`
