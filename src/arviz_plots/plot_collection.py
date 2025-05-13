@@ -6,8 +6,8 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
-from arviz_base import rcParams
-from arviz_base.sel_utils import xarray_sel_iter
+from arviz_base import rcParams, xarray_sel_iter
+from arviz_base.labels import BaseLabeller
 
 
 def backend_from_object(obj, return_module=True):
@@ -1202,14 +1202,15 @@ class PlotCollection:
         """Store the artist object of `var_name`+`sel` combination in `fun_label` variable."""
         self.viz[fun_label][var_name].loc[sel] = aux_artist
 
-    def add_legend(  # pylint: disable=unreachable
+    def add_legend(
         self,
         dim,
-        var_name=None,
         aes=None,
         artist_kwargs=None,
         title=None,
         text_only=False,
+        # position=(0, -1),  # TODO: add argument
+        labeller=None,
         **kwargs,
     ):
         """Add a legend for the given artist/aesthetic to the plot.
@@ -1221,17 +1222,17 @@ class PlotCollection:
 
         Parameters
         ----------
-        dim : hashable
-            Dimension for which to generate the legend. It should have at least
-            one :term:`aesthetic mapped <aesthetic mapping>` to it.
-        var_name : hashable, optional
-            Variable name for which to generate the legend. Unless the ``aes``
-            DataTree has been modified manually, the legend will be independent
-            of the variable chosen. Defaults to the first variable with `dim` as
-            dimension.
+        dim : hashable or iterable of hashable
+            Dimension or dimensions for which to generate the legend.
+            The pseudo-dimension ``__variable__`` is allowed too.
+            It should have at least one :term:`aesthetic mapped <aesthetic mapping>` to it.
+            Only the mappings that match will be taken into account; if a legend is requested
+            for the "chain" dimension but there is only one aesthetic mapping
+            for ("chain", "group") no legend can be generated.
         aes : str or iterable of str, optional
             Specific aesthetics to take into account when generating the legend.
-            They should all be mapped to `dim`.
+            They should all be mapped to `dim`. Defaults to all aesthetics matching
+            that mapping with the exception "x" and "y" which are never included.
         artist_kwargs : mapping, optional
             Keyword arguments passed to the backend artist function used to
             generate the miniatures in the legend.
@@ -1239,6 +1240,9 @@ class PlotCollection:
             Legend title. Defaults to `dim`.
         text_only : bool, optional
             If True, creates a text-only legend without graphical markers.
+        labeller : labeller instance, optional
+            Labeller to generate the legend entries
+        position : (int, int), default (0, -1)
         **kwargs : mapping, optional
             Keyword arguments passed to the backend function that generates the legend.
 
@@ -1247,52 +1251,61 @@ class PlotCollection:
         legend : object
             The corresponding legend object for the backend of the ``PlotCollection``.
         """
-        # TODO: adapt legend to updated aesthetics datatree
-        return None
-        if title is None:
-            title = dim
-        if var_name is None:
-            var_name = [name for name, ds in self.aes.children.items() if dim in ds.dims][0]
-        aes_ds = self.aes[var_name].to_dataset()
-        if dim not in aes_ds.dims:
-            raise ValueError(
-                f"Legend can't be generated. Found no aesthetics mapped to dimension {dim}"
-            )
-        aes_ds = aes_ds.drop_dims([d for d in aes_ds.dims if d != dim])
-        if aes is None:
-            dropped_vars = ["x", "y"] + [name for name, da in aes_ds.items() if dim not in da.dims]
-            aes_ds = aes_ds.drop_vars(dropped_vars, errors="ignore")
+        if isinstance(dim, str):
+            dim = (dim,)
         else:
-            if isinstance(aes, str):
-                aes = [aes]
-            aes_ds = aes_ds[aes]
-
-        label_list = aes_ds[dim].values
-        kwarg_list = [
-            {k: v.item() for k, v in aes_ds.sel({dim: coord}).items()} for coord in label_list
+            dim = tuple(dim)
+        dim_str = ", ".join(("variable" if d == "__variable__" else d for d in dim))
+        if title is None:
+            title = dim_str
+        aes_mappings = {
+            aes_key: list(ds.dims) + ([] if "mapping" in ds.data_vars else ["__variable__"])
+            for aes_key, ds in self.aes.children.items()
+        }
+        valid_aes = [
+            aes_key for aes_key, aes_dims in aes_mappings.items() if set(dim) == set(aes_dims)
         ]
+        if not valid_aes:
+            raise ValueError(
+                f"Legend can't be generated. Found no aesthetics mapped to dimension {dim}. "
+                f"Existing mappings are {aes_mappings}."
+            )
+        if aes is None:
+            aes = [aes_key for aes_key in valid_aes if aes_key not in ("x", "y")]
+        elif isinstance(aes, str):
+            aes = [aes]
 
-        kwarg_list = [
-            {key: value for key, value in kwarg_dict.items() if not key.startswith("overlay")}
-            for kwarg_dict in kwarg_list
-        ]
+        if labeller is None:
+            labeller = BaseLabeller()
+
+        sample_aes_ds = self.aes[aes[0]].dataset
+        subset_iterator = list(xarray_sel_iter(sample_aes_ds, skip_dims=set()))
+        if "__variable__" in dim:
+            label_list = [labeller.make_label_flat(*subset) for subset in subset_iterator]
+        else:
+            label_list = [
+                labeller.sel_to_str(sel, isel) if var_name == "mapping" else "∅"
+                for var_name, sel, isel in subset_iterator
+            ]
         if text_only:
+            kwarg_list = [{} for _ in subset_iterator]
+            artist_kwargs = {"linestyle": "none", "linewidth": 0, "color": "none"}
+        else:
             kwarg_list = [
-                {key: value for key, value in kwarg_dict.items() if not key != "color"}
-                for kwarg_dict in kwarg_list
+                self.get_aes_kwargs(aes, var_name, sel) for var_name, sel, _ in subset_iterator
             ]
 
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
 
         legend_title = None if text_only else title
 
+        # TODO: store, maybe have a group in viz called legend as if it were a visual more
+        # but then it has only scalar variables with name `dim_str`
         return plot_bknd.legend(
             self.viz["figure"].item(),
             kwarg_list,
             label_list,
             title=legend_title,
-            artist_kwargs={"linestyle": "none", "linewidth": 0, "color": "none"}
-            if text_only
-            else artist_kwargs,
+            artist_kwargs=artist_kwargs,
             **kwargs,
         )

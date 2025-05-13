@@ -127,7 +127,7 @@ def plot_bf(
         pc_kwargs=pc_kwargs,
     )
 
-    plot_collection.aes["BF_type"] = bf_dataset
+    plot_collection.update_aes_from_dataset("bf_aes", bf_aes_ds)
     backend = plot_collection.backend
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
