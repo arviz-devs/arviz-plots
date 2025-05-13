@@ -65,7 +65,7 @@ def sel_subset(sel, ds_da):
     for key in sel:
         if key in dim_subset:
             continue
-        if key in ds_da.indexes:
+        if key in ds_da.coords:
             da_indexer = ds_da[key]
             if da_indexer.ndim == 1 and da_indexer.dims[0] not in dims_with_coords:
                 dim_subset[key] = sel[key]
@@ -89,11 +89,17 @@ def subset_ds(ds, var_name, sel):
     var_name : hashable
     sel : mapping
     """
-    subset_dict = sel_subset(sel, ds[var_name])
+    ds = ds[var_name]
+    if isinstance(ds, xr.DataTree):
+        ds = ds.dataset
+    subset_dict = sel_subset(sel, ds)
     if subset_dict:
-        out = ds[var_name].sel(subset_dict)
+        for key in subset_dict:
+            if key not in ds.dims and key not in ds.xindexes:
+                ds = ds.set_xindex(key)
+        out = ds.sel(subset_dict)
     else:
-        out = ds[var_name]
+        out = ds
     if out.size == 1:
         return out.item()
     return out.values
@@ -112,6 +118,9 @@ def try_da_subset(da, sel):
     """
     subset_dict = sel_subset(sel, da)
     if subset_dict:
+        for key in subset_dict:
+            if key not in da.xindexes:
+                da = da.set_xindex(key)
         try:
             da = da.sel(subset_dict)
         except KeyError:
@@ -151,12 +160,16 @@ def process_facet_dims(data, facet_dims):
     facets_per_var = {}
     if "__variable__" in facet_dims:
         for var_name, da in data.items():
-            lenghts = [len(da[dim]) for dim in facet_dims if dim in da.dims]
+            lenghts = [
+                len(np.unique(da[dim]))
+                for dim in facet_dims
+                if dim in set(da.dims).union(da.coords)
+            ]
             facets_per_var[var_name] = np.prod(lenghts) if lenghts else 1
         n_facets = np.sum(list(facets_per_var.values()))
     else:
         missing_dims = {
-            var_name: [dim for dim in facet_dims if dim not in da.dims]
+            var_name: [dim for dim in facet_dims if dim not in set(da.dims).union(da.coords)]
             for var_name, da in data.items()
         }
         missing_dims = {k: v for k, v in missing_dims.items() if v}
@@ -165,7 +178,7 @@ def process_facet_dims(data, facet_dims):
                 "All variables must have all faceting dimensions, but found the following "
                 f"dims to be missing in these variables: {missing_dims}"
             )
-        n_facets = np.prod([data.sizes[dim] for dim in facet_dims])
+        n_facets = np.prod([len(np.unique(data[dim])) for dim in facet_dims])
     return n_facets, facets_per_var
 
 
@@ -503,12 +516,32 @@ class PlotCollection:
             plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         get_default_aes = plot_bknd.get_default_aes
         ds_dict = {aes_key: xr.Dataset() for aes_key in aes}
+        all_dims = set(dim for dims in aes.values() for dim in dims)
+        clean_sizes = {}
+        coords = {}
+        for dim in all_dims:
+            if dim == "__variable__":
+                continue
+            unique_values = np.unique(data[dim])
+            clean_sizes[dim] = len(unique_values)
+            if len(data[dim]) == len(unique_values):
+                # preserve original order if there are no unique values
+                coords[dim] = data[dim]
+            else:
+                coords[dim] = unique_values
+
         for aes_key, dims in aes.items():
             if "__variable__" in dims:
                 total_aes_vals = int(
                     np.sum(
                         [
-                            np.prod([size for dim, size in da.sizes.items() if dim in dims])
+                            np.prod(
+                                [
+                                    clean_sizes[dim]
+                                    for dim in dims
+                                    if dim in set(da.dims).union(da.coords)
+                                ]
+                            )
                             for da in self.data.values()
                         ]
                     )
@@ -516,8 +549,8 @@ class PlotCollection:
                 aes_vals = get_default_aes(aes_key, total_aes_vals, kwargs)
                 aes_cumulative = 0
                 for var_name, da in data.items():
-                    aes_dims = [dim for dim in dims if dim in da.dims]
-                    aes_raw_shape = [da.sizes[dim] for dim in aes_dims]
+                    aes_dims = [dim for dim in dims if dim in set(da.dims).union(da.coords)]
+                    aes_raw_shape = [clean_sizes[dim] for dim in aes_dims]
                     if not aes_raw_shape:
                         ds_dict[aes_key][var_name] = np.asarray(aes_vals)[
                             aes_cumulative : aes_cumulative + 1
@@ -530,18 +563,19 @@ class PlotCollection:
                             aes_raw_shape
                         ),
                         dims=aes_dims,
-                        coords={dim: da.coords[dim] for dim in dims if dim in da.coords},
+                        coords={dim: coords[dim] for dim in aes_dims},
                     )
                     aes_cumulative += n_aes
             else:
                 aes_dims_in_var = {
-                    var_name: set(dims) <= set(da.dims) for var_name, da in data.items()
+                    var_name: set(dims) <= set(da.dims).union(da.coords)
+                    for var_name, da in data.items()
                 }
                 if not any(aes_dims_in_var.values()):
                     warnings.warn(
                         f"Provided mapping for {aes_key} will only use the neutral element"
                     )
-                aes_shape = [data.sizes[dim] for dim in dims]
+                aes_shape = [clean_sizes[dim] for dim in dims]
                 total_aes_vals = int(np.prod(aes_shape))
                 neutral_element_needed = not all(aes_dims_in_var.values())
                 aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
@@ -564,7 +598,7 @@ class PlotCollection:
                 ds_dict[aes_key]["mapping"] = xr.DataArray(
                     np.array(aes_vals).reshape(aes_shape),
                     dims=dims,
-                    coords={dim: data.coords[dim] for dim in dims if dim in data.coords},
+                    coords={dim: coords[dim] for dim in dims},
                 )
         return xr.DataTree.from_dict(ds_dict)
 
@@ -730,7 +764,16 @@ class PlotCollection:
         flat_col_id = col_id.flatten()[:n_plots]
         if "__variable__" not in cols:
             dims = cols  # use provided dim orders, not existing ones
-            plots_raw_shape = [data.sizes[dim] for dim in dims]
+            plots_raw_shape = []
+            coords = {}
+            for dim in dims:
+                unique_values = np.unique(data[dim])
+                plots_raw_shape.append(len(unique_values))
+                if len(unique_values) == len(data[dim]):
+                    # preserve original order if there are no unique values
+                    coords[dim] = data[dim]
+                else:
+                    coords[dim] = unique_values
             viz_dict["/"] = xr.Dataset(
                 {
                     "figure": np.array(fig, dtype=object),
@@ -738,7 +781,7 @@ class PlotCollection:
                     "row_index": (dims, flat_row_id.reshape(plots_raw_shape)),
                     "col_index": (dims, flat_col_id.reshape(plots_raw_shape)),
                 },
-                coords={dim: data[dim] for dim in dims},
+                coords=coords,
             )
         else:
             viz_dict["/"] = xr.Dataset({"figure": np.array(fig, dtype=object)})
@@ -748,8 +791,18 @@ class PlotCollection:
             all_dims = cols
             facet_cumulative = 0
             for var_name, da in data.items():
-                dims = [dim for dim in all_dims if dim in da.dims]
-                plots_raw_shape = [data.sizes[dim] for dim in dims]
+                coords = {}
+                plots_raw_shape = []
+                for dim in all_dims:
+                    if dim not in set(da.dims).union(da.coords):
+                        continue
+                    unique_values = np.unique(da[dim])
+                    plots_raw_shape.append(len(unique_values))
+                    if len(unique_values) == len(data[dim]):
+                        coords[dim] = data[dim]
+                    else:
+                        coords[dim] = unique_values
+                dims = list(coords.keys())
                 col_slice = (
                     slice(None, None)
                     if var_name not in plots_per_var
@@ -771,7 +824,7 @@ class PlotCollection:
                             flat_col_id[col_slice].reshape(plots_raw_shape),
                         ),
                     },
-                    coords={dim: da[dim] for dim in dims},
+                    coords=coords,
                 )
                 viz_dict["plot"][var_name] = aux_ds["plot"]
                 viz_dict["row_index"][var_name] = aux_ds["row_index"]
@@ -849,7 +902,15 @@ class PlotCollection:
         viz_dict = {}
         if "__variable__" not in cols and "__variable__" not in rows:
             dims = tuple((*rows, *cols))  # use provided dim orders, not existing ones
-            plots_raw_shape = [data.sizes[dim] for dim in dims]
+            plots_raw_shape = []
+            coords = {}
+            for dim in dims:
+                unique_values = np.unique(data[dim])
+                plots_raw_shape.append(len(unique_values))
+                if len(unique_values) == len(data[dim]):
+                    coords[dim] = data[dim]
+                else:
+                    coords[dim] = unique_values
             viz_dict["/"] = xr.Dataset(
                 {
                     "figure": np.array(fig, dtype=object),
@@ -857,7 +918,7 @@ class PlotCollection:
                     "row_index": (dims, row_id.flatten().reshape(plots_raw_shape)),
                     "col_index": (dims, col_id.flatten().reshape(plots_raw_shape)),
                 },
-                coords={dim: data[dim] for dim in dims},
+                coords=coords,
             )
         else:
             viz_dict["/"] = xr.Dataset({"figure": np.array(fig, dtype=object)})
@@ -869,10 +930,21 @@ class PlotCollection:
             coords = {}
             for var_name, da in data.items():
                 dims = [dim for dim in all_dims if dim in da.dims]
-                for dim in dims:
-                    if dim not in coords:
-                        coords[dim] = data.coords[dim]
-                plots_raw_shape = [data.sizes[dim] for dim in dims]
+                plots_raw_shape = []
+                dims = []
+                for dim in all_dims:
+                    if dim not in set(da.dims).union(da.coords):
+                        continue
+                    if dim in coords:
+                        unique_values = coords[dim]
+                    else:
+                        unique_values = np.unique(da[dim])
+                        if len(unique_values) == len(data[dim]):
+                            coords[dim] = data[dim]
+                        else:
+                            coords[dim] = unique_values
+                    plots_raw_shape.append(len(unique_values))
+                    dims.append(dim)
                 row_slice = (
                     slice(None, None)
                     if var_name not in rows_per_var
@@ -1078,9 +1150,12 @@ class PlotCollection:
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
         dim_to_idx = {
             data[idx].dims[0]: idx
-            for idx in data.indexes
+            for idx in data.coords
             if (idx in all_loop_dims) and (idx not in data.dims)
         }
+        for idx in dim_to_idx.values():
+            if idx not in data.xindexes:
+                data = data.set_xindex(idx)
         skip_dims = {
             dim for dim in data.dims if (dim not in all_loop_dims) and (dim not in dim_to_idx)
         }

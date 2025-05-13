@@ -5,6 +5,7 @@ from importlib import import_module
 from arviz_base import rcParams
 
 from arviz_plots import PlotCollection
+from arviz_plots.plot_collection import backend_from_object
 from arviz_plots.plots.utils import process_group_variables_coords, set_grid_layout
 
 
@@ -46,8 +47,9 @@ def backendize_kwargs(kwargs, backend):
     }
 
 
-def render(da, target, backend, **kwargs):
+def render(da, target, **kwargs):
     """Render artist descriptions from the none backend with a plotting backend."""
+    backend = backend_from_object(target, return_module=False)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_kwargs = da.item()
     plot_fun_name = plot_kwargs["function"]
