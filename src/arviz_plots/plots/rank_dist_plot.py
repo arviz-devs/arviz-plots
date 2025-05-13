@@ -108,8 +108,8 @@ def plot_rank_dist(
     stats_rank_kwargs : mapping, optional
         Valid keys are:
 
-        * n_simulations -> passed to ecdf_pit
-        * method -> passed to ecdf_pit
+        * n_simulations -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is 1000.
+        * method -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is "simulation".
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection`
