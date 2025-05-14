@@ -20,14 +20,13 @@ def plot_rank(
     coords=None,
     sample_dims=None,
     ci_prob=None,
-    n_simulations=1000,
-    method="simulation",
     plot_collection=None,
     backend=None,
     labeller=None,
     aes_map=None,
     plot_kwargs=None,
     pc_kwargs=None,
+    stats_kwargs=None,
 ):
     """Fractional rank Δ-ECDF plots.
 
@@ -60,12 +59,6 @@ def plot_rank(
     ci_prob : float, optional
         Indicates the probability that should be contained within the plotted credible interval.
         Defaults to ``rcParams["stats.ci_prob"]``
-    n_simulations : int, optional
-        Number of simulations to use to compute simultaneous confidence intervals when using the
-        `method="simulation"` ignored if method is "optimized". Defaults to 1000.
-    method : str, optional
-        Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -81,6 +74,12 @@ def plot_rank(
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
+
+    stats_kwargs : mapping, optional
+        Valid keys are:
+
+        * n_simulations -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is 1000.
+        * method -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is "simulation".
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -118,6 +117,10 @@ def plot_rank(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
+    if stats_kwargs is None:
+        stats_kwargs = {}
+    stats_kwargs.setdefault("n_simulations", 1000)
+    stats_kwargs.setdefault("method", "simulation")
     if plot_kwargs is None:
         plot_kwargs = {}
     else:
@@ -151,7 +154,7 @@ def plot_rank(
     # But we should consider the jointly rank-transformed values
     dummy_vals_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, method, n_simulations)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **stats_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 

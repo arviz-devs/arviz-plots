@@ -1,4 +1,5 @@
-"""TraceDist plot code."""
+# pylint: disable=R0801
+"""rankDist plot code."""
 from copy import copy
 from importlib import import_module
 
@@ -8,7 +9,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.trace_plot import plot_trace
+from arviz_plots.plots.rank_plot import plot_rank
 from arviz_plots.plots.utils import (
     filter_aes,
     get_group,
@@ -18,7 +19,7 @@ from arviz_plots.plots.utils import (
 from arviz_plots.visuals import labelled_x, labelled_y, ticklabel_props, trace_rug
 
 
-def plot_trace_dist(
+def plot_rank_dist(
     dt,
     var_names=None,
     filter_vars=None,
@@ -28,15 +29,25 @@ def plot_trace_dist(
     compact=True,
     combined=False,
     kind=None,
+    ci_prob=None,
     plot_collection=None,
     backend=None,
     labeller=None,
     aes_map=None,
     plot_kwargs=None,
-    stats_kwargs=None,
+    stats_dist_kwargs=None,
+    stats_rank_kwargs=None,
     pc_kwargs=None,
 ):
-    """Plot 1D marginal distributions and iteration versus sampled values.
+    """Plot 1D marginal distributions and fractional rank Δ-ECDF plots.
+
+    Rank plots are built by replacing the posterior draws by their ranking computed over all chains.
+    Then each chain is plotted independently. If all of the chains are targeting the same posterior,
+    we expect the ranks in each chain to be uniformly distributed.
+    To simplify comparison we compute the ordered fractional ranks, which are distributed
+    uniformly in [0, 1]. Additionally, we plot the Δ-ECDF, that is, the difference between the
+    expected CDF from the observed ECDF.
+    Simultaneous confidence bands are computed using the method described in [1]_.
 
     Parameters
     ----------
@@ -60,8 +71,12 @@ def plot_trace_dist(
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
-        How to represent the marginal distribution.
+        How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
+    ci_prob : float, optional
+        Indicates the probability that should be contained within the plotted credible interval for
+        the fractional ranks.
+        Defaults to ``rcParams["stats.ci_prob"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
@@ -79,17 +94,22 @@ def plot_trace_dist(
           * "ecdf" -> :func:`~.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
-        * "trace" -> passed to :func:`~.visuals.line`
-        * "divergence" -> passed to :func:`~.visuals.trace_rug`
+        * "rank" -> passed to :func:`~.visuals.ecdf_line`
         * "label" -> :func:`~.visuals.labelled_x` and :func:`~.visuals.labelled_y`
         * "ticklabels" -> :func:`~.visuals.ticklabel_props`
-        * "xlabel_trace" -> :func:`~.visuals.labelled_x`
+        * "xlabel_rank" -> :func:`~.visuals.labelled_x`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats_kwargs : mapping, optional
+    stats_dist_kwargs : mapping, optional
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
+
+    stats_rank_kwargs : mapping, optional
+        Valid keys are:
+
+        * n_simulations -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is 1000.
+        * method -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is "simulation".
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection`
@@ -100,45 +120,45 @@ def plot_trace_dist(
 
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_trace_dist``.
+    The following examples focus on behaviour specific to ``plot_rank_dist``.
     For a general introduction to batteries-included functions like this one and common
     usage examples see :ref:`plots_intro`
 
-    Default plot_trace_dist (``compact=True`` and ``combined=False``). In this case,
+    Default plot_rank_dist (``compact=True`` and ``combined=False``). In this case,
     the multiple coordinate values are overlaid on the same plot for multidimensional values;
     by default, the color is mapped to all dimensions of each variable (but `sample_dims`)
-    to allow distinguising the different coordinate values.
+    to allow distinguishing the different coordinate values.
 
     As ``combined=False`` each chain is also being plotted, overlaying them on their
     corresponding plots; as the color property is already taken, the chain information
     is encoded in the linestyle as default.
 
-    Both mappings are applied to the trace and dist elements.
+    Both mappings are applied to the rank and dist elements.
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_trace_dist, style
+        >>> from arviz_plots import plot_rank_dist, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
         >>> coords = {"school": ["Choate", "Deerfield", "Hotchkiss"]}
-        >>> pc = plot_trace_dist(centered, coords=coords, compact=True, combined=False)
+        >>> pc = plot_rank_dist(centered, coords=coords, compact=True, combined=False)
         >>> pc.add_legend("school")
 
-    plot_trace_dist with ``compact=True`` and ``combined=True``. The aesthetic mappings
+    plot_rank_dist with ``compact=True`` and ``combined=True``. The aesthetic mappings
     stay the same as in the previous case, but now the linestyle property mapping
-    is only taken into account for the trace as in the left column, we use
+    is only taken into account for the rank as in the left column, we use
     the data from all chains to generate a single distribution representation
     for each variable+coordinate value combination.
 
     Similarly to the first case, this default and now only mapping is applied to both
-    the trace and the dist elements.
+    the rank and the dist elements.
 
     .. plot::
         :context: close-figs
 
-        >>> pc = plot_trace_dist(centered, coords=coords, compact=True, combined=True)
+        >>> pc = plot_rank_dist(centered, coords=coords, compact=True, combined=True)
         >>> pc.add_legend("school")
 
     When ``compact=False``, each variable and coordinate value gets its own plot,
@@ -148,7 +168,7 @@ def plot_trace_dist(
     .. plot::
         :context: close-figs
 
-        >>> pc = plot_trace_dist(centered, coords=coords, compact=False, combined=False)
+        >>> pc = plot_rank_dist(centered, coords=coords, compact=False, combined=False)
 
     Similarly to the other ``combined=True`` case, the aesthetics stay the same
     as with ``combined=False``, but they are ignored by default when plotting
@@ -157,8 +177,14 @@ def plot_trace_dist(
     .. plot::
         :context: close-figs
 
-        >>> pc = plot_trace_dist(centered, coords=coords, compact=False, combined=True)
+        >>> pc = plot_rank_dist(centered, coords=coords, compact=False, combined=True)
         >>> pc.add_legend("chain")
+
+    References
+    ----------
+    .. [1] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
+       its applications in goodness-of-fit evaluation and multiple sample comparison*.
+       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
 
     """
     if sample_dims is None:
@@ -167,8 +193,10 @@ def plot_trace_dist(
         sample_dims = [sample_dims]
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if stats_kwargs is None:
-        stats_kwargs = {}
+    if stats_dist_kwargs is None:
+        stats_dist_kwargs = {}
+    if stats_rank_kwargs is None:
+        stats_rank_kwargs = {}
     if plot_kwargs is None:
         plot_kwargs = {}
     if pc_kwargs is None:
@@ -238,7 +266,7 @@ def plot_trace_dist(
         pc_kwargs = set_grid_layout(pc_kwargs, plot_bknd, distribution, num_cols=2)
 
         plot_collection = PlotCollection.grid(
-            distribution.expand_dims(column=2).assign_coords(column=["dist", "trace"]),
+            distribution.expand_dims(column=2).assign_coords(column=["dist", "rank"]),
             backend=backend,
             **pc_kwargs,
         )
@@ -258,7 +286,7 @@ def plot_trace_dist(
             )
     else:
         aes_map[kind] = {"overlay"}.union(aes_map.get(kind, plot_collection.aes_set))
-    aes_map["trace"] = {"overlay"}.union(aes_map.get("trace", plot_collection.aes_set))
+    aes_map["rank"] = {"overlay"}.union(aes_map.get("rank", plot_collection.aes_set))
     aes_map["divergence"] = {"overlay"}.union(aes_map.get("divergence", {}))
 
     if combined and "chain" in distribution.dims:
@@ -303,38 +331,40 @@ def plot_trace_dist(
         labeller=labeller,
         aes_map={key: value for key, value in aes_map.items() if key == kind},
         plot_kwargs=plot_kwargs_dist,
-        stats_kwargs=stats_kwargs,
+        stats_kwargs=stats_dist_kwargs,
     )
     plot_collection.coords = None
 
-    # trace
-    trace_kwargs = copy(plot_kwargs.get("trace", {}))
+    # rank
+    rank_kwargs = copy(plot_kwargs.get("rank", {}))
     div_kwargs = copy(plot_kwargs.get("divergence", {}))
-    xlabel_kwargs = copy(plot_kwargs.get("xlabel_trace", {}))
-    plot_kwargs_trace = {"trace": trace_kwargs, "divergence": div_kwargs, "xlabel": xlabel_kwargs}
-    plot_kwargs_trace["title"] = False
-    plot_kwargs_trace["ticklabels"] = False
-    aes_map_trace = {
-        key.replace("_trace", ""): value
+    xlabel_kwargs = copy(plot_kwargs.get("xlabel_rank", {}))
+    plot_kwargs_rank = {"rank": rank_kwargs, "divergence": div_kwargs, "xlabel": xlabel_kwargs}
+    plot_kwargs_rank["title"] = False
+    plot_kwargs_rank["ticklabels"] = False
+    aes_map_rank = {
+        key.replace("_rank", ""): value
         for key, value in plot_kwargs.items()
-        if key in {"trace", "divergence", "xlabel_trace"}
+        if key in {"rank", "divergence", "xlabel_rank"}
     }
-    plot_collection.coords = {"column": "trace"}
-    plot_trace(
+    plot_collection.coords = {"column": "rank"}
+    plot_rank(
         dt,
         var_names=var_names,
         filter_vars=filter_vars,
         group=group,
         coords=coords,
         sample_dims=sample_dims,
+        ci_prob=ci_prob,
         plot_collection=plot_collection,
         labeller=labeller,
-        aes_map=aes_map_trace,
-        plot_kwargs=plot_kwargs_trace,
+        aes_map=aes_map_rank,
+        plot_kwargs=plot_kwargs_rank,
+        stats_kwargs=stats_rank_kwargs,
     )
     plot_collection.coords = None
     if xlabel_kwargs is not False:
-        plot_collection.rename_artists(xlabel="xlabel_trace")
+        plot_collection.rename_artists(xlabel="xlabel_rank")
     # divergences
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
     if (
@@ -343,8 +373,6 @@ def plot_trace_dist(
         and "diverging" in sample_stats.data_vars
         and np.any(sample_stats.diverging)
     ):
-        # rename divergences artist from plot_trace to avoid clashing
-        plot_collection.rename_artists(divergence="divergence_trace")
         divergence_mask = dt.sample_stats.diverging
         _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
         if "color" not in div_aes:
@@ -387,9 +415,9 @@ def plot_trace_dist(
 
         plot_collection.map(
             labelled_y,
-            "ylabel_trace",
+            "ylabel_rank",
             ignore_aes=labels_ignore,
-            coords={"column": "trace"},
+            coords={"column": "rank"},
             subset_info=True,
             labeller=labeller,
             store_artist=backend == "none",
