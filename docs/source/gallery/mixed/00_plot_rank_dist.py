@@ -18,6 +18,7 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("non_centered_eight")
 pc = azp.plot_rank_dist(
     data,
+    var_names=["mu", "tau"],
     backend="none"  # change to preferred backend
 )
 pc.show()
