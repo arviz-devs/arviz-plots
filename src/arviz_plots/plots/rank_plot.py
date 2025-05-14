@@ -154,7 +154,6 @@ def plot_rank(
     # But we should consider the jointly rank-transformed values
     dummy_vals_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    print(stats_kwargs)
     x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **stats_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
