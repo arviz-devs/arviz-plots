@@ -255,7 +255,9 @@ def add_reference_lines(
 
     plot_func = vline if orientation == "vertical" else hline
 
-    ref_ds = references_to_dataset(references, plot_collection.data, sample_dims=sample_dims)
+    ref_ds = references_to_dataset(
+        references, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
+    )
     requested_aes = (
         set(aes_map["ref_line"]).union(aes_map["ref_text"]).difference(plot_collection.aes_set)
     )
