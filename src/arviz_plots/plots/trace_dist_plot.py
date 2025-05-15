@@ -124,7 +124,7 @@ def plot_trace_dist(
         >>> centered = load_arviz_data('centered_eight')
         >>> coords = {"school": ["Choate", "Deerfield", "Hotchkiss"]}
         >>> pc = plot_trace_dist(centered, coords=coords, compact=True, combined=False)
-        >>> pc.add_legend("school")
+        >>> pc.add_legend(["__variable__", "school"])
 
     plot_trace_dist with ``compact=True`` and ``combined=True``. The aesthetic mappings
     stay the same as in the previous case, but now the linestyle property mapping
@@ -139,7 +139,7 @@ def plot_trace_dist(
         :context: close-figs
 
         >>> pc = plot_trace_dist(centered, coords=coords, compact=True, combined=True)
-        >>> pc.add_legend("school")
+        >>> pc.add_legend(["__variable__", "school"])
 
     When ``compact=False``, each variable and coordinate value gets its own plot,
     and so the color property is no longer used to encode this information.

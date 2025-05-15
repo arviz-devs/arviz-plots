@@ -1,14 +1,12 @@
 """Contain functions for Bayes Factor plotting."""
 
 from copy import copy
-from importlib import import_module
 
 import xarray as xr
 from arviz_stats.bayes_factor import bayes_factor
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
-from arviz_plots.plots.utils import filter_aes
-from arviz_plots.visuals import vline
+from arviz_plots.plots.utils import add_reference_lines, filter_aes
 
 
 def plot_bf(
@@ -106,11 +104,11 @@ def plot_bf(
 
     if isinstance(var_names, str):
         var_names = [var_names]
-    bf_dataset = xr.Dataset(
+    bf_aes_ds = xr.Dataset(
         {
             var: xr.DataArray(
-                f"BF01:{bf[var]['BF01']:.2f}",
-                coords={"BF_type": ["BF01"]},
+                None,
+                coords={"BF_type": [f"BF01:{bf[var]['BF01']:.2f}"]},
                 dims=["BF_type"],
             )
             for var in var_names
@@ -132,8 +130,6 @@ def plot_bf(
     )
 
     plot_collection.update_aes_from_dataset("bf_aes", bf_aes_ds)
-    backend = plot_collection.backend
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     ref_line_kwargs = copy(plot_kwargs.get("ref_line", {}))
     if ref_line_kwargs is False:
@@ -142,17 +138,18 @@ def plot_bf(
         )
 
     if ref_val is not False:
-        _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_line", "sample")
+        _, ref_aes, _ = filter_aes(plot_collection, aes_map, "ref_line", "sample")
         if "color" not in ref_aes:
             ref_line_kwargs.setdefault("color", "black")
-        if "linestyle" not in ref_aes:
-            default_linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
-            ref_line_kwargs.setdefault("linestyle", default_linestyle)
         if "alpha" not in ref_aes:
             ref_line_kwargs.setdefault("alpha", 0.5)
+        add_reference_lines(
+            plot_collection, ref_val, aes_map=aes_map, plot_kwargs={"ref_line": ref_line_kwargs}
+        )
 
-        plot_collection.map(
-            vline, "ref_line", data=bf_dataset, ignore_aes=ref_ignore, **ref_line_kwargs
+    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
+        plot_collection.add_legend(
+            ["__variable__", "BF_type"], loc="upper left", fontsize=10, text_only=True
         )
 
     return plot_collection
