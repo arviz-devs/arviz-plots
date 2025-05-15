@@ -439,7 +439,7 @@ def test_plot_rank_dist(datatree, kind, compact, combined, plot_kwargs):
         combined=combined,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" in child for child in pc.viz.children.values())
+    assert "plot" in pc.viz.children
     for artist, value in plot_kwargs.items():
         if value is False:
             assert artist not in pc.viz.children
