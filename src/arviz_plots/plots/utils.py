@@ -357,7 +357,7 @@ def add_reference_bands(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_dist, add_reference_lines, style
+        >>> from arviz_plots import plot_dist, add_reference_bands, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
