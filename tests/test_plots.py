@@ -490,7 +490,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" in pc.viz["theta"].dims
 
     def test_plot_bf(self, datatree, backend):
-        pc = plot_bf(datatree, var_name="mu", backend=backend)
+        pc = plot_bf(datatree, var_names="mu", backend=backend)
         assert "chart" in pc.viz.data_vars
         assert "Groups" in pc.viz["mu"].coords
         assert "BF_type" in pc.aes

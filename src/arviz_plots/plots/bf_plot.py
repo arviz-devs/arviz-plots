@@ -89,7 +89,7 @@ def plot_bf(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
-        >>> plot_bf(dt, var_name="mu", kind="hist")
+        >>> plot_bf(dt, var_names="mu", kind="hist")
 
     .. minigallery:: plot_bf
     """
