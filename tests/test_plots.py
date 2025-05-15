@@ -258,17 +258,17 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_rank_dist(self, datatree, backend, compact, combined):
         kind = "kde"
         pc = plot_rank_dist(datatree, backend=backend, compact=compact, combined=combined)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "chain" in pc.viz["theta"]["ecdf_lines"].dims
+        assert "plot" in pc.viz.children
         if combined:
-            assert "chain" not in pc.viz["theta"][kind].dims
+            assert "chain" not in pc.viz[kind]["theta"].dims
         else:
-            assert "chain" in pc.viz["theta"][kind].dims
+            assert "chain" in pc.viz[kind]["theta"].dims
         if compact:
-            assert "hierarchy" not in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" not in pc.viz["plot"]["theta"].dims
         else:
-            assert "hierarchy" in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" in pc.viz["plot"]["theta"].dims
 
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_forest(self, datatree, backend, combined):
