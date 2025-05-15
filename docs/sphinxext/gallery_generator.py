@@ -206,7 +206,7 @@ def main(app):
             {code_text.replace('backend="none"', 'backend="bokeh"').replace("pc.show()", "")}
 
             # for some reason the bokeh plot extension needs explicit use of show
-            show(pc.viz["chart"].item() if pc.viz["chart"].item() is not None else pc.viz["plot"].item())
+            show(pc.viz["figure"].item() if pc.viz["figure"].item() is not None else pc.viz["plot"].item())
             ```
 
             Link to this page with the [bokeh tab selected]({site_url}/gallery/{basename}.html?backend=bokeh#synchronised-tabs)

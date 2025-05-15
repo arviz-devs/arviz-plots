@@ -5,7 +5,7 @@ The classes in this module lay at the core of the library,
 and are consequently available at the ``arviz_plots`` top level namespace.
 
 They abstract all information regarding :term:`faceting` and :term:`aesthetic mapping`
-in our :term:`chart` to prevent duplication and ensure coherence between
+in our :term:`figure` to prevent duplication and ensure coherence between
 the different functions.
 
 .. currentmodule:: arviz_plots
@@ -31,7 +31,6 @@ Plotting
 
    PlotCollection.add_legend
    PlotCollection.map
-   PlotCollection.plot_iterator
 
 Attributes
 ..........
@@ -42,7 +41,7 @@ Attributes
    PlotCollection.aes
    PlotCollection.viz
    PlotCollection.aes_set
-   PlotCollection.base_loop_dims
+   PlotCollection.facet_dims
    PlotCollection.data
 
 Faceting and aesthetics mapping
@@ -100,5 +99,5 @@ Attributes
    PlotMatrix.aes
    PlotMatrix.viz
    PlotMatrix.aes_set
-   PlotMatrix.base_loop_dims
+   PlotMatrix.facet_dims
    PlotMatrix.data

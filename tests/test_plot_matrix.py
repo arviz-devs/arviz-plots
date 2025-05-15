@@ -67,8 +67,9 @@ def test_plot_matrix_aes(dataset):
     pc = PlotMatrix(
         dataset, ["__variable__", "hierarchy", "group"], backend="none", aes={"color": ["chain"]}
     )
-    assert all("color" in child.data_vars for child in pc.aes.children.values())
-    assert all("chain" in child.dims for child in pc.aes.children.values())
+    assert "/color" in pc.aes.groups
+    assert "mapping" in pc.aes["color"].data_vars
+    assert "neutral_element" not in pc.aes["color"].data_vars
 
 
 # pylint: disable=unused-argument

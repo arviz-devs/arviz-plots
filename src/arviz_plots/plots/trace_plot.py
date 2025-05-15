@@ -127,11 +127,7 @@ def plot_trace(
             **pc_kwargs,
         )
     else:
-        aux_dim_list = list(
-            set(
-                dim for child in plot_collection.viz.children.values() for dim in child["plot"].dims
-            )
-        )
+        aux_dim_list = list(plot_collection.viz["plot"].dims)
 
     if aes_map is None:
         aes_map = {}

@@ -213,7 +213,7 @@ def plot_ppc_dist(
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("overlay", ["sample"])
+        pc_kwargs["aes"].setdefault("overlay_ppc", ["sample"])
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
 
@@ -280,7 +280,7 @@ def plot_ppc_dist(
 
             plot_collection.map(
                 line_xy,
-                "observe_density",
+                "observed_density",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,
@@ -291,7 +291,7 @@ def plot_ppc_dist(
 
             plot_collection.map(
                 hist,
-                "observe_density",
+                "observed_density",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,
@@ -301,7 +301,7 @@ def plot_ppc_dist(
             dt_observed = observed_dist.azstats.ecdf(**stats_kwargs)
             plot_collection.map(
                 ecdf_line,
-                "observe_density",
+                "observed_density",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,

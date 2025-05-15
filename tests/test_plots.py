@@ -8,6 +8,7 @@ from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
     add_reference_lines,
+    plot_autocorr,
     plot_bf,
     plot_compare,
     plot_dist,
@@ -158,127 +159,123 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind)
-        assert not pc.aes["mu"]
-        assert kind in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
-        assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+        assert not pc.aes
+        assert "mu" in pc.viz[kind].data_vars
+        artists = ("plot", kind, "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
 
     def test_plot_dist_step_hist(self, datatree, backend):
-        if backend == "none":
-            pytest.skip("Step hist test is not required for 'none' backend")
-        kind = "hist"
         plot_kwargs = {"hist": {"step": True}}
-        pc = plot_dist(datatree, backend=backend, kind=kind, plot_kwargs=plot_kwargs)
-        assert not pc.aes["mu"]
-        assert kind in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
-        assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+        pc = plot_dist(datatree, backend=backend, kind="hist", plot_kwargs=plot_kwargs)
+        assert not pc.aes
+        assert "mu" in pc.viz["hist"].data_vars
+        artists = ("plot", "hist", "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
 
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_sample(self, datatree_sample, backend, kind):
         pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", kind=kind)
-        assert not pc.aes["mu"]
-        assert kind in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
-        assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+        assert not pc.aes
+        assert "mu" in pc.viz[kind].data_vars
+        artists = ("plot", kind, "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
 
     def test_plot_dist_sample_step_hist(self, datatree_sample, backend):
-        if backend == "none":
-            pytest.skip("Step hist test is not required for 'none' backend")
-        kind = "hist"
         plot_kwargs = {"hist": {"step": True}}
         pc = plot_dist(
             datatree_sample,
             backend=backend,
             sample_dims="sample",
-            kind=kind,
+            kind="hist",
             plot_kwargs=plot_kwargs,
         )
-        assert not pc.aes["mu"]
-        assert kind in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "hierarchy" not in pc.viz["mu"]["point_estimate"].dims
-        assert "hierarchy" in pc.viz["theta"]["point_estimate"].dims
+        assert not pc.aes
+        assert "mu" in pc.viz["hist"].data_vars
+        artists = ("plot", "hist", "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
 
     @pytest.mark.parametrize("kind", ["kde"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
         pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
-        assert "/mu" in pc.aes.groups
-        assert "/mu" in pc.viz.groups
-        assert kind in pc.viz["mu"].data_vars
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "model" in pc.viz["mu"].dims
+        assert "/color" in pc.aes.groups
+        assert tuple(pc.aes["color"].dims) == ("model",)
+        assert kind in pc.viz.children
+        assert "mu" in pc.viz[kind].data_vars
+        assert "hierarchy" not in pc.viz[kind]["mu"].dims
+        assert "model" in pc.viz[kind]["mu"].dims
 
     def test_plot_trace(self, datatree, backend):
         pc = plot_trace(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert pc.viz["mu"].trace.shape == (4,)
+        assert "plot" in pc.viz.children
+        assert pc.viz["trace"]["mu"].shape == (4,)
 
     def test_plot_trace_sample(self, datatree_sample, backend):
         pc = plot_trace(datatree_sample, sample_dims="sample", backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert pc.viz["mu"].trace.shape == ()
+        assert "plot" in pc.viz.children
+        assert pc.viz["trace"]["mu"].shape == ()
 
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_trace_dist(self, datatree, backend, compact, combined):
         kind = "kde"
         pc = plot_trace_dist(datatree, backend=backend, compact=compact, combined=combined)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "chain" in pc.viz["theta"]["trace"].dims
+        assert "plot" in pc.viz.children
+        assert "chain" in pc.viz["trace"]["theta"].dims
         if combined:
-            assert "chain" not in pc.viz["theta"][kind].dims
+            assert "chain" not in pc.viz[kind]["theta"].dims
         else:
-            assert "chain" in pc.viz["theta"][kind].dims
+            assert "chain" in pc.viz[kind]["theta"].dims
         if compact:
-            assert "hierarchy" not in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" not in pc.viz["plot"]["theta"].dims
         else:
-            assert "hierarchy" in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" in pc.viz["plot"]["theta"].dims
 
     @pytest.mark.parametrize("compact", (True, False))
     def test_plot_trace_dist_sample(self, datatree_sample, backend, compact):
         pc = plot_trace_dist(
             datatree_sample, backend=backend, sample_dims="sample", compact=compact
         )
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
+        assert "plot" in pc.viz.children
         if compact:
-            assert "hierarchy" not in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" not in pc.viz["plot"]["theta"].dims
         else:
-            assert "hierarchy" in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" in pc.viz["plot"]["theta"].dims
 
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_rank_dist(self, datatree, backend, compact, combined):
         kind = "kde"
         pc = plot_rank_dist(datatree, backend=backend, compact=compact, combined=combined)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "chain" in pc.viz["theta"]["ecdf_lines"].dims
+        assert "plot" in pc.viz.children
         if combined:
-            assert "chain" not in pc.viz["theta"][kind].dims
+            assert "chain" not in pc.viz[kind]["theta"].dims
         else:
-            assert "chain" in pc.viz["theta"][kind].dims
+            assert "chain" in pc.viz[kind]["theta"].dims
         if compact:
-            assert "hierarchy" not in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" not in pc.viz["plot"]["theta"].dims
         else:
-            assert "hierarchy" in pc.viz["theta"]["plot"].dims
+            assert "hierarchy" in pc.viz["plot"]["theta"].dims
 
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_forest(self, datatree, backend, combined):
         pc = plot_forest(datatree, backend=backend, combined=combined)
         assert "plot" in pc.viz.data_vars
-        assert all("y" in child.data_vars for child in pc.aes.children.values())
+        assert "/y" in pc.aes.groups
+        assert all(var_name in pc.aes["y"].data_vars for var_name in datatree.posterior.data_vars)
 
     def test_plot_forest_sample(self, datatree_sample, backend):
         pc = plot_forest(datatree_sample, backend=backend, sample_dims="sample")
@@ -299,7 +296,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc.map(visuals.scatter_x, "ess", data=mock_ess, coords={"column": "ess"}, color="blue")
         assert "plot" in pc.viz.data_vars
         assert pc.viz["plot"].sizes["column"] == 3
-        assert all("ess" in child.data_vars for child in pc.viz.children.values())
+        assert "ess" in pc.viz.children
 
     @pytest.mark.parametrize("pseudo_dim", ("__variable__", "hierarchy", "group"))
     def test_plot_forest_aes_labels_shading(self, backend, datatree_4d, pseudo_dim):
@@ -311,35 +308,40 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             backend=backend,
         )
         assert "plot" in pc.viz.data_vars
-        assert all("shade" in child.data_vars for child in pc.viz.children.values())
+        assert "shade" in pc.viz.children
         if pseudo_dim != "__variable__":
-            assert all(0 in child["alpha"] for child in pc.aes.children.values())
-            assert any(pseudo_dim in child["shade"].dims for child in pc.viz.children.values())
+            assert pc.aes["alpha"]["neutral_element"].item() == 0
+            assert 0 in pc.aes["alpha"]["mapping"].values
+            assert pseudo_dim in pc.viz["shade"].dims
 
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_ridge(self, datatree, backend, combined):
         pc = plot_ridge(datatree, backend=backend, combined=combined)
         assert "plot" in pc.viz.data_vars
-        assert all("y" in child.data_vars for child in pc.aes.children.values())
-        assert "edge" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "/y" in pc.aes.groups
+        assert all(var_name in pc.aes["y"].data_vars for var_name in datatree.posterior.data_vars)
+        assert "edge" in pc.viz.children
+        assert "mu" in pc.viz["edge"]
+        assert "hierarchy" not in pc.viz["edge"]["mu"].dims
+        assert "hierarchy" in pc.viz["edge"]["theta"].dims
 
     def test_plot_ridge_sample(self, datatree_sample, backend):
         pc = plot_ridge(datatree_sample, backend=backend, sample_dims="sample")
         assert "plot" in pc.viz.data_vars
-        assert "edge" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "edge" in pc.viz.children
+        assert "mu" in pc.viz["edge"]
+        assert "hierarchy" not in pc.viz["edge"]["mu"].dims
+        assert "hierarchy" in pc.viz["edge"]["theta"].dims
 
     def test_plot_ridge_models(self, datatree, datatree2, backend):
         pc = plot_ridge({"c": datatree, "n": datatree2}, backend=backend)
         assert "plot" in pc.viz.data_vars
-        assert "/mu" in pc.aes.groups
-        assert "/mu" in pc.viz.groups
-        assert "edge" in pc.viz["mu"].data_vars
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "model" in pc.viz["mu"].dims
+        assert "/color" in pc.aes.groups
+        assert "/edge" in pc.viz.groups
+        assert "mu" in pc.viz["edge"].data_vars
+        assert "hierarchy" not in pc.viz["edge"]["mu"].dims
+        assert "hierarchy" in pc.viz["edge"]["theta"].dims
+        assert "model" in pc.viz["edge"]["mu"].dims
 
     def test_plot_ridge_extendable(self, datatree, backend):
         dt_aux = (
@@ -352,7 +354,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc.map(visuals.scatter_x, "ess", data=mock_ess, coords={"column": "ess"}, color="blue")
         assert "plot" in pc.viz.data_vars
         assert pc.viz["plot"].sizes["column"] == 3
-        assert all("ess" in child.data_vars for child in pc.viz.children.values())
+        assert "ess" in pc.viz.children
 
     @pytest.mark.parametrize("pseudo_dim", ("__variable__", "hierarchy", "group"))
     def test_plot_ridge_aes_labels_shading(self, backend, datatree_4d, pseudo_dim):
@@ -364,17 +366,18 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             backend=backend,
         )
         assert "plot" in pc.viz.data_vars
-        assert all("shade" in child.data_vars for child in pc.viz.children.values())
+        assert "shade" in pc.viz.children
         if pseudo_dim != "__variable__":
-            assert all(0 in child["alpha"] for child in pc.aes.children.values())
-            assert any(pseudo_dim in child["shade"].dims for child in pc.viz.children.values())
+            assert pc.aes["alpha"]["neutral_element"].item() == 0
+            assert 0 in pc.aes["alpha"]["mapping"].values
+            assert pseudo_dim in pc.viz["shade"].dims
 
     def test_plot_compare(self, cmp, backend):
         pc = plot_compare(cmp, backend=backend)
-        assert pc.viz["plot"]
+        assert "plot" in pc.viz.data_vars
 
     def test_plot_compare_kwargs(self, cmp, backend):
-        plot_compare(
+        pc = plot_compare(
             cmp,
             plot_kwargs={
                 "shade": {"color": "black", "alpha": 0.2},
@@ -384,130 +387,130 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200), "figsize_units": "dots"}},
             backend=backend,
         )
+        assert "plot" in pc.viz.data_vars
 
     def test_plot_ess(self, datatree, backend):
         pc = plot_ess(datatree, backend=backend, rug=True)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "ess" in pc.viz["mu"]
-        assert "min_ess" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "rug" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "chain" in pc.viz["mu"].rug.dims  # checking rug artist overlay
+        assert "mu" in pc.viz["ess"]
+        assert "mu" in pc.viz["min_ess"]
+        assert "mu" in pc.viz["title"]
+        assert "mu" in pc.viz["rug"]
+        assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
+        assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
+        assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug artist overlay
         # checking aesthetics
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "mapping" in pc.aes["overlay"]
+        assert "chain" in pc.aes["overlay"]["mapping"].dims
 
     def test_plot_ess_sample(self, datatree_sample, backend):
         pc = plot_ess(datatree_sample, backend=backend, rug=True, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "ess" in pc.viz["mu"]
-        assert "min_ess" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "rug" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert pc.viz["mu"].rug.shape == ()  # 0 chains here, so no overlay
+        assert "mu" in pc.viz["ess"]
+        assert "mu" in pc.viz["min_ess"]
+        assert "mu" in pc.viz["title"]
+        assert "mu" in pc.viz["rug"]
+        assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
+        assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
+        assert pc.viz["rug"]["mu"].shape == ()  # 0 chains here, so no overlay
 
     def test_plot_ess_models(self, datatree, datatree2, backend):
         pc = plot_ess({"c": datatree, "n": datatree2}, backend=backend, rug=False)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "ess" in pc.viz["mu"]
-        assert "min_ess" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "rug" not in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "model" in pc.viz["mu"].dims
+        assert "mu" in pc.viz["ess"]
+        assert "mu" in pc.viz["min_ess"]
+        assert "mu" in pc.viz["title"]
+        assert "rug" not in pc.viz.children
+        assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
+        assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
+        assert "model" in pc.viz["ess"]["mu"].dims
         # checking aesthetics
-        assert "model" in pc.aes["mu"].dims
-        assert "x" in pc.aes["mu"].data_vars
-        assert "color" in pc.aes["mu"].data_vars
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "/color" in pc.aes.groups
+        assert "model" in pc.aes["color"].dims
+        assert "/x" in pc.aes.groups
 
     def test_plot_ess_evolution(self, datatree, backend):
         pc = plot_ess_evolution(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "ess_bulk" in pc.viz["mu"]
-        assert "ess_tail" in pc.viz["mu"]
-        assert "ess_bulk_line" in pc.viz["mu"]
-        assert "ess_tail_line" in pc.viz["mu"]
-        assert "min_ess" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "mu" in pc.viz["ess_bulk"]
+        assert "mu" in pc.viz["ess_tail"]
+        assert "mu" in pc.viz["ess_bulk_line"]
+        assert "mu" in pc.viz["ess_tail_line"]
+        assert "mu" in pc.viz["min_ess"]
+        assert "mu" in pc.viz["title"]
+        assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
+        assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
 
     def test_plot_ess_evolution_sample(
         self, datatree_sample, backend
     ):  # pylint: disable=unused-argument
         pc = plot_ess_evolution(datatree_sample, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "ess_bulk" in pc.viz["mu"]
-        assert "ess_tail" in pc.viz["mu"]
-        assert "ess_bulk_line" in pc.viz["mu"]
-        assert "ess_tail_line" in pc.viz["mu"]
-        assert "min_ess" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "mu" in pc.viz["ess_bulk"]
+        assert "mu" in pc.viz["ess_tail"]
+        assert "mu" in pc.viz["ess_bulk_line"]
+        assert "mu" in pc.viz["ess_tail_line"]
+        assert "mu" in pc.viz["min_ess"]
+        assert "mu" in pc.viz["title"]
+        assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
+        assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
 
-    # omitting hist for the moment as I get [hist-none] - ValueError: artist_kws not empty
-    @pytest.mark.parametrize("kind", ["kde", "ecdf"])
+    @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
-        assert "chart" in pc.viz.data_vars
-        assert pc.aes["y"]
-        assert kind in pc.viz["y"]
-        assert "observe_density" in pc.viz["y"]
+        assert "figure" in pc.viz.data_vars
+        assert "/overlay_ppc" in pc.aes.groups
+        assert "y" in pc.viz[kind]
+        assert "y" in pc.viz["observed_density"]
 
     def test_plot_psense_dist(self, datatree, backend):
         pc = plot_psense_dist(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "plot" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["plot"].dims
-        assert "alpha" not in pc.viz["mu"]["plot"].dims
-        assert "credible_interval" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
-        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "plot" in pc.viz.children
+        assert "component_group" in pc.viz["plot"]["mu"].dims
+        assert "alpha" not in pc.viz["plot"]["mu"].dims
+        assert "mu" in pc.viz["credible_interval"]
+        assert "component_group" in pc.viz["credible_interval"]["mu"].dims
+        assert "alpha" in pc.viz["credible_interval"]["mu"].dims
+        assert "hierarchy" in pc.viz["credible_interval"]["theta"].dims
 
     def test_plot_psense_dist_sample(self, datatree_sample, backend):
         pc = plot_psense_dist(datatree_sample, backend=backend, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "plot" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["plot"].dims
-        assert "alpha" not in pc.viz["mu"]["plot"].dims
-        assert "credible_interval" in pc.viz["mu"]
-        assert "component_group" in pc.viz["mu"]["credible_interval"].dims
-        assert "alpha" in pc.viz["mu"]["credible_interval"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "plot" in pc.viz.children
+        assert "component_group" in pc.viz["plot"]["mu"].dims
+        assert "alpha" not in pc.viz["plot"]["mu"].dims
+        assert "mu" in pc.viz["credible_interval"]
+        assert "component_group" in pc.viz["credible_interval"]["mu"].dims
+        assert "alpha" in pc.viz["credible_interval"]["mu"].dims
+        assert "hierarchy" in pc.viz["credible_interval"]["theta"].dims
 
     def test_plot_bf(self, datatree, backend):
         pc = plot_bf(datatree, var_names="mu", backend=backend)
-        assert "chart" in pc.viz.data_vars
-        assert "Groups" in pc.viz["mu"].coords
-        assert "BF_type" in pc.aes
-        assert "mu" in pc.aes["BF_type"]
+        assert "figure" in pc.viz.data_vars
+        assert "Groups" in pc.viz["kde"].coords
+        assert "/color" in pc.aes.groups
+        assert "BF_type" in pc.aes["bf_aes"].coords
 
     def test_plot_energy_dist(self, datatree, backend):
         pc = plot_energy(datatree, backend=backend)
         assert pc is not None
         assert hasattr(pc, "viz")
-        assert "/energy_" in pc.viz.groups
-        assert "kde" in pc.viz["/energy_"]
-        assert "energy" in pc.viz["/energy_"].coords
-        kde_values = pc.viz["/energy_"]["kde"].values
+        assert "/kde" in pc.viz.groups
+        assert "energy" in pc.viz["kde"]
+        assert "energy" in pc.viz["kde"].coords
+        kde_values = pc.viz["kde"]["energy_"].values
         assert kde_values.size > 0
-        assert "component_group" not in pc.viz["/energy_"]["kde"].dims
-        assert "alpha" not in pc.viz["/energy_"]["kde"].dims
-        energy_coords = pc.viz["/energy_"]["kde"].coords["energy"].values
+        assert "component_group" not in pc.viz["kde"]["energy_"].dims
+        assert "alpha" not in pc.viz["kde"]["energy_"].dims
+        energy_coords = pc.viz["kde"]["energy_"].coords["energy"].values
         assert "marginal" in energy_coords
         assert "transition" in energy_coords
 
@@ -515,87 +518,87 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_energy(datatree_sample, backend=backend)
         assert pc is not None
         assert hasattr(pc, "viz")
-        assert "/energy_" in pc.viz.groups
-        assert "kde" in pc.viz["/energy_"]
-        assert "energy" in pc.viz["/energy_"].coords
-        kde_values = pc.viz["/energy_"]["kde"].values
+        assert "/kde" in pc.viz.groups
+        assert "energy" in pc.viz["kde"]
+        assert "energy" in pc.viz["kde"].coords
+        kde_values = pc.viz["kde"]["energy_"].values
         assert kde_values.size > 0
-        assert "component_group" not in pc.viz["/energy_"]["kde"].dims
-        assert "alpha" not in pc.viz["/energy_"]["kde"].dims
-        energy_coords = pc.viz["/energy_"]["kde"].coords["energy"].values
+        assert "component_group" not in pc.viz["kde"]["energy_"].dims
+        assert "alpha" not in pc.viz["kde"]["energy_"].dims
+        energy_coords = pc.viz["kde"]["energy_"].coords["energy"].values
         assert "marginal" in energy_coords
         assert "transition" in energy_coords
 
     def test_plot_prior_posterior(self, datatree, backend):
         pc = plot_prior_posterior(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
-        assert "Groups" in pc.viz["mu"].coords
+        assert "figure" in pc.viz.data_vars
+        assert "Groups" not in pc.viz["plot"].coords
+        assert "Groups" in pc.viz["kde"].coords
 
     def test_autocorr(self, datatree, backend):
-        pc = plot_trace(datatree, backend=backend)
-        assert "chart" in pc.viz.data_vars
+        pc = plot_autocorr(datatree, backend=backend)
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
+        assert "hierarchy" not in pc.viz["lines"]["mu"].dims
+        assert "hierarchy" in pc.viz["lines"]["theta"].dims
 
     def test_plot_mcse(self, datatree, backend):
         pc = plot_mcse(datatree, backend=backend, rug=True)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "mcse" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "rug" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "chain" in pc.viz["mu"].rug.dims  # checking rug artist overlay
+        assert "mu" in pc.viz["mcse"]
+        assert "mu" in pc.viz["title"]
+        assert "mu" in pc.viz["rug"]
+        assert "hierarchy" not in pc.viz["mcse"]["mu"].dims
+        assert "hierarchy" in pc.viz["mcse"]["theta"].dims
+        assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug artist overlay
         # checking aesthetics
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "/overlay" in pc.aes.groups  # overlay of chains
 
     def test_plot_mcse_sample(self, datatree_sample, backend):
         pc = plot_mcse(datatree_sample, backend=backend, rug=True, sample_dims="sample")
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "mcse" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "rug" in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert pc.viz["mu"].rug.shape == ()  # 0 chains here, so no overlay
+        assert "mu" in pc.viz["mcse"]
+        assert "mu" in pc.viz["title"]
+        assert "mu" in pc.viz["rug"]
+        assert "hierarchy" not in pc.viz["mcse"]["mu"].dims
+        assert "hierarchy" in pc.viz["mcse"]["theta"].dims
+        assert pc.viz["rug"]["mu"].shape == ()  # 0 chains here, so no overlay
 
     def test_plot_mcse_models(self, datatree, datatree2, backend):
         pc = plot_mcse({"c": datatree, "n": datatree2}, backend=backend, rug=False)
-        assert "chart" in pc.viz.data_vars
+        assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
-        assert "mcse" in pc.viz["mu"]
-        assert "title" in pc.viz["mu"]
-        assert "rug" not in pc.viz["mu"]
-        assert "hierarchy" not in pc.viz["mu"].dims
-        assert "hierarchy" in pc.viz["theta"].dims
-        assert "model" in pc.viz["mu"].dims
+        assert "mu" in pc.viz["mcse"]
+        assert "mu" in pc.viz["title"]
+        assert "rug" not in pc.viz.children
+        assert "hierarchy" not in pc.viz["mcse"]["mu"].dims
+        assert "hierarchy" in pc.viz["mcse"]["theta"].dims
+        assert "model" in pc.viz["mcse"]["mu"].dims
         # checking aesthetics
-        assert "model" in pc.aes["mu"].dims
-        assert "x" in pc.aes["mu"].data_vars
-        assert "color" in pc.aes["mu"].data_vars
-        assert "overlay" in pc.aes["mu"].data_vars  # overlay of chains
+        assert "/color" in pc.aes.groups
+        assert "model" in pc.aes["color"].dims
+        assert "/x" in pc.aes.groups
 
     def test_add_references_scalar(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, 0)
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_dim" not in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "ref_dim" not in pc.viz["ref_line"]["mu"].dims
 
     def test_add_references_array(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, [0, 1])
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_dim" in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
 
     def test_add_references_dict(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, {"mu": [0, 1]})
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_line" not in pc.viz["theta"]
-        assert "ref_dim" in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "theta" not in pc.viz["ref_line"]
+        assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
 
     def test_add_references_ds(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
@@ -604,14 +607,15 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             datatree.posterior.dataset.quantile((0.1, 0.5, 0.9), dim=["chain", "draw"]),
             ref_dim="quantile",
         )
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_line" in pc.viz["theta"]
-        assert "quantile" in pc.viz["mu"]["ref_line"].dims
+        assert "mu" in pc.viz["ref_line"]
+        assert "theta" in pc.viz["ref_line"]
+        assert "ref_dim" not in pc.viz["ref_line"].dims
+        assert "quantile" in pc.viz["ref_line"].dims
 
     def test_add_references_aes(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_lines(pc, [0, 1], aes_map={"ref_line": ["color"]})
-        assert "ref_line" in pc.viz["mu"]
-        assert "ref_dim" in pc.viz["mu"]["ref_line"].dims
-        assert "color" in pc.aes["mu"]
-        assert "ref_dim" in pc.aes["mu"]["color"].dims
+        assert "mu" in pc.viz["ref_line"].data_vars
+        assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
+        assert "/color" in pc.aes.groups
+        assert "ref_dim" in pc.aes["color"].dims

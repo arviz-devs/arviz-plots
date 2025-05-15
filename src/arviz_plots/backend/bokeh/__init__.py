@@ -16,7 +16,8 @@ from bokeh.models import (
     Span,
     Title,
 )
-from bokeh.plotting import figure, output_file, save
+from bokeh.plotting import figure as _figure
+from bokeh.plotting import output_file, save
 from bokeh.plotting import show as _show
 
 from ..none import get_default_aes as get_agnostic_default_aes
@@ -172,31 +173,31 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
 
 # object creation and i/o
-def show(chart):
+def show(figure):
     """Show the provided bokeh layout."""
-    _show(chart)
+    _show(figure)
 
 
-def savefig(chart, path, **kwargs):
-    """Save the chart to a file.
+def savefig(figure, path, **kwargs):
+    """Save the figure to a file.
 
     Parameters
     ----------
-    chart : bokeh.plotting.Figure
-        The chart to save.
+    figure : bokeh.plotting.Figure
+        The figure to save.
     filename : pathlib.Path
-        The path to the file where the chart will be saved.
+        The path to the file where the figure will be saved.
     **kwargs : dict, optional
         Additional keyword arguments passed to the export or
         save function depending on the file extension.
     """
     if path.suffix == ".png":
-        export_png(chart, filename=path, **kwargs)
+        export_png(figure, filename=path, **kwargs)
     elif path.suffix == ".svg":
-        export_svg(chart, filename=path, **kwargs)
+        export_svg(figure, filename=path, **kwargs)
     elif path.suffix == ".html":
         output_file(path)
-        save(chart, **kwargs)
+        save(figure, **kwargs)
     else:
         raise ValueError(
             f"Unsupported file format: {path}. Supported formats are .png, .svg, and .html."
@@ -204,17 +205,17 @@ def savefig(chart, path, **kwargs):
 
 
 def get_figsize(plot_collection):
-    """Get the size of the :term:`chart` element and its units."""
-    chart = plot_collection.viz["chart"].item()
-    if chart is None:
+    """Get the size of the :term:`figure` element and its units."""
+    figure = plot_collection.viz["figure"].item()
+    if figure is None:
         plot = plot_collection.viz["plot"].item()
         return (plot.width, plot.height), "dots"
-    if isinstance(chart, (GridBox, GridPlot)):
-        gridbox = chart
-    elif isinstance(chart, tuple):
-        gridbox = chart[1]
+    if isinstance(figure, (GridBox, GridPlot)):
+        gridbox = figure
+    elif isinstance(figure, tuple):
+        gridbox = figure[1]
     else:
-        gridbox = chart.children[1]
+        gridbox = figure.children[1]
     if not isinstance(gridbox, (GridBox, GridPlot)):
         return (800, 800)
     row_heights_sum = np.sum([plot.height for plot, _, col in gridbox.children if col == 0])
@@ -238,7 +239,7 @@ def create_plotting_grid(
     subplot_kws=None,
     **kwargs,
 ):
-    """Create a chart with a grid of plotting targets in it.
+    """Create a figure with a grid of plotting targets in it.
 
     Parameters
     ----------
@@ -295,10 +296,10 @@ def create_plotting_grid(
         if len(width_ratios) != cols:
             raise ValueError("width_ratios must be an iterable of length cols")
         plot_width = subplot_kws.get("width", 600)
-        chart_width = plot_width * cols
+        figure_width = plot_width * cols
         width_ratios = np.array(width_ratios, dtype=float)
         width_ratios /= width_ratios.sum()
-        plot_widths = np.ceil(chart_width * width_ratios).astype(int)
+        plot_widths = np.ceil(figure_width * width_ratios).astype(int)
 
     shared_xrange = {}
     shared_yrange = {}
@@ -316,21 +317,21 @@ def create_plotting_grid(
             if width_ratios is not None:
                 subplot_kws["width"] = plot_widths[col]
             if (row == 0) and (col == 0) and (sharex is True or sharey is True):
-                p = figure(**subplot_kws_i)  # pylint: disable=invalid-name
+                p = _figure(**subplot_kws_i)  # pylint: disable=invalid-name
                 figures[row, col] = p
                 if sharex is True:
                     subplot_kws["x_range"] = p.x_range
                 if sharey is True:
                     subplot_kws["y_range"] = p.y_range
             elif col == 0 and (sharex == "row" or sharey == "row"):
-                p = figure(**subplot_kws_i)  # pylint: disable=invalid-name
+                p = _figure(**subplot_kws_i)  # pylint: disable=invalid-name
                 figures[row, col] = p
                 if sharex == "row":
                     shared_xrange[row] = p.x_range
                 if sharey == "row":
                     shared_yrange[row] = p.y_range
             elif row == 0 and (sharex == "col" or sharey == "col"):
-                p = figure(**subplot_kws_i)  # pylint: disable=invalid-name
+                p = _figure(**subplot_kws_i)  # pylint: disable=invalid-name
                 figures[row, col] = p
                 if sharex == "col":
                     shared_xrange[col] = p.x_range
@@ -339,7 +340,7 @@ def create_plotting_grid(
             elif row * cols + (col + 1) > number:
                 figures[row, col] = None
             else:
-                figures[row, col] = figure(**subplot_kws_i)
+                figures[row, col] = _figure(**subplot_kws_i)
     if squeeze and figures.size == 1:
         return None, figures[0, 0]
     layout = gridplot(figures.tolist(), **kwargs)
@@ -372,12 +373,12 @@ def hist(
     r_e,
     target,
     *,
+    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
     edgecolor=unset,
     alpha=unset,
-    step_mode="center",
     **artist_kws,
 ):
     """Interface to Bokeh for a histogram bar or step plot."""
@@ -387,9 +388,9 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    step_hist = artist_kws.pop("step", False)
     kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
-    if step_hist:
+    if step:
+        step_mode = artist_kws.pop("step_mode", "center")
         kwargs = {"line_color": edgecolor, "alpha": alpha}
 
         x = [l_e[0], l_e[0]]

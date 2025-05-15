@@ -100,35 +100,35 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
 
 # object creation and i/o
-def show(chart):
-    """Show this :term:`chart`.
+def show(figure):
+    """Show this :term:`figure`.
 
     Parameters
     ----------
-    chart : chart_type
+    figure : figure_type
     """
     raise TypeError("'none' backend objects can't be shown.")
 
 
-def savefig(chart, path, **kwargs):
-    """Show this :term:`chart`.
+def savefig(figure, path, **kwargs):
+    """Show this :term:`figure`.
 
     Parameters
     ----------
-    chart : chart_type
-        The chart to save.
+    figure : figure_type
+        The figure to save.
     path : pathlib.Path
-        The path to save the chart to.
+        The path to save the figure to.
     **kwargs : dict, optional
         Additional keyword arguments.
     """
-    raise TypeError("'none' backend charts can't be saved.")
+    raise TypeError("'none' backend figures can't be saved.")
 
 
 def get_figsize(plot_collection):
-    """Get the size of the :term:`chart` element and its units."""
-    chart_element = plot_collection.viz["chart"].item()
-    return chart_element["figsize"], chart_element["figsize_units"]
+    """Get the size of the :term:`figure` element and its units."""
+    figure_element = plot_collection.viz["figure"].item()
+    return figure_element["figsize"], figure_element["figsize_units"]
 
 
 def create_plotting_grid(
@@ -147,7 +147,7 @@ def create_plotting_grid(
     subplot_kws=None,
     **kwargs,
 ):
-    """Create a :term:`chart` with a grid of :term:`plots` in it.
+    """Create a :term:`figure` with a grid of :term:`plots` in it.
 
     Parameters
     ----------
@@ -172,7 +172,7 @@ def create_plotting_grid(
 
     Returns
     -------
-    chart : False
+    figure : False
     plots : [] or ndarray of []
     """
     plots = np.empty((rows, cols), dtype=object)
@@ -185,7 +185,7 @@ def create_plotting_grid(
             raise ValueError("'subplot_kws' is not empty")
         if kwargs:
             raise ValueError("kwargs are not empty")
-    chart_element = {
+    figure_element = {
         "figsize": figsize,
         "figsize_units": figsize_units,
         "sharex": sharex,
@@ -196,7 +196,7 @@ def create_plotting_grid(
         "subplot_kws": subplot_kws,
         **kwargs,
     }
-    return np.array(chart_element, dtype=object), plots
+    return np.array(figure_element, dtype=object), plots
 
 
 def _filter_kwargs(kwargs, artist_kws):
@@ -211,21 +211,23 @@ def hist(
     r_e,
     target,
     *,
+    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
     edgecolor=unset,
+    alpha=unset,
     **artist_kws,
 ):
     """Interface to matplotlib for a histogram bar plot."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     if color is not unset:
         if facecolor is unset:
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
+    kwargs = {"step": step, "bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
     artist_element = {
         "function": "hist",
         "l_e": np.atleast_1d(l_e),
@@ -242,7 +244,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to a line plot."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "line",
         "x": np.atleast_1d(x),
@@ -285,7 +287,7 @@ def scatter(
         "width": width,
     }
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "scatter",
         "x": np.atleast_1d(x),
@@ -300,7 +302,7 @@ def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to a step line."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "step",
         "x": np.atleast_1d(x),
@@ -333,7 +335,7 @@ def text(
         "horizontal_align": horizontal_align,
     }
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "text",
         "x": np.atleast_1d(x),
@@ -356,7 +358,7 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
         y_top = y_top.item()
     kwargs = {"color": color, "alpha": alpha}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "fill_between_y",
         "x": x,
@@ -372,7 +374,7 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     """Interface to a vertical line spanning the whole axes."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "vline",
         "x": x,
@@ -386,7 +388,7 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     """Interface to a horizontal line spanning the whole axes."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "vline",
         "y": y,
@@ -411,7 +413,7 @@ def ciliney(
     """Interface to a line from y_bottom to y_top at given value of x."""
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "ciliney",
         "x": np.atleast_1d(x),
@@ -428,7 +430,7 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a title to a plot."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "title", "string": string, **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)
     return artist_element
@@ -438,7 +440,7 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a label to a plot's y axis."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "ylabel", "string": string, **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)
     return artist_element
@@ -448,7 +450,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a label to a plot's x axis."""
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xlabel", "string": string, **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)
     return artist_element
@@ -457,7 +459,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
 def xticks(ticks, labels, target, **artist_kws):
     """Interface to setting ticks and tick labels of the x axis."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xticks", "ticks": ticks, "labels": labels, **artist_kws}
     target.append(artist_element)
     return artist_element
@@ -466,7 +468,7 @@ def xticks(ticks, labels, target, **artist_kws):
 def yticks(ticks, labels, target, **artist_kws):
     """Interface to setting ticks and tick labels of the y axis."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "yticks", "ticks": ticks, "labels": labels, **artist_kws}
     target.append(artist_element)
     return artist_element
@@ -475,7 +477,7 @@ def yticks(ticks, labels, target, **artist_kws):
 def xlim(lims, target, **artist_kws):
     """Interface to setting limits for the x axis."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xlim", "lims": lims, **artist_kws}
     target.append(artist_element)
     return artist_element
@@ -484,7 +486,7 @@ def xlim(lims, target, **artist_kws):
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to setting size of tick labels."""
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     kwargs = {"axis": axis, "size": size, "color": color}
     artist_element = {"function": "ticklabel_props", **_filter_kwargs(kwargs, artist_kws)}
     target.append(artist_element)

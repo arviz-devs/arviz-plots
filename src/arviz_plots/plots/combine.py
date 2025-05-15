@@ -1,11 +1,11 @@
-"""Elements to combine multiple batteries-included plots into a single chart."""
+"""Elements to combine multiple batteries-included plots into a single figure."""
 import re
 from importlib import import_module
 
-import xarray as xr
 from arviz_base import rcParams
 
 from arviz_plots import PlotCollection
+from arviz_plots.plot_collection import backend_from_object
 from arviz_plots.plots.utils import process_group_variables_coords, set_grid_layout
 
 
@@ -47,8 +47,9 @@ def backendize_kwargs(kwargs, backend):
     }
 
 
-def render(da, target, backend, **kwargs):
+def render(da, target, **kwargs):
     """Render artist descriptions from the none backend with a plotting backend."""
+    backend = backend_from_object(target, return_module=False)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     plot_kwargs = da.item()
     plot_fun_name = plot_kwargs["function"]
@@ -197,27 +198,21 @@ def combine_plots(
             var_names=var_names,
             filter_vars=filter_vars,
             coords=coords,
+            sample_dims=sample_dims,
             **kwargs,
         )
         pc.coords = None
         pc.aes = pc_i.aes
         pc.coords = {expand: name}
-        inverted_dt_dict = {}
         for viz_group, ds in pc_i.viz.children.items():
-            for viz_var_name, da in ds.data_vars.items():
-                if viz_var_name in {"plot", "row_index", "col_index"}:
-                    continue
-                if viz_var_name not in inverted_dt_dict:
-                    inverted_dt_dict[viz_var_name] = {}
-                inverted_dt_dict[viz_var_name].update({viz_group: da})
-        inverted_dt_dict = {key: xr.Dataset(values) for key, values in inverted_dt_dict.items()}
-        for viz_group, ds in inverted_dt_dict.items():
-            attrs = ds[list(ds.data_vars)[0]].attrs
+            if viz_group in {"plot", "row_index", "col_index"}:
+                continue
+            attrs = ds.attrs
             pc.map(
                 render,
                 fun_label=f"{viz_group}_{name}",
-                data=ds,
-                ignore_aes=attrs.get("ignore_aes", None),
+                data=ds.dataset,
+                ignore_aes=attrs.get("ignore_aes", frozenset()),
             )
     pc.coords = None
     # TODO: at some point all `pc_i.aes` objects should be merged

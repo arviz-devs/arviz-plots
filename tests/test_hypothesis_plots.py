@@ -105,12 +105,15 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, plot_kwargs):
         point_estimate=point_estimate,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" in child for child in pc.viz.children.values())
-    for key, value in plot_kwargs.items():
+    assert "plot" in pc.viz.children
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
-        elif key != "remove_axis":
-            assert all(key in child for child in pc.viz.children.values())
+            assert artist not in pc.viz.children
+        else:
+            assert artist in pc.viz.children
+            assert all(
+                var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
+            )
 
 
 @given(
@@ -156,23 +159,22 @@ def test_plot_forest(
         plot_kwargs=plot_kwargs,
         stats_kwargs=stats_kwargs,
     )
-    assert all("plot" not in child for child in pc.viz.children.values())
     assert "plot" in pc.viz.data_vars
-    for key, value in plot_kwargs.items():
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
-        elif key == "labels":
-            for label in labels:
-                assert all(
-                    f"{label.strip('_')}_label" in child for child in pc.viz.children.values()
-                )
-        elif key == "shade":
+            assert artist not in pc.viz.children
+        elif artist == "labels":
+            assert all(f"{label.strip('_')}_label" in pc.viz.children for label in labels)
+        elif artist == "shade":
             if shade_label is None:
-                assert all(key not in child for child in pc.viz.children.values())
+                assert artist not in pc.viz.children
             else:
-                assert all(key in child for child in pc.viz.children.values())
-        elif key not in ("remove_axis", "ticklabels"):
-            assert all(key in child for child in pc.viz.children.values())
+                assert artist in pc.viz.children
+        elif artist != "ticklabels":
+            assert artist in pc.viz.children
+            assert all(
+                var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
+            )
 
 
 @given(
@@ -201,23 +203,22 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
         shade_label=shade_label,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" not in child for child in pc.viz.children.values())
     assert "plot" in pc.viz.data_vars
-    for key, value in plot_kwargs.items():
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
-        elif key == "labels":
-            for label in labels:
-                assert all(
-                    f"{label.strip('_')}_label" in child for child in pc.viz.children.values()
-                )
-        elif key == "shade":
+            assert artist not in pc.viz.children
+        elif artist == "labels":
+            assert all(f"{label.strip('_')}_label" in pc.viz.children for label in labels)
+        elif artist == "shade":
             if shade_label is None:
-                assert all(key not in child for child in pc.viz.children.values())
+                assert artist not in pc.viz.children
             else:
-                assert all(key in child for child in pc.viz.children.values())
-        elif key not in ("remove_axis", "ticklabels"):
-            assert all(key in child for child in pc.viz.children.values())
+                assert artist in pc.viz.children
+        elif artist != "ticklabels":
+            assert artist in pc.viz.children
+            assert all(
+                var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
+            )
 
 
 @given(
@@ -255,22 +256,22 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
         min_ess=min_ess,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" in child for child in pc.viz.children.values())
-    for key, value in plot_kwargs.items():
+    assert "plot" in pc.viz.children
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
-        elif key in ["mean", "sd", "mean_text", "sd_text"]:
+            assert artist not in pc.viz.children
+        elif artist in ["mean", "sd", "mean_text", "sd_text"]:
             if extra_methods is False:
-                assert all(key not in child for child in pc.viz.children.values())
+                assert artist not in pc.viz.children
             else:
-                assert all(key in child for child in pc.viz.children.values())
-        elif key == "rug":
+                assert artist in pc.viz.children
+        elif artist == "rug":
             if rug is False:
-                assert all(key not in child for child in pc.viz.children.values())
+                assert artist not in pc.viz.children
             else:
-                assert all(key in child for child in pc.viz.children.values())
+                assert artist in pc.viz.children
         else:
-            assert all(key in child for child in pc.viz.children.values())
+            assert artist in pc.viz.children
 
 
 @given(
@@ -307,17 +308,17 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
         min_ess=min_ess,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" in child for child in pc.viz.children.values())
-    for key, value in plot_kwargs.items():
+    assert "plot" in pc.viz.children
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
-        elif key in ["mean", "sd", "mean_text", "sd_text"]:
+            assert artist not in pc.viz.children
+        elif artist in ["mean", "sd", "mean_text", "sd_text"]:
             if extra_methods is False:
-                assert all(key not in child for child in pc.viz.children.values())
+                assert artist not in pc.viz.children
             else:
-                assert all(key in child for child in pc.viz.children.values())
-        elif key != "remove_axis":
-            assert all(key in child for child in pc.viz.children.values())
+                assert artist in pc.viz.children
+        else:
+            assert artist in pc.viz.children
 
 
 @given(
@@ -350,12 +351,12 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwarg
         point_estimate=point_estimate,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" in child for child in pc.viz.children.values())
-    for key, value in plot_kwargs.items():
+    assert "plot" in pc.viz.children
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
-        elif key != "remove_axis":
-            assert all(key in child for child in pc.viz.children.values())
+            assert artist not in pc.viz.children
+        else:
+            assert artist in pc.viz.children
 
 
 @given(
@@ -393,20 +394,26 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, plot_kwarg
         ref_line=ref_line,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" in child for child in pc.viz.children.values())
+    assert "plot" in pc.viz.children
     if diagnostics is None:
         diagnostics = ["ess_bulk", "ess_tail", "rhat"]
-    assert [diagnostic in pc.viz.children for diagnostic in diagnostics]
-    for key, value in plot_kwargs.items():
+    if isinstance(diagnostics, str):
+        diagnostics = [diagnostics]
+    assert all(
+        diagnostic in child.data_vars
+        for diagnostic in diagnostics
+        for child in pc.viz.children.values()
+    )
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
-        elif key == "ref_line":
+            assert artist not in pc.viz.children
+        elif artist == "ref_line":
             if ref_line:
-                assert all(key in child for child in pc.viz.children.values())
+                assert artist in pc.viz.children
             else:
-                assert all(key not in child for child in pc.viz.children.values())
-        elif key != "remove_axis":
-            assert all(key in child for child in pc.viz.children.values())
+                assert artist not in pc.viz.children
+        else:
+            assert artist in pc.viz.children
 
 
 @given(
@@ -432,9 +439,9 @@ def test_plot_rank_dist(datatree, kind, compact, combined, plot_kwargs):
         combined=combined,
         plot_kwargs=plot_kwargs,
     )
-    assert all("plot" in child for child in pc.viz.children.values())
-    for key, value in plot_kwargs.items():
+    assert "plot" in pc.viz.children
+    for artist, value in plot_kwargs.items():
         if value is False:
-            assert all(key not in child for child in pc.viz.children.values())
+            assert artist not in pc.viz.children
         else:
-            assert all(key in child for child in pc.viz.children.values())
+            assert artist in pc.viz.children
