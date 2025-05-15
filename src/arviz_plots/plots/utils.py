@@ -8,7 +8,7 @@ from arviz_base import references_to_dataset
 from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
-from arviz_plots.visuals import hline, vline
+from arviz_plots.visuals import hline, hspan, vline, vspan
 
 
 def get_group(data, group, allow_missing=False):
@@ -294,4 +294,125 @@ def add_reference_lines(
             ignore_aes=ref_ignore,
             **ref_kwargs,
         )
+    return plot_collection
+
+
+def add_reference_bands(
+    plot_collection,
+    references,
+    orientation="vertical",
+    aes_map=None,
+    plot_kwargs=None,
+    sample_dims=None,
+    ref_dim=None,
+    **kwargs,
+):
+    """Add reference bands.
+
+    This function adds lines to a plot collection based on the provided
+    references. It supports both vertical and horizontal lines, depending on the
+    specified orientation.
+
+    Parameters
+    ----------
+    plot_collection : PlotCollection
+        Plot collection to which the reference lines will be added.
+    references : tuple, list or dict
+        Reference values to be plotted as bands/shaded regions.
+    orientation : str, default "vertical"
+        The orientation of the reference lines, either "vertical" or "horizontal".
+    aes_map : mapping of {str : sequence of str}, optional
+        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `plot_kwargs`.
+
+        The default is to use an "overlay" aesthetic for all elements.
+
+        It is possible to request aesthetics without mappings defined in the
+        provided `plot_collection`. In those cases, a mapping of "ref_dim" to the requested
+        aesthetic will be automatically added.
+    plot_kwargs : mapping of {str : mapping or False}, optional
+        Valid keys are:
+
+        * "ref_band" -> passed to :func:`~arviz_plots.visuals.vspan` for vertical `orientation`
+          and to :func:`~arviz_plots.visuals.hspan` for horizontal `orientation`
+
+    sample_dims : list, optional
+        Dimensions to reduce unless mapped to an aesthetic.
+        Defaults to ``rcParams["data.sample_dims"]``
+    ref_dim : list, optional
+        Specifies the name of the reference dimension for reference values.
+    **kwargs : mapping of {str : sequence}, optional
+        Mapping of aesthetic keys to the values to be used in their mapping.
+        See :func:`~arviz_plots.PlotCollection.generate_aes_dt` for more details.
+
+    Returns
+    -------
+    plot_collection : PlotCollection
+        Plot collection with the reference lines added.
+
+    Examples
+    --------
+    Add reference bands from 0 to 2 and 3 to 5 for all variables.
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_dist, add_reference_lines, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> pc = plot_dist(
+        >>>     dt,
+        >>>     kind="ecdf"
+        >>> )
+        >>> add_reference_bands(pc, references=[[0, 2], [3, 5]])
+    """
+    if plot_kwargs is None:
+        plot_kwargs = {}
+    if aes_map is None:
+        aes_map = {}
+    else:
+        aes_map = aes_map.copy()
+    aes_map["ref_band"] = aes_map.get("ref_band", ["overlay"])
+    if sample_dims is None:
+        sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
+    if ref_dim is None:
+        ref_dim = ["ref_dim_0", "ref_dim_1"]
+    plot_bknd = import_module(f".backend.{plot_collection.backend}", package="arviz_plots")
+
+    plot_func = vspan if orientation == "vertical" else hspan
+
+    ref_ds = references_to_dataset(
+        references, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
+    )
+
+    requested_aes = set(aes_map["ref_band"]).difference(plot_collection.aes_set)
+    ref_dim_0 = ref_dim[0]
+    if ref_dim_0 in ref_ds.dims:
+        for aes_key in requested_aes:
+            aes_values = np.array(
+                plot_bknd.get_default_aes(aes_key, ref_ds.sizes[ref_dim_0], kwargs)
+            )
+            plot_collection.update_aes_from_dataset(
+                aes_key,
+                xr.Dataset(
+                    {
+                        var_name: (ref_dim_0, aes_values)
+                        for var_name in plot_collection.data.data_vars
+                    },
+                    coords={ref_dim_0: ref_ds[ref_dim_0]},
+                ),
+            )
+
+    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_band", sample_dims)
+    ref_kwargs = copy(plot_kwargs.get("ref_band", {}))
+    if ref_kwargs is not False:
+        if "color" not in ref_aes:
+            ref_kwargs.setdefault("color", "gray")
+        if "alpha" not in ref_aes:
+            ref_kwargs.setdefault("alpha", 0.25)
+        plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)
+
     return plot_collection

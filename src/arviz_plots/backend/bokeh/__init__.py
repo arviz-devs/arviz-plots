@@ -8,6 +8,7 @@ import numpy as np
 from bokeh.io.export import export_png, export_svg
 from bokeh.layouts import GridBox, gridplot
 from bokeh.models import (
+    BoxAnnotation,
     ColumnDataSource,
     CustomJSTickFormatter,
     FixedTicker,
@@ -519,6 +520,22 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     span_element = Span(location=y, dimension="width", **_filter_kwargs(kwargs, artist_kws))
     target.add_layout(span_element)
     return span_element
+
+
+def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
+    """Interface to bokeh for a vertical shaded region spanning the whole axes."""
+    kwargs = {"fill_color": color, "fill_alpha": alpha}
+    vbox = BoxAnnotation(left=xmin, right=xmax, **_filter_kwargs(kwargs, artist_kws))
+    target.add_layout(vbox)
+    return vbox
+
+
+def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
+    """Interface to bokeh for a horizontal shaded region spanning the whole axes."""
+    kwargs = {"fill_color": color, "fill_alpha": alpha}
+    hbox = BoxAnnotation(bottom=ymin, top=ymax, **_filter_kwargs(kwargs, artist_kws))
+    target.add_layout(hbox)
+    return hbox
 
 
 def ciliney(

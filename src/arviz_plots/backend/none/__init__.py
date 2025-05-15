@@ -398,6 +398,36 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return artist_element
 
 
+def vspan(xmin, xmax, target, color=unset, alpha=unset, **artist_kws):
+    """Interface to a vertical shaded region spanning the whole axes."""
+    kwargs = {"color": color, "alpha": alpha}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    artist_element = {
+        "function": "vspan",
+        "xmin": xmin,
+        "xmax": xmax,
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def hspan(ymin, ymax, target, color=unset, alpha=unset, **artist_kws):
+    """Interface to a horizontal shaded region spanning the whole axes."""
+    kwargs = {"color": color, "alpha": alpha}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError("artist_kws not empty")
+    artist_element = {
+        "function": "hspan",
+        "ymin": ymin,
+        "ymax": ymax,
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 def ciliney(
     x,
     y_bottom,

@@ -590,6 +590,40 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     )
 
 
+def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
+    """Interface to plotly for a vertical shaded region spanning the whole axes."""
+    kwargs = {"fillcolor": color, "opacity": alpha}
+    vbox = go.layout.Shape(
+        type="rect",
+        xref="x",
+        yref="y domain",
+        x0=xmin,
+        x1=xmax,
+        y0=0,
+        y1=1,
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+    target.add_shape(vbox)
+    return vbox
+
+
+def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
+    """Interface to plotly for a horizontal shaded region spanning the whole axes."""
+    kwargs = {"fillcolor": color, "opacity": alpha}
+    hbox = go.layout.Shape(
+        type="rect",
+        xref="x domain",
+        yref="y",
+        y0=ymin,
+        y1=ymax,
+        x0=0,
+        x1=1,
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+    target.add_shape(hbox)
+    return hbox
+
+
 def ciliney(
     x,
     y_bottom,
