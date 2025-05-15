@@ -104,6 +104,8 @@ def plot_bf(
 
     bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)
 
+    if isinstance(var_names, str):
+        var_names = [var_names]
     bf_dataset = xr.Dataset(
         {
             var: xr.DataArray(bf[var]["BF01"], coords={"BF_type": ["BF01"]}, dims=["BF_type"])
