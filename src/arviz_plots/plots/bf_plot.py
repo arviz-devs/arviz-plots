@@ -13,7 +13,7 @@ from arviz_plots.visuals import vline
 
 def plot_bf(
     dt,
-    var_name,
+    var_names,
     ref_val=0,
     kind=None,
     sample_dims=None,
@@ -37,8 +37,9 @@ def plot_bf(
     dt : DataTree or dict of {str : DataTree}
         Input data. In case of dictionary input, the keys are taken to be model names.
         In such cases, a dimension "model" is generated and can be used to map to aesthetics.
-    var_name : str, optional
-        Variable to be plotted.
+    var_names : str, optional
+        Variables for which the bayes factor will be computed and the prior and
+        posterior will be plotted.
     ref_val : int or float, default 0
         Reference (point-null) value for Bayes factor estimation.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
@@ -88,7 +89,7 @@ def plot_bf(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
-        >>> plot_bf(dt, var_name="mu", kind="hist")
+        >>> plot_bf(dt, var_names="mu", kind="hist")
 
     .. minigallery:: plot_bf
     """
@@ -101,19 +102,20 @@ def plot_bf(
     else:
         aes_map = aes_map.copy()
 
-    # Compute Bayes Factor using the bayes_factor function
-    # Currently works onlu for a single variable.
-    bf, _ = bayes_factor(dt, var_name, ref_val, return_ref_vals=True)
+    bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)
 
-    bf_values = xr.DataArray(
-        [f"BF01: {bf['BF01']:.2f}"],
-        dims=["BF_type"],
-        coords={"BF_type": ["BF01"]},
+    if isinstance(var_names, str):
+        var_names = [var_names]
+    bf_dataset = xr.Dataset(
+        {
+            var: xr.DataArray(bf[var]["BF01"], coords={"BF_type": ["BF01"]}, dims=["BF_type"])
+            for var in var_names
+        }
     )
 
     plot_collection = plot_prior_posterior(
         dt,
-        var_names=var_name,
+        var_names=var_names,
         coords=None,
         sample_dims=sample_dims,
         kind=kind,
@@ -125,7 +127,7 @@ def plot_bf(
         pc_kwargs=pc_kwargs,
     )
 
-    plot_collection.aes["BF_type"] = bf_values
+    plot_collection.aes["BF_type"] = bf_dataset
     backend = plot_collection.backend
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -136,7 +138,6 @@ def plot_bf(
         )
 
     if ref_val is not False:
-        ref_dt = xr.Dataset({var_name: xr.DataArray([ref_val])})
         _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_line", "sample")
         if "color" not in ref_aes:
             ref_line_kwargs.setdefault("color", "black")
@@ -147,10 +148,12 @@ def plot_bf(
             ref_line_kwargs.setdefault("alpha", 0.5)
 
         plot_collection.map(
-            vline, "ref_line", data=ref_dt, ignore_aes=ref_ignore, **ref_line_kwargs
+            vline, "ref_line", data=bf_dataset, ignore_aes=ref_ignore, **ref_line_kwargs
         )
 
     if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        plot_collection.add_legend("BF_type", loc="upper left", fontsize=10, text_only=True)
+        plot_collection.add_legend(
+            "BF_type", loc="upper left", aes="BF_type", fontsize=10, text_only=True
+        )
 
     return plot_collection
