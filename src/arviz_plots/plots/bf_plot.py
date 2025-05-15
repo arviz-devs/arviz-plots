@@ -108,7 +108,11 @@ def plot_bf(
         var_names = [var_names]
     bf_dataset = xr.Dataset(
         {
-            var: xr.DataArray(bf[var]["BF01"], coords={"BF_type": ["BF01"]}, dims=["BF_type"])
+            var: xr.DataArray(
+                f"BF01:{bf[var]['BF01']:.2f}",
+                coords={"BF_type": ["BF01"]},
+                dims=["BF_type"],
+            )
             for var in var_names
         }
     )
@@ -149,11 +153,6 @@ def plot_bf(
 
         plot_collection.map(
             vline, "ref_line", data=bf_dataset, ignore_aes=ref_ignore, **ref_line_kwargs
-        )
-
-    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        plot_collection.add_legend(
-            "BF_type", loc="upper left", aes="BF_type", fontsize=10, text_only=True
         )
 
     return plot_collection
