@@ -28,7 +28,7 @@ data = load_arviz_data("centered_eight")
 pc = azp.plot_bf(
     data,
     backend="none",  # change to preferred backend
-    var_name="mu"
+    var_names="mu"
 )
 
 pc.show()
