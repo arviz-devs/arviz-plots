@@ -175,7 +175,7 @@ def add_reference_lines(
     aes_map=None,
     plot_kwargs=None,
     sample_dims=None,
-    ref_dim="ref_line_dim",
+    ref_dim="ref_dim",
     **kwargs,
 ):
     """Add reference lines.
@@ -199,7 +199,7 @@ def add_reference_lines(
         The default is to use an "overlay" aesthetic for all elements.
 
         It is possible to request aesthetics without mappings defined in the
-        provided `plot_collection`. In those cases, a mapping of "ref_line_dim" to the requested
+        provided `plot_collection`. In those cases, a mapping of "ref_dim" to the requested
         aesthetic will be automatically added.
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
@@ -211,6 +211,9 @@ def add_reference_lines(
     sample_dims : list, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    ref_dim : str, optional
+        Specifies the name of the reference dimension for reference values.
+        Defaults to "ref_dim".
     **kwargs : mapping of {str : sequence}, optional
         Mapping of aesthetic keys to the values to be used in their mapping.
         See :func:`~arviz_plots.PlotCollection.generate_aes_dt` for more details.
@@ -255,7 +258,9 @@ def add_reference_lines(
 
     plot_func = vline if orientation == "vertical" else hline
 
-    ref_ds = references_to_dataset(references, plot_collection.data, sample_dims=sample_dims)
+    ref_ds = references_to_dataset(
+        references, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
+    )
     requested_aes = (
         set(aes_map["ref_line"]).union(aes_map["ref_text"]).difference(plot_collection.aes_set)
     )
