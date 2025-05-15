@@ -163,7 +163,7 @@ def _get_aes_dict_from_dt(aes_dt):
 class PlotCollection:
     """Low level base class for plotting with xarray Datasets.
 
-    This class instatiates a chart with multiple plots in it and provides methods to loop
+    This class instantiates a chart with multiple plots in it and provides methods to loop
     over these plots and the provided data syncing each plot and data subset to
     user given aesthetics.
 
