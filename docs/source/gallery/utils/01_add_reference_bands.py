@@ -17,7 +17,7 @@ import arviz_plots as azp
 azp.style.use("arviz-variat")
 
 data = load_arviz_data("centered_eight")
-ref_dict = [(0, 3), (3, 9), (10, 20)]
+references = [(0, 5), (5, 20)]
 pc = azp.plot_dist(
     data,
     kind="ecdf",
@@ -26,9 +26,9 @@ pc = azp.plot_dist(
 
 pc = azp.add_reference_bands(
     pc,
-    references=ref_dict,
+    references=references,
     aes_map={"ref_band": ["color"]},
-    color=["black", "gray", "blue"]
+    color=["black", "gray"]
 )
 
 pc.show()
