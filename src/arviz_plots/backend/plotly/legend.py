@@ -1,15 +1,17 @@
 """Plotly legend generation."""
 
+
 def dealiase_line_kwargs(kwargs):
     """Convert arviz common interface properties to plotly ones."""
     prop_map = {"linewidth": "width", "linestyle": "dash"}
     return {prop_map.get(key, key): value for key, value in kwargs.items()}
 
+
 def legend(
     target, kwarg_list, label_list, title=None, artist_type="line", artist_kwargs=None, **kwargs
 ):
     """Generate a legend with plotly.
-    
+
     Parameters
     ----------
     target : plotly.graph_objects.Figure
@@ -34,7 +36,7 @@ def legend(
     """
     if artist_kwargs is None:
         artist_kwargs = {}
-    
+
     if artist_type == "line":
         artist_fun = target.add_scatter
         kwarg_list = [dealiase_line_kwargs(kws) for kws in kwarg_list]
@@ -50,11 +52,7 @@ def legend(
             mode=mode,
             line=kws,
             showlegend=True,
-            **artist_kwargs
+            **artist_kwargs,
         )
 
-    target.update_layout(
-        showlegend=True,
-        legend_title_text=title,
-        **kwargs
-    )
+    target.update_layout(showlegend=True, legend_title_text=title, **kwargs)

@@ -20,7 +20,7 @@ def legend(
     artist_kwargs=None,
     legend_target=None,
     side="auto",
-    legend_placement_threshold=600, #Magic number
+    legend_placement_threshold=600,  # Magic number
     **kwargs,
 ):
     """Generate a legend on a figure given lists of labels and property kwargs.
@@ -69,7 +69,7 @@ def legend(
             side = "right"
         else:
             side = "center"
-    
+
     leg = Legend(
         items=[(str(label), [glyph]) for label, glyph in zip(label_list, glyph_list)],
         title=title,
