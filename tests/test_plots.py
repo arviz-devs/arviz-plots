@@ -625,19 +625,19 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_dist(datatree, backend=backend)
         add_reference_bands(pc, [(0, 1), (2, 4)])
         assert "mu" in pc.viz["ref_band"]
-        assert "ref_dim_0" in pc.viz["ref_band"]["mu"].dims
+        assert "ref_dim" in pc.viz["ref_band"]["mu"].dims
 
     def test_add_bands_dict(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_bands(pc, {"mu": [(0, 1)]})
         assert "mu" in pc.viz["ref_band"]
         assert "theta" not in pc.viz["ref_band"]
-        assert "ref_dim_0" in pc.viz["ref_band"]["mu"].dims
+        assert "ref_dim" in pc.viz["ref_band"]["mu"].dims
 
     def test_add_bands_aes(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
         add_reference_bands(pc, [(0, 1), (2, 5)], aes_map={"ref_band": ["color"]})
         assert "mu" in pc.viz["ref_band"].data_vars
-        assert "ref_dim_0" in pc.viz["ref_band"]["mu"].dims
+        assert "ref_dim" in pc.viz["ref_band"]["mu"].dims
         assert "/color" in pc.aes.groups
-        assert "ref_dim_0" in pc.aes["color"].dims
+        assert "ref_dim" in pc.aes["color"].dims
