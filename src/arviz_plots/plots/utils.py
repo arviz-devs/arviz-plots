@@ -373,7 +373,7 @@ def add_reference_bands(
         aes_map = {}
     else:
         aes_map = aes_map.copy()
-    aes_map["ref_band"] = aes_map.get("ref_band", ["overlay"])
+    aes_map["ref_band"] = aes_map.get("ref_band", ["overlay_ref"])
     if sample_dims is None:
         sample_dims = list(set(plot_collection.data.dims).difference(plot_collection.facet_dims))
     if isinstance(sample_dims, str):
