@@ -373,14 +373,13 @@ def add_reference_bands(
         aes_map = {}
     else:
         aes_map = aes_map.copy()
-    aes_map["ref_band"] = aes_map.get("ref_band", ["overlay_ref"])
+    aes_map["ref_band"] = aes_map.get("ref_band", ["overlay_band"])
     if sample_dims is None:
         sample_dims = list(set(plot_collection.data.dims).difference(plot_collection.facet_dims))
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     if ref_dim is None:
-        ref_dim = ["ref_dim_0", "ref_dim_1"]
-    plot_bknd = import_module(f".backend.{plot_collection.backend}", package="arviz_plots")
+        ref_dim = ["ref_dim", "band_dim"]
 
     plot_func = vspan if orientation == "vertical" else hspan
 
@@ -389,22 +388,12 @@ def add_reference_bands(
     )
 
     requested_aes = set(aes_map["ref_band"]).difference(plot_collection.aes_set)
-    ref_dim_0 = ref_dim[0]
-    if ref_dim_0 in ref_ds.dims:
-        for aes_key in requested_aes:
-            aes_values = np.array(
-                plot_bknd.get_default_aes(aes_key, ref_ds.sizes[ref_dim_0], kwargs)
-            )
-            plot_collection.update_aes_from_dataset(
-                aes_key,
-                xr.Dataset(
-                    {
-                        var_name: (ref_dim_0, aes_values)
-                        for var_name in plot_collection.data.data_vars
-                    },
-                    coords={ref_dim_0: ref_ds[ref_dim_0]},
-                ),
-            )
+    *ref_dim, _band_dim = ref_dim
+    aes_dt = plot_collection.generate_aes_dt(
+        {aes: ref_dim for aes in requested_aes}, ref_ds, **kwargs
+    )
+    for aes, child in aes_dt.children.items():
+        plot_collection.update_aes_from_dataset(aes, child.dataset)
 
     _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_band", sample_dims)
     ref_kwargs = copy(plot_kwargs.get("ref_band", {}))
