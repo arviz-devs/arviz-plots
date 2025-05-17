@@ -414,6 +414,20 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return target.axhline(y, **_filter_kwargs(kwargs, Line2D, artist_kws))
 
 
+def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
+    """Interface to matplotlib for a vertical shaded region spanning the whole axes."""
+    artist_kws.setdefault("zorder", 0)
+    kwargs = {"color": color, "alpha": alpha}
+    return target.axvspan(xmin, xmax, **_filter_kwargs(kwargs, None, artist_kws))
+
+
+def hspan(ymin, y_max, target, *, color=unset, alpha=unset, **artist_kws):
+    """Interface to matplotlib for a horizontal shaded region spanning the whole axes."""
+    artist_kws.setdefault("zorder", 0)
+    kwargs = {"color": color, "alpha": alpha}
+    return target.axhspan(ymin, y_max, **_filter_kwargs(kwargs, None, artist_kws))
+
+
 def ciliney(
     x,
     y_bottom,

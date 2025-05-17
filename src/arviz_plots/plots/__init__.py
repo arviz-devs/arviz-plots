@@ -26,7 +26,7 @@ from .rank_plot import plot_rank
 from .ridge_plot import plot_ridge
 from .trace_dist_plot import plot_trace_dist
 from .trace_plot import plot_trace
-from .utils import add_reference_lines
+from .utils import add_reference_bands, add_reference_lines
 
 __all__ = [
     "combine_plots",
@@ -56,4 +56,5 @@ __all__ = [
     "plot_psense_dist",
     "plot_psense_quantities",
     "add_reference_lines",
+    "add_reference_bands",
 ]

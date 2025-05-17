@@ -137,6 +137,18 @@ def hline(values, target, **kwargs):
     return plot_backend.hline(values.item(), target, **kwargs)
 
 
+def vspan(da, target, **kwargs):
+    """Plot a vertical shaded region that spans the whole figure."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.vspan(da.values[0], da.values[1], target, **kwargs)
+
+
+def hspan(da, target, **kwargs):
+    """Plot a vertical shaded region that spans the whole figure."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.hspan(da.values[0], da.values[1], target, **kwargs)
+
+
 def dline(da, target, x=None, y=None, **kwargs):
     """Plot a diagonal line across the x-y range."""
     plot_backend = backend_from_object(target)
