@@ -53,7 +53,7 @@ a short description of the example and a seealso directive using MyST syntax.
 
 The code part should import arviz-plots as `azp`. Later on, it set `backend="none"`
 explicitly when calling the plotting functions and
-store the generated :class:`~arviz_plots.PlotCollection` as the `pc` variable
+store the generated {class}`~arviz_plots.PlotCollection` as the `pc` variable
 so the example can finish with `pc.show()`.
 
 Here is an example that can be used as template:
