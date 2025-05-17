@@ -16,6 +16,7 @@ from plotly.subplots import make_subplots
 from webcolors import hex_to_rgb, name_to_rgb
 
 from ..none import get_default_aes as get_agnostic_default_aes
+from .legend import legend
 
 
 class UnsetDefault:

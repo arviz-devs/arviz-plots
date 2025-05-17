@@ -11,6 +11,8 @@ import warnings
 
 import numpy as np
 
+from .legend import legend
+
 ALLOW_KWARGS = True
 
 
@@ -532,16 +534,3 @@ def grid(target, axis, color):
     }
     target.append(artist_element)
     return artist_element
-
-
-def legend(
-    target,
-    kwarg_list,
-    label_list,
-    title=None,  # pylint: disable=redefined-outer-name
-    artist_type="line",
-    artist_kwargs=None,
-    **kwargs,
-):
-    """Interface to manually generated legends."""
-    raise NotImplementedError("No legends in 'none' backend.")
