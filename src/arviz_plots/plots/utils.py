@@ -325,7 +325,7 @@ def add_reference_bands(
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs`.
 
-        The default is to use an "overlay" aesthetic for all elements.
+        The default is to use an "overlay_band" aesthetic for all elements.
 
         It is possible to request aesthetics without mappings defined in the
         provided `plot_collection`. In those cases, a mapping of "ref_dim" to the requested
