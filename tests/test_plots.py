@@ -7,6 +7,7 @@ from arviz_base import from_dict
 from scipy.stats import halfnorm, norm
 
 from arviz_plots import (
+    add_reference_bands,
     add_reference_lines,
     plot_autocorr,
     plot_bf,
@@ -617,5 +618,26 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         add_reference_lines(pc, [0, 1], aes_map={"ref_line": ["color"]})
         assert "mu" in pc.viz["ref_line"].data_vars
         assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
+        assert "/color" in pc.aes.groups
+        assert "ref_dim" in pc.aes["color"].dims
+
+    def test_add_bands_array(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_bands(pc, [(0, 1), (2, 4)])
+        assert "mu" in pc.viz["ref_band"]
+        assert "ref_dim" in pc.viz["ref_band"]["mu"].dims
+
+    def test_add_bands_dict(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_bands(pc, {"mu": [(0, 1)]})
+        assert "mu" in pc.viz["ref_band"]
+        assert "theta" not in pc.viz["ref_band"]
+        assert "ref_dim" in pc.viz["ref_band"]["mu"].dims
+
+    def test_add_bands_aes(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend)
+        add_reference_bands(pc, [(0, 1), (2, 5)], aes_map={"ref_band": ["color"]})
+        assert "mu" in pc.viz["ref_band"].data_vars
+        assert "ref_dim" in pc.viz["ref_band"]["mu"].dims
         assert "/color" in pc.aes.groups
         assert "ref_dim" in pc.aes["color"].dims
