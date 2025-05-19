@@ -339,7 +339,7 @@ def add_reference_bands(
 
     sample_dims : list, optional
         Dimensions that should not be added to the Dataset generated from
-        `refereces` via :func:`arviz_base.references_to_dataset`.
+        `references` via :func:`arviz_base.references_to_dataset`.
         Defaults to all dimensions in ``plot_collection.data`` that are not ``facet_dims``
     ref_dim : list, optional
         List of dimension names that define the axes along which reference values are stored.
