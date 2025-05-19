@@ -337,7 +337,8 @@ def add_reference_bands(
         * "ref_band" -> passed to :func:`~arviz_plots.visuals.vspan` for vertical `orientation`
           and to :func:`~arviz_plots.visuals.hspan` for horizontal `orientation`
 
-    Dimensions that should not be added to the Dataset generated from
+    sample_dims : list, optional
+        Dimensions that should not be added to the Dataset generated from
         `refereces` via :func:`arviz_base.references_to_dataset`.
         Defaults to all dimensions in ``plot_collection.data`` that are not ``facet_dims``
     ref_dim : list, optional
