@@ -328,20 +328,23 @@ def add_reference_bands(
         The default is to use an "overlay_band" aesthetic for all elements.
 
         It is possible to request aesthetics without mappings defined in the
-        provided `plot_collection`. In those cases, a mapping of "ref_dim" to the requested
-        aesthetic will be automatically added.
+        provided `plot_collection`. In those cases, a mapping of the dimensions in
+        `ref_dim` minus its last element to the requested aesthetic will be
+        automatically added.
     plot_kwargs : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * "ref_band" -> passed to :func:`~arviz_plots.visuals.vspan` for vertical `orientation`
           and to :func:`~arviz_plots.visuals.hspan` for horizontal `orientation`
 
-    sample_dims : list, optional
-        Dimensions to reduce unless mapped to an aesthetic.
-        Defaults to ``rcParams["data.sample_dims"]``
+    Dimensions that should not be added to the Dataset generated from
+        `refereces` via :func:`arviz_base.references_to_dataset`.
+        Defaults to all dimensions in ``plot_collection.data`` that are not ``facet_dims``
     ref_dim : list, optional
-        Specifies the name of the reference dimension for reference values.
-    **kwargs : mapping of {str : sequence}, optional
+        List of dimension names that define the axes along which reference values are stored.
+        These dimensions are used to align or compare input data with reference data.
+        Defaults to ["ref_dim", "band_dim"].
+    **kwargs : sequence, optional
         Mapping of aesthetic keys to the values to be used in their mapping.
         See :func:`~arviz_plots.PlotCollection.generate_aes_dt` for more details.
 
@@ -388,7 +391,12 @@ def add_reference_bands(
     )
 
     requested_aes = set(aes_map["ref_band"]).difference(plot_collection.aes_set)
-    *ref_dim, _band_dim = ref_dim
+    *ref_dim, band_dim = ref_dim
+    if ref_ds.sizes[band_dim] != 2:
+        raise ValueError(
+            f"Expected dimension '{band_dim}' in reference dataset to have size 2, "
+            f"but found size {ref_ds.sizes[band_dim]}"
+        )
     aes_dt = plot_collection.generate_aes_dt(
         {aes: ref_dim for aes in requested_aes}, ref_ds, **kwargs
     )

@@ -15,6 +15,7 @@ Data plotting elements
    fill_between_y
    hline
    hist
+   hspan
    line
    line_xy
    line_x
@@ -23,6 +24,7 @@ Data plotting elements
    scatter_xy
    trace_rug
    vline
+   vspan
    
 
 Data and axis annotating elements
