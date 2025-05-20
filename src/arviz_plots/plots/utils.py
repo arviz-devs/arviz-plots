@@ -239,7 +239,7 @@ def add_lines(
         >>>     kind="ecdf",
         >>>     var_names=["mu"],
         >>> )
-        >>> add_lines(pc, references=[0, 5])
+        >>> add_lines(pc, values=[0, 5])
     """
     if plot_kwargs is None:
         plot_kwargs = {}
