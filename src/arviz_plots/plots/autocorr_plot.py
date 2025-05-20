@@ -136,11 +136,8 @@ def plot_autocorr(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("col_wrap", 5)
         pc_kwargs.setdefault(
-            "cols",
-            ["__variable__"]
-            + [dim for dim in distribution.dims if dim not in {"model"}.union(sample_dims)],
+            "cols", ["__variable__"] + [dim for dim in acf_dataset.dims if dim not in sample_dims]
         )
-        pc_kwargs.setdefault("rows", None)
 
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("color", ["chain"])
