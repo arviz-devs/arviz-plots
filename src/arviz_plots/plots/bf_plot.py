@@ -6,7 +6,7 @@ import xarray as xr
 from arviz_stats.bayes_factor import bayes_factor
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
-from arviz_plots.plots.utils import add_reference_lines, filter_aes
+from arviz_plots.plots.utils import add_lines, filter_aes
 
 
 def plot_bf(
@@ -143,7 +143,7 @@ def plot_bf(
             ref_line_kwargs.setdefault("color", "black")
         if "alpha" not in ref_aes:
             ref_line_kwargs.setdefault("alpha", 0.5)
-        add_reference_lines(
+        add_lines(
             plot_collection, ref_val, aes_map=aes_map, plot_kwargs={"ref_line": ref_line_kwargs}
         )
 

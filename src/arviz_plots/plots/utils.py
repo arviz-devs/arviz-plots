@@ -168,9 +168,9 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     return pc_kwargs
 
 
-def add_reference_lines(
+def add_lines(
     plot_collection,
-    references,
+    values,
     orientation="vertical",
     aes_map=None,
     plot_kwargs=None,
@@ -178,20 +178,19 @@ def add_reference_lines(
     ref_dim="ref_dim",
     **kwargs,
 ):
-    """Add reference lines.
+    """Add lines.
 
-    This function adds lines to a plot collection based on the provided
-    references. It supports both vertical and horizontal lines, depending on the
-    specified orientation.
+    This function adds lines to a plot collection based on the provided values.
+    It supports both vertical and horizontal lines, depending on the specified orientation.
 
     Parameters
     ----------
     plot_collection : PlotCollection
-        Plot collection to which the reference lines will be added.
-    references : int, float, tuple, list or dict
-        Reference values to be plotted as lines.
+        Plot collection to which the lines will be added.
+    values : int, float, tuple, list or dict
+        Positions for the lines.
     orientation : str, default "vertical"
-        The orientation of the reference lines, either "vertical" or "horizontal".
+        The orientation of the lines, either "vertical" or "horizontal".
     aes_map : mapping of {str : sequence of str}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs`.
@@ -210,10 +209,10 @@ def add_reference_lines(
 
     sample_dims : list, optional
         Dimensions that should not be added to the Dataset generated from
-        `refereces` via :func:`arviz_base.references_to_dataset`.
+        `values` via :func:`arviz_base.references_to_dataset`.
         Defaults to all dimensions in ``plot_collection.data`` that are not ``facet_dims``
     ref_dim : str, optional
-        Specifies the name of the reference dimension for reference values.
+        Specifies the name of the dimension for the line values.
         Defaults to "ref_dim".
     **kwargs : mapping of {str : sequence}, optional
         Mapping of aesthetic keys to the values to be used in their mapping.
@@ -222,16 +221,16 @@ def add_reference_lines(
     Returns
     -------
     plot_collection : PlotCollection
-        Plot collection with the reference lines added.
+        Plot collection with the lines added.
 
     Examples
     --------
-    Add reference lines at values 0 and 5 for all variables.
+    Add lines at values 0 and 5 for all variables.
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_dist, add_reference_lines, style
+        >>> from arviz_plots import plot_dist, add_lines, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
@@ -240,7 +239,7 @@ def add_reference_lines(
         >>>     kind="ecdf",
         >>>     var_names=["mu"],
         >>> )
-        >>> add_reference_lines(pc, references=[0, 5])
+        >>> add_lines(pc, references=[0, 5])
     """
     if plot_kwargs is None:
         plot_kwargs = {}
@@ -260,7 +259,7 @@ def add_reference_lines(
     plot_func = vline if orientation == "vertical" else hline
 
     ref_ds = references_to_dataset(
-        references, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
+        values, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
     )
     requested_aes = (
         set(aes_map["ref_line"]).union(aes_map["ref_text"]).difference(plot_collection.aes_set)
@@ -297,9 +296,9 @@ def add_reference_lines(
     return plot_collection
 
 
-def add_reference_bands(
+def add_bands(
     plot_collection,
-    references,
+    values,
     orientation="vertical",
     aes_map=None,
     plot_kwargs=None,
@@ -307,20 +306,20 @@ def add_reference_bands(
     ref_dim=None,
     **kwargs,
 ):
-    """Add reference bands.
+    """Add bands.
 
-    This function adds lines to a plot collection based on the provided
-    references. It supports both vertical and horizontal lines, depending on the
+    This function adds bands (shared areas) to a plot collection based on the provided
+    values. It supports both vertical and horizontal bands, depending on the
     specified orientation.
 
     Parameters
     ----------
     plot_collection : PlotCollection
-        Plot collection to which the reference lines will be added.
-    references : tuple, list or dict
-        Reference values to be plotted as bands/shaded regions.
+        Plot collection to which the bands will be added.
+    values : tuple, list or dict
+        Start and end values for the bands to be plotted.
     orientation : str, default "vertical"
-        The orientation of the reference lines, either "vertical" or "horizontal".
+        The orientation of the bands, either "vertical" or "horizontal".
     aes_map : mapping of {str : sequence of str}, optional
         Mapping of artists to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `plot_kwargs`.
@@ -339,11 +338,11 @@ def add_reference_bands(
 
     sample_dims : list, optional
         Dimensions that should not be added to the Dataset generated from
-        `references` via :func:`arviz_base.references_to_dataset`.
+        `values` via :func:`arviz_base.references_to_dataset`.
         Defaults to all dimensions in ``plot_collection.data`` that are not ``facet_dims``
     ref_dim : list, optional
-        List of dimension names that define the axes along which reference values are stored.
-        These dimensions are used to align or compare input data with reference data.
+        List of dimension names that define the axes along which the band values are stored.
+        These dimensions are used to align or compare input data with band data.
         Defaults to ["ref_dim", "band_dim"].
     **kwargs : sequence, optional
         Mapping of aesthetic keys to the values to be used in their mapping.
@@ -352,24 +351,21 @@ def add_reference_bands(
     Returns
     -------
     plot_collection : PlotCollection
-        Plot collection with the reference lines added.
+        Plot collection with the bands added.
 
     Examples
     --------
-    Add reference bands from 0 to 2 and 3 to 5 for all variables.
+    Add two bands for the theta variable, one from -2 to 2 and the other from -5 to 5.
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_dist, add_reference_bands, style
+        >>> from arviz_plots import plot_dist, add_bands, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
-        >>> pc = plot_dist(
-        >>>     dt,
-        >>>     kind="ecdf"
-        >>> )
-        >>> add_reference_bands(pc, references=[[0, 2], [3, 5]])
+        >>> pc = plot_dist(dt)
+        >>> add_bands(pc, values=[[-2, 2], [-5, 5]])
     """
     if plot_kwargs is None:
         plot_kwargs = {}
@@ -388,7 +384,7 @@ def add_reference_bands(
     plot_func = vspan if orientation == "vertical" else hspan
 
     ref_ds = references_to_dataset(
-        references, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
+        values, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
     )
 
     requested_aes = set(aes_map["ref_band"]).difference(plot_collection.aes_set)

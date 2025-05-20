@@ -1,12 +1,12 @@
 """
-# Add Reference Lines
+# Add Lines
 
-Draw reference lines on plots to highlight specific thresholds, targets, or important values.
+Draw lines on plots to highlight specific thresholds, targets, or important values.
 
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.add_reference_lines`
+API Documentation: {func}`~arviz_plots.add_lines`
 :::
 """
 
@@ -23,9 +23,9 @@ pc = azp.plot_dist(
     kind="ecdf",
     backend="none",   # change to preferred backend
 )
-pc = azp.add_reference_lines(
+pc = azp.add_lines(
     pc,
-    references=ref_ds,
+    values=ref_ds,
     ref_dim="quantile",
     aes_map={"ref_line": ["color"]},
     color=["black", "gray", "gray"]
