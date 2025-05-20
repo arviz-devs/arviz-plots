@@ -22,7 +22,7 @@ pc = azp.plot_forest(
     data,
     backend="none",   # change to preferred backend
 )
-
+pc.coords = {"column": "forest"}
 pc = azp.add_bands(
     pc,
     values=rope,
