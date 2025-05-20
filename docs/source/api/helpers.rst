@@ -12,8 +12,8 @@ An introductory guide to the ``plot_...`` functions is also available at :ref:`p
 .. autosummary::
    :toctree: generated/
 
-   add_reference_bands
-   add_reference_lines
+   add_bands
+   add_lines
 
 Style
 ...............
