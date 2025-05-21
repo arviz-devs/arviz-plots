@@ -1,12 +1,12 @@
 """
 # Add Reference Bands
 
-Draw reference bands on plots to highlight specific regions.
+Draw reference bands to highlight specific regions.
 
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.add_reference_bands`
+API Documentation: {func}`~arviz_plots.add_bands`
 :::
 """
 
@@ -17,18 +17,16 @@ import arviz_plots as azp
 azp.style.use("arviz-variat")
 
 data = load_arviz_data("centered_eight")
-references = [(0, 5), (5, 20)]
-pc = azp.plot_dist(
+rope = [(-1, 1)]
+pc = azp.plot_forest(
     data,
-    kind="ecdf",
     backend="none",   # change to preferred backend
 )
-
-pc = azp.add_reference_bands(
+pc.coords = {"column": "forest"}
+pc = azp.add_bands(
     pc,
-    references=references,
-    aes_map={"ref_band": ["color"]},
-    color=["black", "gray"]
+    values=rope,
+    plot_kwargs={"ref_band":{"color": "#f66d7f"}},
 )
 
 pc.show()
