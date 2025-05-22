@@ -208,7 +208,7 @@ def plot_psense_dist(
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("color", [color_cycle[0], "black", color_cycle[1]])
-        pc_kwargs.setdefault("y", [-0.4, -0.225, -0.05])
+        pc_kwargs.setdefault("y", [-0.05, -0.225, -0.4])
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])
         pc_kwargs.setdefault("cols", ["component_group"])
