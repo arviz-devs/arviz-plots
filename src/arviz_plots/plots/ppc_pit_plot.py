@@ -145,15 +145,7 @@ def plot_ppc_pit(
 
     References
     ----------
-    .. [1] Vehtari et al. *Practical Bayesian model evaluation using leave-one-out cross-validation
-       and WAIC*. Statistics and Computing. 27(5) (2017) https://doi.org/10.1007/s11222-016-9696-4
-       arXiv preprint https://arxiv.org/abs/1507.04544.
-
-    .. [2] Vehtari et al. *Pareto Smoothed Importance Sampling*.
-       Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
-       arXiv preprint https://arxiv.org/abs/1507.02646
-
-    .. [3] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
+    .. [1] Säilynoja et al. *Graphical test for discrete uniformity and
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """

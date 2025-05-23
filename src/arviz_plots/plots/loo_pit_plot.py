@@ -127,7 +127,7 @@ def plot_loo_pit(
     .. [2] Vehtari et al. Pareto Smoothed Importance Sampling. Journal of Machine Learning
        Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
 
-    .. [3] Säilynoja T, Bürkner PC. and Vehtari A. *Graphical test for discrete uniformity and
+    .. [3] Säilynoja et al. *Graphical test for discrete uniformity and
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """

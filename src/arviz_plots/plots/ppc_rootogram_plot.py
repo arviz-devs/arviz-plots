@@ -41,8 +41,10 @@ def plot_ppc_rootogram(
     Rootograms are useful to check the calibration of count models.
     A rootogram shows the difference between observed and predicted counts. The y-axis,
     showing frequencies, is on the square root scale. This makes easier to compare
-    observed and expected frequencies even for low frequencies [1]_.
+    observed and expected frequencies even for low frequencies [1]_ and [2]_.
 
+    For more details on how to interpret this plot,
+    see https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html
 
     Parameters
     ----------
@@ -122,7 +124,10 @@ def plot_ppc_rootogram(
     References
     ----------
     .. [1] Kleiber C, Zeileis A. *Visualizing Count Data Regressions Using Rootograms*.
-       The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
+        The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
+
+    .. [2] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
+        (2025) arXiv preprint https://arxiv.org/abs/2503.01509
     """
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
