@@ -45,7 +45,7 @@ def plot_ppc_rootogram(
 
 
     For more details on how to interpret this plot,
-    see https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#posterior-predictive-checks-for-discrete-data.  #pylint: disable=line-too-long
+    see https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html
 
     Parameters
     ----------
