@@ -21,7 +21,7 @@ def plot_compare(
     Parameters
     ----------
     comp_df : pandas.DataFrame
-        Result of the :func:`arviz.compare` method.
+        Result of the :func:`arviz_stats.compare` method.
     similar_shade : bool, optional
         If True, a shade is drawn to indicate models with similar
         predictive performance to the best model. Defaults to True.
@@ -70,14 +70,10 @@ def plot_compare(
 
     column_index = [c.lower() for c in cmp_df.columns]
 
-    elpd_method = "elpd" + "_" + rcParams["stats.information_criterion"].lower()
-
-    if "elpd_loo" in column_index:
-        elpd_method = "elpd_loo"
-    elif "elpd_waic" in column_index:
-        elpd_method = "elpd_waic"
-    else:
-        raise ValueError("cmp_df must have been created using the `compare` function from ArviZ.")
+    if "elpd" not in column_index:
+        raise ValueError(
+            "cmp_df must have been created using the `compare` function from ArviZ-Stats."
+        )
 
     # Set default backend
     if backend is None:
@@ -123,7 +119,7 @@ def plot_compare(
     # Set scale relative to the best model
     if relative_scale:
         cmp_df = cmp_df.copy()
-        cmp_df[elpd_method] = cmp_df[elpd_method] - cmp_df[elpd_method].iloc[0]
+        cmp_df["elpd"] = cmp_df["elpd"] - cmp_df["elpd"].iloc[0]
 
     # Compute positions of yticks
     yticks_pos = list(range(len(cmp_df), 0, -1))
@@ -133,9 +129,7 @@ def plot_compare(
         error_kwargs.setdefault("color", "black")
 
         # Compute values for standard error bars
-        se_list = list(
-            zip((cmp_df[elpd_method] - cmp_df["se"]), (cmp_df[elpd_method] + cmp_df["se"]))
-        )
+        se_list = list(zip((cmp_df["elpd"] - cmp_df["se"]), (cmp_df["elpd"] + cmp_df["se"])))
 
         for se_vals, ytick in zip(se_list, yticks_pos):
             p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
@@ -145,7 +139,7 @@ def plot_compare(
         ref_kwargs.setdefault("color", "gray")
         ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
         p_be.line(
-            (cmp_df[elpd_method].iloc[0], cmp_df[elpd_method].iloc[0]),
+            (cmp_df["elpd"].iloc[0], cmp_df["elpd"].iloc[0]),
             (yticks_pos[0], yticks_pos[-1]),
             target,
             **ref_kwargs,
@@ -154,14 +148,14 @@ def plot_compare(
     # Plot ELPD point estimates
     if (pe_kwargs := plot_kwargs.get("point_estimate", {})) is not False:
         pe_kwargs.setdefault("color", "black")
-        p_be.scatter(cmp_df[elpd_method], yticks_pos, target, **pe_kwargs)
+        p_be.scatter(cmp_df["elpd"], yticks_pos, target, **pe_kwargs)
 
     # Add shade for statistically undistinguishable models
     if similar_shade and (shade_kwargs := plot_kwargs.get("shade", {})) is not False:
         shade_kwargs.setdefault("color", "black")
         shade_kwargs.setdefault("alpha", 0.1)
 
-        x_0, x_1 = cmp_df[elpd_method].iloc[0] - 4, cmp_df[elpd_method].iloc[0]
+        x_0, x_1 = cmp_df["elpd"].iloc[0] - 4, cmp_df["elpd"].iloc[0]
 
         padding = (yticks_pos[0] - yticks_pos[-1]) * 0.05
         p_be.fill_between_y(
