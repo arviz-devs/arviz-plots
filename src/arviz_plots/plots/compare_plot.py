@@ -21,7 +21,7 @@ def plot_compare(
     Parameters
     ----------
     comp_df : pandas.DataFrame
-        Result of the :func:`arviz.compare` method.
+        Result of the :func:`arviz_stats.compare` method.
     similar_shade : bool, optional
         If True, a shade is drawn to indicate models with similar
         predictive performance to the best model. Defaults to True.
@@ -67,9 +67,13 @@ def plot_compare(
         arXiv preprint https://arxiv.org/abs/1507.02646
     """
     # Check if cmp_df contains the required information
+
     column_index = [c.lower() for c in cmp_df.columns]
+
     if "elpd" not in column_index:
-        raise ValueError("cmp_df must have been created using the `compare` function from ArviZ.")
+        raise ValueError(
+            "cmp_df must have been created using the `compare` function from ArviZ-Stats."
+        )
 
     # Set default backend
     if backend is None:
