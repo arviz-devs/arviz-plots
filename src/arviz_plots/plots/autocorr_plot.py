@@ -134,7 +134,7 @@ def plot_autocorr(
     if plot_collection is None:
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("col_wrap", 5)
+        pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
             "cols", ["__variable__"] + [dim for dim in acf_dataset.dims if dim not in sample_dims]
         )

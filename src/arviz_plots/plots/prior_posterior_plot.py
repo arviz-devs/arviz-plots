@@ -171,7 +171,7 @@ def plot_prior_posterior(
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs["aes"].setdefault("color", ["Groups"])
-        pc_kwargs.setdefault("col_wrap", 5)
+        pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
