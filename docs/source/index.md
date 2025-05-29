@@ -38,6 +38,7 @@ both `plotly>5` and `webcolors` are required.
 :hidden:
 :caption: User guide
 
+tutorials/overview
 tutorials/plots_intro
 tutorials/intro_to_plotcollection
 tutorials/compose_own_plot
