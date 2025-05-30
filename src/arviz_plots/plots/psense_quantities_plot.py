@@ -235,7 +235,7 @@ def plot_psense_quantities(
         max_ = baseline_quantities + mcse_quantities * 2
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    colors = plot_bknd.get_default_aes("color", 5, {})
+    colors = plot_bknd.get_default_aes("color", 2, {})
     markers = plot_bknd.get_default_aes("marker", 6, {})
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
@@ -244,6 +244,7 @@ def plot_psense_quantities(
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs["aes"].setdefault("color", ["component_group"])
         pc_kwargs.setdefault("cols", ["quantities"])
         pc_kwargs.setdefault(
             "rows",
@@ -277,7 +278,7 @@ def plot_psense_quantities(
     if prior_ms_kwargs is not False:
         _, _, prior_ms_ignore = filter_aes(plot_collection, aes_map, "prior_markers", sample_dims)
         prior_ms_kwargs.setdefault("marker", markers[0])
-        prior_ms_kwargs.setdefault("color", colors[3])
+        prior_ms_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
             scatter_xy,
@@ -292,7 +293,7 @@ def plot_psense_quantities(
 
     if prior_ls_kwargs is not False:
         _, _, prior_ms_ignore = filter_aes(plot_collection, aes_map, "prior_lines", sample_dims)
-        prior_ls_kwargs.setdefault("color", colors[3])
+        prior_ls_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
             line_xy,
@@ -313,7 +314,7 @@ def plot_psense_quantities(
         )
 
         likelihood_ms_kwargs.setdefault("marker", markers[5])
-        likelihood_ms_kwargs.setdefault("color", colors[4])
+        likelihood_ms_kwargs.setdefault("color", colors[1])
 
         plot_collection.map(
             scatter_xy,
@@ -331,7 +332,7 @@ def plot_psense_quantities(
             plot_collection, aes_map, "likelihood_lines", sample_dims
         )
 
-        likelihood_ls_kwargs.setdefault("color", colors[4])
+        likelihood_ls_kwargs.setdefault("color", colors[1])
 
         plot_collection.map(
             line_xy,
@@ -397,5 +398,7 @@ def plot_psense_quantities(
         labeller=labeller,
         **title_kwargs,
     )
+
+    plot_collection.add_legend("component_group")
 
     return plot_collection
