@@ -36,7 +36,7 @@ The goal of ArviZ is to provide a unified interface for performing exploratory a
 
 ## Installation
 
-For instructions on how to install the full ArviZ package (including `arviz-base`, `arviz-stats` and `arviz-plots`), please refer to the [installation guide](https://arviz-devs.github.io/arviz/stable/getting_started/Installation.html).
+For instructions on how to install the full ArviZ package (including `arviz-base`, `arviz-stats` and `arviz-plots`), please refer to the [installation guide](https://python.arviz.org/en/latest/getting_started/Installation.html).
 
 However, if you are only interested in the plotting functions provided by ArviZ-plots, please follow the instructions below:
 
@@ -58,8 +58,8 @@ pip install "arviz-plots[<backend>] @ git+https://github.com/arviz-devs/arviz-pl
 ::::
 
 Note that `arviz-plots` is a minimal package, which only depends on
-xarray (and xarray-datatree), numpy, arviz-base and arviz-stats.
-None of the possible backends: matplotlib, bokeh or plotly is installed
+xarray, numpy, arviz-base and arviz-stats.
+None of the possible backends: matplotlib, bokeh or plotly are installed
 by default.
 
 Consequently, it is not recommended to install `arviz-plots` but
