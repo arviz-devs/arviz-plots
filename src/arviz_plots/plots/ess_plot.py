@@ -278,6 +278,7 @@ def plot_ess(
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
         pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
+        pc_kwargs["plot_grid_kws"].setdefault("sharey", True)
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -313,12 +314,11 @@ def plot_ess(
 
     if ess_kwargs is not False:
         ess_dims, ess_aes, ess_ignore = filter_aes(plot_collection, aes_map, kind, sample_dims)
+        ylabel = "{}"
         if kind == "local":
             probs = np.linspace(0, 1, n_points, endpoint=False)
-            ylabel = "{} for small intervals"
         elif kind == "quantile":
             probs = np.linspace(1 / n_points, 1 - 1 / n_points, n_points)
-            ylabel = "{} for quantiles"
         xdata = probs
 
         ess_y_dataset = xr.concat(
@@ -579,5 +579,8 @@ def plot_ess(
             subset_info=True,
             **ylabel_kwargs,
         )
+
+    if "model" in distribution:
+        plot_collection.add_legend("model")
 
     return plot_collection
