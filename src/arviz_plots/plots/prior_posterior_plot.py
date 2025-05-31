@@ -150,8 +150,8 @@ def plot_prior_posterior(
         .assign_coords(sample=("sample", np.arange(num_samples)))
     )
 
-    distribution = concat([ds_prior, ds_posterior], dim="Groups").assign_coords(
-        {"Groups": ["prior", "posterior"]}
+    distribution = concat([ds_prior, ds_posterior], dim="Group").assign_coords(
+        {"Group": ["prior", "posterior"]}
     )
 
     distribution = process_group_variables_coords(
@@ -170,12 +170,12 @@ def plot_prior_posterior(
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("color", ["Groups"])
+        pc_kwargs["aes"].setdefault("color", ["Group"])
         pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
-            + [dim for dim in distribution.dims if dim not in sample_dims + ["Groups"]],
+            + [dim for dim in distribution.dims if dim not in sample_dims + ["Group"]],
         )
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
@@ -220,7 +220,6 @@ def plot_prior_posterior(
         pc_kwargs=pc_kwargs,
     )
 
-    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        plot_collection.add_legend("Groups", loc="upper right", fontsize=10)
+    plot_collection.add_legend("Group")
 
     return plot_collection
