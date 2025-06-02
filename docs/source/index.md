@@ -10,7 +10,7 @@ We recommend most users install and use all three ArviZ components together thro
 Note: All plotting functions - whether accessed through the full ArviZ package or directly via ArviZ-plots - are documented here.
 
 
-## Overview
+## Exploratory Analysis of Bayesian Models
 
 In Modern Bayesian statistics models are usually build and solve using probabilistic programming languages (PPLs) such as PyMC, Stan, NumPyro, etc. These languages allow users to specify models in a high-level language and perform inference using state-of-the-art algorithms like Markov Chain Monte Carlo (MCMC) or Variational Inference (VI). As a result we usually get a posterior distribution, in the form of samples. The posterior distribution has a central role in Bayesian statistics, but other distributions like the posterior and prior predictive distribution are also of interest. And other quantities may be relevant too.
 
