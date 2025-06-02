@@ -150,9 +150,11 @@ def plot_prior_posterior(
         .assign_coords(sample=("sample", np.arange(num_samples)))
     )
 
-    distribution = concat([ds_prior, ds_posterior], dim="Group").assign_coords(
-        {"Group": ["prior", "posterior"]}
+    distribution = concat([ds_prior, ds_posterior], dim="group").assign_coords(
+        {"group": ["prior", "posterior"]}
     )
+
+    print(distribution)
 
     distribution = process_group_variables_coords(
         distribution,
@@ -170,12 +172,12 @@ def plot_prior_posterior(
         pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("color", ["Group"])
+        pc_kwargs["aes"].setdefault("color", ["group"])
         pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
-            + [dim for dim in distribution.dims if dim not in sample_dims + ["Group"]],
+            + [dim for dim in distribution.dims if dim not in sample_dims + ["group"]],
         )
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
@@ -220,6 +222,6 @@ def plot_prior_posterior(
         pc_kwargs=pc_kwargs,
     )
 
-    plot_collection.add_legend("Group")
+    plot_collection.add_legend("group")
 
     return plot_collection
