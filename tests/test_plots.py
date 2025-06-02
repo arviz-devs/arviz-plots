@@ -496,7 +496,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_bf(self, datatree, backend):
         pc = plot_bf(datatree, var_names="mu", backend=backend)
         assert "figure" in pc.viz.data_vars
-        assert "Groups" in pc.viz["kde"].coords
+        assert "group" in pc.viz["kde"].coords
         assert "/color" in pc.aes.groups
         assert "BF_type" in pc.aes["bf_aes"].coords
 
