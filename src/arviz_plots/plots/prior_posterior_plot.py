@@ -154,7 +154,6 @@ def plot_prior_posterior(
         {"group": ["prior", "posterior"]}
     )
 
-    print(distribution)
 
     distribution = process_group_variables_coords(
         distribution,
