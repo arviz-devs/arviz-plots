@@ -9,7 +9,12 @@ from arviz_plots.plot_collection import PlotCollection
 
 
 def plot_compare(
-    cmp_df, similar_shade=True, relative_scale=False, backend=None, plot_kwargs=None, pc_kwargs=None
+    cmp_df,
+    similar_shade=True,
+    relative_scale=False,
+    backend=None,
+    visuals=None,
+    **pc_kwargs,
 ):
     r"""Summary plot for model comparison.
 
@@ -32,7 +37,7 @@ def plot_compare(
         Select plotting backend. Defaults to rcParams["plot.backend"].
     figsize : (float, float), optional
         If `None`, size is (10, num of models) inches.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * point_estimate -> passed to :func:`~.backend.scatter`
@@ -79,19 +84,16 @@ def plot_compare(
     if backend is None:
         backend = rcParams["plot.backend"]
 
-    if plot_kwargs is None:
-        plot_kwargs = {}
-
-    if pc_kwargs is None:
-        pc_kwargs = {}
+    if visuals is None:
+        visuals = {}
 
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
 
     # Get figure params and create figure and axis
-    pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-    figsize = pc_kwargs.get("plot_grid_kws", {}).get("figsize", None)
-    figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+    pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+    figsize = pc_kwargs.get("figure_kwargs", {}).get("figsize", None)
+    figsize_units = pc_kwargs["figure_kwargs"].get("figsize_units", "inches")
 
     figsize = p_be.scale_fig_size(
         figsize,
@@ -125,7 +127,7 @@ def plot_compare(
     yticks_pos = list(range(len(cmp_df), 0, -1))
 
     # Plot ELPD standard error bars
-    if (error_kwargs := plot_kwargs.get("error_bar", {})) is not False:
+    if (error_kwargs := visuals.get("error_bar", {})) is not False:
         error_kwargs.setdefault("color", "black")
 
         # Compute values for standard error bars
@@ -135,7 +137,7 @@ def plot_compare(
             p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
 
     # Add reference line for the best model
-    if (ref_kwargs := plot_kwargs.get("ref_line", {})) is not False:
+    if (ref_kwargs := visuals.get("ref_line", {})) is not False:
         ref_kwargs.setdefault("color", "gray")
         ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
         p_be.line(
@@ -146,12 +148,12 @@ def plot_compare(
         )
 
     # Plot ELPD point estimates
-    if (pe_kwargs := plot_kwargs.get("point_estimate", {})) is not False:
+    if (pe_kwargs := visuals.get("point_estimate", {})) is not False:
         pe_kwargs.setdefault("color", "black")
         p_be.scatter(cmp_df["elpd"], yticks_pos, target, **pe_kwargs)
 
     # Add shade for statistically undistinguishable models
-    if similar_shade and (shade_kwargs := plot_kwargs.get("shade", {})) is not False:
+    if similar_shade and (shade_kwargs := visuals.get("shade", {})) is not False:
         shade_kwargs.setdefault("color", "black")
         shade_kwargs.setdefault("alpha", 0.1)
 
@@ -167,18 +169,18 @@ def plot_compare(
         )
 
     # Add title and labels
-    if (title_kwargs := plot_kwargs.get("title", {})) is not False:
+    if (title_kwargs := visuals.get("title", {})) is not False:
         p_be.title(
             "Model comparison\nhigher is better",
             target,
             **title_kwargs,
         )
 
-    if (labels_kwargs := plot_kwargs.get("labels", {})) is not False:
+    if (labels_kwargs := visuals.get("labels", {})) is not False:
         p_be.ylabel("ranked models", target, **labels_kwargs)
         p_be.xlabel("ELPD", target, **labels_kwargs)
 
-    if (ticklabels_kwargs := plot_kwargs.get("ticklabels", {})) is not False:
+    if (ticklabels_kwargs := visuals.get("ticklabels", {})) is not False:
         p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
 
     return plot_collection

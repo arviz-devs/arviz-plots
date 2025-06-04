@@ -23,10 +23,10 @@ def plot_rank(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    pc_kwargs=None,
-    stats_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     """Fractional rank Δ-ECDF plots.
 
@@ -62,11 +62,11 @@ def plot_rank(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -75,7 +75,7 @@ def plot_rank(
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * n_simulations -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is 1000.
@@ -117,19 +117,15 @@ def plot_rank(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if stats_kwargs is None:
-        stats_kwargs = {}
-    stats_kwargs.setdefault("n_simulations", 1000)
-    stats_kwargs.setdefault("method", "simulation")
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if stats is None:
+        stats = {}
+    stats.setdefault("n_simulations", 1000)
+    stats.setdefault("method", "simulation")
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    plot_kwargs.setdefault("remove_axis", True)
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
+    visuals.setdefault("remove_axis", True)
 
     if backend is None:
         if plot_collection is None:
@@ -154,14 +150,14 @@ def plot_rank(
     # But we should consider the jointly rank-transformed values
     dummy_vals_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **stats_kwargs)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **stats)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
@@ -172,24 +168,26 @@ def plot_rank(
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, dt_ecdf_ranks)
-        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
+        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             dt_ecdf_ranks,
             backend=backend,
             **pc_kwargs,
         )
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
-    aes_map.setdefault("ecdf_lines", plot_collection.aes_set)
+        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals.setdefault("ecdf_lines", plot_collection.aes_set)
 
     ## ecdf_line
-    ecdf_ls_kwargs = copy(plot_kwargs.get("ecdf_lines", {}))
+    ecdf_ls_kwargs = copy(visuals.get("ecdf_lines", {}))
 
     if ecdf_ls_kwargs is not False:
-        _, _, ecdf_ls_ignore = filter_aes(plot_collection, aes_map, "ecdf_lines", sample_dims)
+        _, _, ecdf_ls_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ecdf_lines", sample_dims
+        )
 
         plot_collection.map(
             ecdf_line,
@@ -199,8 +197,8 @@ def plot_rank(
             **ecdf_ls_kwargs,
         )
 
-    ci_kwargs = copy(plot_kwargs.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("ci", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", "black")
         ci_kwargs.setdefault("alpha", 0.1)
@@ -217,8 +215,10 @@ def plot_rank(
         )
 
     # set xlabel
-    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "xlabel", sample_dims
+    )
+    xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -233,8 +233,8 @@ def plot_rank(
         )
 
     # title
-    title_kwargs = copy(plot_kwargs.get("title", {}))
-    _, _, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+    title_kwargs = copy(visuals.get("title", {}))
+    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     if title_kwargs is not False:
         plot_collection.map(
@@ -246,7 +246,7 @@ def plot_rank(
             **title_kwargs,
         )
 
-    if plot_kwargs.get("remove_axis", True) is not False:
+    if visuals.get("remove_axis", True) is not False:
         plot_collection.map(
             remove_axis,
             store_artist=backend == "none",

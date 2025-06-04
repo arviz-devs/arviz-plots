@@ -28,10 +28,10 @@ def plot_ppc_tstat(
     backend=None,
     data_pairs=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     """
     Plot Bayesian t-stat for observed data and posterior/prior predictive.
@@ -79,10 +79,10 @@ def plot_ppc_tstat(
         Dictionary of keys prior/posterior predictive data and values observed data variable names.
         If None, it will assume that the observed data and the predictive data have
         the same variable name.
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
@@ -103,7 +103,7 @@ def plot_ppc_tstat(
         observed_tstat defaults to False, no observed data is plotted, if group is
         "prior_predictive". Pass an (empty) mapping to plot the observed tstats.
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
@@ -145,7 +145,7 @@ def plot_ppc_tstat(
         :context: close-figs
 
         >>> azp.plot_ppc_tstat(dt,
-        >>>                    plot_kwargs={"kde": False,
+        >>>                    visuals={"kde": False,
         >>>                                 "credible_interval": {},
         >>>                                 "point_estimate": {}})
 
@@ -163,18 +163,15 @@ def plot_ppc_tstat(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if stats_kwargs is None:
-        stats_kwargs = {}
+    if stats is None:
+        stats = {}
     else:
-        stats_kwargs = stats_kwargs.copy()
-    if plot_kwargs is None:
-        plot_kwargs = {}
+        stats = stats.copy()
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
+
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -185,10 +182,10 @@ def plot_ppc_tstat(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
     if data_pairs is None:
         data_pairs = (var_names, var_names)
@@ -211,7 +208,7 @@ def plot_ppc_tstat(
     # we use observed_tstat_kwargs as a flag to indicate if
     # we should compute and plot the observed t-statistics
     observed_tstat_kwargs = copy(
-        plot_kwargs.get("observed_tstat", False if group == "prior_predictive" else {})
+        visuals.get("observed_tstat", False if group == "prior_predictive" else {})
     )
 
     predictive_dist = predictive_dist.stack(sample=sample_dims)
@@ -220,7 +217,7 @@ def plot_ppc_tstat(
         predictive_dist = getattr(predictive_dist, t_stat)(dim=reduce_dim)
         if observed_tstat_kwargs is not False:
             observed_dist = getattr(observed_dist, t_stat)()
-        plot_kwargs.setdefault("title", {"text": t_stat})
+        visuals.setdefault("title", {"text": t_stat})
     elif t_stat == "iqr":
 
         def iqr(data, dim):
@@ -231,7 +228,7 @@ def plot_ppc_tstat(
         predictive_dist = iqr(predictive_dist, dim=reduce_dim)
         if observed_tstat_kwargs is not False:
             observed_dist = iqr(observed_dist, dim=None)
-        plot_kwargs.setdefault("title", {"text": "IQR"})
+        visuals.setdefault("title", {"text": "IQR"})
     elif t_stat == "mad":
 
         def mad(data, dim):
@@ -241,13 +238,13 @@ def plot_ppc_tstat(
         predictive_dist = mad(predictive_dist, dim=reduce_dim)
         if observed_tstat_kwargs is not False:
             observed_dist = mad(observed_dist, dim=None)
-        plot_kwargs.setdefault("title", {"text": "MAD"})
+        visuals.setdefault("title", {"text": "MAD"})
 
     elif hasattr(t_stat, "__call__"):
         predictive_dist = predictive_dist.map(t_stat)
         if observed_tstat_kwargs is not False:
             observed_dist = observed_dist.map(t_stat)
-        plot_kwargs.setdefault("title", {"text": t_stat.__name__})
+        visuals.setdefault("title", {"text": t_stat.__name__})
     else:
         try:
             t_stat_float = float(t_stat)
@@ -261,12 +258,12 @@ def plot_ppc_tstat(
                 observed_dist = observed_dist.quantile(q=t_stat_float).rename(
                     {"quantile": "t_stat"}
                 )
-            plot_kwargs.setdefault("title", {"text": f"q={t_stat}"})
+            visuals.setdefault("title", {"text": f"q={t_stat}"})
         else:
             raise ValueError(f"T statistic '{t_stat}' not in valid range (0, 1).")
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", "__variable__")
@@ -280,9 +277,9 @@ def plot_ppc_tstat(
             **pc_kwargs,
         )
     # Plot predictive data
-    plot_kwargs.setdefault("credible_interval", False)
-    plot_kwargs.setdefault("point_estimate", False)
-    plot_kwargs.setdefault("point_estimate_text", False)
+    visuals.setdefault("credible_interval", False)
+    visuals.setdefault("point_estimate", False)
+    visuals.setdefault("point_estimate_text", False)
 
     plot_dist(
         predictive_dist,
@@ -295,12 +292,12 @@ def plot_ppc_tstat(
         ci_kind=ci_kind,
         ci_prob=ci_prob,
         plot_collection=plot_collection,
-        aes_map=aes_map,
+        aes_by_visuals=aes_by_visuals,
         backend=backend,
         labeller=labeller,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
-        pc_kwargs=pc_kwargs,
+        visuals=visuals,
+        stats=stats,
+        **pc_kwargs,
     )
 
     # Plot the observed data

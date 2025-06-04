@@ -79,7 +79,7 @@ class PlotMatrix(PlotCollection):
     arviz_plots.PlotCollection : Unidimensional facetting manager
     """
 
-    def __init__(self, data, facet_dims, aes=None, backend=None, plot_grid_kws=None, **kwargs):
+    def __init__(self, data, facet_dims, aes=None, backend=None, figure_kwargs=None, **kwargs):
         """Initialize a PlotMatrix.
 
         Parameters
@@ -107,12 +107,12 @@ class PlotMatrix(PlotCollection):
             backend = rcParams["plot.backend"]
         self.backend = backend
 
-        if plot_grid_kws is None:
-            plot_grid_kws = {}
+        if figure_kwargs is None:
+            figure_kwargs = {}
 
         super().__init__(
             data=self._data,
-            viz_dt=self._generate_viz_dt(**plot_grid_kws),
+            viz_dt=self._generate_viz_dt(**figure_kwargs),
             aes=aes,
             backend=backend,
             **kwargs,
@@ -123,7 +123,7 @@ class PlotMatrix(PlotCollection):
         """Facetting dimensions."""
         return set(dim for dim in self._facet_dims if dim != "__variable__")
 
-    def _generate_viz_dt(self, **plot_grid_kws):
+    def _generate_viz_dt(self, **figure_kwargs):
         """Generate ``.viz`` DataTree."""
         data = self._data
         facet_dims = self._facet_dims
@@ -134,7 +134,7 @@ class PlotMatrix(PlotCollection):
         n_plots = n_pairs**2
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_pairs, n_pairs, squeeze=False, **plot_grid_kws
+            n_plots, n_pairs, n_pairs, squeeze=False, **figure_kwargs
         )
         coords = {
             "col_index": np.arange(n_pairs),
@@ -185,7 +185,7 @@ class PlotMatrix(PlotCollection):
     def allocate_artist(
         self, fun_label, data, all_loop_dims, dim_to_idx=None, artist_dims=None, ignore_aes=None
     ):
-        """Allocate an artist in the ``viz`` DataTree."""
+        """Allocate an visual in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
         if dim_to_idx:
@@ -208,15 +208,15 @@ class PlotMatrix(PlotCollection):
         )
 
     def store_in_artist_da(self, aux_artist, fun_label, var_name, sel, var_name_y=None, sel_y=None):
-        """Store artist object or array into its preallocated DataArray within ``viz``.
+        """Store visual object or array into its preallocated DataArray within ``viz``.
 
         Parameters
         ----------
         aux_artist
-            The plotting backend class representing an artist to be stored or
+            The plotting backend class representing an visual to be stored or
             an array-like of such objects.
         fun_label : hashable
-            The identifier of the artist within the ``PlotMatrix``.
+            The identifier of the visual within the ``PlotMatrix``.
             It should be one of the values for which
             :meth:`~arviz_plots.PlotMatrix.allocate_artist` has already been called.
         var_name : hashable
@@ -301,7 +301,7 @@ class PlotMatrix(PlotCollection):
         store_artist : boolean, default True
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
-            ``map`` with functions that return an array of :term:`artist`.
+            ``map`` with functions that return an array of :term:`visual`.
         **kwargs : mapping, optional
             Extra keyword arguments to be passed to `fun`.
 
@@ -459,7 +459,7 @@ class PlotMatrix(PlotCollection):
         store_artist : boolean, default True
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
-            ``map`` with functions that return an array of :term:`artist`.
+            ``map`` with functions that return an array of :term:`visual`.
         **kwargs : mapping, optional
             Keyword arguments passed as is to `fun`. Values within `**kwargs`
             with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
@@ -500,10 +500,10 @@ class PlotMatrix(PlotCollection):
         * ``figure`` (always on the home group) -> Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
         * ``plot`` -> :term:`Plot` objects in this :term:`figure`.
-          Generally, these are the target where :term:`artists <artist>` are added,
-          although it is possible to have artists targetting the figure itself.
+          Generally, these are the target where :term:`visuals <visual>` are added,
+          although it is possible to have visuals targetting the figure itself.
 
-        Plus all the artists that have been added to the plot and stored.
+        Plus all the visuals that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotMatrix.map` and :meth:`arviz_plots.PlotMatrix.map_triangle`
         for more details.
         """

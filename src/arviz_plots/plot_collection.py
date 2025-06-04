@@ -303,7 +303,7 @@ class PlotCollection:
     def viz(self):
         """Information about the visual elements in the plot as a DataTree.
 
-        Plot elements like :term:`artists`, :term:`plots` and the :term:`figure`
+        Plot elements like :term:`visuals`, :term:`plots` and the :term:`figure`
         are stored at the top level, if possible directly as DataArrays,
         otherwise as groups whose variables are variable names in the input
         Dataset.
@@ -312,8 +312,8 @@ class PlotCollection:
         * ``figure`` (always on the home group) -> Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
         * ``plot`` -> :term:`Plot` objects in this :term:`figure`.
-          Generally, these are the target where :term:`artists <artist>` are added,
-          although it is possible to have artists targetting the figure itself.
+          Generally, these are the target where :term:`visuals <visual>` are added,
+          although it is possible to have visuals targetting the figure itself.
         * ``row`` -> Integer row indicator
         * ``col`` -> Integer column indicator
 
@@ -645,7 +645,7 @@ class PlotCollection:
     def facet_dims(self):
         """Dimensions over which one should loop for facetting when using this PlotCollection.
 
-        When adding specific artists, we might need to loop over more dimensions than these ones
+        When adding specific visuals, we might need to loop over more dimensions than these ones
         due to the defined aesthetic mappings.
         """
         return set(self.viz["plot"].dims)
@@ -676,13 +676,13 @@ class PlotCollection:
             return out.item()
         return out
 
-    def rename_artists(self, name_dict=None, **names):
-        """Rename artist data variables in the :attr:`~.PlotCollection.viz` DataTree.
+    def rename_visuals(self, name_dict=None, **names):
+        """Rename visual data variables in the :attr:`~.PlotCollection.viz` DataTree.
 
         Parameters
         ----------
         name_dict, **names : mapping
-            Keys are current artist names and values are desired names.
+            Keys are current visual names and values are desired names.
             At least one of these must be provided.
         """
         if name_dict is None:
@@ -703,7 +703,7 @@ class PlotCollection:
         cols=None,
         col_wrap=4,
         backend=None,
-        plot_grid_kws=None,
+        figure_kwargs=None,
         **kwargs,
     ):
         """Instatiate a PlotCollection and generate a plot grid iterating over subsets and wrapping.
@@ -725,7 +725,7 @@ class PlotCollection:
             new rows are created.
         backend : str, optional
             Plotting backend.
-        plot_grid_kws : mapping, optional
+        figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
@@ -739,8 +739,8 @@ class PlotCollection:
         """
         if cols is None:
             cols = []
-        if plot_grid_kws is None:
-            plot_grid_kws = {}
+        if figure_kwargs is None:
+            figure_kwargs = {}
         if backend is None:
             backend = rcParams["plot.backend"]
         data = concat_model_dict(data)
@@ -755,7 +755,7 @@ class PlotCollection:
 
         plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_rows, n_cols, squeeze=False, **plot_grid_kws
+            n_plots, n_rows, n_cols, squeeze=False, **figure_kwargs
         )
         col_id, row_id = np.meshgrid(np.arange(n_cols), np.arange(n_rows))
         viz_dict = {}
@@ -844,7 +844,7 @@ class PlotCollection:
         cols=None,
         rows=None,
         backend=None,
-        plot_grid_kws=None,
+        figure_kwargs=None,
         **kwargs,
     ):
         """Instatiate a PlotCollection and generate a plot grid iterating over rows and columns.
@@ -865,7 +865,7 @@ class PlotCollection:
             of values within `cols` and `rows`.
         backend : str, optional
             Plotting backend.
-        plot_grid_kws : mapping, optional
+        figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
@@ -881,8 +881,8 @@ class PlotCollection:
             cols = []
         if rows is None:
             rows = []
-        if plot_grid_kws is None:
-            plot_grid_kws = {}
+        if figure_kwargs is None:
+            figure_kwargs = {}
         if backend is None:
             backend = rcParams["plot.backend"]
         repeated_dims = [col for col in cols if col in rows]
@@ -896,7 +896,7 @@ class PlotCollection:
         n_plots = n_cols * n_rows
         plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_rows, n_cols, squeeze=False, **plot_grid_kws
+            n_plots, n_rows, n_cols, squeeze=False, **figure_kwargs
         )
         col_id, row_id = np.meshgrid(np.arange(n_cols), np.arange(n_rows))
         viz_dict = {}
@@ -993,7 +993,7 @@ class PlotCollection:
         artist_dims=None,
         ignore_aes=frozenset(),
     ):
-        """Allocate an artist in the ``viz`` DataTree."""
+        """Allocate an visual in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
         if dim_to_idx is None:
@@ -1124,7 +1124,7 @@ class PlotCollection:
         store_artist : boolean, default True
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
-            ``map`` with functions that return an array of :term:`artist`.
+            ``map`` with functions that return an array of :term:`visual`.
         **kwargs : mapping, optional
             Keyword arguments passed as is to `fun`. Values within `**kwargs`
             with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
@@ -1199,7 +1199,7 @@ class PlotCollection:
                 self.store_in_artist_da(aux_artist, fun_label, var_name, sel)
 
     def store_in_artist_da(self, aux_artist, fun_label, var_name, sel):
-        """Store the artist object of `var_name`+`sel` combination in `fun_label` variable."""
+        """Store the visual object of `var_name`+`sel` combination in `fun_label` variable."""
         self.viz[fun_label][var_name].loc[sel] = aux_artist
 
     def add_legend(
@@ -1213,7 +1213,7 @@ class PlotCollection:
         labeller=None,
         **kwargs,
     ):
-        """Add a legend for the given artist/aesthetic to the plot.
+        """Add a legend for the given visual/aesthetic to the plot.
 
         Warnings
         --------
@@ -1234,7 +1234,7 @@ class PlotCollection:
             They should all be mapped to `dim`. Defaults to all aesthetics matching
             that mapping with the exception "x" and "y" which are never included.
         artist_kwargs : mapping, optional
-            Keyword arguments passed to the backend artist function used to
+            Keyword arguments passed to the backend visual function used to
             generate the miniatures in the legend.
         title : str, optional
             Legend title. Defaults to `dim`.

@@ -32,9 +32,9 @@ def plot_ppc_pava(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    **pc_kwargs,
 ):
     """PAV-adjusted calibration plot.
 
@@ -76,11 +76,11 @@ def plot_ppc_pava(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * lines -> passed to :func:`~arviz_plots.visuals.line_xy`
@@ -132,14 +132,10 @@ def plot_ppc_pava(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
 
     if backend is None:
         if plot_collection is None:
@@ -149,7 +145,7 @@ def plot_ppc_pava(
 
     labeller = BaseLabeller()
 
-    plot_kwargs.setdefault("markers", False)
+    visuals.setdefault("markers", False)
 
     if data_pairs is None:
         data_pairs = {var_names: var_names}
@@ -162,7 +158,7 @@ def plot_ppc_pava(
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("rows", None)
@@ -175,17 +171,17 @@ def plot_ppc_pava(
             **pc_kwargs,
         )
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
     ## reference line
-    reference_ls_kwargs = copy(plot_kwargs.get("reference_line", {}))
+    reference_ls_kwargs = copy(visuals.get("reference_line", {}))
 
     if reference_ls_kwargs is not False:
         _, _, reference_ls_ignore = filter_aes(
-            plot_collection, aes_map, "reference_line", sample_dims
+            plot_collection, aes_by_visuals, "reference_line", sample_dims
         )
         reference_ls_kwargs.setdefault("color", "grey")
         reference_ls_kwargs.setdefault("linestyle", lines[1])
@@ -200,10 +196,12 @@ def plot_ppc_pava(
         )
 
     ## markers
-    calibration_ms_kwargs = copy(plot_kwargs.get("markers", {}))
+    calibration_ms_kwargs = copy(visuals.get("markers", {}))
 
     if calibration_ms_kwargs is not False:
-        _, _, calibration_ms_ignore = filter_aes(plot_collection, aes_map, "markers", sample_dims)
+        _, _, calibration_ms_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "markers", sample_dims
+        )
         calibration_ms_kwargs.setdefault("color", colors[0])
         calibration_ms_kwargs.setdefault("marker", markers[6])
 
@@ -216,10 +214,12 @@ def plot_ppc_pava(
         )
 
     ## lines
-    calibration_ls_kwargs = copy(plot_kwargs.get("lines", {}))
+    calibration_ls_kwargs = copy(visuals.get("lines", {}))
 
     if calibration_ls_kwargs is not False:
-        _, _, calibration_ls_ignore = filter_aes(plot_collection, aes_map, "lines", sample_dims)
+        _, _, calibration_ls_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "lines", sample_dims
+        )
         calibration_ls_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
@@ -230,8 +230,8 @@ def plot_ppc_pava(
             **calibration_ls_kwargs,
         )
 
-    ci_kwargs = copy(plot_kwargs.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("ci", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", colors[0])
         ci_kwargs.setdefault("alpha", 0.25)
@@ -248,8 +248,10 @@ def plot_ppc_pava(
         )
 
     # set xlabel
-    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "xlabel", sample_dims
+    )
+    xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -265,8 +267,10 @@ def plot_ppc_pava(
         )
 
     # set ylabel
-    _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
+    _, ylabels_aes, ylabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "ylabel", sample_dims
+    )
+    ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "black")
@@ -282,8 +286,8 @@ def plot_ppc_pava(
         )
 
     # title
-    title_kwargs = copy(plot_kwargs.get("title", {}))
-    _, _, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+    title_kwargs = copy(visuals.get("title", {}))
+    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     if title_kwargs is not False:
         plot_collection.map(

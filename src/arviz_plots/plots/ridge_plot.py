@@ -29,10 +29,10 @@ def plot_ridge(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     """Plot 1D marginal densities in a single plot, akin to a forest plot.
 
@@ -80,9 +80,9 @@ def plot_ridge(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str or False}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs` except "ticklabels"
+    aes_by_visuals : mapping of {str : sequence of str or False}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals` except "ticklabels"
         which doesn't apply.
 
         By default, aesthetic mappings are generated for: y, alpha, overlay and color
@@ -93,7 +93,7 @@ def plot_ridge(
         "overlay" is a dummy aesthetic to trigger looping over variables and/or
         dimensions using all aesthetics in every iteration. "alpha" gets two
         values (0, 0.3) in order to trigger the alternate shading effect.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * edge -> passed to :func:`~visuals.line_xy`
@@ -104,7 +104,7 @@ def plot_ridge(
         * remove_axis -> not passed anywhere, can only take ``False`` as value to skip calling
           :func:`~.visuals.remove_axis`
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * density -> passed to kde
@@ -162,11 +162,9 @@ def plot_ridge(
         >>> pc = plot_ridge(
         >>>     non_centered,
         >>>     var_names=["theta", "mu", "theta_t", "tau"],
-        >>>     pc_kwargs={
-        >>>         "aes": {"color": ["__variable__"]},
-        >>>         "plot_grid_kws": {"width_ratios": [1, 2], "layout": "none"}
-        >>>     },
-        >>>     aes_map={"labels": ["color"]},
+        >>>     aes={"color": ["__variable__"]},
+        >>>     figure_kwargs={"width_ratios": [1, 2], "layout": "none"},
+        >>>     aes_by_visuals={"labels": ["color"]},
         >>>     shade_label="school",
         >>> )
 
@@ -200,15 +198,11 @@ def plot_ridge(
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
-    if plot_kwargs is None:
-        plot_kwargs = {}
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+    if visuals is None:
+        visuals = {}
 
-    if stats_kwargs is None:
-        stats_kwargs = {}
+    if stats is None:
+        stats = {}
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -221,14 +215,12 @@ def plot_ridge(
     if not combined and "chain" not in distribution.dims:
         combined = True
 
-    labels_kwargs = copy(plot_kwargs.get("labels", {}))
+    labels_kwargs = copy(visuals.get("labels", {}))
     if labels_kwargs is False:
-        raise ValueError("plot_kwargs['labels'] can't be False, use labels=[] to remove all labels")
-    shade_kwargs = copy(plot_kwargs.get("shade", {}))
+        raise ValueError("visuals['labels'] can't be False, use labels=[] to remove all labels")
+    shade_kwargs = copy(visuals.get("shade", {}))
     if shade_kwargs is False:
-        raise ValueError(
-            "plot_kwargs['shade'] can't be False, use shade_label=None to remove shading"
-        )
+        raise ValueError("visuals['shade'] can't be False, use shade_label=None to remove shading")
 
     if shade_label is not None and shade_label not in labels:
         raise ValueError("shade_label must be one of the elements in labels argument")
@@ -250,15 +242,15 @@ def plot_ridge(
                 "'labels' and 'ridge' are missing."
             )
         pc_kwargs.setdefault("cols", ["column"])
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        pc_kwargs["plot_grid_kws"].setdefault("sharey", True)
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+        pc_kwargs["figure_kwargs"].setdefault("sharey", True)
         width_ratios = xr.ones_like(pc_data.column, dtype=float)
         width_ratios.loc[{"column": "ridge"}] = 3 if len(labels) < 3 else 2
-        pc_kwargs["plot_grid_kws"].setdefault("width_ratios", width_ratios.values)
+        pc_kwargs["figure_kwargs"].setdefault("width_ratios", width_ratios.values)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         alpha_aes_dims = False
         if shade_label is not None:
-            pc_kwargs["plot_grid_kws"].setdefault("plot_hspace", 0)
+            pc_kwargs["figure_kwargs"].setdefault("plot_hspace", 0)
             alpha_aes_dims = pc_kwargs["aes"].get("alpha", [shade_label])
             pc_kwargs["aes"]["alpha"] = alpha_aes_dims
         pc_kwargs["aes"].setdefault("y", labellable_dims)
@@ -324,27 +316,29 @@ def plot_ridge(
         y_ds = y_ds.max().to_array().max() - add_factor - y_ds - shift
         plot_collection.update_aes_from_dataset("y", y_ds)
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
-    aes_map.setdefault("edge", plot_collection.aes_set.difference({"alpha"}))
-    aes_map.setdefault("face", plot_collection.aes_set.difference({"alpha"}))
-    aes_map["labels"] = {"overlay"}.union(aes_map.get("labels", {}))
-    aes_map["shade"] = {"overlay", "alpha"}.union(aes_map.get("shade", {}))
+        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals.setdefault("edge", plot_collection.aes_set.difference({"alpha"}))
+    aes_by_visuals.setdefault("face", plot_collection.aes_set.difference({"alpha"}))
+    aes_by_visuals["labels"] = {"overlay"}.union(aes_by_visuals.get("labels", {}))
+    aes_by_visuals["shade"] = {"overlay", "alpha"}.union(aes_by_visuals.get("shade", {}))
     if labeller is None:
         labeller = BaseLabeller()
 
     # compute kde density if at least one of edge or face element needs to be plotted
-    edge_kwargs = copy(plot_kwargs.get("edge", {}))
-    face_kwargs = copy(plot_kwargs.get("face", {}))
+    edge_kwargs = copy(visuals.get("edge", {}))
+    face_kwargs = copy(visuals.get("face", {}))
 
     if edge_kwargs is not False or face_kwargs is not False:
-        edge_dims, edge_aes, edge_ignore = filter_aes(plot_collection, aes_map, "edge", sample_dims)
+        edge_dims, edge_aes, edge_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "edge", sample_dims
+        )
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            density = distribution.azstats.kde(dims=edge_dims, **stats_kwargs.get("density", {}))
+            density = distribution.azstats.kde(dims=edge_dims, **stats.get("density", {}))
         # rescaling kde
         density.loc[{"plot_axis": "y"}] = (
             density.sel(plot_axis="y")
@@ -353,7 +347,7 @@ def plot_ridge(
         )
 
     if face_kwargs is not False:  # create face_density dataset only if required
-        _, face_aes, face_ignore = filter_aes(plot_collection, aes_map, "face", sample_dims)
+        _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
         face_density = density.rename({"plot_axis": "kwarg"})
         face_density = face_density.assign_coords(
             kwarg=[
@@ -393,7 +387,9 @@ def plot_ridge(
             y_min = y_ds.min(reduce_dims) - shade_extend
         y = (y_max + y_min) / 2
         if shade_label == label:
-            _, shade_aes, shade_ignore = filter_aes(plot_collection, aes_map, "shade", sample_dims)
+            _, shade_aes, shade_ignore = filter_aes(
+                plot_collection, aes_by_visuals, "shade", sample_dims
+            )
             if "color" not in shade_aes:
                 shade_kwargs.setdefault("color", "gray")
             shade_data = xr.concat((y_min, y_max), "kwarg").assign_coords(
@@ -423,7 +419,7 @@ def plot_ridge(
                 ignore_aes=shade_ignore,
                 **shade_kwargs,
             )
-        _, lab_aes, lab_ignore = filter_aes(plot_collection, aes_map, "labels", sample_dims)
+        _, lab_aes, lab_ignore = filter_aes(plot_collection, aes_by_visuals, "labels", sample_dims)
         extra_ignore_aes = []
         for aes_key in lab_aes:
             if aes_key == "overlay":
@@ -453,7 +449,7 @@ def plot_ridge(
         )
         x += 1
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    ticklabel_kwargs = copy(plot_kwargs.get("ticklabels", {}))
+    ticklabel_kwargs = copy(visuals.get("ticklabels", {}))
     if ticklabel_kwargs is not False:
         plot_bknd.xticks(
             np.arange(len(labels)),
@@ -493,7 +489,7 @@ def plot_ridge(
         plot_bknd.xlim(xlim_labels, plot_collection.get_target(None, {"column": "labels"}))
         plot_bknd.xlim(xlim_ridge, plot_collection.get_target(None, {"column": "ridge"}))
 
-    if plot_kwargs.get("remove_axis", True) is not False:
+    if visuals.get("remove_axis", True) is not False:
         plot_collection.map(
             remove_axis,
             store_artist=backend == "none",

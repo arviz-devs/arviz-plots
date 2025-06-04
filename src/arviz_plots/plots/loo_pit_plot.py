@@ -19,9 +19,9 @@ def plot_loo_pit(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    **pc_kwargs,
 ):
     r"""LOO-PIT Δ-ECDF values with simultaneous confidence envelope.
 
@@ -75,11 +75,11 @@ def plot_loo_pit(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -131,10 +131,10 @@ def plot_loo_pit(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
+        visuals = visuals.copy()
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
 
@@ -144,9 +144,9 @@ def plot_loo_pit(
     lpv = loo_pit(dt)
     new_dt = convert_to_datatree(lpv, group="loo_pit")
 
-    plot_kwargs.setdefault("ylabel", {})
-    plot_kwargs.setdefault("remove_axis", False)
-    plot_kwargs.setdefault("xlabel", {"text": "LOO-PIT"})
+    visuals.setdefault("ylabel", {})
+    visuals.setdefault("remove_axis", False)
+    visuals.setdefault("xlabel", {"text": "LOO-PIT"})
 
     plot_collection = plot_ecdf_pit(
         new_dt,
@@ -162,9 +162,9 @@ def plot_loo_pit(
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
-        aes_map=aes_map,
-        plot_kwargs=plot_kwargs,
-        pc_kwargs=pc_kwargs,
+        aes_by_visuals=aes_by_visuals,
+        visuals=visuals,
+        **pc_kwargs,
     )
 
     return plot_collection

@@ -2,7 +2,7 @@
 
 Notes
 -----
-:term:`artists` are returned, but it seems modifying them won't modify the figure.
+:term:`visuals` are returned, but it seems modifying them won't modify the figure.
 """
 
 import math

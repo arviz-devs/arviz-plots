@@ -18,7 +18,7 @@ def legend(
     title : str, optional
     artist_type : {"line", "scatter", "rectangle"}, default "line"
     artist_kwargs : mapping, optional
-        Passed to all artists when generating legend miniatures.
+        Passed to all visuals when generating legend miniatures.
     **kwargs
         Passed to backend legend generating function.
     """
