@@ -22,7 +22,7 @@ pc = azp.plot_psense_dist(
     idata,
     var_names=["defs", "sd_att", "sd_def"],
     coords={"team": ["Scotland", "Wales"]},
-    pc_kwargs={"y": [-2, -1, 0]},
+    y=[-2, -1, 0],
     backend="none",
 )
 pc.show()

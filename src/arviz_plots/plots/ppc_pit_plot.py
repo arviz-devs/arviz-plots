@@ -35,9 +35,9 @@ def plot_ppc_pit(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    **pc_kwargs,
 ):
     r"""PIT Δ-ECDF values with simultaneous confidence envelope.
 
@@ -96,11 +96,11 @@ def plot_ppc_pit(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -156,14 +156,10 @@ def plot_ppc_pit(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
 
     if backend is None:
         if plot_collection is None:
@@ -202,8 +198,8 @@ def plot_ppc_pit(
     colors = plot_bknd.get_default_aes("color", 1, {})
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs.setdefault("rows", None)
@@ -216,16 +212,18 @@ def plot_ppc_pit(
             **pc_kwargs,
         )
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
     ## ecdf_line
-    ecdf_ls_kwargs = copy(plot_kwargs.get("ecdf_lines", {}))
+    ecdf_ls_kwargs = copy(visuals.get("ecdf_lines", {}))
 
     if ecdf_ls_kwargs is not False:
-        _, _, ecdf_ls_ignore = filter_aes(plot_collection, aes_map, "ecdf_lines", sample_dims)
+        _, _, ecdf_ls_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ecdf_lines", sample_dims
+        )
         ecdf_ls_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
@@ -245,8 +243,8 @@ def plot_ppc_pit(
             store_artist=backend == "none",
         )
 
-    ci_kwargs = copy(plot_kwargs.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("ci", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", "black")
         ci_kwargs.setdefault("alpha", 0.1)
@@ -263,8 +261,10 @@ def plot_ppc_pit(
         )
 
     # set xlabel
-    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "xlabel", sample_dims
+    )
+    xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -283,8 +283,10 @@ def plot_ppc_pit(
         )
 
     # set ylabel
-    _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
+    _, ylabels_aes, ylabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "ylabel", sample_dims
+    )
+    ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "black")
@@ -300,8 +302,8 @@ def plot_ppc_pit(
         )
 
     # title
-    title_kwargs = copy(plot_kwargs.get("title", {}))
-    _, _, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+    title_kwargs = copy(visuals.get("title", {}))
+    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     if title_kwargs is not False:
         plot_collection.map(

@@ -75,7 +75,7 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
     return distribution
 
 
-def filter_aes(pc, aes_map, artist, sample_dims):
+def filter_aes(pc, aes_by_visuals, artist, sample_dims):
     """Split aesthetics and get relevant dimensions.
 
     Returns
@@ -87,7 +87,7 @@ def filter_aes(pc, aes_map, artist, sample_dims):
     artist_aes : iterable
     ignore_aes : set
     """
-    artist_aes = aes_map.get(artist, {})
+    artist_aes = aes_by_visuals.get(artist, {})
     pc_aes = pc.aes_set
     ignore_aes = set(pc_aes).difference(artist_aes)
     _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)
@@ -107,8 +107,8 @@ def set_wrap_layout(pc_kwargs, plot_bknd, ds):
     ds : Dataset
         Dataset to be plotted
     """
-    figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-    figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+    figsize = pc_kwargs["figure_kwargs"].get("figsize", None)
+    figsize_units = pc_kwargs["figure_kwargs"].get("figsize_units", "inches")
     pc_kwargs.setdefault("col_wrap", 4)
     col_wrap = pc_kwargs["col_wrap"]
     if figsize is None:
@@ -128,8 +128,8 @@ def set_wrap_layout(pc_kwargs, plot_bknd, ds):
         )
         figsize_units = "dots"
 
-    pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-    pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+    pc_kwargs["figure_kwargs"]["figsize"] = figsize
+    pc_kwargs["figure_kwargs"]["figsize_units"] = figsize_units
     return pc_kwargs
 
 
@@ -148,8 +148,8 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
         Take the number of rows or columns as the provided one irrespective
         of pc_kwargs
     """
-    figsize = pc_kwargs["plot_grid_kws"].get("figsize", None)
-    figsize_units = pc_kwargs["plot_grid_kws"].get("figsize_units", "inches")
+    figsize = pc_kwargs["figure_kwargs"].get("figsize", None)
+    figsize_units = pc_kwargs["figure_kwargs"].get("figsize_units", "inches")
     if figsize is None:
         if num_cols is None:
             num_cols = process_facet_dims(ds, pc_kwargs["cols"])[0]
@@ -163,8 +163,8 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
         )
         figsize_units = "dots"
 
-    pc_kwargs["plot_grid_kws"]["figsize"] = figsize
-    pc_kwargs["plot_grid_kws"]["figsize_units"] = figsize_units
+    pc_kwargs["figure_kwargs"]["figsize"] = figsize
+    pc_kwargs["figure_kwargs"]["figsize_units"] = figsize_units
     return pc_kwargs
 
 
@@ -172,8 +172,8 @@ def add_lines(
     plot_collection,
     values,
     orientation="vertical",
-    aes_map=None,
-    plot_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
     sample_dims=None,
     ref_dim="ref_dim",
     **kwargs,
@@ -191,16 +191,16 @@ def add_lines(
         Positions for the lines.
     orientation : str, default "vertical"
         The orientation of the lines, either "vertical" or "horizontal".
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
         The default is to use an "overlay_ref" aesthetic for all elements.
 
         It is possible to request aesthetics without mappings defined in the
         provided `plot_collection`. In those cases, a mapping of "ref_dim" to the requested
         aesthetic will be automatically added.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * "ref_line" -> passed to :func:`~arviz_plots.visuals.vline` for vertical `orientation`
@@ -241,14 +241,14 @@ def add_lines(
         >>> )
         >>> add_lines(pc, values=[0, 5])
     """
-    if plot_kwargs is None:
-        plot_kwargs = {}
-    if aes_map is None:
-        aes_map = {}
+    if visuals is None:
+        visuals = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
-    aes_map["ref_line"] = aes_map.get("ref_line", ["overlay_ref"])
-    aes_map["ref_text"] = aes_map.get("ref_text", ["overlay_ref"])
+        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals["ref_line"] = aes_by_visuals.get("ref_line", ["overlay_ref"])
+    aes_by_visuals["ref_text"] = aes_by_visuals.get("ref_text", ["overlay_ref"])
     if sample_dims is None:
         sample_dims = list(set(plot_collection.data.dims).difference(plot_collection.facet_dims))
     if isinstance(sample_dims, str):
@@ -262,7 +262,9 @@ def add_lines(
         values, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
     )
     requested_aes = (
-        set(aes_map["ref_line"]).union(aes_map["ref_text"]).difference(plot_collection.aes_set)
+        set(aes_by_visuals["ref_line"])
+        .union(aes_by_visuals["ref_text"])
+        .difference(plot_collection.aes_set)
     )
     if ref_dim in ref_ds.dims:
         for aes_key in requested_aes:
@@ -278,8 +280,8 @@ def add_lines(
                 ),
             )
 
-    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_line", sample_dims)
-    ref_kwargs = copy(plot_kwargs.get("ref_line", {}))
+    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_by_visuals, "ref_line", sample_dims)
+    ref_kwargs = copy(visuals.get("ref_line", {}))
     if ref_kwargs is not False:
         if "color" not in ref_aes:
             ref_kwargs.setdefault("color", "gray")
@@ -300,8 +302,8 @@ def add_bands(
     plot_collection,
     values,
     orientation="vertical",
-    aes_map=None,
-    plot_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
     sample_dims=None,
     ref_dim=None,
     **kwargs,
@@ -320,9 +322,9 @@ def add_bands(
         Start and end values for the bands to be plotted.
     orientation : str, default "vertical"
         The orientation of the bands, either "vertical" or "horizontal".
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
         The default is to use an "overlay_band" aesthetic for all elements.
 
@@ -330,7 +332,7 @@ def add_bands(
         provided `plot_collection`. In those cases, a mapping of the dimensions in
         `ref_dim` minus its last element to the requested aesthetic will be
         automatically added.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * "ref_band" -> passed to :func:`~arviz_plots.visuals.vspan` for vertical `orientation`
@@ -367,13 +369,13 @@ def add_bands(
         >>> pc = plot_dist(dt)
         >>> add_bands(pc, values=[[-2, 2], [-5, 5]])
     """
-    if plot_kwargs is None:
-        plot_kwargs = {}
-    if aes_map is None:
-        aes_map = {}
+    if visuals is None:
+        visuals = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
-    aes_map["ref_band"] = aes_map.get("ref_band", ["overlay_band"])
+        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals["ref_band"] = aes_by_visuals.get("ref_band", ["overlay_band"])
     if sample_dims is None:
         sample_dims = list(set(plot_collection.data.dims).difference(plot_collection.facet_dims))
     if isinstance(sample_dims, str):
@@ -387,7 +389,7 @@ def add_bands(
         values, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
     )
 
-    requested_aes = set(aes_map["ref_band"]).difference(plot_collection.aes_set)
+    requested_aes = set(aes_by_visuals["ref_band"]).difference(plot_collection.aes_set)
     *ref_dim, band_dim = ref_dim
     if ref_ds.sizes[band_dim] != 2:
         raise ValueError(
@@ -400,8 +402,8 @@ def add_bands(
     for aes, child in aes_dt.children.items():
         plot_collection.update_aes_from_dataset(aes, child.dataset)
 
-    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_band", sample_dims)
-    ref_kwargs = copy(plot_kwargs.get("ref_band", {}))
+    _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_by_visuals, "ref_band", sample_dims)
+    ref_kwargs = copy(visuals.get("ref_band", {}))
     if ref_kwargs is not False:
         if "color" not in ref_aes:
             ref_kwargs.setdefault("color", "gray")

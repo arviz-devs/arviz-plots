@@ -64,8 +64,8 @@ kind_value = st.sampled_from(("kde", "ecdf"))
 ess_kind_value = st.sampled_from(("local", "quantile"))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 point_estimate_value = st.sampled_from(("mean", "median"))
-plot_kwargs_value = st.sampled_from(({}, False, {"color": "red"}))
-plot_kwargs_value_no_false = st.sampled_from(({}, {"color": "red"}))
+visuals_value = st.sampled_from(({}, False, {"color": "red"}))
+visuals_value_no_false = st.sampled_from(({}, {"color": "red"}))
 
 
 @st.composite
@@ -78,14 +78,14 @@ def labels_shade(draw, elements):
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": plot_kwargs_value,
-            "credible_interval": plot_kwargs_value,
-            "point_estimate": plot_kwargs_value,
-            "point_estimate_text": plot_kwargs_value,
-            "title": plot_kwargs_value,
+            "kind": visuals_value,
+            "credible_interval": visuals_value,
+            "point_estimate": visuals_value,
+            "point_estimate_text": visuals_value,
+            "title": visuals_value,
             "remove_axis": st.just(False),
         },
     ),
@@ -93,20 +93,20 @@ def labels_shade(draw, elements):
     ci_kind=ci_kind_value,
     point_estimate=point_estimate_value,
 )
-def test_plot_dist(datatree, kind, ci_kind, point_estimate, plot_kwargs):
-    kind_kwargs = plot_kwargs.pop("kind", None)
+def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
+    kind_kwargs = visuals.pop("kind", None)
     if kind_kwargs is not None:
-        plot_kwargs[kind] = kind_kwargs
+        visuals[kind] = kind_kwargs
     pc = plot_dist(
         datatree,
         backend="none",
         kind=kind,
         ci_kind=ci_kind,
         point_estimate=point_estimate,
-        plot_kwargs=plot_kwargs,
+        visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         else:
@@ -117,19 +117,19 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, plot_kwargs):
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "trunk": plot_kwargs_value,
-            "twig": plot_kwargs_value,
-            "point_estimate": plot_kwargs_value,
+            "trunk": visuals_value,
+            "twig": visuals_value,
+            "point_estimate": visuals_value,
             "labels": st.sampled_from(({}, {"color": "red"})),
             "shade": st.sampled_from(({}, {"color": "red"})),
             "ticklabels": st.sampled_from(({}, False)),
             "remove_axis": st.just(False),
         },
     ),
-    stats_kwargs=st.fixed_dictionaries(
+    stats=st.fixed_dictionaries(
         {},
         optional={
             "trunk": st.just(True),
@@ -143,11 +143,11 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, plot_kwargs):
     labels_shade_label=labels_shade(st.sampled_from(("__variable__", "hierarchy", "group"))),
 )
 def test_plot_forest(
-    datatree, combined, ci_kind, point_estimate, plot_kwargs, stats_kwargs, labels_shade_label
+    datatree, combined, ci_kind, point_estimate, visuals, stats, labels_shade_label
 ):
     labels = labels_shade_label[0]
     shade_label = labels_shade_label[1]
-    stats_kwargs = {key: datatree[key].ds for key in stats_kwargs}
+    stats = {key: datatree[key].ds for key in stats}
     pc = plot_forest(
         datatree,
         backend="none",
@@ -156,11 +156,11 @@ def test_plot_forest(
         point_estimate=point_estimate,
         labels=labels,
         shade_label=shade_label,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
+        visuals=visuals,
+        stats=stats,
     )
     assert "plot" in pc.viz.data_vars
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         elif artist == "labels":
@@ -178,11 +178,11 @@ def test_plot_forest(
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "edge": plot_kwargs_value,
-            "face": plot_kwargs_value,
+            "edge": visuals_value,
+            "face": visuals_value,
             "labels": st.sampled_from(({}, {"color": "red"})),
             "shade": st.sampled_from(({}, {"color": "red"})),
             "ticklabels": st.sampled_from(({}, False)),
@@ -192,7 +192,7 @@ def test_plot_forest(
     combined=st.booleans(),
     labels_shade_label=labels_shade(st.sampled_from(("__variable__", "hierarchy", "group"))),
 )
-def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
+def test_plot_ridge(datatree, combined, visuals, labels_shade_label):
     labels = labels_shade_label[0]
     shade_label = labels_shade_label[1]
     pc = plot_ridge(
@@ -201,10 +201,10 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
         combined=combined,
         labels=labels,
         shade_label=shade_label,
-        plot_kwargs=plot_kwargs,
+        visuals=visuals,
     )
     assert "plot" in pc.viz.data_vars
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         elif artist == "labels":
@@ -222,19 +222,19 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "ess": plot_kwargs_value,
-            "rug": plot_kwargs_value_no_false,
-            "xlabel": plot_kwargs_value_no_false,
-            "ylabel": plot_kwargs_value_no_false,
-            "mean": plot_kwargs_value,
-            "mean_text": plot_kwargs_value,
-            "sd": plot_kwargs_value,
-            "sd_text": plot_kwargs_value,
-            "min_ess": plot_kwargs_value,
-            "title": plot_kwargs_value,
+            "ess": visuals_value,
+            "rug": visuals_value_no_false,
+            "xlabel": visuals_value_no_false,
+            "ylabel": visuals_value_no_false,
+            "mean": visuals_value,
+            "mean_text": visuals_value,
+            "sd": visuals_value,
+            "sd_text": visuals_value,
+            "min_ess": visuals_value,
+            "title": visuals_value,
         },
     ),
     kind=ess_kind_value,
@@ -244,7 +244,7 @@ def test_plot_ridge(datatree, combined, plot_kwargs, labels_shade_label):
     extra_methods=st.booleans(),
     min_ess=st.integers(min_value=10, max_value=150),
 )
-def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_ess, plot_kwargs):
+def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_ess, visuals):
     pc = plot_ess(
         datatree,
         backend="none",
@@ -254,10 +254,10 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
         n_points=n_points,
         extra_methods=extra_methods,
         min_ess=min_ess,
-        plot_kwargs=plot_kwargs,
+        visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         elif artist in ["mean", "sd", "mean_text", "sd_text"]:
@@ -275,21 +275,21 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "ess_bulk": plot_kwargs_value,
-            "ess_bulk_line": plot_kwargs_value,
-            "ess_tail": plot_kwargs_value,
-            "ess_tail_line": plot_kwargs_value,
-            "xlabel": plot_kwargs_value_no_false,
-            "ylabel": plot_kwargs_value_no_false,
-            "mean": plot_kwargs_value,
-            "mean_text": plot_kwargs_value,
-            "sd": plot_kwargs_value,
-            "sd_text": plot_kwargs_value,
-            "min_ess": plot_kwargs_value,
-            "title": plot_kwargs_value,
+            "ess_bulk": visuals_value,
+            "ess_bulk_line": visuals_value,
+            "ess_tail": visuals_value,
+            "ess_tail_line": visuals_value,
+            "xlabel": visuals_value_no_false,
+            "ylabel": visuals_value_no_false,
+            "mean": visuals_value,
+            "mean_text": visuals_value,
+            "sd": visuals_value,
+            "sd_text": visuals_value,
+            "min_ess": visuals_value,
+            "title": visuals_value,
             "remove_axis": st.just(False),
         },
     ),
@@ -298,7 +298,7 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
     extra_methods=st.booleans(),
     n_points=st.integers(min_value=2, max_value=12),
 )
-def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess, plot_kwargs):
+def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess, visuals):
     pc = plot_ess_evolution(
         datatree,
         backend="none",
@@ -306,10 +306,10 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
         n_points=n_points,
         extra_methods=extra_methods,
         min_ess=min_ess,
-        plot_kwargs=plot_kwargs,
+        visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         elif artist in ["mean", "sd", "mean_text", "sd_text"]:
@@ -322,14 +322,14 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": plot_kwargs_value,
-            "credible_interval": plot_kwargs_value,
-            "point_estimate": plot_kwargs_value,
-            "point_estimate_text": plot_kwargs_value,
-            "title": plot_kwargs_value,
+            "kind": visuals_value,
+            "credible_interval": visuals_value,
+            "point_estimate": visuals_value,
+            "point_estimate_text": visuals_value,
+            "title": visuals_value,
             "remove_axis": st.just(False),
         },
     ),
@@ -338,10 +338,10 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
     point_estimate=point_estimate_value,
     ci_kind=ci_kind_value,
 )
-def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwargs):
-    kind_kwargs = plot_kwargs.pop("kind", None)
+def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, visuals):
+    kind_kwargs = visuals.pop("kind", None)
     if kind_kwargs is not None:
-        plot_kwargs[kind] = kind_kwargs
+        visuals[kind] = kind_kwargs
     pc = plot_psense_dist(
         datatree,
         alphas=alphas,
@@ -349,10 +349,10 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwarg
         kind=kind,
         ci_kind=ci_kind,
         point_estimate=point_estimate,
-        plot_kwargs=plot_kwargs,
+        visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         else:
@@ -360,12 +360,12 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwarg
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": plot_kwargs_value,
-            "ref_line": plot_kwargs_value_no_false,
-            "title": plot_kwargs_value,
+            "kind": visuals_value,
+            "ref_line": visuals_value_no_false,
+            "title": visuals_value,
             "remove_axis": st.just(False),
         },
     ),
@@ -382,17 +382,17 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, plot_kwarg
     kind=kind_value,
     ref_line=st.booleans(),
 )
-def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, plot_kwargs):
-    kind_kwargs = plot_kwargs.pop("kind", None)
+def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
+    kind_kwargs = visuals.pop("kind", None)
     if kind_kwargs is not None:
-        plot_kwargs[kind] = kind_kwargs
+        visuals[kind] = kind_kwargs
     pc = plot_convergence_dist(
         datatree,
         diagnostics=diagnostics,
         backend="none",
         kind=kind,
         ref_line=ref_line,
-        plot_kwargs=plot_kwargs,
+        visuals=visuals,
     )
     assert "plot" in pc.viz.children
     if diagnostics is None:
@@ -404,7 +404,7 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, plot_kwarg
         for diagnostic in diagnostics
         for child in pc.viz.children.values()
     )
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         elif artist == "ref_line":
@@ -417,30 +417,30 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, plot_kwarg
 
 
 @given(
-    plot_kwargs=st.fixed_dictionaries(
+    visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": plot_kwargs_value,
+            "kind": visuals_value,
         },
     ),
     kind=kind_value,
     compact=st.booleans(),
     combined=st.booleans(),
 )
-def test_plot_rank_dist(datatree, kind, compact, combined, plot_kwargs):
-    kind_kwargs = plot_kwargs.pop("kind", None)
+def test_plot_rank_dist(datatree, kind, compact, combined, visuals):
+    kind_kwargs = visuals.pop("kind", None)
     if kind_kwargs is not None:
-        plot_kwargs[kind] = kind_kwargs
+        visuals[kind] = kind_kwargs
     pc = plot_rank_dist(
         datatree,
         backend="none",
         kind=kind,
         compact=compact,
         combined=combined,
-        plot_kwargs=plot_kwargs,
+        visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in plot_kwargs.items():
+    for artist, value in visuals.items():
         if value is False:
             assert artist not in pc.viz.children
         else:

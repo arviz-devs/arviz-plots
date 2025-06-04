@@ -18,10 +18,10 @@ def plot_bf(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     r"""Bayes Factor for comparing hypothesis of two nested models.
 
@@ -49,10 +49,10 @@ def plot_bf(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
@@ -64,7 +64,7 @@ def plot_bf(
         * "ref_line -> passed to :func: `~arviz_plots.visuals.vline`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
@@ -91,14 +91,14 @@ def plot_bf(
 
     .. minigallery:: plot_bf
     """
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if aes_map is None:
-        aes_map = {}
+        visuals = visuals.copy()
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
     bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)
 
@@ -124,27 +124,30 @@ def plot_bf(
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
-        pc_kwargs=pc_kwargs,
+        visuals=visuals,
+        stats=stats,
+        **pc_kwargs,
     )
 
     plot_collection.update_aes_from_dataset("bf_aes", bf_aes_ds)
 
-    ref_line_kwargs = copy(plot_kwargs.get("ref_line", {}))
+    ref_line_kwargs = copy(visuals.get("ref_line", {}))
     if ref_line_kwargs is False:
         raise ValueError(
-            "plot_kwargs['ref_line'] can't be False, use ref_val=False to remove this element"
+            "visuals['ref_line'] can't be False, use ref_val=False to remove this element"
         )
 
     if ref_val is not False:
-        _, ref_aes, _ = filter_aes(plot_collection, aes_map, "ref_line", "sample")
+        _, ref_aes, _ = filter_aes(plot_collection, aes_by_visuals, "ref_line", "sample")
         if "color" not in ref_aes:
             ref_line_kwargs.setdefault("color", "black")
         if "alpha" not in ref_aes:
             ref_line_kwargs.setdefault("alpha", 0.5)
         add_lines(
-            plot_collection, ref_val, aes_map=aes_map, plot_kwargs={"ref_line": ref_line_kwargs}
+            plot_collection,
+            ref_val,
+            aes_by_visuals=aes_by_visuals,
+            visuals={"ref_line": ref_line_kwargs},
         )
 
     if backend == "matplotlib":  ## remove this when we have a better way to handle legends

@@ -29,10 +29,10 @@ def plot_psense_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     """Plot power scaled posteriors.
 
@@ -79,11 +79,11 @@ def plot_psense_dist(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
@@ -98,7 +98,7 @@ def plot_psense_dist(
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
@@ -123,7 +123,7 @@ def plot_psense_dist(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> rugby = load_arviz_data('rugby')
-        >>> plot_psense_dist(rugby, var_names=["sd_att"], plot_kwargs={"kde":False})
+        >>> plot_psense_dist(rugby, var_names=["sd_att"], visuals={"kde":False})
 
 
     .. minigallery:: plot_psense_dist
@@ -141,18 +141,14 @@ def plot_psense_dist(
     sample_dims = list(sample_dims)
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if stats_kwargs is None:
-        stats_kwargs = {}
+    if stats is None:
+        stats = {}
     else:
-        stats_kwargs = stats_kwargs.copy()
-    if plot_kwargs is None:
-        plot_kwargs = {}
+        stats = stats.copy()
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
 
     if alphas is None:
         alphas = (0.8, 1.25)
@@ -202,9 +198,9 @@ def plot_psense_dist(
         )
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        pc_kwargs["plot_grid_kws"].setdefault("sharex", "row")
-        pc_kwargs["plot_grid_kws"].setdefault("sharey", "row")
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+        pc_kwargs["figure_kwargs"].setdefault("sharex", "row")
+        pc_kwargs["figure_kwargs"].setdefault("sharey", "row")
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("color", [color_cycle[0], "black", color_cycle[1]])
@@ -229,15 +225,15 @@ def plot_psense_dist(
             **pc_kwargs,
         )
 
-    plot_kwargs.setdefault("point_estimate_text", False)
+    visuals.setdefault("point_estimate_text", False)
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
-    aes_map.setdefault("point_estimate", ["color", "y"])
-    aes_map.setdefault("credible_interval", ["color", "y"])
+    aes_by_visuals.setdefault("point_estimate", ["color", "y"])
+    aes_by_visuals.setdefault("credible_interval", ["color", "y"])
 
     if labeller is None:
         labeller = BaseLabeller()
@@ -246,15 +242,15 @@ def plot_psense_dist(
         # Histograms are not great for overlapping distributions
         # But "step" histograms may be slightly easier to interpret than bars histograms
         # Using the same number of "bins" should help too
-        plot_kwargs.setdefault("hist", {})
-        plot_kwargs.setdefault("remove_axis", True)
-        if plot_kwargs["hist"] is not False:
-            plot_kwargs["hist"].setdefault("alpha", 0.3)
-            plot_kwargs["hist"].setdefault("edgecolor", None)
-            stats_kwargs.setdefault("density", {"density": True})
+        visuals.setdefault("hist", {})
+        visuals.setdefault("remove_axis", True)
+        if visuals["hist"] is not False:
+            visuals["hist"].setdefault("alpha", 0.3)
+            visuals["hist"].setdefault("edgecolor", None)
+            stats.setdefault("density", {"density": True})
 
-    if kind == "ecdf" and plot_kwargs.get("ecdf") is False:
-        plot_kwargs.setdefault("remove_axis", True)
+    if kind == "ecdf" and visuals.get("ecdf") is False:
+        visuals.setdefault("remove_axis", True)
 
     plot_dist(
         distribution,
@@ -269,9 +265,9 @@ def plot_psense_dist(
         ci_prob=ci_prob,
         plot_collection=plot_collection,
         labeller=labeller,
-        aes_map=aes_map,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
+        aes_by_visuals=aes_by_visuals,
+        visuals=visuals,
+        stats=stats,
     )
 
     # Add legend for alpha parameter automatically

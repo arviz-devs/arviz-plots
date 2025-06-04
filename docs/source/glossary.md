@@ -21,7 +21,7 @@ figure
 
 EABM
   Acronym for Exploratory Analysis of Bayesian Models. We use this concept to
-  reference all the tasks within a Bayesian modelling workflow outside of 
+  reference all the tasks within a Bayesian workflow outside of 
   building and fitting or sampling a model. For more details, see the
   [EABM virtual book](https://arviz-devs.github.io/EABM/)
 
@@ -30,9 +30,9 @@ plots
   Area (or areas) where the data will be plotted into. A {term}`figure`
   can contain multiple {term}`faceted` plots.
 
-artist
-artists
-  Visual element added by `arviz-plots`
+visual
+visuals
+  Graphical component or element added by `arviz-plots`
 
 faceting
 faceted
@@ -47,10 +47,10 @@ faceted
 |------------------|--------------|---------|------------------|
 | figure            | figure       | layout  | Figure           |
 | plot             | axes/subplot | figure  | -[^plotly_plot]  |
-| artist           | artist       | glyph   | trace            |
+| visual           | artist       | glyph   | trace            |
 
 [^plotly_plot]: In plotly there is no specific object to represent a {term}`plot`.
 
-    Instead, when adding {term}`artists` one can choose to add the artist to all {term}`plots`
+    Instead, when adding {term}`visuals` one can choose to add a visual to all {term}`plots`
     in the {term}`figure`, or give the row/col indexes, or specify a subset of {term}`plots`
-    on which to add the {term}`artist`.
+    on which to add the {term}`visual`.

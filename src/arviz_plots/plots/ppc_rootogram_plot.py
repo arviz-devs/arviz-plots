@@ -32,9 +32,9 @@ def plot_ppc_rootogram(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    **pc_kwargs,
 ):
     """Rootogram with confidence intervals per predicted count.
 
@@ -80,11 +80,11 @@ def plot_ppc_rootogram(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * predictive_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
@@ -136,14 +136,10 @@ def plot_ppc_rootogram(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
 
     if backend is None:
         if plot_collection is None:
@@ -196,7 +192,7 @@ def plot_ppc_rootogram(
     markers = plot_bknd.get_default_aes("marker", 7, {})
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", "__variable__")
@@ -210,19 +206,19 @@ def plot_ppc_rootogram(
             **pc_kwargs,
         )
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
-    aes_map.setdefault("predictive_markers", plot_collection.aes_set)
-    aes_map.setdefault("ci", plot_collection.aes_set)
+    aes_by_visuals.setdefault("predictive_markers", plot_collection.aes_set)
+    aes_by_visuals.setdefault("ci", plot_collection.aes_set)
     ## predictive_markers
-    predictive_ms_kwargs = copy(plot_kwargs.get("predictive_markers", {}))
+    predictive_ms_kwargs = copy(visuals.get("predictive_markers", {}))
 
     if predictive_ms_kwargs is not False:
         _, predictive_ms_aes, predictive_ms_ignore = filter_aes(
-            plot_collection, aes_map, "predictive_markers", sample_dims
+            plot_collection, aes_by_visuals, "predictive_markers", sample_dims
         )
         if "color" not in predictive_ms_aes:
             predictive_ms_kwargs.setdefault("color", colors[0])
@@ -238,8 +234,8 @@ def plot_ppc_rootogram(
         )
 
     ## confidence intervals
-    ci_kwargs = copy(plot_kwargs.get("ci", {}))
-    _, ci_aes, ci_ignore = filter_aes(plot_collection, aes_map, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("ci", {}))
+    _, ci_aes, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
 
     if ci_kwargs is not False:
         if "color" not in ci_aes:
@@ -258,12 +254,12 @@ def plot_ppc_rootogram(
 
     ## observed_markers
     observed_ms_kwargs = copy(
-        plot_kwargs.get("observed_markers", False if group == "prior_predictive" else {})
+        visuals.get("observed_markers", False if group == "prior_predictive" else {})
     )
 
     if observed_ms_kwargs is not False:
         _, _, observed_ms_ignore = filter_aes(
-            plot_collection, aes_map, "observed_markers", sample_dims
+            plot_collection, aes_by_visuals, "observed_markers", sample_dims
         )
         observed_ms_kwargs.setdefault("color", "black")
         observed_ms_kwargs.setdefault("marker", markers[6])
@@ -277,10 +273,10 @@ def plot_ppc_rootogram(
         )
 
     ## grid
-    grid_kwargs = copy(plot_kwargs.get("grid", {}))
+    grid_kwargs = copy(visuals.get("grid", {}))
 
     if grid_kwargs is not False:
-        _, _, grid_ignore = filter_aes(plot_collection, aes_map, "grid", sample_dims)
+        _, _, grid_ignore = filter_aes(plot_collection, aes_by_visuals, "grid", sample_dims)
         grid_kwargs.setdefault("color", "#cccccc")
         grid_kwargs.setdefault("axis", "y")
 
@@ -292,8 +288,10 @@ def plot_ppc_rootogram(
         )
 
     # set xlabel
-    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "xlabel", sample_dims
+    )
+    xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -309,8 +307,10 @@ def plot_ppc_rootogram(
         )
 
     # set ylabel
-    _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
+    _, ylabels_aes, ylabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "ylabel", sample_dims
+    )
+    ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "black")
@@ -326,8 +326,8 @@ def plot_ppc_rootogram(
         )
 
     # title
-    title_kwargs = copy(plot_kwargs.get("title", {}))
-    _, _, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+    title_kwargs = copy(visuals.get("title", {}))
+    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     if title_kwargs is not False:
         plot_collection.map(

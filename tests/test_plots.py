@@ -162,42 +162,42 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_dist(datatree, backend=backend, kind=kind)
         assert not pc.aes
         assert "mu" in pc.viz[kind].data_vars
-        artists = ("plot", kind, "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
+        visuals = ("plot", kind, "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
 
     def test_plot_dist_step_hist(self, datatree, backend):
-        plot_kwargs = {"hist": {"step": True}}
-        pc = plot_dist(datatree, backend=backend, kind="hist", plot_kwargs=plot_kwargs)
+        visuals = {"hist": {"step": True}}
+        pc = plot_dist(datatree, backend=backend, kind="hist", visuals=visuals)
         assert not pc.aes
         assert "mu" in pc.viz["hist"].data_vars
-        artists = ("plot", "hist", "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
+        visuals = ("plot", "hist", "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
 
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_sample(self, datatree_sample, backend, kind):
         pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", kind=kind)
         assert not pc.aes
         assert "mu" in pc.viz[kind].data_vars
-        artists = ("plot", kind, "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
+        visuals = ("plot", kind, "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
 
     def test_plot_dist_sample_step_hist(self, datatree_sample, backend):
-        plot_kwargs = {"hist": {"step": True}}
+        visuals = {"hist": {"step": True}}
         pc = plot_dist(
             datatree_sample,
             backend=backend,
             sample_dims="sample",
             kind="hist",
-            plot_kwargs=plot_kwargs,
+            visuals=visuals,
         )
         assert not pc.aes
         assert "mu" in pc.viz["hist"].data_vars
-        artists = ("plot", "hist", "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in artists)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in artists)
+        visuals = ("plot", "hist", "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
+        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
 
     @pytest.mark.parametrize("kind", ["kde"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
@@ -303,8 +303,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_forest_aes_labels_shading(self, backend, datatree_4d, pseudo_dim):
         pc = plot_forest(
             datatree_4d,
-            pc_kwargs={"aes": {"color": [pseudo_dim]}},
-            aes_map={"labels": ["color"]},
+            aes={"color": [pseudo_dim]},
+            aes_by_visuals={"labels": ["color"]},
             shade_label=pseudo_dim,
             backend=backend,
         )
@@ -361,8 +361,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_ridge_aes_labels_shading(self, backend, datatree_4d, pseudo_dim):
         pc = plot_forest(
             datatree_4d,
-            pc_kwargs={"aes": {"color": [pseudo_dim]}},
-            aes_map={"labels": ["color"]},
+            aes={"color": [pseudo_dim]},
+            aes_by_visuals={"labels": ["color"]},
             shade_label=pseudo_dim,
             backend=backend,
         )
@@ -380,12 +380,12 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_compare_kwargs(self, cmp, backend):
         pc = plot_compare(
             cmp,
-            plot_kwargs={
+            visuals={
                 "shade": {"color": "black", "alpha": 0.2},
                 "error_bar": {"color": "gray"},
                 "point_estimate": {"color": "red", "marker": "|"},
             },
-            pc_kwargs={"plot_grid_kws": {"figsize": (1000, 200), "figsize_units": "dots"}},
+            figure_kwargs={"figsize": (1000, 200), "figsize_units": "dots"},
             backend=backend,
         )
         assert "plot" in pc.viz.data_vars
@@ -496,7 +496,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_bf(self, datatree, backend):
         pc = plot_bf(datatree, var_names="mu", backend=backend)
         assert "figure" in pc.viz.data_vars
-        assert "Groups" in pc.viz["kde"].coords
+        assert "group" in pc.viz["kde"].coords
         assert "/color" in pc.aes.groups
         assert "BF_type" in pc.aes["bf_aes"].coords
 
@@ -533,8 +533,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_prior_posterior(self, datatree, backend):
         pc = plot_prior_posterior(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
-        assert "Groups" not in pc.viz["plot"].coords
-        assert "Groups" in pc.viz["kde"].coords
+        assert "group" not in pc.viz["plot"].coords
+        assert "group" in pc.viz["kde"].coords
 
     def test_autocorr(self, datatree, backend):
         pc = plot_autocorr(datatree, backend=backend)
@@ -615,7 +615,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_add_references_aes(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
-        add_lines(pc, [0, 1], aes_map={"ref_line": ["color"]})
+        add_lines(pc, [0, 1], aes_by_visuals={"ref_line": ["color"]})
         assert "mu" in pc.viz["ref_line"].data_vars
         assert "ref_dim" in pc.viz["ref_line"]["mu"].dims
         assert "/color" in pc.aes.groups
@@ -636,7 +636,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     def test_add_bands_aes(self, datatree, backend):
         pc = plot_dist(datatree, backend=backend)
-        add_bands(pc, [(0, 1), (2, 5)], aes_map={"ref_band": ["color"]})
+        add_bands(pc, [(0, 1), (2, 5)], aes_by_visuals={"ref_band": ["color"]})
         assert "mu" in pc.viz["ref_band"].data_vars
         assert "ref_dim" in pc.viz["ref_band"]["mu"].dims
         assert "/color" in pc.aes.groups

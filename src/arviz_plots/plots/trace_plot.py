@@ -26,9 +26,9 @@ def plot_trace(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    **pc_kwargs,
 ):
     """Plot iteration versus sampled values.
 
@@ -49,10 +49,10 @@ def plot_trace(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
+    aes_by_visuals : mapping, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Defaults to only mapping properties to the trace lines.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * trace -> passed to :func:`~.visuals.line`
@@ -90,12 +90,8 @@ def plot_trace(
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
-    if plot_kwargs is None:
-        plot_kwargs = {}
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+    if visuals is None:
+        visuals = {}
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -117,10 +113,10 @@ def plot_trace(
         pc_kwargs.setdefault(
             "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
         )
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         aux_dim_list = [dim for dim in pc_kwargs["cols"] if dim != "__variable__"]
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
-        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
+        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -129,18 +125,18 @@ def plot_trace(
     else:
         aux_dim_list = list(plot_collection.viz["plot"].dims)
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
-    aes_map.setdefault("trace", plot_collection.aes_set)
-    aes_map.setdefault("divergence", {"overlay"})
+        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals.setdefault("trace", plot_collection.aes_set)
+    aes_by_visuals.setdefault("divergence", {"overlay"})
 
     if labeller is None:
         labeller = BaseLabeller()
 
     # trace
-    trace_kwargs = copy(plot_kwargs.get("trace", {}))
+    trace_kwargs = copy(visuals.get("trace", {}))
     if trace_kwargs is False:
         xname = None
     else:
@@ -151,7 +147,7 @@ def plot_trace(
             default_xname = None
         xname = trace_kwargs.get("xname", default_xname)
         trace_kwargs["xname"] = xname
-        _, _, trace_ignore = filter_aes(plot_collection, aes_map, "trace", sample_dims)
+        _, _, trace_ignore = filter_aes(plot_collection, aes_by_visuals, "trace", sample_dims)
         plot_collection.map(
             line,
             "trace",
@@ -162,7 +158,7 @@ def plot_trace(
 
     # divergences
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-    divergence_kwargs = copy(plot_kwargs.get("divergence", {}))
+    divergence_kwargs = copy(visuals.get("divergence", {}))
     if (
         sample_stats is not None
         and "diverging" in sample_stats.data_vars
@@ -170,7 +166,9 @@ def plot_trace(
         and divergence_kwargs is not False
     ):
         divergence_mask = dt.sample_stats.diverging
-        _, div_aes, div_ignore = filter_aes(plot_collection, aes_map, "divergence", sample_dims)
+        _, div_aes, div_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "divergence", sample_dims
+        )
         if "color" not in div_aes:
             divergence_kwargs.setdefault("color", "black")
         if "marker" not in div_aes:
@@ -191,9 +189,11 @@ def plot_trace(
         )
 
     # aesthetics
-    title_kwargs = copy(plot_kwargs.get("title", {}))
+    title_kwargs = copy(visuals.get("title", {}))
     if title_kwargs is not False:
-        _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+        _, title_aes, title_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "title", sample_dims
+        )
         if "color" not in title_aes:
             title_kwargs.setdefault("color", "black")
         plot_collection.map(
@@ -206,9 +206,11 @@ def plot_trace(
         )
 
     # Add "Steps" as x_label for trace
-    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
+    xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
-        _, xlabel_aes, xlabel_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
+        _, xlabel_aes, xlabel_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "xlabel", sample_dims
+        )
 
         if "color" not in xlabel_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -222,9 +224,11 @@ def plot_trace(
         )
 
     # Adjust tick labels
-    ticklabels_kwargs = copy(plot_kwargs.get("ticklabels", {}))
+    ticklabels_kwargs = copy(visuals.get("ticklabels", {}))
     if ticklabels_kwargs is not False:
-        _, _, ticklabels_ignore = filter_aes(plot_collection, aes_map, "ticklabels", sample_dims)
+        _, _, ticklabels_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ticklabels", sample_dims
+        )
         plot_collection.map(
             ticklabel_props,
             ignore_aes=ticklabels_ignore,

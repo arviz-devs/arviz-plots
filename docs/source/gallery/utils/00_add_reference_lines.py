@@ -27,7 +27,7 @@ pc = azp.add_lines(
     pc,
     values=ref_ds,
     ref_dim="quantile",
-    aes_map={"ref_line": ["color"]},
+    aes_by_visuals={"ref_line": ["color"]},
     color=["black", "gray", "gray"]
 )
 pc.show()

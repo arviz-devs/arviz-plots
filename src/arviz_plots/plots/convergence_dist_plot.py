@@ -29,10 +29,10 @@ def plot_convergence_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     """Plot the distribution of convergence diagnostics (ESS and/or R-hat).
 
@@ -76,11 +76,11 @@ def plot_convergence_dist(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
         By default, no mappings are defined for this plot.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
@@ -93,7 +93,7 @@ def plot_convergence_dist(
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
@@ -162,26 +162,21 @@ def plot_convergence_dist(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
+        visuals = visuals.copy()
 
-    ref_line_kwargs = copy(plot_kwargs.get("ref_line", {}))
+    ref_line_kwargs = copy(visuals.get("ref_line", {}))
     if ref_line_kwargs is False:
         raise ValueError(
-            "plot_kwargs['ref_line'] can't be False, use ref_line=False to remove this element"
+            "visuals['ref_line'] can't be False, use ref_line=False to remove this element"
         )
 
-    if pc_kwargs is None:
-        pc_kwargs = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        pc_kwargs = pc_kwargs.copy()
-
-    if aes_map is None:
-        aes_map = {}
-    else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
     if diagnostics is None:
         diagnostics = ["ess_bulk", "ess_tail", "rhat"]
@@ -201,7 +196,7 @@ def plot_convergence_dist(
     distribution = _compute_diagnostics(dt, diagnostics, sample_dims, grouped)
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if grouped is False:
@@ -214,9 +209,9 @@ def plot_convergence_dist(
         plot_dist_sample_dims = [dim for dim in dt.dims if dim not in sample_dims]
         plot_dist_var_names = var_names
 
-    plot_kwargs.setdefault("credible_interval", False)
-    plot_kwargs.setdefault("point_estimate", False)
-    plot_kwargs.setdefault("point_estimate_text", False)
+    visuals.setdefault("credible_interval", False)
+    visuals.setdefault("point_estimate", False)
+    visuals.setdefault("point_estimate_text", False)
 
     plot_collection = plot_dist(
         distribution,
@@ -234,14 +229,16 @@ def plot_convergence_dist(
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
-        aes_map=aes_map,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
-        pc_kwargs=pc_kwargs,
+        aes_by_visuals=aes_by_visuals,
+        visuals=visuals,
+        stats=stats,
+        **pc_kwargs,
     )
 
     if ref_line:
-        _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_map, "ref_line", sample_dims)
+        _, ref_aes, ref_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ref_line", sample_dims
+        )
         if "color" not in ref_aes:
             ref_line_kwargs.setdefault("color", "black")
         if "linestyle" not in ref_aes:

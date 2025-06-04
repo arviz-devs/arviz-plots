@@ -303,7 +303,7 @@ class PlotCollection:
     def viz(self):
         """Information about the visual elements in the plot as a DataTree.
 
-        Plot elements like :term:`artists`, :term:`plots` and the :term:`figure`
+        Plot elements like :term:`visuals`, :term:`plots` and the :term:`figure`
         are stored at the top level, if possible directly as DataArrays,
         otherwise as groups whose variables are variable names in the input
         Dataset.
@@ -312,8 +312,8 @@ class PlotCollection:
         * ``figure`` (always on the home group) -> Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
         * ``plot`` -> :term:`Plot` objects in this :term:`figure`.
-          Generally, these are the target where :term:`artists <artist>` are added,
-          although it is possible to have artists targetting the figure itself.
+          Generally, these are the target where :term:`visuals <artist>` are added,
+          although it is possible to have visuals targetting the figure itself.
         * ``row`` -> Integer row indicator
         * ``col`` -> Integer column indicator
 
@@ -645,7 +645,7 @@ class PlotCollection:
     def facet_dims(self):
         """Dimensions over which one should loop for facetting when using this PlotCollection.
 
-        When adding specific artists, we might need to loop over more dimensions than these ones
+        When adding specific visuals, we might need to loop over more dimensions than these ones
         due to the defined aesthetic mappings.
         """
         return set(self.viz["plot"].dims)
@@ -676,7 +676,7 @@ class PlotCollection:
             return out.item()
         return out
 
-    def rename_artists(self, name_dict=None, **names):
+    def rename_visuals(self, name_dict=None, **names):
         """Rename artist data variables in the :attr:`~.PlotCollection.viz` DataTree.
 
         Parameters
@@ -703,7 +703,7 @@ class PlotCollection:
         cols=None,
         col_wrap=4,
         backend=None,
-        plot_grid_kws=None,
+        figure_kwargs=None,
         **kwargs,
     ):
         """Instatiate a PlotCollection and generate a plot grid iterating over subsets and wrapping.
@@ -725,7 +725,7 @@ class PlotCollection:
             new rows are created.
         backend : str, optional
             Plotting backend.
-        plot_grid_kws : mapping, optional
+        figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
@@ -739,8 +739,8 @@ class PlotCollection:
         """
         if cols is None:
             cols = []
-        if plot_grid_kws is None:
-            plot_grid_kws = {}
+        if figure_kwargs is None:
+            figure_kwargs = {}
         if backend is None:
             backend = rcParams["plot.backend"]
         data = concat_model_dict(data)
@@ -755,7 +755,7 @@ class PlotCollection:
 
         plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_rows, n_cols, squeeze=False, **plot_grid_kws
+            n_plots, n_rows, n_cols, squeeze=False, **figure_kwargs
         )
         col_id, row_id = np.meshgrid(np.arange(n_cols), np.arange(n_rows))
         viz_dict = {}
@@ -844,7 +844,7 @@ class PlotCollection:
         cols=None,
         rows=None,
         backend=None,
-        plot_grid_kws=None,
+        figure_kwargs=None,
         **kwargs,
     ):
         """Instatiate a PlotCollection and generate a plot grid iterating over rows and columns.
@@ -865,7 +865,7 @@ class PlotCollection:
             of values within `cols` and `rows`.
         backend : str, optional
             Plotting backend.
-        plot_grid_kws : mapping, optional
+        figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
@@ -881,8 +881,8 @@ class PlotCollection:
             cols = []
         if rows is None:
             rows = []
-        if plot_grid_kws is None:
-            plot_grid_kws = {}
+        if figure_kwargs is None:
+            figure_kwargs = {}
         if backend is None:
             backend = rcParams["plot.backend"]
         repeated_dims = [col for col in cols if col in rows]
@@ -896,7 +896,7 @@ class PlotCollection:
         n_plots = n_cols * n_rows
         plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_rows, n_cols, squeeze=False, **plot_grid_kws
+            n_plots, n_rows, n_cols, squeeze=False, **figure_kwargs
         )
         col_id, row_id = np.meshgrid(np.arange(n_cols), np.arange(n_rows))
         viz_dict = {}
@@ -1258,17 +1258,19 @@ class PlotCollection:
         dim_str = ", ".join(("variable" if d == "__variable__" else d for d in dim))
         if title is None:
             title = dim_str
-        aes_mappings = {
+        aes_by_visualspings = {
             aes_key: list(ds.dims) + ([] if "mapping" in ds.data_vars else ["__variable__"])
             for aes_key, ds in self.aes.children.items()
         }
         valid_aes = [
-            aes_key for aes_key, aes_dims in aes_mappings.items() if set(dim) == set(aes_dims)
+            aes_key
+            for aes_key, aes_dims in aes_by_visualspings.items()
+            if set(dim) == set(aes_dims)
         ]
         if not valid_aes:
             raise ValueError(
                 f"Legend can't be generated. Found no aesthetics mapped to dimension {dim}. "
-                f"Existing mappings are {aes_mappings}."
+                f"Existing mappings are {aes_by_visualspings}."
             )
         if aes is None:
             aes = [aes_key for aes_key in valid_aes if aes_key not in ("x", "y")]

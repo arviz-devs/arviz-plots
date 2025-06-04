@@ -28,9 +28,9 @@ def plot_psense_quantities(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    **pc_kwargs,
 ):
     """Plot power scaled posterior quantities.
 
@@ -73,11 +73,11 @@ def plot_psense_quantities(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * prior_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
@@ -126,14 +126,10 @@ def plot_psense_quantities(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
 
     if backend is None:
         if plot_collection is None:
@@ -235,15 +231,16 @@ def plot_psense_quantities(
         max_ = baseline_quantities + mcse_quantities * 2
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    colors = plot_bknd.get_default_aes("color", 5, {})
+    colors = plot_bknd.get_default_aes("color", 2, {})
     markers = plot_bknd.get_default_aes("marker", 6, {})
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
-        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs["aes"].setdefault("color", ["component_group"])
         pc_kwargs.setdefault("cols", ["quantities"])
         pc_kwargs.setdefault(
             "rows",
@@ -262,22 +259,24 @@ def plot_psense_quantities(
             **pc_kwargs,
         )
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
-    aes_map.setdefault("quantities_marker", ["color", "marker"])
-    aes_map.setdefault("quantities", ["color"])
+    aes_by_visuals.setdefault("quantities_marker", ["color", "marker"])
+    aes_by_visuals.setdefault("quantities", ["color"])
 
     # plot quantities for prior-perturbations
     ## markers
-    prior_ms_kwargs = copy(plot_kwargs.get("prior_markers", {}))
+    prior_ms_kwargs = copy(visuals.get("prior_markers", {}))
 
     if prior_ms_kwargs is not False:
-        _, _, prior_ms_ignore = filter_aes(plot_collection, aes_map, "prior_markers", sample_dims)
+        _, _, prior_ms_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "prior_markers", sample_dims
+        )
         prior_ms_kwargs.setdefault("marker", markers[0])
-        prior_ms_kwargs.setdefault("color", colors[3])
+        prior_ms_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
             scatter_xy,
@@ -288,11 +287,13 @@ def plot_psense_quantities(
             **prior_ms_kwargs,
         )
     ## lines
-    prior_ls_kwargs = copy(plot_kwargs.get("prior_lines", {}))
+    prior_ls_kwargs = copy(visuals.get("prior_lines", {}))
 
     if prior_ls_kwargs is not False:
-        _, _, prior_ms_ignore = filter_aes(plot_collection, aes_map, "prior_lines", sample_dims)
-        prior_ls_kwargs.setdefault("color", colors[3])
+        _, _, prior_ms_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "prior_lines", sample_dims
+        )
+        prior_ms_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
             line_xy,
@@ -305,15 +306,15 @@ def plot_psense_quantities(
 
     # plot quantities for likelihood-perturbations
     ## markers
-    likelihood_ms_kwargs = copy(plot_kwargs.get("likelihood_markers", {}))
+    likelihood_ms_kwargs = copy(visuals.get("likelihood_markers", {}))
 
     if likelihood_ms_kwargs is not False:
         _, _, likelihood_ms_ignore = filter_aes(
-            plot_collection, aes_map, "likelihood_markers", sample_dims
+            plot_collection, aes_by_visuals, "likelihood_markers", sample_dims
         )
 
         likelihood_ms_kwargs.setdefault("marker", markers[5])
-        likelihood_ms_kwargs.setdefault("color", colors[4])
+        likelihood_ms_kwargs.setdefault("color", colors[1])
 
         plot_collection.map(
             scatter_xy,
@@ -324,14 +325,14 @@ def plot_psense_quantities(
             **likelihood_ms_kwargs,
         )
     ## lines
-    likelihood_ls_kwargs = copy(plot_kwargs.get("likelihood_lines", {}))
+    likelihood_ls_kwargs = copy(visuals.get("likelihood_lines", {}))
 
     if likelihood_ls_kwargs is not False:
         _, _, likelihood_ls_ignore = filter_aes(
-            plot_collection, aes_map, "likelihood_lines", sample_dims
+            plot_collection, aes_by_visuals, "likelihood_lines", sample_dims
         )
 
-        likelihood_ls_kwargs.setdefault("color", colors[4])
+        likelihood_ls_kwargs.setdefault("color", colors[1])
 
         plot_collection.map(
             line_xy,
@@ -344,8 +345,8 @@ def plot_psense_quantities(
 
     # plot mcse
     if mcse:
-        mcse_kwargs = copy(plot_kwargs.get("mcse", {}))
-        _, _, mcse_ignore = filter_aes(plot_collection, aes_map, "mcse", sample_dims)
+        mcse_kwargs = copy(visuals.get("mcse", {}))
+        _, _, mcse_ignore = filter_aes(plot_collection, aes_by_visuals, "mcse", sample_dims)
         if mcse_kwargs is not False:
             mcse_kwargs.setdefault("color", "grey")
             mcse_kwargs.setdefault("linestyle", lines[1])
@@ -355,8 +356,8 @@ def plot_psense_quantities(
         plot_collection.map(hline, "mcse", data=max_, ignore_aes=mcse_ignore, **mcse_kwargs)
 
     # set ticks
-    ticks_kwargs = copy(plot_kwargs.get("ticks", {}))
-    _, _, ticks_ignore = filter_aes(plot_collection, aes_map, "ticks", sample_dims)
+    ticks_kwargs = copy(visuals.get("ticks", {}))
+    _, _, ticks_ignore = filter_aes(plot_collection, aes_by_visuals, "ticks", sample_dims)
 
     plot_collection.map(
         set_xticks,
@@ -369,8 +370,10 @@ def plot_psense_quantities(
     )
 
     # set xlabel
-    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = plot_kwargs.get("xlabel", {}).copy()
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "xlabel", sample_dims
+    )
+    xlabel_kwargs = visuals.get("xlabel", {}).copy()
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -386,8 +389,8 @@ def plot_psense_quantities(
         )
 
     # title
-    title_kwargs = copy(plot_kwargs.get("title", {}))
-    _, _, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+    title_kwargs = copy(visuals.get("title", {}))
+    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     plot_collection.map(
         labelled_title,
@@ -397,5 +400,7 @@ def plot_psense_quantities(
         labeller=labeller,
         **title_kwargs,
     )
+
+    plot_collection.add_legend("component_group")
 
     return plot_collection

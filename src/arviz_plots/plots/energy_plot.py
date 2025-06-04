@@ -12,10 +12,10 @@ def plot_energy(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     r"""Plot transition distribution and marginal energy distribution in HMC algorithms.
 
@@ -38,11 +38,11 @@ def plot_energy(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
@@ -54,7 +54,7 @@ def plot_energy(
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
         * density -> passed to kde, ecdf, ...
 
@@ -88,14 +88,10 @@ def plot_energy(
     """
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if plot_kwargs is None:
-        plot_kwargs = {}
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+        visuals = visuals.copy()
 
     new_ds = _get_energy_ds(dt)
 
@@ -106,10 +102,10 @@ def plot_energy(
     pc_kwargs.setdefault("cols", None)
     pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
     pc_kwargs["aes"].setdefault("color", ["energy"])
-    plot_kwargs.setdefault("credible_interval", False)
-    plot_kwargs.setdefault("point_estimate", False)
-    plot_kwargs.setdefault("point_estimate_text", False)
-    plot_kwargs.setdefault("title", False)
+    visuals.setdefault("credible_interval", False)
+    visuals.setdefault("point_estimate", False)
+    visuals.setdefault("point_estimate_text", False)
+    visuals.setdefault("title", False)
 
     plot_collection = plot_dist(
         new_ds,
@@ -125,14 +121,13 @@ def plot_energy(
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
-        aes_map=aes_map,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
-        pc_kwargs=pc_kwargs,
+        aes_by_visuals=aes_by_visuals,
+        visuals=visuals,
+        stats=stats,
+        **pc_kwargs,
     )
 
-    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        plot_collection.add_legend("energy", loc="outside right upper")
+    plot_collection.add_legend("energy")
 
     if bfmi:
         raise NotImplementedError("BFMI is not implemented yet")

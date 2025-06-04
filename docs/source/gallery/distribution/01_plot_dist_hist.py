@@ -21,7 +21,7 @@ data = load_arviz_data("centered_eight")
 pc = azp.plot_dist(
     data,
     kind="hist",
-    plot_kwargs={"point_estimate_text": False},
+    visuals={"point_estimate_text": False},
     backend="none"  # change to preferred backend
 )
 pc.show()

@@ -25,7 +25,7 @@ def legend(
     artist_type : str, optional
         Type of artist to use for legend entries. Currently only "line" is supported.
     artist_kwargs : dict, optional
-        Additional kwargs passed to all artists
+        Additional kwargs passed to all visuals
     **kwargs : dict
         Additional kwargs passed to legend configuration
 

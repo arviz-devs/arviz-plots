@@ -79,7 +79,7 @@ class PlotMatrix(PlotCollection):
     arviz_plots.PlotCollection : Unidimensional facetting manager
     """
 
-    def __init__(self, data, facet_dims, aes=None, backend=None, plot_grid_kws=None, **kwargs):
+    def __init__(self, data, facet_dims, aes=None, backend=None, figure_kwargs=None, **kwargs):
         """Initialize a PlotMatrix.
 
         Parameters
@@ -107,12 +107,12 @@ class PlotMatrix(PlotCollection):
             backend = rcParams["plot.backend"]
         self.backend = backend
 
-        if plot_grid_kws is None:
-            plot_grid_kws = {}
+        if figure_kwargs is None:
+            figure_kwargs = {}
 
         super().__init__(
             data=self._data,
-            viz_dt=self._generate_viz_dt(**plot_grid_kws),
+            viz_dt=self._generate_viz_dt(**figure_kwargs),
             aes=aes,
             backend=backend,
             **kwargs,
@@ -123,7 +123,7 @@ class PlotMatrix(PlotCollection):
         """Facetting dimensions."""
         return set(dim for dim in self._facet_dims if dim != "__variable__")
 
-    def _generate_viz_dt(self, **plot_grid_kws):
+    def _generate_viz_dt(self, **figure_kwargs):
         """Generate ``.viz`` DataTree."""
         data = self._data
         facet_dims = self._facet_dims
@@ -134,7 +134,7 @@ class PlotMatrix(PlotCollection):
         n_plots = n_pairs**2
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_pairs, n_pairs, squeeze=False, **plot_grid_kws
+            n_plots, n_pairs, n_pairs, squeeze=False, **figure_kwargs
         )
         coords = {
             "col_index": np.arange(n_pairs),
@@ -500,10 +500,10 @@ class PlotMatrix(PlotCollection):
         * ``figure`` (always on the home group) -> Scalar object containing the highest level
           plotting structure. i.e. the matplotlib figure or the bokeh layout
         * ``plot`` -> :term:`Plot` objects in this :term:`figure`.
-          Generally, these are the target where :term:`artists <artist>` are added,
-          although it is possible to have artists targetting the figure itself.
+          Generally, these are the target where :term:`visuals <artist>` are added,
+          although it is possible to have visuals targetting the figure itself.
 
-        Plus all the artists that have been added to the plot and stored.
+        Plus all the visuals that have been added to the plot and stored.
         See :meth:`arviz_plots.PlotMatrix.map` and :meth:`arviz_plots.PlotMatrix.map_triangle`
         for more details.
         """

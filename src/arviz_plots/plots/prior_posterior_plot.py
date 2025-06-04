@@ -22,10 +22,10 @@ def plot_prior_posterior(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     r"""Plot 1D marginal densities for prior and posterior.
 
@@ -57,10 +57,10 @@ def plot_prior_posterior(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    aes_by_visuals : mapping of {str : sequence of str}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
@@ -71,7 +71,7 @@ def plot_prior_posterior(
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * density -> passed to kde, ecdf, ...
@@ -106,26 +106,21 @@ def plot_prior_posterior(
     sample_dims = list(sample_dims)
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if stats_kwargs is None:
-        stats_kwargs = {}
+    if stats is None:
+        stats = {}
     else:
-        stats_kwargs = stats_kwargs.copy()
-    if plot_kwargs is None:
-        plot_kwargs = {}
+        stats = stats.copy()
+    if visuals is None:
+        visuals = {}
     else:
-        plot_kwargs = plot_kwargs.copy()
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
-
+        visuals = visuals.copy()
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
-    if not isinstance(plot_kwargs, dict):
-        plot_kwargs = {}
+    if not isinstance(visuals, dict):
+        visuals = {}
 
     if backend is None:
         if plot_collection is None:
@@ -150,8 +145,8 @@ def plot_prior_posterior(
         .assign_coords(sample=("sample", np.arange(num_samples)))
     )
 
-    distribution = concat([ds_prior, ds_posterior], dim="Groups").assign_coords(
-        {"Groups": ["prior", "posterior"]}
+    distribution = concat([ds_prior, ds_posterior], dim="group").assign_coords(
+        {"group": ["prior", "posterior"]}
     )
 
     distribution = process_group_variables_coords(
@@ -167,15 +162,15 @@ def plot_prior_posterior(
         sample_dims = ["sample"]
 
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("color", ["Groups"])
+        pc_kwargs["aes"].setdefault("color", ["group"])
         pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
-            + [dim for dim in distribution.dims if dim not in sample_dims + ["Groups"]],
+            + [dim for dim in distribution.dims if dim not in sample_dims + ["group"]],
         )
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
@@ -186,21 +181,21 @@ def plot_prior_posterior(
             **pc_kwargs,
         )
 
-    plot_kwargs.setdefault("credible_interval", False)
-    plot_kwargs.setdefault("point_estimate", False)
-    plot_kwargs.setdefault("point_estimate_text", False)
+    visuals.setdefault("credible_interval", False)
+    visuals.setdefault("point_estimate", False)
+    visuals.setdefault("point_estimate_text", False)
 
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
+        aes_by_visuals = aes_by_visuals.copy()
 
     if kind == "hist":
-        plot_kwargs.setdefault("hist", {})
-        plot_kwargs.setdefault("remove_axis", True)
-        if plot_kwargs["hist"] is not False:
-            plot_kwargs["hist"].setdefault("step", True)
-            stats_kwargs.setdefault("density", {"density": True})
+        visuals.setdefault("hist", {})
+        visuals.setdefault("remove_axis", True)
+        if visuals["hist"] is not False:
+            visuals["hist"].setdefault("step", True)
+            stats.setdefault("density", {"density": True})
 
     plot_collection = plot_dist(
         distribution,
@@ -215,12 +210,11 @@ def plot_prior_posterior(
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
-        plot_kwargs=plot_kwargs,
-        stats_kwargs=stats_kwargs,
-        pc_kwargs=pc_kwargs,
+        visuals=visuals,
+        stats=stats,
+        **pc_kwargs,
     )
 
-    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        plot_collection.add_legend("Groups", loc="upper right", fontsize=10)
+    plot_collection.add_legend("group")
 
     return plot_collection

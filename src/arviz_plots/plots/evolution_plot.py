@@ -37,10 +37,10 @@ def plot_ess_evolution(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     """Plot estimated effective sample size plots for increasing number of iterations.
 
@@ -78,11 +78,11 @@ def plot_ess_evolution(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str or False}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str or False}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
         * ess_bulk -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * ess_bulk_line -> passed to :func:`~arviz_plots.visuals.line_xy`
@@ -97,7 +97,7 @@ def plot_ess_evolution(
         * sd_text -> passed to :func:`~arviz.plots.visuals.annotate_xy`
         * min_ess -> passed to :func:`~arviz_plots.visuals.line_xy`
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
         * ess_bulk -> passed to ess, method = 'bulk'
         * ess_tail -> passed to ess, method = 'tail'
@@ -134,14 +134,14 @@ def plot_ess_evolution(
         >>>     non_centered,
         >>>     var_names=["mu", "tau"],
         >>>     extra_methods=True,
-        >>>     plot_kwargs={
+        >>>     visuals={
         >>>         "ess_bulk_line": {"linestyle": "-."},
         >>>         "ess_tail_line": {"linestyle": ":"},
         >>>         "ess_bulk": False,
         >>>         "ess_tail": False,
         >>>     },
-        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
-        >>>     aes_map={"title": ["color"]},
+        >>>     aes= {"color": ["__variable__"]},
+        >>>     aes_by_visuals={"title": ["color"]},
         >>> )
 
     The points and lines for ess 'bulk' and 'tail' can be individually switched on and off.
@@ -155,12 +155,12 @@ def plot_ess_evolution(
         >>>     non_centered,
         >>>     var_names=["mu", "tau"],
         >>>     extra_methods=True,
-        >>>     plot_kwargs={
+        >>>     visuals={
         >>>         "ess_bulk": {"marker": "x"},
         >>>         "ess_tail": {"marker": "_"},
         >>>     },
-        >>>     pc_kwargs={"aes": {"color": ["__variable__"]}},
-        >>>     aes_map={"title": ["color"]},
+        >>>     aes={"color": ["__variable__"]},
+        >>>     aes_by_visuals={"title": ["color"]},
         >>> )
 
     We can add extra methods to plot the mean and standard deviation as lines, and adjust
@@ -213,15 +213,11 @@ def plot_ess_evolution(
         sample_dims = [sample_dims]
 
     # mutable inputs
-    if plot_kwargs is None:
-        plot_kwargs = {}
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
+    if visuals is None:
+        visuals = {}
 
-    if stats_kwargs is None:
-        stats_kwargs = {}
+    if stats is None:
+        stats = {}
 
     # processing dt/group/coords/filtering
     distribution = process_group_variables_coords(
@@ -238,7 +234,7 @@ def plot_ess_evolution(
 
     # set plot collection initialization defaults if it doesnt exist
     if plot_collection is None:
-        pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault(
             "cols",
@@ -247,7 +243,7 @@ def plot_ess_evolution(
         )
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
-        pc_kwargs["plot_grid_kws"].setdefault("sharex", True)
+        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
@@ -255,18 +251,18 @@ def plot_ess_evolution(
         )
 
     # set plot collection dependent defaults (like aesthetics mappings for each artist)
-    if aes_map is None:
-        aes_map = {}
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
     else:
-        aes_map = aes_map.copy()
-    aes_map.setdefault("ess_bulk", plot_collection.aes_set)
-    aes_map.setdefault("ess_bulk_line", plot_collection.aes_set)
-    aes_map.setdefault("ess_tail", plot_collection.aes_set)
-    aes_map.setdefault("ess_tail_line", plot_collection.aes_set)
-    if "mean" in aes_map and "mean_text" not in aes_map:
-        aes_map["mean_text"] = aes_map["mean"]
-    if "sd" in aes_map and "sd_text" not in aes_map:
-        aes_map["sd_text"] = aes_map["sd"]
+        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals.setdefault("ess_bulk", plot_collection.aes_set)
+    aes_by_visuals.setdefault("ess_bulk_line", plot_collection.aes_set)
+    aes_by_visuals.setdefault("ess_tail", plot_collection.aes_set)
+    aes_by_visuals.setdefault("ess_tail_line", plot_collection.aes_set)
+    if "mean" in aes_by_visuals and "mean_text" not in aes_by_visuals:
+        aes_by_visuals["mean_text"] = aes_by_visuals["mean"]
+    if "sd" in aes_by_visuals and "sd_text" not in aes_by_visuals:
+        aes_by_visuals["sd_text"] = aes_by_visuals["sd"]
     if labeller is None:
         labeller = BaseLabeller()
 
@@ -297,7 +293,7 @@ def plot_ess_evolution(
         method,  # "bulk" or "tail"
         method_dims,  # bulk_dims or tail_dims
         relative,
-        stats_kwargs,
+        stats,
     ):
         first_sample_dim = sample_dims[-1]  # take the last dim of the sample dims
         ess_y_dataset = xr.concat(
@@ -306,7 +302,7 @@ def plot_ess_evolution(
                     dims=method_dims,
                     method=method,
                     relative=relative,
-                    **stats_kwargs.get(f"ess_{method}", {}),
+                    **stats.get(f"ess_{method}", {}),
                 )
                 for draw_div in draw_divisions
             ],
@@ -327,10 +323,10 @@ def plot_ess_evolution(
 
         return ess_dataset
 
-    bulk_kwargs = copy(plot_kwargs.get("ess_bulk", {}))
+    bulk_kwargs = copy(visuals.get("ess_bulk", {}))
     if bulk_kwargs is not False:
         bulk_dims, bulk_aes, bulk_ignore = filter_aes(
-            plot_collection, aes_map, "ess_bulk", sample_dims
+            plot_collection, aes_by_visuals, "ess_bulk", sample_dims
         )
 
         ess_bulk_dataset = compute_ess_dataset(
@@ -340,7 +336,7 @@ def plot_ess_evolution(
             "bulk",
             bulk_dims,
             relative,
-            stats_kwargs,
+            stats,
         )
 
         if "color" not in bulk_aes:
@@ -350,10 +346,10 @@ def plot_ess_evolution(
             scatter_xy, "ess_bulk", data=ess_bulk_dataset, ignore_aes=bulk_ignore, **bulk_kwargs
         )
 
-    bulk_line_kwargs = copy(plot_kwargs.get("ess_bulk_line", {}))
+    bulk_line_kwargs = copy(visuals.get("ess_bulk_line", {}))
     if bulk_line_kwargs is not False:
         bulk_line_dims, bulk_line_aes, bulk_line_ignore = filter_aes(
-            plot_collection, aes_map, "ess_bulk_line", sample_dims
+            plot_collection, aes_by_visuals, "ess_bulk_line", sample_dims
         )
 
         if ess_bulk_dataset is None:
@@ -364,7 +360,7 @@ def plot_ess_evolution(
                 "bulk",
                 bulk_line_dims,
                 relative,
-                stats_kwargs,
+                stats,
             )
 
         if "color" not in bulk_line_aes:
@@ -380,11 +376,11 @@ def plot_ess_evolution(
 
     ess_tail_dataset = None
 
-    tail_kwargs = copy(plot_kwargs.get("ess_tail", {}))
+    tail_kwargs = copy(visuals.get("ess_tail", {}))
 
     if tail_kwargs is not False:
         tail_dims, tail_aes, tail_ignore = filter_aes(
-            plot_collection, aes_map, "ess_tail", sample_dims
+            plot_collection, aes_by_visuals, "ess_tail", sample_dims
         )
 
         ess_tail_dataset = compute_ess_dataset(
@@ -394,7 +390,7 @@ def plot_ess_evolution(
             "tail",
             tail_dims,
             relative,
-            stats_kwargs,
+            stats,
         )
 
         if "color" not in tail_aes:
@@ -404,11 +400,11 @@ def plot_ess_evolution(
             scatter_xy, "ess_tail", data=ess_tail_dataset, ignore_aes=tail_ignore, **tail_kwargs
         )
 
-    tail_line_kwargs = copy(plot_kwargs.get("ess_tail_line", {}))
+    tail_line_kwargs = copy(visuals.get("ess_tail_line", {}))
 
     if tail_line_kwargs is not False:
         tail_line_dims, tail_line_aes, tail_line_ignore = filter_aes(
-            plot_collection, aes_map, "ess_tail_line", sample_dims
+            plot_collection, aes_by_visuals, "ess_tail_line", sample_dims
         )
 
         if ess_tail_dataset is None:
@@ -419,7 +415,7 @@ def plot_ess_evolution(
                 "tail",
                 tail_line_dims,
                 relative,
-                stats_kwargs,
+                stats,
             )
 
         if "color" not in tail_line_aes:
@@ -441,18 +437,20 @@ def plot_ess_evolution(
     # plot mean and sd and annotate them
     if extra_methods is not False:
         # computing mean_ess
-        mean_dims, mean_aes, mean_ignore = filter_aes(plot_collection, aes_map, "mean", sample_dims)
+        mean_dims, mean_aes, mean_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "mean", sample_dims
+        )
         mean_ess = distribution.azstats.ess(
-            dims=mean_dims, method="mean", relative=relative, **stats_kwargs.get("mean", {})
+            dims=mean_dims, method="mean", relative=relative, **stats.get("mean", {})
         )
 
         # computing sd_ess
-        sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_map, "sd", sample_dims)
+        sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_by_visuals, "sd", sample_dims)
         sd_ess = distribution.azstats.ess(
-            dims=sd_dims, method="sd", relative=relative, **stats_kwargs.get("sd", {})
+            dims=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
         )
 
-        mean_kwargs = copy(plot_kwargs.get("mean", {}))
+        mean_kwargs = copy(visuals.get("mean", {}))
         if mean_kwargs is not False:
             # getting 2nd default linestyle for chosen backend and assigning it by default
             mean_kwargs.setdefault("linestyle", linestyles[1])
@@ -469,7 +467,7 @@ def plot_ess_evolution(
                 **mean_kwargs,
             )
 
-        sd_kwargs = copy(plot_kwargs.get("sd", {}))
+        sd_kwargs = copy(visuals.get("sd", {}))
         if sd_kwargs is not False:
             sd_kwargs.setdefault("linestyle", linestyles[2])
 
@@ -486,12 +484,12 @@ def plot_ess_evolution(
             sd_va_align = xr.where(mean_ess < sd_ess, "bottom", "top")
             mean_va_align = xr.where(mean_ess < sd_ess, "top", "bottom")
 
-        mean_text_kwargs = copy(plot_kwargs.get("mean_text", {}))
+        mean_text_kwargs = copy(visuals.get("mean_text", {}))
         if (
             mean_text_kwargs is not False and mean_ess is not None
         ):  # mean_ess has to exist for an annotation to be applied
             _, mean_text_aes, mean_text_ignore = filter_aes(
-                plot_collection, aes_map, "mean_text", sample_dims
+                plot_collection, aes_by_visuals, "mean_text", sample_dims
             )
 
             if "color" not in mean_text_aes:
@@ -516,12 +514,12 @@ def plot_ess_evolution(
                 **mean_text_kwargs,
             )
 
-        sd_text_kwargs = copy(plot_kwargs.get("sd_text", {}))
+        sd_text_kwargs = copy(visuals.get("sd_text", {}))
         if (
             sd_text_kwargs is not False and sd_ess is not None
         ):  # sd_ess has to exist for an annotation to be applied
             _, sd_text_aes, sd_text_ignore = filter_aes(
-                plot_collection, aes_map, "sd_text", sample_dims
+                plot_collection, aes_by_visuals, "sd_text", sample_dims
             )
 
             if "color" not in sd_text_aes:
@@ -547,11 +545,11 @@ def plot_ess_evolution(
             )
 
     # plot minimum ess
-    min_ess_kwargs = copy(plot_kwargs.get("min_ess", {}))
+    min_ess_kwargs = copy(visuals.get("min_ess", {}))
 
     if min_ess_kwargs is not False:
         _, min_ess_aes, min_ess_ignore = filter_aes(
-            plot_collection, aes_map, "min_ess", sample_dims
+            plot_collection, aes_by_visuals, "min_ess", sample_dims
         )
 
         if relative:
@@ -573,10 +571,12 @@ def plot_ess_evolution(
         )
 
     # plot titles for each faceted subplot
-    title_kwargs = copy(plot_kwargs.get("title", {}))
+    title_kwargs = copy(visuals.get("title", {}))
 
     if title_kwargs is not False:
-        _, title_aes, title_ignore = filter_aes(plot_collection, aes_map, "title", sample_dims)
+        _, title_aes, title_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "title", sample_dims
+        )
         if "color" not in title_aes:
             title_kwargs.setdefault("color", "black")
         plot_collection.map(
@@ -590,8 +590,10 @@ def plot_ess_evolution(
 
     # plot x and y axis labels
     # Add varnames as x and y labels
-    _, xlabels_aes, xlabels_ignore = filter_aes(plot_collection, aes_map, "xlabel", sample_dims)
-    xlabel_kwargs = copy(plot_kwargs.get("xlabel", {}))
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "xlabel", sample_dims
+    )
+    xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", "black")
@@ -608,8 +610,10 @@ def plot_ess_evolution(
             **xlabel_kwargs,
         )
 
-    _, ylabels_aes, ylabels_ignore = filter_aes(plot_collection, aes_map, "ylabel", sample_dims)
-    ylabel_kwargs = copy(plot_kwargs.get("ylabel", {}))
+    _, ylabels_aes, ylabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "ylabel", sample_dims
+    )
+    ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "black")

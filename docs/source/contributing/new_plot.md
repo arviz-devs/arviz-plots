@@ -18,7 +18,7 @@ This includes things like taking {class}`.DataTree` (in some cases also dictiona
 having inputs for defining subsets with `var_names` or `coords`,
 for the dimensions to reduce...
 
-Also have inputs that are passed downstream to customize objects created when plotting like `plot_kwargs` or `pc_kwargs`.
+Also have inputs that are passed downstream to customize objects created when plotting like `visuals` or `pc_kwargs`.
 
 And last but not least, they should all return a {class}`~arviz_plots.PlotCollection`.
 
@@ -45,10 +45,10 @@ def plot_xyz(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_map=None,
-    plot_kwargs=None,
-    stats_kwargs=None,
-    pc_kwargs=None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
+    **pc_kwargs,
 ):
     
     """Plot description in 1 line.
@@ -80,18 +80,18 @@ def plot_xyz(
     backend : {"matplotlib", "bokeh", "plotly", "none"}, optional
         Plotting backend to use. Defaults to ``rcParams["plot.backend"]``
     labeller : labeller, optional
-    aes_map : mapping of {str : sequence of str or False}, optional
-        Mapping of artists to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `plot_kwargs`.
+    aes_by_visuals : mapping of {str : sequence of str or False}, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
+        when plotted. Valid keys are the same as for `visuals`.
 
         [[Description of default aesthetic mappings]]
-    plot_kwargs : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * [[first artist id]] -> [[function called when drawing the first artist]]
-        * [[repeat for all artists]]
+        * [[repeat for all visuals]]
 
-    stats_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
         * [[stats/summary/diagnostic name]] -> [[function in arviz-stats used for computation]]
@@ -176,16 +176,16 @@ pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds)
 
 ## PlotCollection dependent defaults
 Once we have made sure that `plot_collection` is not None, we continue setting defaults.
-There are arguments such as `aes_map` that need information from the `plot_collection`
+There are arguments such as `aes_by_visuals` that need information from the `plot_collection`
 input to have their defaults set. A common pattern will therefore be:
 
 ```python
-if aes_map is None:
-    aes_map = {}
+if aes_by_visuals is None:
+    aes_by_visuals = {}
 else:
-    aes_map = aes_map.copy()
-aes_map.setdefault("artist", plot_collection.aes_set)
-aes_map.setdefault("annotation", ["color"])
+    aes_by_visuals = aes_by_visuals.copy()
+aes_by_visuals.setdefault("artist", plot_collection.aes_set)
+aes_by_visuals.setdefault("annotation", ["color"])
 ```
 
 where we are setting the default that "artist" will use all available aesthetic mappings,
@@ -194,10 +194,10 @@ and "annotation" will use only the mapping for color (if set, that is checked la
 We might also want to tweak some aesthetic values, in which case
 {meth}`~.PlotCollection.get_aes_as_dataset` and {meth}`~.PlotCollection.update_aes_from_dataset` can be helpful. See {func}`~arviz_plots.plot_forest` source code for an example.
 
-## Adding {term}`artists` to the {term}`plot`
+## Adding {term}`visuals` to the {term}`plot`
 
 :::{important}
-Before starting to add artists individually, check if part of the plot can be composed
+Before starting to add visuals individually, check if part of the plot can be composed
 calling an existing function.
 
 For example, {func}`~arviz_plots.plot_trace_dist` calls {func}`~arviz_plots.plot_trace`
@@ -205,12 +205,12 @@ to fill the right column and {func}`~arviz_plots.plot_dist` to fill the left one
 :::
 
 Each artist should have its own id and ideally also its own call to `.map`.
-The id is what is used to get the artist specific kwargs from `plot_kwargs` and `aes_map`,
+The id is what is used to get the artist specific kwargs from `visuals` and `aes_by_visuals`,
 and what is used to store the artist in the {attr}`~.PlotCollection.viz` attribute.
 The independent calls to `.map` allow each artist in the plot to use different {term}`aesthetic mappings`.
 Consequently, there are multiple steps that should be followed for each artist:
 
-1. Access the respective kwargs in `plot_kwargs`. Only proceed to step 2 if these are not `False`.
+1. Access the respective kwargs in `visuals`. Only proceed to step 2 if these are not `False`.
 2. Use `filter_aes` to get the dimensions, active aesthetics and aesthetics to be ignored for this
    particular artist.
 3. (optional) If necessary and particular to this artist, call the stats/summary/diagnostic
@@ -222,21 +222,21 @@ Consequently, there are multiple steps that should be followed for each artist:
    - Use only properties that are part of the {ref}`common interface <backend_interface_arguments>` for defaults.
      If a setting a default for a property not on the list, open an issue to discuss it.
      This is key to ensure all plotting backends work seamlessly and behave as expected.
-5. Call {meth}`~.PlotCollection.map` to create the artist. For some "artists" like removing
+5. Call {meth}`~.PlotCollection.map` to create the artist. For some "visuals" like removing
    axis, it doesn't make much sense to store them, in such cases, use `store_artist=backend == "none"`.
 
 Here is a general template:
 
 ```python
 # step 1
-artist_kwargs = copy(plot_kwargs.get("artist", {}))
+artist_kwargs = copy(visuals.get("artist", {}))
 if artist_kwargs is not False:
     # step 2
     artist_dims, artist_aes, artist_ignore = filter_aes(
-        plot_collection, aes_map, "artist", sample_dims
+        plot_collection, aes_by_visuals, "artist", sample_dims
     )
     # step 3 (optional)
-    artist_data = stats(..., dims=artist_dims, **stats_kwargs.get("artist", {}))
+    artist_data = stats(..., dims=artist_dims, **stats.get("artist", {}))
 
     # step 4
     if "color" not in artist_aes:
@@ -254,8 +254,8 @@ if artist_kwargs is not False:
 ```
 
 :::{note}
-There might be some cases in which multiple artists are given the same aesthetic mappings
-and keyword arguments, but this should be done rarely and for artists that eventually call
+There might be some cases in which multiple visuals are given the same aesthetic mappings
+and keyword arguments, but this should be done rarely and for visuals that eventually call
 the same function in the {mod}`~arviz_plots.backend` module.
 
 One example of this particular case are the var+coord labels in `plot_trace_dist`.
@@ -264,7 +264,7 @@ whereas the right column labels the y axis.
 
 Therefore, there are to `.map` calls,
 one to {func}`~.visuals.labelled_x` and {func}`~.visuals.labelled_y` but they can
-be considered the same element, so they both get `plot_kwargs` and `aes_map` from
+be considered the same element, so they both get `visuals` and `aes_by_visuals` from
 the `label` kwarg.
 :::
 

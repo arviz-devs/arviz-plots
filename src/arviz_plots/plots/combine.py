@@ -51,11 +51,11 @@ def render(da, target, **kwargs):
     """Render artist descriptions from the none backend with a plotting backend."""
     backend = backend_from_object(target, return_module=False)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    plot_kwargs = da.item()
-    plot_fun_name = plot_kwargs["function"]
-    plot_kwargs = backendize_kwargs(plot_kwargs, backend)
+    visuals = da.item()
+    plot_fun_name = visuals["function"]
+    visuals = backendize_kwargs(visuals, backend)
     kwargs = backendize_kwargs(kwargs, backend)
-    return getattr(plot_backend, plot_fun_name)(target=target, **{**plot_kwargs, **kwargs})
+    return getattr(plot_backend, plot_fun_name)(target=target, **{**visuals, **kwargs})
 
 
 def combine_plots(
@@ -69,7 +69,7 @@ def combine_plots(
     expand="column",
     plot_names=None,
     backend=None,
-    pc_kwargs=None,
+    **pc_kwargs,
 ):
     """Arrange multiple batteries-included plots in a customizable column or row layout.
 
@@ -164,11 +164,7 @@ def combine_plots(
         else [dim for dim in distribution.dims if dim not in sample_dims]
     )
 
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
-    pc_kwargs["plot_grid_kws"] = pc_kwargs.get("plot_grid_kws", {}).copy()
+    pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
     if expand == "column":
         pc_kwargs.setdefault("cols", ["column"])
         pc_kwargs.setdefault("rows", facet_dims)
