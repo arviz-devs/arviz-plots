@@ -162,10 +162,8 @@ def plot_ridge(
         >>> pc = plot_ridge(
         >>>     non_centered,
         >>>     var_names=["theta", "mu", "theta_t", "tau"],
-        >>>     pc_kwargs={
-        >>>         "aes": {"color": ["__variable__"]},
-        >>>         "figure_kwargs": {"width_ratios": [1, 2], "layout": "none"}
-        >>>     },
+        >>>     aes={"color": ["__variable__"]},
+        >>>     figure_kwargs={"width_ratios": [1, 2], "layout": "none"},
         >>>     aes_by_visuals={"labels": ["color"]},
         >>>     shade_label="school",
         >>> )
