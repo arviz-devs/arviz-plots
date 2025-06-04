@@ -75,19 +75,19 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
     return distribution
 
 
-def filter_aes(pc, aes_by_visuals, artist, sample_dims):
+def filter_aes(pc, aes_by_visuals, visual, sample_dims):
     """Split aesthetics and get relevant dimensions.
 
     Returns
     -------
     artist_dims : list
-        Dimensions that should be reduced for this artist.
+        Dimensions that should be reduced for this visual.
         That is, all dimensions in `sample_dims` that are not
         mapped to any aesthetic.
     artist_aes : iterable
     ignore_aes : set
     """
-    artist_aes = aes_by_visuals.get(artist, {})
+    artist_aes = aes_by_visuals.get(visual, {})
     pc_aes = pc.aes_set
     ignore_aes = set(pc_aes).difference(artist_aes)
     _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)

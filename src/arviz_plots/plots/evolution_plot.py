@@ -250,7 +250,7 @@ def plot_ess_evolution(
             **pc_kwargs,
         )
 
-    # set plot collection dependent defaults (like aesthetics mappings for each artist)
+    # set plot collection dependent defaults (like aesthetics mappings for each visual)
     if aes_by_visuals is None:
         aes_by_visuals = {}
     else:

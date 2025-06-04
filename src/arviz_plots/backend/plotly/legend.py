@@ -23,7 +23,7 @@ def legend(
     title : str, optional
         Title of the legend
     artist_type : str, optional
-        Type of artist to use for legend entries. Currently only "line" is supported.
+        Type of visual to use for legend entries. Currently only "line" is supported.
     artist_kwargs : dict, optional
         Additional kwargs passed to all visuals
     **kwargs : dict

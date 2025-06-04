@@ -106,13 +106,13 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
+            assert visual not in pc.viz.children
         else:
-            assert artist in pc.viz.children
+            assert visual in pc.viz.children
             assert all(
-                var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
+                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
             )
 
 
@@ -160,20 +160,20 @@ def test_plot_forest(
         stats=stats,
     )
     assert "plot" in pc.viz.data_vars
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
-        elif artist == "labels":
+            assert visual not in pc.viz.children
+        elif visual == "labels":
             assert all(f"{label.strip('_')}_label" in pc.viz.children for label in labels)
-        elif artist == "shade":
+        elif visual == "shade":
             if shade_label is None:
-                assert artist not in pc.viz.children
+                assert visual not in pc.viz.children
             else:
-                assert artist in pc.viz.children
-        elif artist != "ticklabels":
-            assert artist in pc.viz.children
+                assert visual in pc.viz.children
+        elif visual != "ticklabels":
+            assert visual in pc.viz.children
             assert all(
-                var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
+                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
             )
 
 
@@ -204,20 +204,20 @@ def test_plot_ridge(datatree, combined, visuals, labels_shade_label):
         visuals=visuals,
     )
     assert "plot" in pc.viz.data_vars
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
-        elif artist == "labels":
+            assert visual not in pc.viz.children
+        elif visual == "labels":
             assert all(f"{label.strip('_')}_label" in pc.viz.children for label in labels)
-        elif artist == "shade":
+        elif visual == "shade":
             if shade_label is None:
-                assert artist not in pc.viz.children
+                assert visual not in pc.viz.children
             else:
-                assert artist in pc.viz.children
-        elif artist != "ticklabels":
-            assert artist in pc.viz.children
+                assert visual in pc.viz.children
+        elif visual != "ticklabels":
+            assert visual in pc.viz.children
             assert all(
-                var_name in pc.viz[artist].data_vars for var_name in datatree["posterior"].data_vars
+                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
             )
 
 
@@ -257,21 +257,21 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
-        elif artist in ["mean", "sd", "mean_text", "sd_text"]:
+            assert visual not in pc.viz.children
+        elif visual in ["mean", "sd", "mean_text", "sd_text"]:
             if extra_methods is False:
-                assert artist not in pc.viz.children
+                assert visual not in pc.viz.children
             else:
-                assert artist in pc.viz.children
-        elif artist == "rug":
+                assert visual in pc.viz.children
+        elif visual == "rug":
             if rug is False:
-                assert artist not in pc.viz.children
+                assert visual not in pc.viz.children
             else:
-                assert artist in pc.viz.children
+                assert visual in pc.viz.children
         else:
-            assert artist in pc.viz.children
+            assert visual in pc.viz.children
 
 
 @given(
@@ -309,16 +309,16 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
-        elif artist in ["mean", "sd", "mean_text", "sd_text"]:
+            assert visual not in pc.viz.children
+        elif visual in ["mean", "sd", "mean_text", "sd_text"]:
             if extra_methods is False:
-                assert artist not in pc.viz.children
+                assert visual not in pc.viz.children
             else:
-                assert artist in pc.viz.children
+                assert visual in pc.viz.children
         else:
-            assert artist in pc.viz.children
+            assert visual in pc.viz.children
 
 
 @given(
@@ -352,11 +352,11 @@ def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, visuals):
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
+            assert visual not in pc.viz.children
         else:
-            assert artist in pc.viz.children
+            assert visual in pc.viz.children
 
 
 @given(
@@ -404,16 +404,16 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
         for diagnostic in diagnostics
         for child in pc.viz.children.values()
     )
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
-        elif artist == "ref_line":
+            assert visual not in pc.viz.children
+        elif visual == "ref_line":
             if ref_line:
-                assert artist in pc.viz.children
+                assert visual in pc.viz.children
             else:
-                assert artist not in pc.viz.children
+                assert visual not in pc.viz.children
         else:
-            assert artist in pc.viz.children
+            assert visual in pc.viz.children
 
 
 @given(
@@ -440,8 +440,8 @@ def test_plot_rank_dist(datatree, kind, compact, combined, visuals):
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
-    for artist, value in visuals.items():
+    for visual, value in visuals.items():
         if value is False:
-            assert artist not in pc.viz.children
+            assert visual not in pc.viz.children
         else:
-            assert artist in pc.viz.children
+            assert visual in pc.viz.children

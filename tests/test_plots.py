@@ -163,8 +163,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert not pc.aes
         assert "mu" in pc.viz[kind].data_vars
         visuals = ("plot", kind, "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
     def test_plot_dist_step_hist(self, datatree, backend):
         visuals = {"hist": {"step": True}}
@@ -172,8 +172,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert not pc.aes
         assert "mu" in pc.viz["hist"].data_vars
         visuals = ("plot", "hist", "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_sample(self, datatree_sample, backend, kind):
@@ -181,8 +181,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert not pc.aes
         assert "mu" in pc.viz[kind].data_vars
         visuals = ("plot", kind, "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
     def test_plot_dist_sample_step_hist(self, datatree_sample, backend):
         visuals = {"hist": {"step": True}}
@@ -196,8 +196,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert not pc.aes
         assert "mu" in pc.viz["hist"].data_vars
         visuals = ("plot", "hist", "credible_interval", "point_estimate")
-        assert all("hierarchy" not in pc.viz[artist]["mu"].dims for artist in visuals)
-        assert all("hierarchy" in pc.viz[artist]["theta"].dims for artist in visuals)
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
     @pytest.mark.parametrize("kind", ["kde"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
@@ -400,7 +400,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "mu" in pc.viz["rug"]
         assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
         assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
-        assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug artist overlay
+        assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug visual overlay
         # checking aesthetics
         assert "mapping" in pc.aes["overlay"]
         assert "chain" in pc.aes["overlay"]["mapping"].dims
@@ -552,7 +552,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "mu" in pc.viz["rug"]
         assert "hierarchy" not in pc.viz["mcse"]["mu"].dims
         assert "hierarchy" in pc.viz["mcse"]["theta"].dims
-        assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug artist overlay
+        assert "chain" in pc.viz["rug"]["mu"].dims  # checking rug visual overlay
         # checking aesthetics
         assert "/overlay" in pc.aes.groups  # overlay of chains
 

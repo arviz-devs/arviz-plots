@@ -39,7 +39,7 @@ def get_valid_arg(key, value, backend):
 
 
 def backendize_kwargs(kwargs, backend):
-    """Process the artist description dictionary from the none backend to valid kwargs."""
+    """Process the visual description dictionary from the none backend to valid kwargs."""
     return {
         key: get_valid_arg(key, value, backend)
         for key, value in kwargs.items()
@@ -48,7 +48,7 @@ def backendize_kwargs(kwargs, backend):
 
 
 def render(da, target, **kwargs):
-    """Render artist descriptions from the none backend with a plotting backend."""
+    """Render visual descriptions from the none backend with a plotting backend."""
     backend = backend_from_object(target, return_module=False)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     visuals = da.item()

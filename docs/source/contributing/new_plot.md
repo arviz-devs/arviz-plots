@@ -88,7 +88,7 @@ def plot_xyz(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * [[first artist id]] -> [[function called when drawing the first artist]]
+        * [[first visual id]] -> [[function called when drawing the first visual]]
         * [[repeat for all visuals]]
 
     stats : mapping, optional
@@ -184,11 +184,11 @@ if aes_by_visuals is None:
     aes_by_visuals = {}
 else:
     aes_by_visuals = aes_by_visuals.copy()
-aes_by_visuals.setdefault("artist", plot_collection.aes_set)
+aes_by_visuals.setdefault("visual", plot_collection.aes_set)
 aes_by_visuals.setdefault("annotation", ["color"])
 ```
 
-where we are setting the default that "artist" will use all available aesthetic mappings,
+where we are setting the default that "visual" will use all available aesthetic mappings,
 and "annotation" will use only the mapping for color (if set, that is checked later on, so this default can be hardcoded).
 
 We might also want to tweak some aesthetic values, in which case
@@ -204,16 +204,16 @@ For example, {func}`~arviz_plots.plot_trace_dist` calls {func}`~arviz_plots.plot
 to fill the right column and {func}`~arviz_plots.plot_dist` to fill the left one.
 :::
 
-Each artist should have its own id and ideally also its own call to `.map`.
-The id is what is used to get the artist specific kwargs from `visuals` and `aes_by_visuals`,
-and what is used to store the artist in the {attr}`~.PlotCollection.viz` attribute.
-The independent calls to `.map` allow each artist in the plot to use different {term}`aesthetic mappings`.
-Consequently, there are multiple steps that should be followed for each artist:
+Each visual should have its own id and ideally also its own call to `.map`.
+The id is what is used to get the visual specific kwargs from `visuals` and `aes_by_visuals`,
+and what is used to store the visual in the {attr}`~.PlotCollection.viz` attribute.
+The independent calls to `.map` allow each visual in the plot to use different {term}`aesthetic mappings`.
+Consequently, there are multiple steps that should be followed for each visual:
 
 1. Access the respective kwargs in `visuals`. Only proceed to step 2 if these are not `False`.
 2. Use `filter_aes` to get the dimensions, active aesthetics and aesthetics to be ignored for this
-   particular artist.
-3. (optional) If necessary and particular to this artist, call the stats/summary/diagnostic
+   particular visual.
+3. (optional) If necessary and particular to this visual, call the stats/summary/diagnostic
    function. Details on this are in the {ref}`new_plot/computation` section.
    This will often have already happened earlier on in which case these steps might not happen
    consecutively within the code.
@@ -222,21 +222,21 @@ Consequently, there are multiple steps that should be followed for each artist:
    - Use only properties that are part of the {ref}`common interface <backend_interface_arguments>` for defaults.
      If a setting a default for a property not on the list, open an issue to discuss it.
      This is key to ensure all plotting backends work seamlessly and behave as expected.
-5. Call {meth}`~.PlotCollection.map` to create the artist. For some "visuals" like removing
+5. Call {meth}`~.PlotCollection.map` to create the visual. For some "visuals" like removing
    axis, it doesn't make much sense to store them, in such cases, use `store_artist=backend == "none"`.
 
 Here is a general template:
 
 ```python
 # step 1
-artist_kwargs = copy(visuals.get("artist", {}))
+artist_kwargs = copy(visuals.get("visual", {}))
 if artist_kwargs is not False:
     # step 2
     artist_dims, artist_aes, artist_ignore = filter_aes(
-        plot_collection, aes_by_visuals, "artist", sample_dims
+        plot_collection, aes_by_visuals, "visual", sample_dims
     )
     # step 3 (optional)
-    artist_data = stats(..., dims=artist_dims, **stats.get("artist", {}))
+    artist_data = stats(..., dims=artist_dims, **stats.get("visual", {}))
 
     # step 4
     if "color" not in artist_aes:
@@ -245,7 +245,7 @@ if artist_kwargs is not False:
     # step 5
     plot_collection.map(
         visual,
-        "artist",
+        "visual",
         data=artist_data, # optional
         ignore_aes=artist_ignore,
         ..., # if needed, add more arguments

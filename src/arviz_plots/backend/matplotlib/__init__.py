@@ -263,15 +263,15 @@ def create_plotting_grid(
 
 
 # helper functions
-def _filter_kwargs(kwargs, artist, artist_kws):
+def _filter_kwargs(kwargs, visual, artist_kws):
     """Filter a dictionary to remove all keys whose values are ``unset``.
 
     It also normalizes the matplotlib arguments and aliases to avoid clashing
     of aliases with their extended version.
     """
     kwargs = {key: value for key, value in kwargs.items() if value is not unset}
-    if artist is not None:
-        artist_kws = normalize_kwargs(artist_kws.copy(), artist)
+    if visual is not None:
+        artist_kws = normalize_kwargs(artist_kws.copy(), visual)
     return {**artist_kws, **kwargs}
 
 

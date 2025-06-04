@@ -341,7 +341,7 @@ def plot_trace_dist(
         and "diverging" in sample_stats.data_vars
         and np.any(sample_stats.diverging)
     ):
-        # rename divergences artist from plot_trace to avoid clashing
+        # rename divergences visual from plot_trace to avoid clashing
         plot_collection.rename_visuals(divergence="divergence_trace")
         divergence_mask = dt.sample_stats.diverging
         _, div_aes, div_ignore = filter_aes(

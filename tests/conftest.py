@@ -82,5 +82,5 @@ def check_skips(request):
 
 @pytest.fixture(scope="function")
 def no_artist_kwargs(monkeypatch):
-    """Raise an error if artist kwargs are present when using 'none' backend."""
+    """Raise an error if visual kwargs are present when using 'none' backend."""
     monkeypatch.setattr("arviz_plots.backend.none.ALLOW_KWARGS", False)
