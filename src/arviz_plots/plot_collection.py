@@ -1258,19 +1258,17 @@ class PlotCollection:
         dim_str = ", ".join(("variable" if d == "__variable__" else d for d in dim))
         if title is None:
             title = dim_str
-        aes_by_visualspings = {
+        aes_mappings = {
             aes_key: list(ds.dims) + ([] if "mapping" in ds.data_vars else ["__variable__"])
             for aes_key, ds in self.aes.children.items()
         }
         valid_aes = [
-            aes_key
-            for aes_key, aes_dims in aes_by_visualspings.items()
-            if set(dim) == set(aes_dims)
+            aes_key for aes_key, aes_dims in aes_mappings.items() if set(dim) == set(aes_dims)
         ]
         if not valid_aes:
             raise ValueError(
                 f"Legend can't be generated. Found no aesthetics mapped to dimension {dim}. "
-                f"Existing mappings are {aes_by_visualspings}."
+                f"Existing mappings are {aes_mappings}."
             )
         if aes is None:
             aes = [aes_key for aes_key in valid_aes if aes_key not in ("x", "y")]
