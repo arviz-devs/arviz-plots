@@ -75,21 +75,21 @@ def plot_pairs_focus(
     Returns
     -------
     PlotCollection
+
     Examples
     --------
-
     Default plot_pair_focus
 
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_pair_plot, style
+        >>> from arviz_plots import plot_pairs_focus, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
         >>> focus_var = "mu"
         >>> var_names = ["theta", "tau"]
-        >>> pc = plot_trace(
+        >>> pc = plot_pairs_focus(
         >>>     centered,
         >>>     var_names=var_names,
         >>>     focus_var=focus_var,
@@ -188,22 +188,22 @@ def plot_pairs_focus(
             **div_kwargs,
         )
 
-        # title of plots
+    # title of plots
 
-        if labeller is None:
-            labeller = BaseLabeller()
+    if labeller is None:
+        labeller = BaseLabeller()
 
-        title_kwargs = copy(visuals.get("title", {}))
-        _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
+    title_kwargs = copy(visuals.get("title", {}))
+    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
-        plot_collection.map(
-            labelled_title,
-            "title",
-            subset_info=True,
-            labeller=labeller,
-            ignore_aes=title_ignore,
-            size=8,
-            **title_kwargs,
-        )
+    plot_collection.map(
+        labelled_title,
+        "title",
+        subset_info=True,
+        labeller=labeller,
+        ignore_aes=title_ignore,
+        size=8,
+        **title_kwargs,
+    )
 
     return plot_collection
