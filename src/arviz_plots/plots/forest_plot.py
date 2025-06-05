@@ -343,13 +343,13 @@ def plot_forest(
         if isinstance(twig_stats, xr.Dataset):
             ci_twig = twig_stats
         else:
-            ci_twig = ci_fun(prob=ci_probs[1], dims=ci_dims, **twig_stats)
+            ci_twig = ci_fun(prob=ci_probs[1], dim=ci_dims, **twig_stats)
     if trunk_kwargs is not False:
         trunk_stats = stats.get("trunk", {})
         if isinstance(trunk_stats, xr.Dataset):
             ci_trunk = trunk_stats
         else:
-            ci_trunk = ci_fun(prob=ci_probs[0], dims=ci_dims, **trunk_stats)
+            ci_trunk = ci_fun(prob=ci_probs[0], dim=ci_dims, **trunk_stats)
 
     # compute point estimate
     pe_kwargs = copy(visuals.get("point_estimate", {}))

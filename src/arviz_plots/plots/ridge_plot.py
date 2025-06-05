@@ -338,7 +338,7 @@ def plot_ridge(
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            density = distribution.azstats.kde(dims=edge_dims, **stats.get("density", {}))
+            density = distribution.azstats.kde(dim=edge_dims, **stats.get("density", {}))
         # rescaling kde
         density.loc[{"plot_axis": "y"}] = (
             density.sel(plot_axis="y")

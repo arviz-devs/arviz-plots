@@ -322,7 +322,7 @@ def plot_ess(
         ess_y_dataset = xr.concat(
             [
                 distribution.azstats.ess(
-                    dims=ess_dims,
+                    sample_dims=ess_dims,
                     method=kind,
                     relative=relative,
                     prob=[p, (p + 1 / n_points)] if kind == "local" else p,
@@ -369,7 +369,7 @@ def plot_ess(
             rug_kwargs.setdefault("size", 30)
         div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
-        values = distribution.azstats.compute_ranks(dims=sample_dims, relative=True)
+        values = distribution.azstats.compute_ranks(dim=sample_dims, relative=True)
 
         plot_collection.map(
             trace_rug,
@@ -399,7 +399,7 @@ def plot_ess(
         mean_ess = None
         if (mean_kwargs is not False) or (mean_text_kwargs is not False):
             mean_ess = distribution.azstats.ess(
-                dims=mean_dims, method="mean", relative=relative, **stats.get("mean", {})
+                dim=mean_dims, method="mean", relative=relative, **stats.get("mean", {})
             )
 
         # computing sd_ess
@@ -407,7 +407,7 @@ def plot_ess(
         sd_ess = None
         if (sd_kwargs is not False) or (sd_text_kwargs is not False):
             sd_ess = distribution.azstats.ess(
-                dims=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
+                dim=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
             )
 
         if mean_kwargs is not False:

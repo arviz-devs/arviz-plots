@@ -299,7 +299,7 @@ def plot_ess_evolution(
         ess_y_dataset = xr.concat(
             [
                 distribution.isel(({first_sample_dim: slice(None, draw_div)})).azstats.ess(
-                    dims=method_dims,
+                    sample_dims=method_dims,
                     method=method,
                     relative=relative,
                     **stats.get(f"ess_{method}", {}),
@@ -441,13 +441,13 @@ def plot_ess_evolution(
             plot_collection, aes_by_visuals, "mean", sample_dims
         )
         mean_ess = distribution.azstats.ess(
-            dims=mean_dims, method="mean", relative=relative, **stats.get("mean", {})
+            sample_dims=mean_dims, method="mean", relative=relative, **stats.get("mean", {})
         )
 
         # computing sd_ess
         sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_by_visuals, "sd", sample_dims)
         sd_ess = distribution.azstats.ess(
-            dims=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
+            sample_dims=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
         )
 
         mean_kwargs = copy(visuals.get("mean", {}))

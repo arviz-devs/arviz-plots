@@ -272,7 +272,7 @@ def plot_ppc_dist(
         )
 
         if kind == "kde":
-            dt_observed = observed_dist.azstats.kde(dims=pp_dims, **stats)
+            dt_observed = observed_dist.azstats.kde(dim=pp_dims, **stats)
 
             plot_collection.map(
                 line_xy,
@@ -283,7 +283,7 @@ def plot_ppc_dist(
             )
 
         if kind == "hist":
-            dt_observed = observed_dist.azstats.histogram(dims=pp_dims, **stats)
+            dt_observed = observed_dist.azstats.histogram(dim=pp_dims, **stats)
 
             plot_collection.map(
                 hist,

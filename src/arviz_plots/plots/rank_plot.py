@@ -141,9 +141,9 @@ def plot_rank(
     ecdf_dims = ["draw"]
 
     # Compute ranks
-    dt_ecdf_ranks = distribution.azstats.compute_ranks(dims=sample_dims)
+    dt_ecdf_ranks = distribution.azstats.compute_ranks(dim=sample_dims)
     # Compute ECDF
-    dt_ecdf = dt_ecdf_ranks.azstats.ecdf(dims=ecdf_dims, pit=True)
+    dt_ecdf = dt_ecdf_ranks.azstats.ecdf(dim=ecdf_dims, pit=True)
 
     # Compute envelope
     # This asumes independence between the ranks
