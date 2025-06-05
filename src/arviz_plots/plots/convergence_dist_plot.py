@@ -286,7 +286,7 @@ def _compute_diagnostics(dt, diagnostics, sample_dims, grouped):
                 prob = [float(p) for p in diagnostic.split("(", 1)[1].rstrip(")").split(", ")]
                 prob = prob[0] if len(prob) == 1 else prob
 
-            diagnostic_dt = dt.azstats.ess(method=method, prob=prob, dim=sample_dims)
+            diagnostic_dt = dt.azstats.ess(method=method, prob=prob, sample_dims=sample_dims)
             if grouped:
                 diagnostic_dict[diagnostic] = diagnostic_dt.to_stacked_array(
                     "label", sample_dims=[]
@@ -295,7 +295,7 @@ def _compute_diagnostics(dt, diagnostics, sample_dims, grouped):
                 diagnostic_dict[diagnostic] = diagnostic_dt
 
         elif "rhat" in diagnostic:
-            kwargs = {"dims": sample_dims}
+            kwargs = {"sample_dims": sample_dims}
             if diagnostic != "rhat":
                 method = diagnostic.split("_", 1)[1]
                 kwargs.update({"method": method})

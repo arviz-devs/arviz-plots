@@ -399,7 +399,7 @@ def plot_ess(
         mean_ess = None
         if (mean_kwargs is not False) or (mean_text_kwargs is not False):
             mean_ess = distribution.azstats.ess(
-                dim=mean_dims, method="mean", relative=relative, **stats.get("mean", {})
+                sample_dims=mean_dims, method="mean", relative=relative, **stats.get("mean", {})
             )
 
         # computing sd_ess
@@ -407,7 +407,7 @@ def plot_ess(
         sd_ess = None
         if (sd_kwargs is not False) or (sd_text_kwargs is not False):
             sd_ess = distribution.azstats.ess(
-                dim=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
+                sample_dims=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
             )
 
         if mean_kwargs is not False:
