@@ -6,19 +6,24 @@ import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection, leaf_dataset, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
+from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_group,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import divergence_scatter, labelled_title, scatter_x
 
 
-def plot_pair_focus(
+def plot_pairs_focus(
     dt,
     var_names=None,
-    target_name=None,
+    focus_var=None,
     filter_vars=None,
     group="posterior",
     coords=None,
-    target_coords=None,
+    focus_var_coords=None,
     sample_dims=None,
     plot_collection=None,
     backend=None,
@@ -27,7 +32,7 @@ def plot_pair_focus(
     visuals=None,
     **pc_kwargs,
 ):
-    """Plot pair focus plot of a variable against all other variables in the dataset.
+    """Plot pairs focus of a variable against all other variables in the dataset.
 
     Parameters
     ----------
@@ -36,7 +41,7 @@ def plot_pair_focus(
     var_names: str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    target_name: str
+    focus_var: str
         Name of the variable to be plotted against all other variables.
     filter_vars: {None, “like”, “regex”}, optional, default=None
         If None (default), interpret var_names as the real variables names.
@@ -46,7 +51,7 @@ def plot_pair_focus(
         Group to use for plotting. Defaults to "posterior".
     coords : mapping, optional
         Coordinates to use for plotting. Defaults to None.
-    target_coords : mapping, optional
+    focus_var_coords : mapping, optional
         Coordinates to use for the target variable. Defaults to None.
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
@@ -70,12 +75,8 @@ def plot_pair_focus(
     Returns
     -------
     PlotCollection
-
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_pair_focus``.
-    For a general introduction to batteries-included functions like this one and common
-    usage examples see :ref:`plots_intro`
 
     Default plot_pair_focus
 
@@ -86,15 +87,13 @@ def plot_pair_focus(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> centered = load_arviz_data('centered_eight')
-        >>> target_name = "mu"
+        >>> focus_var = "mu"
         >>> var_names = ["theta", "tau"]
         >>> pc = plot_trace(
         >>>     centered,
         >>>     var_names=var_names,
-        >>>     target_name=target_name,
-        >>>     backend="matplotlib",
+        >>>     focus_var=focus_var,
         >>> )
-        >>> pc.show()
 
     """
     if sample_dims is None:
@@ -126,42 +125,14 @@ def plot_pair_focus(
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     if plot_collection is None:
-        figsize = pc_kwargs.get("figure_kwargs", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("figure_kwargs", {}).get("figsize_units", "dots")
-        pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
             "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
         )
-        n_plots, _ = process_facet_dims(distribution, pc_kwargs["cols"])
-        col_wrap = pc_kwargs["col_wrap"]
-        if n_plots <= col_wrap:
-            n_rows, n_cols = 1, n_plots
-        else:
-            div_mod = divmod(n_plots, col_wrap)
-            n_rows = div_mod[0] + (div_mod[1] != 0)
-            n_cols = col_wrap
-    else:
-        figsize, figsize_units = plot_bknd.get_figsize(plot_collection)
-        n_rows = leaf_dataset(plot_collection.viz, "row").max().to_array().max().item()
-        n_cols = leaf_dataset(plot_collection.viz, "col").max().to_array().max().item()
-
-    figsize = plot_bknd.scale_fig_size(
-        figsize,
-        rows=n_rows,
-        cols=n_cols,
-        figsize_units=figsize_units,
-    )
-
-    # scatter-pair-plot
-
-    if plot_collection is None:
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
-        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
-        if "figsize" not in pc_kwargs["figure_kwargs"]:
-            pc_kwargs["figure_kwargs"]["figsize"] = figsize
-            pc_kwargs["figure_kwargs"]["figsize_units"] = figsize_units
         pc_kwargs["figure_kwargs"].setdefault("sharex", True)
         plot_collection = PlotCollection.wrap(
             distribution,
@@ -169,23 +140,25 @@ def plot_pair_focus(
             **pc_kwargs,
         )
 
+    # scatter
     y = (
-        dt.posterior[target_name].sel(target_coords)
-        if target_coords is not None
-        else dt.posterior[target_name]
+        dt.posterior[focus_var].sel(focus_var_coords)
+        if focus_var_coords is not None
+        else dt.posterior[focus_var]
     )
-    aes_by_visuals["sample"] = {"overlay"}.union(aes_by_visuals.get("sample", {}))
-    sample_kwargs = copy(visuals.get("sample", {}))
-    sample_kwargs.setdefault("alpha", 0.5)
-    sample_kwargs.setdefault("color", "#3f90da")
-    _, _, sample_ignore = filter_aes(plot_collection, aes_by_visuals, "sample", sample_dims)
+    aes_by_visuals["scatter"] = {"overlay"}.union(aes_by_visuals.get("scatter", {}))
+    scatter_kwargs = copy(visuals.get("scatter", {}))
+    scatter_kwargs.setdefault("alpha", 0.5)
+    colors = plot_bknd.get_default_aes("color", 1, {})
+    scatter_kwargs.setdefault("color", colors[0])
+    _, _, scatter_ignore = filter_aes(plot_collection, aes_by_visuals, "scatter", sample_dims)
 
     plot_collection.map(
         scatter_x,
-        "sample",
-        ignore_aes=sample_ignore,
+        "scatter",
+        ignore_aes=scatter_ignore,
         y=y,
-        **sample_kwargs,
+        **scatter_kwargs,
     )
 
     # divergences
