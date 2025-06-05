@@ -158,7 +158,7 @@ def plot_ecdf_pit(
         distribution = distribution / distribution.max()
         distribution = 2 * np.abs(distribution - 0.5)
 
-    dt_ecdf = distribution.azstats.ecdf(dims=sample_dims, pit=True)
+    dt_ecdf = distribution.azstats.ecdf(dim=sample_dims, pit=True)
 
     # Compute envelope
     dummy_vals_size = np.prod([len(distribution[dims]) for dims in sample_dims])

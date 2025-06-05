@@ -294,7 +294,7 @@ def plot_mcse(
         mcse_y_dataset = xr.concat(
             [
                 distribution.azstats.mcse(
-                    dims=mcse_dims,
+                    sample_dims=mcse_dims,
                     method=kind,
                     prob=p,
                     **stats.get("mcse", {}),
@@ -340,7 +340,7 @@ def plot_mcse(
             rug_kwargs.setdefault("size", 30)
         div_reduce_dims = [dim for dim in distribution.dims if dim not in aux_dim_list]
 
-        values = distribution.azstats.compute_ranks(dims=sample_dims, relative=True)
+        values = distribution.azstats.compute_ranks(dim=sample_dims, relative=True)
 
         plot_collection.map(
             trace_rug,
@@ -370,14 +370,16 @@ def plot_mcse(
         mean_mcse = None
         if (mean_kwargs is not False) or (mean_text_kwargs is not False):
             mean_mcse = distribution.azstats.mcse(
-                dims=mean_dims, method="mean", **stats.get("mean", {})
+                sample_dims=mean_dims, method="mean", **stats.get("mean", {})
             )
 
         # computing sd_mcse
         sd_dims, sd_aes, sd_ignore = filter_aes(plot_collection, aes_by_visuals, "sd", sample_dims)
         sd_mcse = None
         if (sd_kwargs is not False) or (sd_text_kwargs is not False):
-            sd_mcse = distribution.azstats.mcse(dims=sd_dims, method="sd", **stats.get("sd", {}))
+            sd_mcse = distribution.azstats.mcse(
+                sample_dims=sd_dims, method="sd", **stats.get("sd", {})
+            )
 
         if mean_kwargs is not False:
             # getting 2nd default linestyle for chosen backend and assigning it by default

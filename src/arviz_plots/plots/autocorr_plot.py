@@ -120,7 +120,7 @@ def plot_autocorr(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
-    acf_dataset = distribution.azstats.autocorr(dims=sample_dims).sel(draw=slice(0, max_lag - 1))
+    acf_dataset = distribution.azstats.autocorr(dim=sample_dims).sel(draw=slice(0, max_lag - 1))
     c_i = 1.96 / acf_dataset.sizes["draw"] ** 0.5
     x_ci = np.arange(0, max_lag).astype(float)
 

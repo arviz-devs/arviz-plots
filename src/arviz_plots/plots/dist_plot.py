@@ -239,7 +239,7 @@ def plot_dist(
             with warnings.catch_warnings():
                 if "model" in distribution:
                     warnings.filterwarnings("ignore", message="Your data appears to have a single")
-                density = distribution.azstats.kde(dims=density_dims, **stats.get("density", {}))
+                density = distribution.azstats.kde(dim=density_dims, **stats.get("density", {}))
             plot_collection.map(
                 line_xy, "kde", data=density, ignore_aes=density_ignore, **density_kwargs
             )
@@ -272,7 +272,7 @@ def plot_dist(
                     **rug_kwargs,
                 )
         elif kind == "ecdf":
-            density = distribution.azstats.ecdf(dims=density_dims, **stats.get("density", {}))
+            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("density", {}))
             plot_collection.map(
                 ecdf_line,
                 "ecdf",
@@ -283,7 +283,7 @@ def plot_dist(
 
         elif kind == "hist":
             stats.setdefault("density", {"density": True})
-            density = distribution.azstats.histogram(dims=density_dims, **stats.get("density", {}))
+            density = distribution.azstats.histogram(dim=density_dims, **stats.get("density", {}))
 
             plot_collection.map(
                 hist,
@@ -316,11 +316,11 @@ def plot_dist(
         )
         if ci_kind == "eti":
             ci = distribution.azstats.eti(
-                prob=ci_prob, dims=ci_dims, **stats.get("credible_interval", {})
+                prob=ci_prob, dim=ci_dims, **stats.get("credible_interval", {})
             )
         elif ci_kind == "hdi":
             ci = distribution.azstats.hdi(
-                prob=ci_prob, dims=ci_dims, **stats.get("credible_interval", {})
+                prob=ci_prob, dim=ci_dims, **stats.get("credible_interval", {})
             )
 
         if "color" not in ci_aes:
