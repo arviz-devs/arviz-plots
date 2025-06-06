@@ -116,6 +116,9 @@ def plot_pairs_focus(
         else:
             backend = plot_collection.backend
 
+    if var_names is None:
+        var_names = "~" + focus_var
+
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
@@ -131,7 +134,7 @@ def plot_pairs_focus(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
-        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
+        pc_kwargs["figure_kwargs"].setdefault("sharey", True)
         plot_collection = PlotCollection.wrap(
             distribution,
             backend=backend,
