@@ -19,12 +19,12 @@ from arviz_plots.visuals import divergence_scatter, labelled_title, scatter_x
 def plot_pairs_focus(
     dt,
     var_names=None,
-    focus_var=None,
     filter_vars=None,
     group="posterior",
     coords=None,
-    focus_var_coords=None,
     sample_dims=None,
+    focus_var=None,
+    focus_var_coords=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -32,7 +32,7 @@ def plot_pairs_focus(
     visuals=None,
     **pc_kwargs,
 ):
-    """Plot pairs focus of a variable against all other variables in the dataset.
+    """Plot a fixed variable against other variables in the dataset.
 
     Parameters
     ----------
@@ -41,8 +41,6 @@ def plot_pairs_focus(
     var_names: str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    focus_var: str
-        Name of the variable to be plotted against all other variables.
     filter_vars: {None, “like”, “regex”}, optional, default=None
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
@@ -51,11 +49,13 @@ def plot_pairs_focus(
         Group to use for plotting. Defaults to "posterior".
     coords : mapping, optional
         Coordinates to use for plotting. Defaults to None.
-    focus_var_coords : mapping, optional
-        Coordinates to use for the target variable. Defaults to None.
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    focus_var: str
+        Name of the variable to be plotted against all other variables.
+    focus_var_coords : mapping, optional
+        Coordinates to use for the target variable. Defaults to None.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh","plotly"}, optional
     labeller : labeller, optional
@@ -65,8 +65,8 @@ def plot_pairs_focus(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * sample -> passed to :func:`~.visuals.scatter_x`
-        * divergence -> passed to :func:`~.visuals.divergence_scatter`
+        * scatter -> passed to :func:`~.visuals.scatter_x`
+        * divergence -> passed to :func:`~.visuals.divergence_scatter`. Defaults to False.
         * title -> :func:`~.visuals.labelled_title`
 
     pc_kwargs : mapping
@@ -86,13 +86,11 @@ def plot_pairs_focus(
         >>> from arviz_plots import plot_pairs_focus, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
-        >>> focus_var = "mu"
-        >>> var_names = ["theta", "tau"]
-        >>> pc = plot_pairs_focus(
-        >>>     centered,
-        >>>     var_names=var_names,
-        >>>     focus_var=focus_var,
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pairs_focus(
+        >>>     dt,
+        >>>     var_names=["theta", "tau"],
+        >>>     focus_var="mu",
         >>> )
 
     """
@@ -151,6 +149,7 @@ def plot_pairs_focus(
     scatter_kwargs.setdefault("alpha", 0.5)
     colors = plot_bknd.get_default_aes("color", 1, {})
     scatter_kwargs.setdefault("color", colors[0])
+    scatter_kwargs.setdefault("width", 0)
     _, _, scatter_ignore = filter_aes(plot_collection, aes_by_visuals, "scatter", sample_dims)
 
     plot_collection.map(
@@ -161,10 +160,12 @@ def plot_pairs_focus(
         **scatter_kwargs,
     )
 
-    # divergences
+    # divergence
 
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
-    div_kwargs = copy(visuals.get("divergence", {}))
+    div_kwargs = copy(visuals.get("divergence", False))
+    if div_kwargs is True:
+        div_kwargs = {}
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
     if (
         div_kwargs is not False
