@@ -13,7 +13,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.visuals import divergence_scatter, labelled_title, scatter_x
+from arviz_plots.visuals import divergence_scatter, labelled_x, labelled_y, scatter_x
 
 
 def plot_pairs_focus(
@@ -192,22 +192,31 @@ def plot_pairs_focus(
             **div_kwargs,
         )
 
-    # title of plots
-
     if labeller is None:
         labeller = BaseLabeller()
 
-    title_kwargs = copy(visuals.get("title", {}))
-    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
+    # xlabel of plots
 
+    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    _, _, xlabel_ignore = filter_aes(plot_collection, aes_by_visuals, "xlabel", sample_dims)
     plot_collection.map(
-        labelled_title,
-        "title",
+        labelled_x,
+        "xlabel",
         subset_info=True,
+        ignore_aes=xlabel_ignore,
         labeller=labeller,
-        ignore_aes=title_ignore,
-        size=8,
-        **title_kwargs,
+        **xlabel_kwargs,
+    )
+
+    # ylabel of plots
+    ylabel_kwargs = copy(visuals.get("ylabel", {}))
+    _, _, ylabel_ignore = filter_aes(plot_collection, aes_by_visuals, "ylabel", sample_dims)
+    plot_collection.map(
+        labelled_y,
+        "ylabel",
+        ignore_aes=ylabel_ignore,
+        text=focus_var,
+        **ylabel_kwargs,
     )
 
     return plot_collection
