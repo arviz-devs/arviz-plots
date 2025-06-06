@@ -459,7 +459,7 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     return target.set_ylabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
-def xlabel(string, target, *, size=unset, share=False, color=unset, **artist_kws):
+def xlabel(string, target, *, size=unset, share=True, color=unset, **artist_kws):
     """Interface to matplotlib for adding a label to the x axis."""
     _ = share  # noqa: F841
     kwargs = {"fontsize": size, "color": color}
