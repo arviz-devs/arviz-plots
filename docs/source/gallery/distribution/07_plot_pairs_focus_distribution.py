@@ -21,6 +21,7 @@ pc = azp.plot_pairs_focus(
     var_names=["theta","tau"],
     focus_var="mu",
     figure_kwargs={"sharex": True},
+    visuals={"xlabel": {"share": False}},
     backend="none", # change to preferred backend
 )
 pc.show()
