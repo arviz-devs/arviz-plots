@@ -588,8 +588,9 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
         setattr(target.yaxis, f"axis_label_{key}", value)
 
 
-def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
+def xlabel(string, target, *, size=unset, share=False, color=unset, **artist_kws):
     """Interface to bokeh for adding a label to the x axis."""
+    _ = share  # noqa: F841
     kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
     target.xaxis.axis_label = string
     for key, value in _filter_kwargs(kwargs, artist_kws).items():
