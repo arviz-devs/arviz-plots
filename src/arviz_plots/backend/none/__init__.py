@@ -478,8 +478,9 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     return artist_element
 
 
-def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
+def xlabel(string, target, *, size=unset, share=True, color=unset, **artist_kws):
     """Interface to adding a label to a plot's x axis."""
+    _ = share  # noqa: F841
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
