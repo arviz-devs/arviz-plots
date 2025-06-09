@@ -14,6 +14,11 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_ppc_dist,
+    plot_ppc_pava,
+    plot_ppc_pit,
+    plot_ppc_rootogram,
+    plot_ppc_tstat,
     plot_psense_dist,
     plot_rank_dist,
     plot_ridge,
@@ -40,6 +45,7 @@ def datatree(seed=31):
         mu[:, :, None] * x[None, None, :] + theta[:, :, idxs0, idxs1], tau[:, :, idxs0]
     ).logpdf(obs[None, None, :])
     log_lik = log_lik / log_lik.var()
+    posterior_predictive = rng.normal(size=(4, 100, 29))
     diverging = rng.choice([True, False], size=(3, 50), p=[0.1, 0.9])
 
     dt = from_dict(
@@ -48,6 +54,7 @@ def datatree(seed=31):
             "log_prior": {"mu": mu_prior, "theta": theta_prior, "tau": tau_prior},
             "log_likelihood": {"y": log_lik},
             "observed_data": {"y": obs},
+            "posterior_predictive": {"y": posterior_predictive},
             "sample_stats": {"diverging": diverging},
         },
         dims={"theta": ["hierarchy", "group"], "tau": ["hierarchy"]},
@@ -60,9 +67,41 @@ def datatree(seed=31):
     return dt
 
 
+@pytest.fixture(scope="module")
+def datatree3(seed=17):
+    rng = np.random.default_rng(seed)
+    posterior_predictive = rng.poisson(4, size=(4, 100, 7))
+    observed_data = rng.poisson(4, size=7)
+
+    return from_dict(
+        {
+            "posterior_predictive": {"y": posterior_predictive},
+            "observed_data": {"y": observed_data},
+        },
+        dims={"y": ["obs_dim"]},
+    )
+
+
+@pytest.fixture(scope="module")
+def datatree_binary(seed=17):
+    rng = np.random.default_rng(seed)
+    posterior_predictive = rng.binomial(0.5, 1, size=(4, 100, 7))
+    observed_data = rng.binomial(0.5, 1, size=7)
+
+    return from_dict(
+        {
+            "posterior_predictive": {"y": posterior_predictive},
+            "observed_data": {"y": observed_data},
+        },
+        dims={"y": ["obs_dim"]},
+    )
+
+
 kind_value = st.sampled_from(("kde", "ecdf"))
 ess_kind_value = st.sampled_from(("local", "quantile"))
+t_stat_value = st.sampled_from(("mean", "median", "std", "var", "min", "max", "iqr", "0.5", 0.5))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
+ci_prob_value = st.floats(min_value=0.1, max_value=0.99, allow_nan=False, allow_infinity=False)
 point_estimate_value = st.sampled_from(("mean", "median"))
 visuals_value = st.sampled_from(({}, False, {"color": "red"}))
 visuals_value_no_false = st.sampled_from(({}, {"color": "red"}))
@@ -319,6 +358,183 @@ def test_plot_ess_evolution(datatree, relative, n_points, extra_methods, min_ess
                 assert visual in pc.viz.children
         else:
             assert visual in pc.viz.children
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "kind": visuals_value_no_false,
+            "title": visuals_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    kind=kind_value,
+)
+def test_plot_ppc_dist(datatree, kind, visuals):
+    kind_kwargs = visuals.pop("kind", None)
+    if kind_kwargs is not None:
+        visuals[kind] = kind_kwargs
+    pc = plot_ppc_dist(
+        datatree,
+        backend="none",
+        kind=kind,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree["posterior_predictive"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "lines": visuals_value,
+            "markers": visuals_value,
+            "reference_line": visuals_value,
+            "ci": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+    ci_prob=ci_prob_value,
+)
+def test_plot_ppc_pava(datatree_binary, ci_prob, visuals):
+    pc = plot_ppc_pava(
+        datatree_binary,
+        backend="none",
+        ci_prob=ci_prob,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree_binary["posterior_predictive"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "predictive_markers": visuals_value,
+            "observed_markers": visuals_value,
+            "ci": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "grid": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+    ci_prob=ci_prob_value,
+)
+def test_plot_ppc_rootogram(datatree3, ci_prob, visuals):
+    pc = plot_ppc_rootogram(
+        datatree3,
+        backend="none",
+        ci_prob=ci_prob,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree3["posterior_predictive"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "ecdf_lines": visuals_value,
+            "ci": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+    coverage=st.booleans(),
+    ci_prob=ci_prob_value,
+)
+def test_plot_ppc_pit(datatree, coverage, ci_prob, visuals):
+    pc = plot_ppc_pit(
+        datatree,
+        backend="none",
+        coverage=coverage,
+        ci_prob=ci_prob,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree["posterior_predictive"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "kind": visuals_value_no_false,
+            "observed_tstat": visuals_value,
+            "credible_interval": visuals_value,
+            "point_estimate": visuals_value,
+            "point_estimate_text": visuals_value,
+            "title": visuals_value,
+            "rug": st.booleans(),
+            "remove_axis": st.just(False),
+        },
+    ),
+    kind=kind_value,
+    t_stat=t_stat_value,
+)
+def test_plot_ppc_tstat(datatree, kind, t_stat, visuals):
+    if kind != "kde":
+        visuals.pop("rug", None)
+    kind_kwargs = visuals.pop("kind", None)
+    if kind_kwargs is not None:
+        visuals[kind] = kind_kwargs
+    pc = plot_ppc_tstat(
+        datatree,
+        backend="none",
+        kind=kind,
+        t_stat=t_stat,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree["posterior_predictive"].data_vars
+            )
 
 
 @given(

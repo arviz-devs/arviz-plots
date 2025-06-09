@@ -17,8 +17,13 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_loo_pit,
     plot_mcse,
     plot_ppc_dist,
+    plot_ppc_pava,
+    plot_ppc_pit,
+    plot_ppc_rootogram,
+    plot_ppc_tstat,
     plot_prior_posterior,
     plot_psense_dist,
     plot_rank_dist,
@@ -51,8 +56,8 @@ def generate_base_data(seed=31):
     log_mu_prior = norm(0, 3).logpdf(mu)
     log_tau_prior = halfnorm(scale=5).logpdf(tau)
     log_theta_prior = norm(0, 1).logpdf(theta)
-    prior_predictive = rng.normal(size=(1, 100, 7))
-    posterior_predictive = rng.normal(size=(4, 100, 7))
+    prior_predictive = rng.normal(size=(1, 100, 29))
+    posterior_predictive = rng.normal(size=(4, 100, 29))
     diverging = rng.choice([True, False], size=(4, 100), p=[0.1, 0.9])
     mu_prior = norm(0, 3).rvs(size=(1, 500), random_state=rng)
     tau_prior = halfnorm(0, 5).rvs(size=(1, 500), random_state=rng)
@@ -96,6 +101,36 @@ def datatree2(seed=17):
             "sample_stats": {"diverging": diverging},
         },
         dims={"theta": ["hierarchy"], "theta_t": ["hierarchy"]},
+    )
+
+
+@pytest.fixture(scope="module")
+def datatree3(seed=17):
+    rng = np.random.default_rng(seed)
+    posterior_predictive = rng.poisson(4, size=(4, 100, 7))
+    observed_data = rng.poisson(4, size=7)
+
+    return from_dict(
+        {
+            "posterior_predictive": {"y": posterior_predictive},
+            "observed_data": {"y": observed_data},
+        },
+        dims={"y": ["obs_dim"]},
+    )
+
+
+@pytest.fixture(scope="module")
+def datatree_binary(seed=17):
+    rng = np.random.default_rng(seed)
+    posterior_predictive = rng.binomial(0.5, 1, size=(4, 100, 7))
+    observed_data = rng.binomial(0.5, 1, size=7)
+
+    return from_dict(
+        {
+            "posterior_predictive": {"y": posterior_predictive},
+            "observed_data": {"y": observed_data},
+        },
+        dims={"y": ["obs_dim"]},
     )
 
 
@@ -270,6 +305,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             assert "hierarchy" not in pc.viz["plot"]["theta"].dims
         else:
             assert "hierarchy" in pc.viz["plot"]["theta"].dims
+
+    @pytest.mark.parametrize("coverage", (True, False))
+    def test_plot_loo_pit(self, datatree, coverage, backend):
+        pc = plot_loo_pit(datatree, coverage=coverage, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.children
+        assert "y" in pc.viz["plot"].data_vars
+        assert "ecdf_lines" in pc.viz.children
 
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_forest(self, datatree, backend, combined):
@@ -468,6 +511,38 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "/overlay_ppc" in pc.aes.groups
         assert "y" in pc.viz[kind]
         assert "y" in pc.viz["observed_density"]
+
+    def test_plot_ppc_pava(self, datatree_binary, backend):
+        pc = plot_ppc_pava(datatree_binary, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "lines" in pc.viz.children
+        assert "y" in pc.viz["plot"]
+
+    @pytest.mark.parametrize("coverage", [False, True])
+    def test_plot_ppc_pit(self, datatree, coverage, backend):
+        pc = plot_ppc_pit(datatree, coverage=coverage, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.children
+        assert "y" in pc.viz["plot"]
+        assert "ecdf_lines" in pc.viz.children
+
+    def test_plot_ppc_rootogram(self, datatree3, backend):
+        pc = plot_ppc_rootogram(datatree3, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "predictive_markers" in pc.viz.children
+        assert "y" in pc.viz["plot"]
+
+    def test_plot_ppc_rootogram_continuous_error(self, datatree, backend):
+        with pytest.raises(ValueError, match="Detected at least one continuous variable"):
+            plot_ppc_rootogram(datatree, backend=backend)
+
+    @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
+    def test_plot_ppc_tstat(self, datatree, kind, backend):
+        pc = plot_ppc_tstat(datatree, kind=kind, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert kind in pc.viz.children
+        assert "observed_tstat" in pc.viz.children
+        assert "y" in pc.viz["plot"]
 
     def test_plot_psense_dist(self, datatree, backend):
         pc = plot_psense_dist(datatree, backend=backend)
