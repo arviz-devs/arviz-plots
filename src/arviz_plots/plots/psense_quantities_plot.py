@@ -146,6 +146,9 @@ def plot_psense_quantities(
     if quantities is None:
         quantities = ["mean", "sd"]
 
+    if isinstance(quantities, str):
+        quantities = [quantities]
+
     labeller = BaseLabeller()
 
     ds_posterior = extract(
@@ -290,17 +293,17 @@ def plot_psense_quantities(
     prior_ls_kwargs = copy(visuals.get("prior_lines", {}))
 
     if prior_ls_kwargs is not False:
-        _, _, prior_ms_ignore = filter_aes(
+        _, _, prior_ls_ignore = filter_aes(
             plot_collection, aes_by_visuals, "prior_lines", sample_dims
         )
-        prior_ms_kwargs.setdefault("color", colors[0])
+        prior_ls_kwargs.setdefault("color", colors[0])
 
         plot_collection.map(
             line_xy,
             "prior_lines",
             data=ds_quantities.sel(component_group="prior"),
             x=ds_quantities.alpha,
-            ignore_aes=prior_ms_ignore,
+            ignore_aes=prior_ls_ignore,
             **prior_ls_kwargs,
         )
 
@@ -336,7 +339,7 @@ def plot_psense_quantities(
 
         plot_collection.map(
             line_xy,
-            "prior_lines",
+            "likelihood_lines",
             data=ds_quantities.sel(component_group="likelihood"),
             x=ds_quantities.alpha,
             ignore_aes=likelihood_ls_ignore,
@@ -351,23 +354,23 @@ def plot_psense_quantities(
             mcse_kwargs.setdefault("color", "grey")
             mcse_kwargs.setdefault("linestyle", lines[1])
 
-        plot_collection.map(hline, "mcse", data=min_, ignore_aes=mcse_ignore, **mcse_kwargs)
-
-        plot_collection.map(hline, "mcse", data=max_, ignore_aes=mcse_ignore, **mcse_kwargs)
+            plot_collection.map(hline, "mcse", data=min_, ignore_aes=mcse_ignore, **mcse_kwargs)
+            plot_collection.map(hline, "mcse", data=max_, ignore_aes=mcse_ignore, **mcse_kwargs)
 
     # set ticks
     ticks_kwargs = copy(visuals.get("ticks", {}))
     _, _, ticks_ignore = filter_aes(plot_collection, aes_by_visuals, "ticks", sample_dims)
 
-    plot_collection.map(
-        set_xticks,
-        "ticks",
-        values=alphas_p1,
-        labels=alphas_p1_labels,
-        ignore_aes=ticks_ignore,
-        store_artist=backend == "none",
-        **ticks_kwargs,
-    )
+    if ticks_kwargs is not False:
+        plot_collection.map(
+            set_xticks,
+            "ticks",
+            values=alphas_p1,
+            labels=alphas_p1_labels,
+            ignore_aes=ticks_ignore,
+            store_artist=backend == "none",
+            **ticks_kwargs,
+        )
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(
@@ -392,14 +395,15 @@ def plot_psense_quantities(
     title_kwargs = copy(visuals.get("title", {}))
     _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
-    plot_collection.map(
-        labelled_title,
-        "title",
-        ignore_aes=title_ignore,
-        subset_info=True,
-        labeller=labeller,
-        **title_kwargs,
-    )
+    if title_kwargs is not False:
+        plot_collection.map(
+            labelled_title,
+            "title",
+            ignore_aes=title_ignore,
+            subset_info=True,
+            labeller=labeller,
+            **title_kwargs,
+        )
 
     plot_collection.add_legend("component_group")
 

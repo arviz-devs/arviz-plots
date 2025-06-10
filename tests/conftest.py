@@ -4,6 +4,13 @@ import logging
 import os
 
 import pytest
+from arviz_base.testing import cmp as _cmp
+from arviz_base.testing import datatree as _datatree
+from arviz_base.testing import datatree2 as _datatree2
+from arviz_base.testing import datatree3 as _datatree3
+from arviz_base.testing import datatree_4d as _datatree_4d
+from arviz_base.testing import datatree_binary as _datatree_binary
+from arviz_base.testing import datatree_sample as _datatree_sample
 from hypothesis import settings
 
 _log = logging.getLogger("arviz_plots")
@@ -84,3 +91,45 @@ def check_skips(request):
 def no_artist_kwargs(monkeypatch):
     """Raise an error if visual kwargs are present when using 'none' backend."""
     monkeypatch.setattr("arviz_plots.backend.none.ALLOW_KWARGS", False)
+
+
+@pytest.fixture(scope="session")
+def datatree():
+    """Fixture for a general DataTree."""
+    return _datatree()
+
+
+@pytest.fixture(scope="session")
+def datatree2():
+    """Fixture for a DataTree with a posterior and sample stats."""
+    return _datatree2()
+
+
+@pytest.fixture(scope="session")
+def datatree3():
+    """Fixture for a DataTree with discrete data."""
+    return _datatree3()
+
+
+@pytest.fixture(scope="session")
+def datatree_4d():
+    """Fixture for a DataTree with a 4D posterior."""
+    return _datatree_4d()
+
+
+@pytest.fixture(scope="session")
+def datatree_binary():
+    """Fixture for a DataTree with binary data."""
+    return _datatree_binary()
+
+
+@pytest.fixture(scope="session")
+def datatree_sample():
+    """Fixture for a DataTree with sample stats."""
+    return _datatree_sample()
+
+
+@pytest.fixture(scope="session")
+def cmp():
+    """Fixture for the cmp function."""
+    return _cmp()

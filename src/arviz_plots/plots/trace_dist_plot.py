@@ -313,7 +313,7 @@ def plot_trace_dist(
     visuals_trace["title"] = False
     visuals_trace["ticklabels"] = False
     aes_by_visuals_trace = {
-        key.replace("_trace", ""): value
+        key.replace("trace", ""): value
         for key, value in visuals.items()
         if key in {"trace", "divergence", "xlabel_trace"}
     }
@@ -404,6 +404,7 @@ def plot_trace_dist(
         )
         plot_collection.map(
             ticklabel_props,
+            "ticklabels",
             ignore_aes=ticklabels_ignore,
             axis="both",
             store_artist=backend == "none",
