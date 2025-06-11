@@ -211,7 +211,6 @@ def plot_ppc_dist(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs["aes"].setdefault("overlay_ppc", ["sample"])
         pc_kwargs.setdefault("cols", "__variable__")
-        pc_kwargs.setdefault("rows", None)
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, predictive_dist)
 

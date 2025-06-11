@@ -161,7 +161,6 @@ def plot_ppc_pava(
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("rows", None)
         pc_kwargs.setdefault("cols", ["__variable__"])
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_calibration)
 
