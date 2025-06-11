@@ -102,7 +102,7 @@ def scatter_x(da, target, y=None, **kwargs):
 
 
 def divergence_scatter(da, target, mask, y=None, **kwargs):
-    """Plot a dot/rug/scatter along the x axis (y constant)."""
+    """Plot a divergence scatter plot along the x axis."""
     if y is None:
         y = np.zeros_like(da)
     if np.asarray(y).size == 1:

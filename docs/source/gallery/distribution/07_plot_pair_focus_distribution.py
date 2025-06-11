@@ -1,5 +1,5 @@
 """
-# Scatter plot with divergences
+# Scatterplot one variable against all others
 
 Plot one variable against other variables in the dataset.
 
@@ -9,21 +9,17 @@ Plot one variable against other variables in the dataset.
 API Documentation: {func}`~arviz_plots.plot_pairs_focus`
 :::
 """
-import numpy as np
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-dt = load_arviz_data("centered_eight")
-dt.posterior["log_tau"] = np.log(dt.posterior["tau"])
-
-pc = azp.plot_pairs_focus(
-    dt,
-    var_names=["theta"],
-    focus_var="log_tau",
-    visuals={"divergence":True},
+data = load_arviz_data("centered_eight")
+pc = azp.plot_pair_focus(
+    data,
+    var_names=["theta","tau"],
+    focus_var="mu",
     backend="none", # change to preferred backend
 )
 pc.show()
