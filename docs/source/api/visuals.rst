@@ -21,6 +21,7 @@ Data plotting elements
    line_x
    scatter_xy
    scatter_x
+   divergence_scatter
    scatter_xy
    trace_rug
    vline

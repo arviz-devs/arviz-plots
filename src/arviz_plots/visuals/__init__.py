@@ -102,7 +102,29 @@ def scatter_x(da, target, y=None, **kwargs):
 
 
 def divergence_scatter(da, target, mask, y=None, **kwargs):
-    """Plot a divergence scatter plot along the x axis."""
+    """
+    Plot a divergence scatter plot using the masked values of a DataArray.
+
+    Parameters
+    ----------
+    da : DataArray
+        The main data array whose values will be plotted along the x-axis.
+    target : object
+        The target plotting object or figure (used to determine the backend).
+    mask : DataArray of bool
+        A boolean mask used to filter which data points to plot.
+    y : DataArray or scalar, optional
+        The values to use on the y-axis.
+        If None or a scalar, defaults to a zero array(or constant value)
+        with the same shape as `da`.
+    **kwargs
+        Additional keyword arguments passed to the scatter plotting function.
+
+    Returns
+    -------
+    plot : object
+        The result of the backend's scatter plot call (e.g., a matplotlib or bokeh artist).
+    """
     if y is None:
         y = np.zeros_like(da)
     if np.asarray(y).size == 1:

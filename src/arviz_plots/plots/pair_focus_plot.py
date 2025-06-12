@@ -99,6 +99,8 @@ def plot_pair_focus(
         >>>     focus_var_coords={"school": "Choate"},
         >>> )
 
+    .. minigallery:: plot_pair_focus
+
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
@@ -134,10 +136,14 @@ def plot_pair_focus(
         )
     elif isinstance(focus_var, xr.DataArray):
         y = focus_var
+    else:
+        raise TypeError(
+            f"focus_var should be a string or DataArray, got {type(focus_var)} instead."
+        )
 
     dims_y = [dim for dim in y.dims if dim not in sample_dims]
     if len(dims_y) > 0:
-        raise ValueError(f"focus variable dimensions should match sample_dims {sample_dims}")
+        raise ValueError(f"focus variable has unexpected dimensions: {dims_y}.")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -238,10 +244,10 @@ def plot_pair_focus(
         _, _, ylabel_ignore = filter_aes(plot_collection, aes_by_visuals, "ylabel", sample_dims)
 
         # generate y label text using labeller
-        scalar_coords = {key: value.item() for key, value in y.coords.items() if value.dims == ()}
-        y_label_text = f"{y.name}"
-        if scalar_coords:
-            y_label_text += " | " + ", ".join(f"{v}" for _, v in scalar_coords.items())
+        focus_var_coords = {key: value.item() for key, value in y.coords.items() if value.size <= 1}
+        y_label_text = labeller.make_label_vert(
+            y.name, focus_var_coords, {name: 0 for name in focus_var_coords}
+        )
 
         plot_collection.map(
             labelled_y,
