@@ -17,6 +17,7 @@ from arviz_plots import (
     plot_forest,
     plot_loo_pit,
     plot_mcse,
+    plot_pair_focus,
     plot_ppc_dist,
     plot_ppc_pava,
     plot_ppc_pit,
@@ -330,6 +331,44 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "/color" in pc.aes.groups
         assert "model" in pc.aes["color"].dims
         assert "/x" in pc.aes.groups
+
+    def test_plot_pair_focus(self, datatree, backend):
+        visuals = {"divergence": True}
+        pc = plot_pair_focus(
+            datatree,
+            focus_var=datatree.posterior["theta"].sel(hierarchy=0),
+            backend=backend,
+            visuals=visuals,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "scatter" in pc.viz.children
+        assert "divergence" in pc.viz.children
+        assert "chain" in pc.viz["scatter"]["mu"].dims
+        assert "chain" in pc.viz["divergence"]["mu"].dims
+        assert "hierarchy" not in pc.viz["scatter"]["mu"].dims
+        assert "hierarchy" in pc.viz["scatter"]["theta"].dims
+        assert pc.viz["xlabel"]["mu"].dims == ()
+        assert pc.viz["xlabel"]["theta"].dims == ("hierarchy",)
+
+    def test_plot_pair_focus_sample(self, datatree_sample, backend):
+        visuals = {"divergence": True}
+        sample_dims = ["sample"]
+        pc = plot_pair_focus(
+            datatree_sample,
+            focus_var=datatree_sample.posterior["theta"].sel(hierarchy=0),
+            sample_dims=sample_dims,
+            backend=backend,
+            visuals=visuals,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "scatter" in pc.viz.children
+        assert "divergence" in pc.viz.children
+        assert "chain" not in pc.viz["scatter"]["mu"].dims
+        assert "chain" not in pc.viz["divergence"]["mu"].dims
+        assert "hierarchy" not in pc.viz["scatter"]["mu"].dims
+        assert "hierarchy" in pc.viz["scatter"]["theta"].dims
+        assert pc.viz["xlabel"]["mu"].dims == ()
+        assert pc.viz["xlabel"]["theta"].dims == ("hierarchy",)
 
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
