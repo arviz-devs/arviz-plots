@@ -231,6 +231,7 @@ def plot_trace(
         )
         plot_collection.map(
             ticklabel_props,
+            "ticklabels",
             ignore_aes=ticklabels_ignore,
             axis="both",
             store_artist=backend == "none",

@@ -34,7 +34,6 @@ def plot_mcse(
     group="posterior",
     coords=None,
     sample_dims=None,
-    kind="quantile",
     rug=False,
     rug_kind="diverging",
     n_points=20,
@@ -71,14 +70,6 @@ def plot_mcse(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    kind : {"local", "quantile"}, default "local"
-        Specify the kind of plot:
-
-        * The ``kind="local"`` argument generates the mcse' local efficiency
-          for estimating small-interval probability of a desired posterior.
-        * The ``kind="quantile"`` argument generates the mcse' local efficiency
-          for estimating quantiles of a desired posterior.
-
     rug : bool, default False
         Add a `rug plot <https://en.wikipedia.org/wiki/Rug_plot>`_ for a specific subset of values.
     rug_kind : str, default "diverging"
@@ -209,7 +200,9 @@ def plot_mcse(
     if stats is None:
         stats = {}
 
-    # procmcseing dt/group/coords/filtering
+    kind = "quantile"
+
+    # processing dt/group/coords/filtering
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
