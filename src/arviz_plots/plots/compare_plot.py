@@ -91,9 +91,9 @@ def plot_compare(
     p_be = import_module(f"arviz_plots.backend.{backend}")
 
     # Get figure params and create figure and axis
-    pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
-    figsize = pc_kwargs.get("figure_kwargs", {}).get("figsize", None)
-    figsize_units = pc_kwargs["figure_kwargs"].get("figsize_units", "inches")
+    figure_kwargs = pc_kwargs.pop("figure_kwargs", {}).copy()
+    figsize = figure_kwargs.pop("figsize", None)
+    figsize_units = figure_kwargs.pop("figsize_units", None)
 
     figsize = p_be.scale_fig_size(
         figsize,
@@ -103,7 +103,9 @@ def plot_compare(
     )
     figsize_units = "dots"
 
-    figure, target = p_be.create_plotting_grid(1, figsize=figsize, figsize_units=figsize_units)
+    figure, target = p_be.create_plotting_grid(
+        1, figsize=figsize, figsize_units=figsize_units, **figure_kwargs
+    )
 
     # Create plot collection
     plot_collection = PlotCollection(

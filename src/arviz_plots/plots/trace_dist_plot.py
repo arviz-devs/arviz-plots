@@ -200,13 +200,15 @@ def plot_trace_dist(
         )
     if not compact and combined:
         neutral_color = color_cycle[0]
-        pc_kwargs["color"] = color_cycle[1:]
+        if "chain" in distribution.dims:
+            pc_kwargs["color"] = color_cycle[1:]
     else:
         neutral_color = False
 
     if compact and combined:
         neutral_linestyle = linestyle_cycle[0]
-        pc_kwargs["linestyle"] = linestyle_cycle[1:]
+        if "chain" in distribution.dims:
+            pc_kwargs["linestyle"] = linestyle_cycle[1:]
     else:
         neutral_linestyle = False
 

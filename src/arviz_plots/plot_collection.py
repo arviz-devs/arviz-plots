@@ -510,6 +510,13 @@ class PlotCollection:
         if data is None:
             data = self.data
         aes = {key: value for key, value in aes.items() if value is not False}
+        extra_keys = [key for key in kwargs if key not in aes]
+        if extra_keys:
+            raise ValueError(
+                f"Keyword arguments {extra_keys} have been passed as **kwargs but "
+                "have no active aesthetic mapped to them. Keyword arguments must define "
+                "values to use in their respective aesthetic mapping."
+            )
         if not hasattr(self, "backend"):
             plot_bknd = import_module(".backend.none", package="arviz_plots")
         else:

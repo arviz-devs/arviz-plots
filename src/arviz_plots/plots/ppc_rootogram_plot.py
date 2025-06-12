@@ -196,7 +196,6 @@ def plot_ppc_rootogram(
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", "__variable__")
-        pc_kwargs.setdefault("rows", None)
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_predictive)
 
