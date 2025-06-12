@@ -6,7 +6,7 @@ Plot one variable against other variables in the dataset.
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_pairs_focus`
+API Documentation: {func}`~arviz_plots.plot_pair_focus`
 :::
 """
 from arviz_base import load_arviz_data
