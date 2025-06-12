@@ -1,8 +1,10 @@
 """dist plot code."""
 
 import warnings
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
@@ -37,9 +39,38 @@ def plot_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "kde",
+            "ecdf",
+            "dot",
+            "hist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "kde",
+            "ecdf",
+            "dot",
+            "hist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[
+        Literal["density", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
+    ] = None,
     **pc_kwargs,
 ):
     """Plot 1D marginal densities in the style of John K. Kruschke’s book [1]_.
