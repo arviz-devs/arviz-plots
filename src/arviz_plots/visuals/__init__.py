@@ -101,47 +101,16 @@ def scatter_x(da, target, y=None, **kwargs):
     return plot_backend.scatter(da, y, target, **kwargs)
 
 
-def divergence_scatter(da, target, mask, y=None, **kwargs):
-    """
-    Plot a divergence scatter plot using the masked values of a DataArray.
-
-    Parameters
-    ----------
-    da : DataArray
-        The main data array whose values will be plotted along the x-axis.
-    target : object
-        The target plotting object or figure (used to determine the backend).
-    mask : DataArray of bool
-        A boolean mask used to filter which data points to plot.
-    y : DataArray or scalar, optional
-        The values to use on the y-axis.
-        If None or a scalar, defaults to a zero array(or constant value)
-        with the same shape as `da`.
-    **kwargs
-        Additional keyword arguments passed to the scatter plotting function.
-
-    Returns
-    -------
-    plot : object
-        The result of the backend's scatter plot call (e.g., a matplotlib or bokeh artist).
-    """
-    if y is None:
-        y = np.zeros_like(da)
-    if np.asarray(y).size == 1:
-        y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
-    plot_backend = backend_from_object(target)
-    return plot_backend.scatter(da[mask], y[mask], target, **kwargs)
-
-
-def scatter_xy(da, target, x=None, y=None, **kwargs):
+def scatter_xy(da, target, x=None, y=None, mask=None, **kwargs):
     """Plot a scatter plot x vs y.
 
     The input argument `da` is split into x and y using the dimension ``plot_axis``.
     If additional x and y arguments are provided, x and y are added to the values
     in the `da` dataset sliced along plot_axis='x' and plot_axis='y'.
+    If a mask is provided, it is applied to both x and y values.
     """
     plot_backend = backend_from_object(target)
-    x, y = _process_da_x_y(da, x, y)
+    x, y = _process_da_x_y(da, x, y, mask)
     return plot_backend.scatter(x, y, target, **kwargs)
 
 
@@ -218,8 +187,8 @@ def fill_between_y(da, target, *, x=None, y_bottom=None, y=None, y_top=None, **k
     return plot_backend.fill_between_y(x, y_bottom, y_top, target, **kwargs)
 
 
-def _process_da_x_y(da, x, y):
-    """Process da, x and y arguments into x and y values."""
+def _process_da_x_y(da, x, y, mask=None):
+    """Process da, x and y arguments into x and y values and apply mask if it is not None."""
     da_has_x = "plot_axis" in da.dims and "x" in da.plot_axis
     da_has_y = "plot_axis" in da.dims and "y" in da.plot_axis
     if da_has_x:
@@ -232,6 +201,9 @@ def _process_da_x_y(da, x, y):
         x = da
     elif y is None:
         y = da
+    if mask is not None:
+        x = x[mask]
+        y = y[mask]
     return np.broadcast_arrays(x, y)
 
 

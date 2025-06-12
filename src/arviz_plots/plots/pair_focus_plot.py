@@ -14,7 +14,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.visuals import divergence_scatter, labelled_x, labelled_y, scatter_x
+from arviz_plots.visuals import labelled_x, labelled_y, scatter_x, scatter_xy
 
 
 def plot_pair_focus(
@@ -211,7 +211,7 @@ def plot_pair_focus(
             div_kwargs.setdefault("color", "black")
         div_kwargs.setdefault("alpha", 0.4)
         plot_collection.map(
-            divergence_scatter,
+            scatter_xy,
             "divergence",
             ignore_aes=div_ignore,
             y=y,
