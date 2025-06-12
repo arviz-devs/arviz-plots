@@ -119,6 +119,7 @@ intersphinx_mapping = {
     "arviz_org": ("https://www.arviz.org/en/latest/", None),
     "arviz_base": ("https://arviz-base.readthedocs.io/en/latest/", None),
     "arviz_stats": ("https://arviz-stats.readthedocs.io/en/latest/", None),
+    "einstats": ("https://einstats.python.arviz.org/en/latest/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),

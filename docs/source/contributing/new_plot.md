@@ -1,3 +1,4 @@
+(add_new_plot)=
 # Adding a batteries-included plot
 Each batteries-included plot should have its own file within the `/src/arviz-plots/plots` folder.
 
