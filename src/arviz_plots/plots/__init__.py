@@ -13,7 +13,7 @@ from .evolution_plot import plot_ess_evolution
 from .forest_plot import plot_forest
 from .loo_pit_plot import plot_loo_pit
 from .mcse_plot import plot_mcse
-from .pairs_focus_plot import plot_pairs_focus
+from .pair_focus_plot import plot_pair_focus
 from .pava_calibration_plot import plot_ppc_pava
 from .ppc_dist_plot import plot_ppc_dist
 from .ppc_pit_plot import plot_ppc_pit
@@ -56,7 +56,7 @@ __all__ = [
     "plot_ppc_tstat",
     "plot_psense_dist",
     "plot_psense_quantities",
-    "plot_pairs_focus",
+    "plot_pair_focus",
     "add_lines",
     "add_bands",
 ]
