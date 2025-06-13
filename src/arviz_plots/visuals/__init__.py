@@ -114,9 +114,14 @@ def scatter_xy(da, target, x=None, y=None, mask=None, **kwargs):
     return plot_backend.scatter(x, y, target, **kwargs)
 
 
-def scatter_couple(da_x, da_y, target, **kwargs):
+def scatter_couple(da_x, da_y, target, mask_x=None, mask_y=None, **kwargs):
     """Plot a scatter plot for a pairplot couple."""
     plot_backend = backend_from_object(target)
+    plot_backend.remove_axis(target, axis="both")
+    if mask_x is not None:
+        da_x = da_x[mask_x]
+    if mask_y is not None:
+        da_y = da_y[mask_y]
     return plot_backend.scatter(da_x.values, da_y.values, target, **kwargs)
 
 
@@ -253,6 +258,25 @@ def point_estimate_text(da, target, *, point_estimate, x=None, y=None, point_lab
         text,
         target,
         **kwargs,
+    )
+
+
+def label_plot(
+    da, target, text=None, x=0.5, y=0.5, labeller=None, var_name=None, sel=None, isel=None, **kwargs
+):
+    """Add a label to a plot."""
+    if text is None:
+        if labeller is None:
+            labeller = BaseLabeller()
+        text = labeller.make_label_flat(var_name, sel, isel)
+    x, y = _ensure_scalar(x, y)
+    plot_backend = backend_from_object(target)
+    plot_backend.remove_axis(target, axis="both")
+    return plot_backend.text(
+        x,
+        y,
+        text,
+        target,
     )
 
 
