@@ -69,7 +69,7 @@ def plot_pair_focus(
         Valid keys are:
 
         * scatter -> passed to :func:`~.visuals.scatter_x`
-        * divergence -> passed to :func:`~.visuals.divergence_scatter`. Defaults to False.
+        * divergence -> passed to :func:`~.visuals.scatter_xy`. Defaults to False.
         * xlabel -> :func:`~.visuals.labelled_x`
         * ylabel -> :func:`~.visuals.labelled_y`
 
@@ -209,7 +209,8 @@ def plot_pair_focus(
         )
         if "color" not in div_aes:
             div_kwargs.setdefault("color", "black")
-        div_kwargs.setdefault("alpha", 0.4)
+        if "alpha" not in div_aes:
+            div_kwargs.setdefault("alpha", 0.4)
         plot_collection.map(
             scatter_xy,
             "divergence",
