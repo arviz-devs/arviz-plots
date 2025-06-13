@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams, xarray_sel_iter
 
-from arviz_plots.plot_collection import PlotCollection, concat_model_dict
+from arviz_plots.plot_collection import PlotCollection, concat_model_dict, process_kwargs_subset
 
 
 def subset_matrix_da(
@@ -384,7 +384,24 @@ class PlotMatrix(PlotCollection):
                     target = self.get_target(var_name_x, sel_x_plus, var_name_y, sel_y_plus)
 
                     aes_kwargs = self.get_aes_kwargs(aes, var_name_x, aes_sel)
-                    fun_kwargs = {**aes_kwargs, **kwargs}
+                    fun_kwargs = {
+                        **aes_kwargs,
+                        **{
+                            key: values
+                            for key, values in kwargs.items()
+                            if not isinstance(values, (xr.DataArray, xr.Dataset))
+                        },
+                        **{
+                            key + "_x": process_kwargs_subset(values, var_name_x, sel_x)
+                            for key, values in kwargs.items()
+                            if isinstance(values, (xr.DataArray, xr.Dataset))
+                        },
+                        **{
+                            key + "_y": process_kwargs_subset(values, var_name_y, sel_y)
+                            for key, values in kwargs.items()
+                            if isinstance(values, (xr.DataArray, xr.Dataset))
+                        },
+                    }
                     if subset_info:
                         fun_kwargs = {
                             **fun_kwargs,
