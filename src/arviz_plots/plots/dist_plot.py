@@ -24,6 +24,18 @@ from arviz_plots.visuals import (
     scatter_x,
 )
 
+CoreVisuals = Literal[
+    "kde",
+    "ecdf",
+    "dot",
+    "hist",
+    "credible_interval",
+    "point_estimate",
+    "point_estimate_text",
+    "title",
+    "rug",
+]
+
 
 def plot_dist(
     dt,
@@ -39,33 +51,9 @@ def plot_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals: Mapping[
-        Literal[
-            "kde",
-            "ecdf",
-            "dot",
-            "hist",
-            "credible_interval",
-            "point_estimate",
-            "point_estimate_text",
-            "title",
-            "rug",
-        ],
-        Sequence[str],
-    ] = None,
+    aes_by_visuals: Mapping[CoreVisuals, Sequence[str]] = None,
     visuals: Mapping[
-        Literal[
-            "kde",
-            "ecdf",
-            "dot",
-            "hist",
-            "credible_interval",
-            "point_estimate",
-            "point_estimate_text",
-            "title",
-            "rug",
-            "remove_axis",
-        ],
+        CoreVisuals | Literal["remove_axis"],
         Mapping[str, Any] | Literal[False],
     ] = None,
     stats: Mapping[
