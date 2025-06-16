@@ -16,6 +16,7 @@ from arviz_plots import (
     plot_forest,
     plot_loo_pit,
     plot_mcse,
+    plot_pair_focus,
     plot_ppc_dist,
     plot_ppc_pava,
     plot_ppc_pit,
@@ -41,6 +42,7 @@ ci_prob_value = st.floats(min_value=0.1, max_value=0.99, allow_nan=False, allow_
 point_estimate_value = st.sampled_from(("mean", "median"))
 visuals_value = st.sampled_from(({}, False, {"color": "red"}))
 visuals_value_no_false = st.sampled_from(({}, {"color": "red"}))
+focus_var_value = st.sampled_from(("tau", "mu"))
 
 
 @st.composite
@@ -482,6 +484,36 @@ def test_plot_mcse(datatree, rug, n_points, extra_methods, visuals):
                 assert visual in pc.viz.children
         else:
             assert visual in pc.viz.children
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "scatter": visuals_value_no_false,
+            "divergence": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+        },
+    ),
+    focus_var=focus_var_value,
+)
+def test_plot_pair_focus(datatree, visuals, focus_var):
+    pc = plot_pair_focus(
+        datatree,
+        backend="none",
+        focus_var=focus_var,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
+            )
 
 
 @given(

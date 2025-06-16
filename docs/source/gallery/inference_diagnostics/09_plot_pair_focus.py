@@ -6,7 +6,7 @@ Plot one variable against other variables in the dataset.
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_pairs_focus`
+API Documentation: {func}`~arviz_plots.plot_pair_focus`
 :::
 """
 import numpy as np
@@ -19,7 +19,7 @@ azp.style.use("arviz-variat")
 dt = load_arviz_data("centered_eight")
 dt.posterior["log_tau"] = np.log(dt.posterior["tau"])
 
-pc = azp.plot_pairs_focus(
+pc = azp.plot_pair_focus(
     dt,
     var_names=["theta"],
     focus_var="log_tau",
