@@ -77,7 +77,7 @@ def plot_autocorr(
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns

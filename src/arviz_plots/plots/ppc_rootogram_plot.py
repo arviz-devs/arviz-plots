@@ -1,6 +1,8 @@
 """Plot ppc rootogram for discrete (count) data."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
@@ -32,8 +34,30 @@ def plot_ppc_rootogram(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "predictive_markers",
+            "observed_markers",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "grid",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "predictive_markers",
+            "observed_markers",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "grid",
+            "title",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     """Rootogram with confidence intervals per predicted count.
@@ -89,7 +113,7 @@ def plot_ppc_rootogram(
 
         * predictive_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`.
-        * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * grid -> passed to :func:`~arviz_plots.visuals.grid`
@@ -98,8 +122,8 @@ def plot_ppc_rootogram(
         observed_markers defaults to False, no observed data is plotted, if group is
         "prior_predictive". Pass an (empty) mapping to plot the observed data.
 
-    pc_kwargs : mapping
-        Passed to :class:`arviz_plots.PlotCollection.grid`
+    **pc_kwargs
+        Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
     -------
@@ -211,7 +235,7 @@ def plot_ppc_rootogram(
         aes_by_visuals = aes_by_visuals.copy()
 
     aes_by_visuals.setdefault("predictive_markers", plot_collection.aes_set)
-    aes_by_visuals.setdefault("ci", plot_collection.aes_set)
+    aes_by_visuals.setdefault("credible_interval", plot_collection.aes_set)
     ## predictive_markers
     predictive_ms_kwargs = copy(visuals.get("predictive_markers", {}))
 
@@ -233,8 +257,10 @@ def plot_ppc_rootogram(
         )
 
     ## confidence intervals
-    ci_kwargs = copy(visuals.get("ci", {}))
-    _, ci_aes, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    _, ci_aes, ci_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "credible_interval", sample_dims
+    )
 
     if ci_kwargs is not False:
         if "color" not in ci_aes:
@@ -245,7 +271,7 @@ def plot_ppc_rootogram(
 
         plot_collection.map(
             ci_line_y,
-            "ci",
+            "credible_interval",
             data=ds_predictive,
             ignore_aes=ci_ignore,
             **ci_kwargs,

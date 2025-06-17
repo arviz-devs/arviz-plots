@@ -1,9 +1,12 @@
 # pylint: disable=R0801
 """rankDist plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
@@ -33,10 +36,21 @@ def plot_rank_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats_dist_kwargs=None,
-    stats_rank_kwargs=None,
+    aes_by_visuals: Mapping[
+        Literal["dist", "rank", "label", "ticklabels", "xlabel_rank"], Sequence[str]
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "rank",
+            "label",
+            "ticklabels",
+            "xlabel_rank",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["dist", "ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Plot 1D marginal distributions and fractional rank Δ-ECDF plots.
@@ -88,10 +102,10 @@ def plot_rank_dist(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
-          * "kde" -> :func:`~.visuals.line_xy`
-          * "ecdf" -> :func:`~.visuals.ecdf_line`
+          * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
+          * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * "rank" -> passed to :func:`~.visuals.ecdf_line`
@@ -100,19 +114,15 @@ def plot_rank_dist(
         * "xlabel_rank" -> :func:`~.visuals.labelled_x`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats_dist_kwargs : mapping, optional
+    stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
+          ``{"method": "simulation", "n_simulation": 1000}``.
 
-    stats_rank_kwargs : mapping, optional
-        Valid keys are:
-
-        * n_simulations -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is 1000.
-        * method -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is "simulation".
-
-    pc_kwargs : mapping
-        Passed to :class:`arviz_plots.PlotCollection`
+    **pc_kwargs
+        Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns
     -------
@@ -327,7 +337,7 @@ def plot_rank_dist(
         labeller=labeller,
         aes_by_visuals={key: value for key, value in aes_by_visuals.items() if key == kind},
         visuals=visuals_dist,
-        stats=stats_dist_kwargs,
+        stats={"dist": stats.get("dist", {})},
     )
     plot_collection.coords = None
 
@@ -356,7 +366,7 @@ def plot_rank_dist(
         labeller=labeller,
         aes_by_visuals=aes_by_visuals_rank,
         visuals=visuals_rank,
-        stats=stats_rank_kwargs,
+        stats={"ecdf_pit": stats.get("ecdf_pit", {})},
     )
     plot_collection.coords = None
     if xlabel_kwargs is not False:

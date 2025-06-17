@@ -1,10 +1,12 @@
 """PsenseDist plot code."""
+from collections.abc import Mapping, Sequence
 from importlib import import_module
+from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.psense import power_scale_dataset
-from xarray import concat
+from xarray import Dataset, concat
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
@@ -29,9 +31,32 @@ def plot_psense_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[
+        Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | Dataset
+    ] = None,
     **pc_kwargs,
 ):
     """Plot power scaled posteriors.
@@ -81,12 +106,12 @@ def plot_psense_dist(
     labeller : labeller, optional
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `visuals`.
+        when plotted. Valid keys are the same as for `visuals` except for "remove_axis"
 
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -101,11 +126,11 @@ def plot_psense_dist(
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
@@ -242,14 +267,14 @@ def plot_psense_dist(
         # Histograms are not great for overlapping distributions
         # But "step" histograms may be slightly easier to interpret than bars histograms
         # Using the same number of "bins" should help too
-        visuals.setdefault("hist", {})
+        visuals.setdefault("dist", {})
         visuals.setdefault("remove_axis", True)
-        if visuals["hist"] is not False:
-            visuals["hist"].setdefault("alpha", 0.3)
-            visuals["hist"].setdefault("edgecolor", None)
-            stats.setdefault("density", {"density": True})
+        if visuals["dist"] is not False:
+            visuals["dist"].setdefault("alpha", 0.3)
+            visuals["dist"].setdefault("edgecolor", None)
+            stats.setdefault("dist", {"density": True})
 
-    if kind == "ecdf" and visuals.get("ecdf") is False:
+    if kind == "ecdf" and visuals.get("dist") is False:
         visuals.setdefault("remove_axis", True)
 
     plot_dist(

@@ -1,6 +1,8 @@
 """Contain functions for Bayes Factor plotting."""
 
+from collections.abc import Mapping, Sequence
 from copy import copy
+from typing import Any, Literal
 
 import xarray as xr
 from arviz_stats.bayes_factor import bayes_factor
@@ -18,9 +20,23 @@ def plot_bf(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "ref_line",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "ref_line",
+            "title",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     r"""Bayes Factor for comparing hypothesis of two nested models.
@@ -55,21 +71,21 @@ def plot_bf(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
-        * "ref_line -> passed to :func: `~arviz_plots.visuals.vline`
+        * ref_line -> passed to :func: `~arviz_plots.visuals.vline`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns

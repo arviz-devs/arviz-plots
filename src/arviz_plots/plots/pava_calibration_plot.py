@@ -1,6 +1,8 @@
 """Plot ppc using PAV-adjusted calibration plot."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
@@ -32,8 +34,30 @@ def plot_ppc_pava(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "lines",
+            "markers",
+            "reference_line",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "lines",
+            "markers",
+            "reference_line",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     """PAV-adjusted calibration plot.
@@ -86,7 +110,7 @@ def plot_ppc_pava(
         * lines -> passed to :func:`~arviz_plots.visuals.line_xy`
         * markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * reference_line -> passed to :func:`~arviz_plots.visuals.line_xy`
-        * ci -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -94,7 +118,7 @@ def plot_ppc_pava(
         markers defaults to False, no markers are plotted.
         Pass an (empty) mapping to plot markers.
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns
@@ -229,15 +253,15 @@ def plot_ppc_pava(
             **calibration_ls_kwargs,
         )
 
-    ci_kwargs = copy(visuals.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", colors[0])
         ci_kwargs.setdefault("alpha", 0.25)
 
         plot_collection.map(
             fill_between_y,
-            "ci",
+            "credible_interval",
             data=ds_calibration,
             x=ds_calibration.sel(plot_axis="x"),
             y_bottom=ds_calibration.sel(plot_axis="y_bottom"),

@@ -31,13 +31,15 @@ def plot_ppc_dist(
     backend=None,
     labeller=None,
     aes_by_visuals: Mapping[
-        Literal["predictive_density", "observed_density", "title"], Sequence[str]
+        Literal["predictive_dist", "observed_dist", "title"], Sequence[str]
     ] = None,
     visuals: Mapping[
-        Literal["predictive_density", "observed_density", "title", "remove_axis"],
+        Literal["predictive_dist", "observed_dist", "title", "remove_axis"],
         Mapping[str, Any] | Literal[False],
     ] = None,
-    stats: Mapping[Literal["density"], Mapping[str, Any] | xr.Dataset] = None,
+    stats: Mapping[
+        Literal["predictive_dist", "observed_dist"], Mapping[str, Any] | xr.Dataset
+    ] = None,
     **pc_kwargs,
 ):
     """
@@ -84,7 +86,7 @@ def plot_ppc_dist(
         unless there are user provided aesthetic mappings.
         With multiple models, ``plot_dist`` maps "color" and "y" to the "model" dimension.
 
-        By default, all aesthetics but "y" are mapped to the density representation,
+        By default, all aesthetics but "y" are mapped to the distribution representation,
         and if multiple models are present, "color" and "y" are mapped to the
         credible interval and the point estimate.
 
@@ -93,23 +95,26 @@ def plot_ppc_dist(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * predictive_density -> passed to a function that depends on the `kind` argument.
-        * observed_density -> passed to a function that depends on the `kind` argument.
+        * predictive_dist, observed_dist -> passed to a function that depends on
+          the `kind` argument.
 
-            - `kind="kde"` -> passed to :func:`~arviz_plots.visuals.line_xy`
-            - `kind="ecdf"` -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-            - `kind="hist"` -> passed to :func: `~arviz_plots.visuals.hist`
+          - `kind="kde"` -> passed to :func:`~arviz_plots.visuals.line_xy`
+          - `kind="ecdf"` -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+          - `kind="hist"` -> passed to :func: `~arviz_plots.visuals.hist`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-        observed_density defaults to False, no observed data is plotted, if group is
+        observed_dist defaults to False, no observed data is plotted, if group is
         "prior_predictive". Pass an (empty) mapping to plot the observed data.
 
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * predictive_dist, observed_dist -> passed to kde, ecdf, ...
+
+    **pc_kwargs
+        Passed to :meth:`~arviz_plots.PlotCollection.wrap`
 
     Returns
     -------
@@ -135,8 +140,10 @@ def plot_ppc_dist(
         >>> pc = plot_ppc_dist(
         >>>     radon,
         >>>     kind="ecdf",
-        >>>     visuals={"predictive_density": {"color":"C1"},
-        >>>                  "observed_density": {"color":"C3"}},
+        >>>     visuals={
+        >>>         "predictive_dist": {"color":"C1"},
+        >>>         "observed_dist": {"color":"C3"}
+        >>>     },
         >>> )
 
     .. minigallery:: plot_ppc_dist
@@ -244,14 +251,13 @@ def plot_ppc_dist(
     visuals.setdefault("rug_plot", False)
 
     # Plot the predictive density
-    pred_density_kwargs = copy(visuals.get("predictive_density", {}))
+    pred_density_kwargs = copy(visuals.get("predictive_dist", {}))
     if pred_density_kwargs is not False:
-        visuals.setdefault(kind, pred_density_kwargs)
+        visuals.setdefault("dist", pred_density_kwargs)
         visuals[kind].setdefault("alpha", 0.3)
         if kind == "hist":
-            if visuals["hist"] is not False:
-                visuals["hist"].setdefault("edgecolor", None)
-                stats.setdefault("density", True)
+            if visuals["dist"] is not False:
+                visuals["dist"].setdefault("edgecolor", None)
 
         plot_collection = plot_dist(
             predictive_dist,
@@ -262,51 +268,54 @@ def plot_ppc_dist(
             aes_by_visuals=aes_by_visuals,
             pc_kwargs=pc_kwargs,
             plot_collection=plot_collection,
+            stats={"dist": stats.get("predictive_dist", {})},
         )
+        plot_collection.rename_visuals(dist="predictive_dist")
 
     # Plot the observed density
     observed_density_kwargs = copy(
-        visuals.get("observed_density", False if group == "prior_predictive" else {})
+        visuals.get("observed_dist", False if group == "prior_predictive" else {})
     )
 
     if observed_density_kwargs is not False:
+        observed_stats_kwargs = stats.get("observed_dist", {}).copy()
         observed_density_kwargs.setdefault("color", "black")
         if kind == "hist":
             observed_density_kwargs.setdefault("alpha", 0.3)
             observed_density_kwargs.setdefault("edgecolor", None)
-            stats.setdefault("density", True)
 
         _, _, observed_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "observed_density", sample_dims
+            plot_collection, aes_by_visuals, "observed_dist", sample_dims
         )
 
         if kind == "kde":
-            dt_observed = observed_dist.azstats.kde(dim=pp_dims, **stats)
+            dt_observed = observed_dist.azstats.kde(dim=pp_dims, **observed_stats_kwargs)
 
             plot_collection.map(
                 line_xy,
-                "observed_density",
+                "observed_dist",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,
             )
 
         if kind == "hist":
-            dt_observed = observed_dist.azstats.histogram(dim=pp_dims, **stats)
+            observed_stats_kwargs.setdefault("density", True)
+            dt_observed = observed_dist.azstats.histogram(dim=pp_dims, **observed_stats_kwargs)
 
             plot_collection.map(
                 hist,
-                "observed_density",
+                "observed_dist",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,
             )
 
         if kind == "ecdf":
-            dt_observed = observed_dist.azstats.ecdf(**stats)
+            dt_observed = observed_dist.azstats.ecdf(**observed_stats_kwargs)
             plot_collection.map(
                 ecdf_line,
-                "observed_density",
+                "observed_dist",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
                 **observed_density_kwargs,

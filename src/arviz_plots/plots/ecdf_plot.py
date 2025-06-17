@@ -1,6 +1,8 @@
 """Plot PIT Δ-ECDF."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
 from arviz_base import rcParams
@@ -34,8 +36,27 @@ def plot_ecdf_pit(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "title",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     """Plot Δ-ECDF.
@@ -88,20 +109,20 @@ def plot_ecdf_pit(
     labeller : labeller, optional
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `visuals`.
+        when plotted. Valid keys are the same as for `visuals` except for "remove_axis"
 
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    pc_kwargs : mapping
-        Passed to :class:`arviz_plots.PlotCollection.grid`
+    **pc_kwargs
+        Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
     -------
@@ -216,15 +237,15 @@ def plot_ecdf_pit(
             store_artist=backend == "none",
         )
 
-    ci_kwargs = copy(visuals.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", "black")
         ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
             fill_between_y,
-            "ci",
+            "credible_interval",
             data=dt_ecdf,
             x=x_ci,
             y_bottom=lower_ci,

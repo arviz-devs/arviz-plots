@@ -1,6 +1,8 @@
 """Pair focus plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
 import xarray as xr
@@ -29,8 +31,24 @@ def plot_pair_focus(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "scatter",
+            "divergence",
+            "xlabel",
+            "ylabel",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "scatter",
+            "divergence",
+            "xlabel",
+            "ylabel",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     """Plot a fixed variable against other variables in the dataset.

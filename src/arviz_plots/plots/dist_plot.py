@@ -24,18 +24,6 @@ from arviz_plots.visuals import (
     scatter_x,
 )
 
-CoreVisuals = Literal[
-    "kde",
-    "ecdf",
-    "dot",
-    "hist",
-    "credible_interval",
-    "point_estimate",
-    "point_estimate_text",
-    "title",
-    "rug",
-]
-
 
 def plot_dist(
     dt,
@@ -51,13 +39,31 @@ def plot_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals: Mapping[CoreVisuals, Sequence[str]] = None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+        ],
+        Sequence[str],
+    ] = None,
     visuals: Mapping[
-        CoreVisuals | Literal["remove_axis"],
+        Literal[
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+            "remove_axis",
+        ],
         Mapping[str, Any] | Literal[False],
     ] = None,
     stats: Mapping[
-        Literal["density", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
+        Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
     ] = None,
     **pc_kwargs,
 ):
@@ -115,7 +121,7 @@ def plot_dist(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -131,11 +137,11 @@ def plot_dist(
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
@@ -190,11 +196,15 @@ def plot_dist(
         kind = rcParams["plot.density_kind"]
     if visuals is None:
         visuals = {}
+    else:
+        visuals = visuals.copy()
     if kind in ("hist", "ecdf"):
         visuals.setdefault("remove_axis", False)
 
     if stats is None:
         stats = {}
+    else:
+        stats = stats.copy()
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -243,7 +253,7 @@ def plot_dist(
         labeller = BaseLabeller()
 
     # density
-    density_kwargs = copy(visuals.get(kind, {}))
+    density_kwargs = copy(visuals.get("dist", {}))
 
     if density_kwargs is not False:
         density_dims, density_aes, density_ignore = filter_aes(
@@ -258,55 +268,29 @@ def plot_dist(
             with warnings.catch_warnings():
                 if "model" in distribution:
                     warnings.filterwarnings("ignore", message="Your data appears to have a single")
-                density = distribution.azstats.kde(dim=density_dims, **stats.get("density", {}))
+                density = distribution.azstats.kde(dim=density_dims, **stats.get("dist", {}))
             plot_collection.map(
-                line_xy, "kde", data=density, ignore_aes=density_ignore, **density_kwargs
+                line_xy, "dist", data=density, ignore_aes=density_ignore, **density_kwargs
             )
 
-            if visuals is None:
-                visuals = {}
-
-            rug_kwargs = copy(visuals.get("rug", False))
-
-            if rug_kwargs is not False:
-                if not isinstance(rug_kwargs, dict):
-                    rug_kwargs = {}
-
-                _, rug_aes, rug_ignore = filter_aes(
-                    plot_collection, aes_by_visuals, "rug", sample_dims
-                )
-
-                if "color" not in rug_aes:
-                    rug_kwargs.setdefault("color", "black")
-                if "marker" not in rug_aes:
-                    rug_kwargs.setdefault("marker", "|")
-                if "size" not in rug_aes:
-                    rug_kwargs.setdefault("size", 15)
-
-                plot_collection.map(
-                    scatter_x,
-                    "rug",
-                    data=distribution,
-                    ignore_aes=rug_ignore,
-                    **rug_kwargs,
-                )
         elif kind == "ecdf":
-            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("density", {}))
+            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
             plot_collection.map(
                 ecdf_line,
-                "ecdf",
+                "dist",
                 data=density,
                 ignore_aes=density_ignore,
                 **density_kwargs,
             )
 
         elif kind == "hist":
-            stats.setdefault("density", {"density": True})
-            density = distribution.azstats.histogram(dim=density_dims, **stats.get("density", {}))
+            hist_kwargs = stats.pop("dist", {}).copy()
+            hist_kwargs.setdefault("density", True)
+            density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
 
             plot_collection.map(
                 hist,
-                "hist",
+                "dist",
                 data=density,
                 ignore_aes=density_ignore,
                 **density_kwargs,
@@ -314,6 +298,29 @@ def plot_dist(
 
         else:
             raise NotImplementedError("coming soon")
+
+    rug_kwargs = copy(visuals.get("rug", False))
+
+    if rug_kwargs is not False:
+        if not isinstance(rug_kwargs, dict):
+            rug_kwargs = {}
+
+        _, rug_aes, rug_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)
+
+        if "color" not in rug_aes:
+            rug_kwargs.setdefault("color", "black")
+        if "marker" not in rug_aes:
+            rug_kwargs.setdefault("marker", "|")
+        if "size" not in rug_aes:
+            rug_kwargs.setdefault("size", 15)
+
+        plot_collection.map(
+            scatter_x,
+            "rug",
+            data=distribution,
+            ignore_aes=rug_ignore,
+            **rug_kwargs,
+        )
 
     if (
         (density_kwargs is not None)

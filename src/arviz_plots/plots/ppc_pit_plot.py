@@ -1,7 +1,9 @@
 """Plot ppc pit."""
 import warnings
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
@@ -35,8 +37,26 @@ def plot_ppc_pit(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "xlabel",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     r"""PIT Δ-ECDF values with simultaneous confidence envelope.
@@ -109,8 +129,8 @@ def plot_ppc_pit(
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
-    pc_kwargs : mapping
-        Passed to :class:`arviz_plots.PlotCollection.grid`
+    **pc_kwargs
+        Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
     -------
@@ -135,10 +155,6 @@ def plot_ppc_pit(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_ppc_pit, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('crabs_hurdle_nb')
         >>> plot_ppc_pit(dt, coverage=True)
 
     .. minigallery:: plot_ppc_pit
@@ -242,15 +258,15 @@ def plot_ppc_pit(
             store_artist=backend == "none",
         )
 
-    ci_kwargs = copy(visuals.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", "black")
         ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
             fill_between_y,
-            "ci",
+            "credible_interval",
             data=ds_ecdf,
             x=ds_ecdf.sel(plot_axis="x"),
             y_bottom=ds_ecdf.sel(plot_axis="y_bottom"),

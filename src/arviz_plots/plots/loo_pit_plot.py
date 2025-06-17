@@ -1,4 +1,7 @@
 """Plot loo pit."""
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal
+
 from arviz_base import convert_to_datatree
 from arviz_stats.loo import loo_pit
 
@@ -19,8 +22,26 @@ def plot_loo_pit(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     r"""LOO-PIT Δ-ECDF values with simultaneous confidence envelope.
@@ -83,12 +104,12 @@ def plot_loo_pit(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns
