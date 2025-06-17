@@ -254,7 +254,7 @@ def plot_ppc_dist(
     pred_density_kwargs = copy(visuals.get("predictive_dist", {}))
     if pred_density_kwargs is not False:
         visuals.setdefault("dist", pred_density_kwargs)
-        visuals[kind].setdefault("alpha", 0.3)
+        visuals["dist"].setdefault("alpha", 0.3)
         if kind == "hist":
             if visuals["dist"] is not False:
                 visuals["dist"].setdefault("edgecolor", None)

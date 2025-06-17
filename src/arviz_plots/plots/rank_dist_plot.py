@@ -203,10 +203,8 @@ def plot_rank_dist(
         sample_dims = [sample_dims]
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if stats_dist_kwargs is None:
-        stats_dist_kwargs = {}
-    if stats_rank_kwargs is None:
-        stats_rank_kwargs = {}
+    if stats is None:
+        stats = {}
     if visuals is None:
         visuals = {}
 

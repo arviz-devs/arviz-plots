@@ -1,8 +1,10 @@
 """Ridge plot code."""
 
 import warnings
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import numpy as np
@@ -29,9 +31,27 @@ def plot_ridge(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "edge",
+            "face",
+            "labels",
+            "shade",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "edge",
+            "face",
+            "labels",
+            "shade",
+            "ticklabels",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Plot 1D marginal densities in a single plot, akin to a forest plot.
@@ -107,7 +127,7 @@ def plot_ridge(
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde
+        * dist -> passed to kde
 
     pc_kwargs : mapping
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -338,7 +358,7 @@ def plot_ridge(
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            density = distribution.azstats.kde(dim=edge_dims, **stats.get("density", {}))
+            density = distribution.azstats.kde(dim=edge_dims, **stats.get("dist", {}))
         # rescaling kde
         density.loc[{"plot_axis": "y"}] = (
             density.sel(plot_axis="y")
