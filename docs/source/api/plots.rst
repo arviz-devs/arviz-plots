@@ -23,17 +23,19 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_compare
    plot_convergence_dist
    plot_dist
-   plot_energy
    plot_ecdf_pit
+   plot_energy
    plot_ess
    plot_ess_evolution
    plot_forest
    plot_loo_pit
+   plot_mcse
    plot_pair_focus
    plot_ppc_dist
    plot_ppc_pava
    plot_ppc_pit
    plot_ppc_rootogram
+   plot_ppc_tstat
    plot_prior_posterior
    plot_psense_dist
    plot_psense_quantities
