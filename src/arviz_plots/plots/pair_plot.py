@@ -86,8 +86,7 @@ def plot_pair(
         >>> dt = load_arviz_data('centered_eight')
         >>> plot_pair(
         >>>     dt,
-        >>>     var_names=["mu", "theta"],
-        >>>     coords={"school": "Choate"},
+        >>>     var_names=["mu", "tau"],
         >>>     visuals={"divergence": True},
         >>> )
 
