@@ -1,8 +1,11 @@
 """Contain functions for Bayes Factor plotting."""
 
+from collections.abc import Mapping, Sequence
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import extract, rcParams
 from xarray import concat
 
@@ -22,9 +25,32 @@ def plot_prior_posterior(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[
+        Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
+    ] = None,
     **pc_kwargs,
 ):
     r"""Plot 1D marginal densities for prior and posterior.
@@ -59,11 +85,13 @@ def plot_prior_posterior(
     labeller : labeller, optional
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `visuals`.
+        when plotted. The prior and posterior groups are combined creating a new
+        dimension "group". By default, there is an aesthetic mapping from group to color.
+        Valid keys are the same as for `visuals`.
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -74,9 +102,9 @@ def plot_prior_posterior(
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
@@ -191,11 +219,10 @@ def plot_prior_posterior(
         aes_by_visuals = aes_by_visuals.copy()
 
     if kind == "hist":
-        visuals.setdefault("hist", {})
+        visuals.setdefault("dist", {})
         visuals.setdefault("remove_axis", True)
-        if visuals["hist"] is not False:
-            visuals["hist"].setdefault("step", True)
-            stats.setdefault("density", {"density": True})
+        if visuals["dist"] is not False:
+            visuals["dist"].setdefault("step", True)
 
     plot_collection = plot_dist(
         distribution,

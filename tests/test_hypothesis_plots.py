@@ -60,7 +60,7 @@ def labels_shade(draw, elements):
         optional={
             "lines": visuals_value,
             "ref_line": visuals_value,
-            "ci": visuals_value,
+            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "title": visuals_value,
         },
@@ -87,7 +87,7 @@ def test_plot_autocorr(datatree, visuals):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value_no_false,
+            "dist": visuals_value_no_false,
             "ref_line": visuals_value_no_false,
             "title": visuals_value,
         },
@@ -96,9 +96,6 @@ def test_plot_autocorr(datatree, visuals):
     ref_val=st.floats(min_value=-1, max_value=1, allow_nan=False, allow_infinity=False),
 )
 def test_plot_bf(datatree, kind, ref_val, visuals):
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_bf(
         datatree,
         backend="none",
@@ -119,7 +116,7 @@ def test_plot_bf(datatree, kind, ref_val, visuals):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value,
+            "dist": visuals_value,
             "ref_line": visuals_value_no_false,
             "title": visuals_value,
             "remove_axis": st.just(False),
@@ -139,9 +136,6 @@ def test_plot_bf(datatree, kind, ref_val, visuals):
     ref_line=st.booleans(),
 )
 def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_convergence_dist(
         datatree,
         diagnostics=diagnostics,
@@ -176,11 +170,12 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value,
+            "dist": visuals_value,
             "credible_interval": visuals_value,
             "point_estimate": visuals_value,
             "point_estimate_text": visuals_value,
             "title": visuals_value,
+            "rug": visuals_value,
             "remove_axis": st.just(False),
         },
     ),
@@ -189,9 +184,6 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
     point_estimate=point_estimate_value,
 )
 def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_dist(
         datatree,
         backend="none",
@@ -216,7 +208,7 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "ci": visuals_value,
+            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
@@ -410,7 +402,7 @@ def test_plot_forest(
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "ci": visuals_value,
+            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
@@ -520,7 +512,8 @@ def test_plot_pair_focus(datatree, visuals, focus_var):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value_no_false,
+            "predictive_dist": visuals_value_no_false,
+            "observed_dist": visuals_value,
             "title": visuals_value,
             "remove_axis": st.just(False),
         },
@@ -528,9 +521,6 @@ def test_plot_pair_focus(datatree, visuals, focus_var):
     kind=kind_value,
 )
 def test_plot_ppc_dist(datatree, kind, visuals):
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_ppc_dist(
         datatree,
         backend="none",
@@ -556,7 +546,7 @@ def test_plot_ppc_dist(datatree, kind, visuals):
             "lines": visuals_value,
             "markers": visuals_value,
             "reference_line": visuals_value,
-            "ci": visuals_value,
+            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
@@ -589,7 +579,7 @@ def test_plot_ppc_pava(datatree_binary, ci_prob, visuals):
         optional={
             "predictive_markers": visuals_value,
             "observed_markers": visuals_value,
-            "ci": visuals_value,
+            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "grid": visuals_value,
@@ -622,7 +612,7 @@ def test_plot_ppc_rootogram(datatree3, ci_prob, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "ci": visuals_value,
+            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
@@ -655,7 +645,7 @@ def test_plot_ppc_pit(datatree, coverage, ci_prob, visuals):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value_no_false,
+            "dist": visuals_value_no_false,
             "observed_tstat": visuals_value,
             "credible_interval": visuals_value,
             "point_estimate": visuals_value,
@@ -669,11 +659,6 @@ def test_plot_ppc_pit(datatree, coverage, ci_prob, visuals):
     t_stat=t_stat_value,
 )
 def test_plot_ppc_tstat(datatree, kind, t_stat, visuals):
-    if kind != "kde":
-        visuals.pop("rug", None)
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_ppc_tstat(
         datatree,
         backend="none",
@@ -697,16 +682,13 @@ def test_plot_ppc_tstat(datatree, kind, t_stat, visuals):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value_no_false,
+            "dist": visuals_value_no_false,
             "title": visuals_value,
         },
     ),
     kind=kind_value,
 )
 def test_plot_prior_posterior(datatree, kind, visuals):
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_prior_posterior(
         datatree,
         backend="none",
@@ -728,7 +710,7 @@ def test_plot_prior_posterior(datatree, kind, visuals):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value,
+            "dist": visuals_value,
             "credible_interval": visuals_value,
             "point_estimate": visuals_value,
             "point_estimate_text": visuals_value,
@@ -742,9 +724,6 @@ def test_plot_prior_posterior(datatree, kind, visuals):
     ci_kind=ci_kind_value,
 )
 def test_plot_psense(datatree, alphas, kind, point_estimate, ci_kind, visuals):
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_psense_dist(
         datatree,
         alphas=alphas,
@@ -810,7 +789,7 @@ def test_plot_psense_quantities(datatree, quantities, mcse, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "ci": visuals_value,
+            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "title": visuals_value,
             "remove_axis": st.just(False),
@@ -840,7 +819,7 @@ def test_plot_rank(datatree, ci_prob, visuals):
     visuals=st.fixed_dictionaries(
         {},
         optional={
-            "kind": visuals_value,
+            "dist": visuals_value_no_false,
         },
     ),
     kind=kind_value,
@@ -848,9 +827,6 @@ def test_plot_rank(datatree, ci_prob, visuals):
     combined=st.booleans(),
 )
 def test_plot_rank_dist(datatree, kind, compact, combined, visuals):
-    kind_kwargs = visuals.pop("kind", None)
-    if kind_kwargs is not None:
-        visuals[kind] = kind_kwargs
     pc = plot_rank_dist(
         datatree,
         backend="none",

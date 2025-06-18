@@ -1,9 +1,9 @@
 """evolution ess plot."""
 
-# imports
-# import warnings
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import numpy as np
@@ -37,9 +37,43 @@ def plot_ess_evolution(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "ess_bulk",
+            "ess_bulk_line",
+            "ess_tail",
+            "ess_tail_line",
+            "title",
+            "xlabel",
+            "ylabel",
+            "mean",
+            "mean_text",
+            "sd",
+            "sd_text",
+            "min_ess",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "ess_bulk",
+            "ess_bulk_line",
+            "ess_tail",
+            "ess_tail_line",
+            "title",
+            "xlabel",
+            "ylabel",
+            "mean",
+            "mean_text",
+            "sd",
+            "sd_text",
+            "min_ess",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[
+        Literal["ess_bulk", "ess_tail", "mean", "sd"], Mapping[str, Any] | xr.Dataset
+    ] = None,
     **pc_kwargs,
 ):
     """Plot estimated effective sample size plots for increasing number of iterations.
@@ -84,6 +118,7 @@ def plot_ess_evolution(
 
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
+
         * ess_bulk -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * ess_bulk_line -> passed to :func:`~arviz_plots.visuals.line_xy`
         * ess_tail -> passed to :func:`~arviz_plots.visuals.scatter_xy`
@@ -99,12 +134,13 @@ def plot_ess_evolution(
 
     stats : mapping, optional
         Valid keys are:
+
         * ess_bulk -> passed to ess, method = 'bulk'
         * ess_tail -> passed to ess, method = 'tail'
         * mean -> passed to ess, method='mean'
         * sd -> passed to ess, method='sd'
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns

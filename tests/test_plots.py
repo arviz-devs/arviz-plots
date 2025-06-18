@@ -53,7 +53,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_bf(self, datatree, backend):
         pc = plot_bf(datatree, var_names="mu", backend=backend)
         assert "figure" in pc.viz.data_vars
-        assert "group" in pc.viz["kde"].coords
+        assert "group" in pc.viz["dist"].coords
         assert "/color" in pc.aes.groups
         assert "BF_type" in pc.aes["bf_aes"].coords
 
@@ -77,24 +77,24 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_convergence_dist(self, datatree, backend):
         pc = plot_convergence_dist(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
-        assert "rhat" in pc.viz["ecdf"]
+        assert "rhat" in pc.viz["dist"]
         assert "ess_bulk" in pc.viz["title"]
 
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind)
         assert not pc.aes
-        assert "mu" in pc.viz[kind].data_vars
-        visuals = ("plot", kind, "credible_interval", "point_estimate")
+        assert "mu" in pc.viz["dist"].data_vars
+        visuals = ("plot", "dist", "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
     def test_plot_dist_step_hist(self, datatree, backend):
-        visuals = {"hist": {"step": True}}
+        visuals = {"dist": {"step": True}}
         pc = plot_dist(datatree, backend=backend, kind="hist", visuals=visuals)
         assert not pc.aes
-        assert "mu" in pc.viz["hist"].data_vars
-        visuals = ("plot", "hist", "credible_interval", "point_estimate")
+        assert "mu" in pc.viz["dist"].data_vars
+        visuals = ("plot", "dist", "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
@@ -102,13 +102,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_dist_sample(self, datatree_sample, backend, kind):
         pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", kind=kind)
         assert not pc.aes
-        assert "mu" in pc.viz[kind].data_vars
-        visuals = ("plot", kind, "credible_interval", "point_estimate")
+        assert "mu" in pc.viz["dist"].data_vars
+        visuals = ("plot", "dist", "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
     def test_plot_dist_sample_step_hist(self, datatree_sample, backend):
-        visuals = {"hist": {"step": True}}
+        visuals = {"dist": {"step": True}}
         pc = plot_dist(
             datatree_sample,
             backend=backend,
@@ -117,8 +117,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             visuals=visuals,
         )
         assert not pc.aes
-        assert "mu" in pc.viz["hist"].data_vars
-        visuals = ("plot", "hist", "credible_interval", "point_estimate")
+        assert "mu" in pc.viz["dist"].data_vars
+        visuals = ("plot", "dist", "credible_interval", "point_estimate")
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
@@ -127,10 +127,10 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
         assert "/color" in pc.aes.groups
         assert tuple(pc.aes["color"].dims) == ("model",)
-        assert kind in pc.viz.children
-        assert "mu" in pc.viz[kind].data_vars
-        assert "hierarchy" not in pc.viz[kind]["mu"].dims
-        assert "model" in pc.viz[kind]["mu"].dims
+        assert "dist" in pc.viz.children
+        assert "mu" in pc.viz["dist"].data_vars
+        assert "hierarchy" not in pc.viz["dist"]["mu"].dims
+        assert "model" in pc.viz["dist"]["mu"].dims
 
     def test_plot_ecdf_pit(self, datatree, backend):
         pc = plot_ecdf_pit(datatree, backend=backend, group="prior")
@@ -144,14 +144,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_energy(datatree, backend=backend)
         assert pc is not None
         assert hasattr(pc, "viz")
-        assert "/kde" in pc.viz.groups
-        assert "energy" in pc.viz["kde"]
-        assert "energy" in pc.viz["kde"].coords
-        kde_values = pc.viz["kde"]["energy_"].values
+        assert "/dist" in pc.viz.groups
+        assert "energy" in pc.viz["dist"]
+        assert "energy" in pc.viz["dist"].coords
+        kde_values = pc.viz["dist"]["energy_"].values
         assert kde_values.size > 0
-        assert "component_group" not in pc.viz["kde"]["energy_"].dims
-        assert "alpha" not in pc.viz["kde"]["energy_"].dims
-        energy_coords = pc.viz["kde"]["energy_"].coords["energy"].values
+        assert "component_group" not in pc.viz["dist"]["energy_"].dims
+        assert "alpha" not in pc.viz["dist"]["energy_"].dims
+        energy_coords = pc.viz["dist"]["energy_"].coords["energy"].values
         assert "marginal" in energy_coords
         assert "transition" in energy_coords
 
@@ -159,14 +159,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_energy(datatree_sample, backend=backend)
         assert pc is not None
         assert hasattr(pc, "viz")
-        assert "/kde" in pc.viz.groups
-        assert "energy" in pc.viz["kde"]
-        assert "energy" in pc.viz["kde"].coords
-        kde_values = pc.viz["kde"]["energy_"].values
+        assert "/dist" in pc.viz.groups
+        assert "energy" in pc.viz["dist"]
+        assert "energy" in pc.viz["dist"].coords
+        kde_values = pc.viz["dist"]["energy_"].values
         assert kde_values.size > 0
-        assert "component_group" not in pc.viz["kde"]["energy_"].dims
-        assert "alpha" not in pc.viz["kde"]["energy_"].dims
-        energy_coords = pc.viz["kde"]["energy_"].coords["energy"].values
+        assert "component_group" not in pc.viz["dist"]["energy_"].dims
+        assert "alpha" not in pc.viz["dist"]["energy_"].dims
+        energy_coords = pc.viz["dist"]["energy_"].coords["energy"].values
         assert "marginal" in energy_coords
         assert "transition" in energy_coords
 
@@ -375,8 +375,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "/overlay_ppc" in pc.aes.groups
-        assert "y" in pc.viz[kind]
-        assert "y" in pc.viz["observed_density"]
+        assert "y" in pc.viz["predictive_dist"]
+        assert "y" in pc.viz["observed_dist"]
 
     def test_plot_ppc_pava(self, datatree_binary, backend):
         pc = plot_ppc_pava(datatree_binary, backend=backend)
@@ -406,7 +406,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_ppc_tstat(self, datatree, kind, backend):
         pc = plot_ppc_tstat(datatree, kind=kind, backend=backend)
         assert "figure" in pc.viz.data_vars
-        assert kind in pc.viz.children
+        assert "dist" in pc.viz.children
         assert "observed_tstat" in pc.viz.children
         assert "y" in pc.viz["plot"]
 
@@ -414,7 +414,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_prior_posterior(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "group" not in pc.viz["plot"].coords
-        assert "group" in pc.viz["kde"].coords
+        assert "group" in pc.viz["dist"].coords
 
     def test_plot_psense_dist(self, datatree, backend):
         pc = plot_psense_dist(datatree, backend=backend)
@@ -462,15 +462,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_rank_dist(self, datatree, backend, compact, combined):
-        kind = "kde"
         pc = plot_rank_dist(datatree, backend=backend, compact=compact, combined=combined)
         assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         if combined:
-            assert "chain" not in pc.viz[kind]["theta"].dims
+            assert "chain" not in pc.viz["dist"]["theta"].dims
         else:
-            assert "chain" in pc.viz[kind]["theta"].dims
+            assert "chain" in pc.viz["dist"]["theta"].dims
         if compact:
             assert "hierarchy" not in pc.viz["plot"]["theta"].dims
         else:
@@ -551,16 +550,15 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
     def test_plot_trace_dist(self, datatree, backend, compact, combined):
-        kind = "kde"
         pc = plot_trace_dist(datatree, backend=backend, compact=compact, combined=combined)
         assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert "chain" in pc.viz["trace"]["theta"].dims
         if combined:
-            assert "chain" not in pc.viz[kind]["theta"].dims
+            assert "chain" not in pc.viz["dist"]["theta"].dims
         else:
-            assert "chain" in pc.viz[kind]["theta"].dims
+            assert "chain" in pc.viz["dist"]["theta"].dims
         if compact:
             assert "hierarchy" not in pc.viz["plot"]["theta"].dims
         else:

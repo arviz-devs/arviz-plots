@@ -1,5 +1,7 @@
 """Compare plot code."""
+from collections.abc import Mapping
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
 from arviz_base import rcParams
@@ -13,7 +15,12 @@ def plot_compare(
     similar_shade=True,
     relative_scale=False,
     backend=None,
-    visuals=None,
+    visuals: Mapping[
+        Literal[
+            "point_estimate", "error_bar", "ref_line", "shade", "labels", "title", "ticklabels"
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     r"""Summary plot for model comparison.
@@ -35,20 +42,21 @@ def plot_compare(
         Defaults to False.
     backend : {"bokeh", "matplotlib", "plotly"}
         Select plotting backend. Defaults to rcParams["plot.backend"].
-    figsize : (float, float), optional
+    figsize : tuple of (float, float), optional
         If `None`, size is (10, num of models) inches.
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * point_estimate -> passed to :func:`~.backend.scatter`
-        * error_bar -> passed to :func:`~.backend.line`
-        * ref_line -> passed to :func:`~.backend.line`
-        * shade -> passed to :func:`~.backend.fill_between_y`
-        * labels -> passed to :func:`~.backend.xticks` and :func:`~.backend.yticks`
-        * title -> passed to :func:`~.backend.title`
-        * ticklabels -> passed to :func:`~.backend.yticks`
+        * point_estimate -> passed to :func:`~arviz_plots.backend.none.scatter`
+        * error_bar -> passed to :func:`~arviz_plots.backend.none.line`
+        * ref_line -> passed to :func:`~arviz_plots.backend.none.line`
+        * shade -> passed to :func:`~arviz_plots.backend.none.fill_between_y`
+        * labels -> passed to :func:`~arviz_plots.backend.none.xticks`
+          and :func:`~arviz_plots.backend.none.yticks`
+        * title -> passed to :func:`~arviz_plots.backend.none.title`
+        * ticklabels -> passed to :func:`~arviz_plots.backend.none.yticks`
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection`
 
     Returns

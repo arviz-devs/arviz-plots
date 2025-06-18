@@ -1,5 +1,9 @@
 """Energy plot code."""
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal
+
 import numpy as np
+import xarray as xr
 from arviz_base import convert_to_dataset, rcParams
 
 from arviz_plots.plots.dist_plot import plot_dist
@@ -12,9 +16,22 @@ def plot_energy(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "title",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     r"""Plot transition distribution and marginal energy distribution in HMC algorithms.
@@ -45,7 +62,7 @@ def plot_energy(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -56,9 +73,10 @@ def plot_energy(
 
     stats : mapping, optional
         Valid keys are:
-        * density -> passed to kde, ecdf, ...
 
-    pc_kwargs : mapping
+        * dist -> passed to kde, ecdf, ...
+
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns

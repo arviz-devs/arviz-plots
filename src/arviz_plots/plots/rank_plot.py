@@ -1,8 +1,11 @@
 """Plot fractional rank."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import ecdf_pit
@@ -23,9 +26,26 @@ def plot_rank(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "ecdf_lines",
+            "credible_interval",
+            "xlabel",
+            "title",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Fractional rank Δ-ECDF plots.
@@ -70,7 +90,7 @@ def plot_rank(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * ci -> passed to :func:`~arviz_plots.visuals.ci_line_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.ci_line_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
@@ -78,11 +98,11 @@ def plot_rank(
     stats : mapping, optional
         Valid keys are:
 
-        * n_simulations -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is 1000.
-        * method -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is "simulation".
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
+          ``{"method": "simulation", "n_simulation": 1000}``.
 
-    pc_kwargs : mapping
-        Passed to :class:`arviz_plots.PlotCollection.grid`
+    **pc_kwargs
+        Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
     -------
@@ -119,8 +139,12 @@ def plot_rank(
     sample_dims = list(sample_dims)
     if stats is None:
         stats = {}
-    stats.setdefault("n_simulations", 1000)
-    stats.setdefault("method", "simulation")
+    else:
+        stats = stats.copy()
+
+    ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
+    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+    ecdf_pit_kwargs.setdefault("method", "simulation")
     if visuals is None:
         visuals = {}
     else:
@@ -150,7 +174,7 @@ def plot_rank(
     # But we should consider the jointly rank-transformed values
     dummy_vals_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **stats)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 
@@ -197,15 +221,15 @@ def plot_rank(
             **ecdf_ls_kwargs,
         )
 
-    ci_kwargs = copy(visuals.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", sample_dims)
+    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", "black")
         ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
             fill_between_y,
-            "ci",
+            "credible_interval",
             data=dt_ecdf,
             x=x_ci,
             y_bottom=lower_ci,

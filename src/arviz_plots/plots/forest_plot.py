@@ -1,6 +1,8 @@
 """Forest plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import numpy as np
@@ -29,9 +31,30 @@ def plot_forest(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "credible_interval",
+            "point_estimate",
+            "labels",
+            "shade",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "trunk",
+            "twig",
+            "point_estimate",
+            "labels",
+            "shade",
+            "ticklabels",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[
+        Literal["trunk", "twig", "point_estimate"], Mapping[str, Any] | xr.Dataset
+    ] = None,
     **pc_kwargs,
 ):
     """Plot 1D marginal credible intervals in a single plot.
@@ -87,7 +110,7 @@ def plot_forest(
     aes_by_visuals : mapping of {str : sequence of str or False}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals` except "ticklabels"
-        which doesn't apply and "twig" and "trunk" which, similarly to `stats`
+        and "remove_axis" which do not apply, and "twig" and "trunk" which
         take the same aesthetics through the "credible_interval" key.
 
         By default, aesthetic mappings are generated for: y, alpha, overlay and color
@@ -115,7 +138,7 @@ def plot_forest(
         * trunk, twig -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns

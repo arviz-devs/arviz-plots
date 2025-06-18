@@ -106,7 +106,7 @@ def combine_plots(
         in the returned :class:`~arviz_plots.PlotCollection`.
     backend : {"matplotlib", "bokeh", "plotly"}, optional
         Plotting backend to use. Defaults to ``rcParams["plot.backend"]``.
-    pc_kwargs : mapping, optional
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns

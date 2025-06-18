@@ -1,6 +1,8 @@
 """psense quantities plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 from arviz_base import extract, rcParams
 from arviz_base.labels import BaseLabeller
@@ -28,8 +30,30 @@ def plot_psense_quantities(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "prior_markers",
+            "prior_lines",
+            "likelihood_markers",
+            "likelihood_lines",
+            "mcse",
+            "ticks",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "prior_markers",
+            "prior_lines",
+            "likelihood_markers",
+            "likelihood_lines",
+            "mcse",
+            "ticks",
+            "title",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     """Plot power scaled posterior quantities.
@@ -88,7 +112,7 @@ def plot_psense_quantities(
         * ticks -> passed to :func:`~arviz_plots.visuals.set_xticks`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns

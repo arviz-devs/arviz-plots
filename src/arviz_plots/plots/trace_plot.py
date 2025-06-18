@@ -1,6 +1,8 @@
 """Trace plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
 from arviz_base import rcParams
@@ -26,8 +28,26 @@ def plot_trace(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "trace",
+            "divergence",
+            "title",
+            "xlabel",
+            "ticklabels",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "trace",
+            "divergence",
+            "title",
+            "xlabel",
+            "ticklabels",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     """Plot iteration versus sampled values.

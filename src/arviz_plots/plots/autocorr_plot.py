@@ -1,7 +1,9 @@
 """Autocorrelation plot code."""
 
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
 from arviz_base import rcParams
@@ -23,8 +25,13 @@ def plot_autocorr(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal["lines", "ref_line", "credible_interval", "xlabel", "title"], Sequence[str]
+    ] = None,
+    visuals: Mapping[
+        Literal["lines", "ref_line", "credible_interval", "xlabel", "title"],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
     **pc_kwargs,
 ):
     """Autocorrelation plots for the given dataset.
@@ -66,11 +73,11 @@ def plot_autocorr(
 
         * lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
         * ref_line -> passed to :func:`~arviz_plots.visuals.line_xy`
-        * ci -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
     Returns
@@ -188,15 +195,15 @@ def plot_autocorr(
         )
 
     # Plot confidence intervals
-    ci_kwargs = copy(visuals.get("ci", {}))
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "ci", "draw")
+    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", "draw")
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", "black")
         ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
             fill_between_y,
-            "ci",
+            "credible_interval",
             data=acf_dataset,
             x=x_ci,
             y=0,

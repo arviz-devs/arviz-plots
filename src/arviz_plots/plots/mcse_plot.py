@@ -1,7 +1,9 @@
 """mcse plot code."""
 
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import numpy as np
@@ -41,9 +43,35 @@ def plot_mcse(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "mcse",
+            "rug",
+            "title",
+            "xlabel",
+            "ylabel",
+            "mean",
+            "mean_text",
+            "sd",
+            "sd_text",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "mcse",
+            "rug",
+            "title",
+            "xlabel",
+            "ylabel",
+            "mean",
+            "mean_text",
+            "sd",
+            "sd_text",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["mcse", "mean", "sd"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Plot Monte Carlo standard error.
@@ -114,7 +142,7 @@ def plot_mcse(
         * mean -> passed to mcse, method='mean'
         * sd -> passed to mcse, method='sd'
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns

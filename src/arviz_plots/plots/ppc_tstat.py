@@ -1,8 +1,11 @@
 """ppc t-stat plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
@@ -28,9 +31,34 @@ def plot_ppc_tstat(
     backend=None,
     data_pairs=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "observed_tstat",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "observed_tstat",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
+            "title",
+            "rug",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[
+        Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
+    ] = None,
     **pc_kwargs,
 ):
     """
@@ -81,11 +109,11 @@ def plot_ppc_tstat(
         the same variable name.
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `visuals`.
+        when plotted. Valid keys are the same as for `visuals` exept for "remove_axis"
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -106,9 +134,9 @@ def plot_ppc_tstat(
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
@@ -144,10 +172,14 @@ def plot_ppc_tstat(
     .. plot::
         :context: close-figs
 
-        >>> azp.plot_ppc_tstat(dt,
-        >>>                    visuals={"kde": False,
-        >>>                                 "credible_interval": {},
-        >>>                                 "point_estimate": {}})
+        >>> azp.plot_ppc_tstat(
+        >>>     dt,
+        >>>     visuals={
+        >>>         "dist": False,
+        >>>         "credible_interval": {},
+        >>>         "point_estimate": {},
+        >>>     }
+        >>> )
 
 
     .. minigallery:: plot_ppc_tstat

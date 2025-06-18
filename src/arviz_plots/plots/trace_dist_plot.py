@@ -1,8 +1,11 @@
 """TraceDist plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
@@ -31,9 +34,30 @@ def plot_trace_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "trace",
+            "divergence",
+            "label",
+            "ticklabels",
+            "xlabel_trace",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "trace",
+            "divergence",
+            "label",
+            "ticklabels",
+            "xlabel_trace",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Plot 1D marginal distributions and iteration versus sampled values.
@@ -73,10 +97,10 @@ def plot_trace_dist(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
-          * "kde" -> :func:`~.visuals.line_xy`
-          * "ecdf" -> :func:`~.visuals.ecdf_line`
+          * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
+          * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * "trace" -> passed to :func:`~.visuals.line`

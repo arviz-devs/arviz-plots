@@ -1,7 +1,9 @@
 """Convergence diagnostic distribution plot code."""
 import warnings
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
@@ -29,9 +31,24 @@ def plot_convergence_dist(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
-    stats=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "dist",
+            "ref_line",
+            "title",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "dist",
+            "ref_line",
+            "title",
+            "remove_axis",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Plot the distribution of convergence diagnostics (ESS and/or R-hat).
@@ -78,12 +95,12 @@ def plot_convergence_dist(
     labeller : labeller, optional
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `visuals`.
+        when plotted. Valid keys are the same as for `visuals` except for "remove_axis"
         By default, no mappings are defined for this plot.
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * One of "kde", "ecdf", "dot" or "hist", matching the `kind` argument.
+        * dist -> depending on the value of `kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -96,9 +113,9 @@ def plot_convergence_dist(
     stats : mapping, optional
         Valid keys are:
 
-        * density -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
 
     Returns
