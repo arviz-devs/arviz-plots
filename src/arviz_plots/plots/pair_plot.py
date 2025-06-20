@@ -23,6 +23,8 @@ from arviz_plots.visuals import (
     labelled_x,
     labelled_y,
     line_xy,
+    remove_axis,
+    remove_matrix_axis,
     scatter_couple,
 )
 
@@ -93,8 +95,9 @@ def plot_pair(
         * scatter -> passed to :func:`~.visuals.scatter_couple`
         * divergence -> passed to :func:`~.visuals.scatter_couple`. Defaults to False.
         * marginal -> :func:`~.visuals.line_xy` or :func:`~.visuals.hist`
-        * remove_axis -> optional argument passed to all above mentioned visuals plotting functions,
-        can take value from  {"both", "x", "y"}. Defaults to ``False`` to skip removing axis.
+        * remove_axis -> passed to :func:`~.visuals.remove_axis`
+        or :func:`~.visuals.remove_matrix_axis`
+
     triangle : {"both", "upper", "lower"}, Defaults to "both"
         Which triangle of the pair plot to plot.
     **pc_kwargs
@@ -155,9 +158,6 @@ def plot_pair(
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    axis_to_remove = visuals.get("remove_axis", False)
-    if marginal:
-        axis_to_remove = False
     if plot_matrix is None:
         pc_kwargs.setdefault(
             "facet_dims",
@@ -205,9 +205,6 @@ def plot_pair(
         if "alpha" not in scatter_aes:
             scatter_kwargs.setdefault("alpha", 0.5)
 
-        if axis_to_remove:
-            scatter_kwargs.setdefault("axis_to_remove", axis_to_remove)
-
         plot_matrix.map_triangle(
             scatter_couple,
             "scatter",
@@ -227,8 +224,6 @@ def plot_pair(
         marginal_dims, marginal_aes, marginal_ignore = filter_aes(
             plot_matrix, aes_by_visuals, "marginal", sample_dims
         )
-        if axis_to_remove:
-            marginal_kwargs.setdefault("axis_to_remove", axis_to_remove)
         default_color = plot_bknd.get_default_aes("color", 1, {})[0]
         if "color" not in marginal_aes:
             marginal_kwargs.setdefault("color", default_color)
@@ -260,8 +255,6 @@ def plot_pair(
         label_kwargs = copy(visuals.get("label", {}))
 
         if label_kwargs is not False:
-            if axis_to_remove:
-                label_kwargs.setdefault("axis_to_remove", axis_to_remove)
             _, _, label_ignore = filter_aes(plot_matrix, aes_by_visuals, "label", sample_dims)
             plot_matrix.map(
                 label_plot,
@@ -291,8 +284,6 @@ def plot_pair(
             div_kwargs.setdefault("color", "black")
         if "alpha" not in div_aes:
             div_kwargs.setdefault("alpha", 0.5)
-        if axis_to_remove:
-            div_kwargs.setdefault("axis_to_remove", axis_to_remove)
 
         plot_matrix.map_triangle(
             scatter_couple,
@@ -356,8 +347,6 @@ def plot_pair(
         diag_xlabel_kwargs = copy(visuals.get("diag_xlabel", {}))
 
         if diag_xlabel_kwargs is not False:
-            if axis_to_remove:
-                diag_xlabel_kwargs.setdefault("axis_to_remove", axis_to_remove)
             _, _, diag_xlabel_ignore = filter_aes(
                 plot_matrix, aes_by_visuals, "diag_xlabel", sample_dims
             )
@@ -368,6 +357,40 @@ def plot_pair(
                 ignore_aes=diag_xlabel_ignore,
                 labeller=labeller,
                 **diag_xlabel_kwargs,
+            )
+
+    # remove_axis
+    if not marginal:
+        remove_axis_kwargs = copy(visuals.get("remove_axis", False))
+        if remove_axis_kwargs is not False:
+            _, _, remove_axis_ignore = filter_aes(
+                plot_matrix, aes_by_visuals, "diag_xlabel", sample_dims
+            )
+
+            # remove axis from lower triangle
+            plot_matrix.map_triangle(
+                remove_matrix_axis,
+                "remove_axis",
+                triangle="lower",
+                ignore_aes=remove_axis_ignore,
+                **remove_axis_kwargs,
+            )
+
+            # remove axis from upper triangle
+            plot_matrix.map_triangle(
+                remove_matrix_axis,
+                "remove_axis",
+                triangle="upper",
+                ignore_aes=remove_axis_ignore,
+                **remove_axis_kwargs,
+            )
+
+            # remove axis from diagonal
+            plot_matrix.map(
+                remove_axis,
+                "remove_axis",
+                ignore_aes=remove_axis_ignore,
+                **remove_axis_kwargs,
             )
 
     return plot_matrix
