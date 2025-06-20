@@ -21,7 +21,7 @@ pc = azp.plot_pair(
     dt,
     var_names=["theta", "mu"],
     coords={"school": ["Lawrenceville", "Mt. Hermon"]},
-    visuals={"divergence":True , "remove_axis": "both"},
+    visuals={"divergence":True , "remove_axis": {"axis":"both"}},
     marginal=False,
     backend="none", # change to preferred backend
 )
