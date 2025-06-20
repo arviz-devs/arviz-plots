@@ -95,8 +95,7 @@ def plot_pair(
         * scatter -> passed to :func:`~.visuals.scatter_couple`
         * divergence -> passed to :func:`~.visuals.scatter_couple`. Defaults to False.
         * marginal -> :func:`~.visuals.line_xy` or :func:`~.visuals.hist`
-        * remove_axis -> passed to :func:`~.visuals.remove_axis`
-        or :func:`~.visuals.remove_matrix_axis`
+        * remove_axis -> :func:`~.visuals.remove_axis` & :func:`~.visuals.remove_matrix_axis`
 
     triangle : {"both", "upper", "lower"}, Defaults to "both"
         Which triangle of the pair plot to plot.
