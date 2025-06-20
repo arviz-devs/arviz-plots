@@ -1,8 +1,11 @@
 """Pair plot code."""
+from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import rcParams, xarray_sel_iter
 from arviz_base.labels import BaseLabeller
 
@@ -13,7 +16,15 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_grid_layout,
 )
-from arviz_plots.visuals import label_plot, scatter_couple
+from arviz_plots.visuals import (
+    ecdf_line,
+    hist,
+    label_plot,
+    labelled_x,
+    labelled_y,
+    line_xy,
+    scatter_couple,
+)
 
 
 def plot_pair(
@@ -25,9 +36,27 @@ def plot_pair(
     sample_dims=None,
     plot_matrix=None,
     backend=None,
+    marginal=True,
+    marginal_kind="kde",
+    marginal_stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "scatter",
+            "divergence",
+            "marginal",
+        ],
+        Sequence[str],
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "scatter",
+            "divergence",
+            "marginal",
+        ],
+        Mapping[str, Any] | Literal[False],
+    ] = None,
+    triangle="both",
     **pc_kwargs,
 ):
     """Plot all variables against each other in the dataset.
@@ -63,8 +92,11 @@ def plot_pair(
 
         * scatter -> passed to :func:`~.visuals.scatter_couple`
         * divergence -> passed to :func:`~.visuals.scatter_couple`. Defaults to False.
-        * label -> :func:`~.visuals.label_plot`
-
+        * marginal -> :func:`~.visuals.line_xy` or :func:`~.visuals.hist`
+        * remove_axis -> optional argument passed to all above mentioned visuals plotting functions,
+        can take value from  {"both", "x", "y"}. Defaults to ``False`` to skip removing axis.
+    triangle : {"both", "upper", "lower"}, Defaults to "both"
+        Which triangle of the pair plot to plot.
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotMatrix`
 
@@ -88,6 +120,8 @@ def plot_pair(
         >>>     dt,
         >>>     var_names=["mu", "tau"],
         >>>     visuals={"divergence": True},
+        >>>     marginal=True,
+        >>>     marginal_kind="hist",
         >>> )
 
     .. minigallery:: plot_pair
@@ -108,7 +142,8 @@ def plot_pair(
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
-
+    if labeller is None:
+        labeller = BaseLabeller()
     if backend is None:
         if plot_matrix is None:
             backend = rcParams["plot.backend"]
@@ -120,7 +155,9 @@ def plot_pair(
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-
+    axis_to_remove = visuals.get("remove_axis", False)
+    if marginal:
+        axis_to_remove = False
     if plot_matrix is None:
         pc_kwargs.setdefault(
             "facet_dims",
@@ -140,6 +177,9 @@ def plot_pair(
         if "chain" in distribution:
             pc_kwargs["aes"].setdefault("overlay", ["chain"])
         pc_kwargs["figure_kwargs"].setdefault("sharey", True)
+        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
+        if marginal:
+            pc_kwargs["figure_kwargs"]["sharey"] = False
         plot_matrix = PlotMatrix(
             distribution,
             backend=backend,
@@ -165,13 +205,72 @@ def plot_pair(
         if "alpha" not in scatter_aes:
             scatter_kwargs.setdefault("alpha", 0.5)
 
+        if axis_to_remove:
+            scatter_kwargs.setdefault("axis_to_remove", axis_to_remove)
+
         plot_matrix.map_triangle(
             scatter_couple,
             "scatter",
+            triangle=triangle,
             data=distribution,
             ignore_aes=scatter_ignore,
             **scatter_kwargs,
         )
+
+    # marginal
+    if marginal is not False:
+        if marginal_stats is None:
+            marginal_stats = {}
+        else:
+            marginal_stats = marginal_stats.copy()
+        marginal_kwargs = copy(visuals.get("dist", {}))
+        marginal_dims, marginal_aes, marginal_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "marginal", sample_dims
+        )
+        if axis_to_remove:
+            marginal_kwargs.setdefault("axis_to_remove", axis_to_remove)
+        default_color = plot_bknd.get_default_aes("color", 1, {})[0]
+        if "color" not in marginal_aes:
+            marginal_kwargs.setdefault("color", default_color)
+
+        if marginal_kind == "kde":
+            density = distribution.azstats.kde(dim=marginal_dims, **marginal_stats.get("dist", {}))
+            plot_matrix.map(
+                line_xy, "marginal", data=density, ignore_aes=marginal_ignore, **marginal_kwargs
+            )
+        elif marginal_kind == "hist":
+            hist_kwargs = marginal_stats.pop("dist", {}).copy()
+            hist_kwargs.setdefault("density", True)
+            density = distribution.azstats.histogram(dim=marginal_dims, **hist_kwargs)
+            plot_matrix.map(
+                hist,
+                "marginal",
+                data=density,
+                ignore_aes=marginal_ignore,
+                **marginal_kwargs,
+            )
+        elif marginal_kind == "ecdf":
+            density = distribution.azstats.ecdf(dim=marginal_dims, **marginal_stats.get("dist", {}))
+            plot_matrix.map(
+                ecdf_line, "marginal", data=density, ignore_aes=marginal_ignore, **marginal_kwargs
+            )
+
+    # diagonal label of plots
+    else:
+        label_kwargs = copy(visuals.get("label", {}))
+
+        if label_kwargs is not False:
+            if axis_to_remove:
+                label_kwargs.setdefault("axis_to_remove", axis_to_remove)
+            _, _, label_ignore = filter_aes(plot_matrix, aes_by_visuals, "label", sample_dims)
+            plot_matrix.map(
+                label_plot,
+                "label",
+                subset_info=True,
+                ignore_aes=label_ignore,
+                labeller=labeller,
+                **label_kwargs,
+            )
 
     # divergence
 
@@ -192,31 +291,83 @@ def plot_pair(
             div_kwargs.setdefault("color", "black")
         if "alpha" not in div_aes:
             div_kwargs.setdefault("alpha", 0.5)
+        if axis_to_remove:
+            div_kwargs.setdefault("axis_to_remove", axis_to_remove)
+
         plot_matrix.map_triangle(
             scatter_couple,
             "divergence",
+            triangle=triangle,
             data=distribution,
             ignore_aes=div_ignore,
             mask=divergence_mask,
             **div_kwargs,
         )
 
-    if labeller is None:
-        labeller = BaseLabeller()
+    # bottom plots xlabel
+    if marginal and triangle in {"both", "lower"}:
+        total = len(plot_matrix.viz.col_index.values)
+        last_row = plot_matrix.viz.var_name_x[total - 1]
+        remove_list = ["col_index", "row_index", "var_name_x", "var_name_y"]
+        last_row_sel = {
+            key[:-2]: value.item()
+            for key, value in last_row.coords.items()
+            if key not in remove_list and value.item() is not None
+        }
+        last_row_var_name = last_row.values.item()
+        xlabel_kwargs = copy(visuals.get("xlabel", {}))
+        if xlabel_kwargs is not False:
+            _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)
+            plot_matrix.map_row_col(
+                labelled_x,
+                var_name=last_row_var_name,
+                selection=last_row_sel,
+                orientation="row",
+                data=distribution,
+                ignore_aes=xlabel_ignore,
+                labeller=labeller,
+                subset_info=True,
+                **xlabel_kwargs,
+            )
 
-    # diagonal label of plots
+        # left most plots ylabel
+        first_col = plot_matrix.viz.var_name_y[0]
+        first_col_sel = {
+            key[:-2]: value.item()
+            for key, value in first_col.coords.items()
+            if key not in remove_list and value.item() is not None
+        }
+        first_col_var_name = first_col.values.item()
+        ylabel_kwargs = copy(visuals.get("ylabel", {}))
+        if ylabel_kwargs is not False:
+            _, _, ylabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "ylabel", sample_dims)
+            plot_matrix.map_row_col(
+                labelled_y,
+                var_name=first_col_var_name,
+                selection=first_col_sel,
+                orientation="col",
+                data=distribution,
+                ignore_aes=ylabel_ignore,
+                labeller=labeller,
+                subset_info=True,
+                **ylabel_kwargs,
+            )
+    elif marginal and triangle == "upper":
+        diag_xlabel_kwargs = copy(visuals.get("diag_xlabel", {}))
 
-    label_kwargs = copy(visuals.get("label", {}))
-
-    if label_kwargs is not False:
-        _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "label", sample_dims)
-        plot_matrix.map(
-            label_plot,
-            "label",
-            subset_info=True,
-            ignore_aes=xlabel_ignore,
-            labeller=labeller,
-            **label_kwargs,
-        )
+        if diag_xlabel_kwargs is not False:
+            if axis_to_remove:
+                diag_xlabel_kwargs.setdefault("axis_to_remove", axis_to_remove)
+            _, _, diag_xlabel_ignore = filter_aes(
+                plot_matrix, aes_by_visuals, "diag_xlabel", sample_dims
+            )
+            plot_matrix.map(
+                labelled_x,
+                "diag_xlabel",
+                subset_info=True,
+                ignore_aes=diag_xlabel_ignore,
+                labeller=labeller,
+                **diag_xlabel_kwargs,
+            )
 
     return plot_matrix

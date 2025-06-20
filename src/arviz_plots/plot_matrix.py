@@ -392,12 +392,7 @@ class PlotMatrix(PlotCollection):
                             if not isinstance(values, (xr.DataArray, xr.Dataset))
                         },
                         **{
-                            key + "_x": process_kwargs_subset(values, var_name_x, sel_x)
-                            for key, values in kwargs.items()
-                            if isinstance(values, (xr.DataArray, xr.Dataset))
-                        },
-                        **{
-                            key + "_y": process_kwargs_subset(values, var_name_y, sel_y)
+                            key: process_kwargs_subset(values, var_name_x, aes_sel)
                             for key, values in kwargs.items()
                             if isinstance(values, (xr.DataArray, xr.Dataset))
                         },
@@ -426,13 +421,178 @@ class PlotMatrix(PlotCollection):
                             sel_y=sel_y,
                         )
 
+    def map_row_col(
+        self,
+        fun,
+        var_name,
+        selection,
+        *,
+        fun_label=None,
+        orientation,
+        data=None,
+        coords=None,
+        ignore_aes=frozenset(),
+        subset_info=False,
+        store_artist=True,
+        artist_dims=None,
+        **kwargs,
+    ):
+        """
+        Apply the given plotting function to a specific row or column in the matrix.
+
+        This method iterates through all the plots in a single specified row or column
+        (through var_name and selection) and applies the given plotting function `fun`
+        to each one. The function `fun` will receive the data for the fixed row/column
+        and the data for the iterating column/row.
+
+        Parameters
+        ----------
+        fun : callable
+            Bivariate function with signature ``fun(da_x, da_y, target, **fun_kwargs)`` which
+            should be called for all plots in the specified row or column. `da_x` corresponds
+            to the data for the plot's column and `da_y` for the plot's row.
+        fun_label : str, optional
+            Function identifier. It will be used as variable name to store the object
+            returned by `fun`. Defaults to ``fun.__name__``.
+        var_name : hashable
+            Variable name for the fixed row or column.
+        selection : mapping
+            Mapping with coordinate subset for the fixed row or column.
+        orientation : {"row", "col"}
+            Whether to map over a "row" or a "column".
+        data : Dataset, optional
+            Data to be subsetted. Defaults to the data used to initialize the ``PlotMatrix``.
+        coords : mapping, optional
+            Dictionary of {coordinate names : coordinate values} that should
+            be used to subset the aes, data and viz objects before any faceting
+            or aesthetics mapping is applied.
+        ignore_aes : set, optional
+            Set of aesthetics present in ``aes`` that should be ignore for this
+            ``map`` call.
+        subset_info : boolean, default False
+            Add the subset info from :func:`arviz_base.xarray_sel_iter`
+            to the keyword arguments passed to `fun`.
+        store_artist : boolean, default True
+        artist_dims : mapping of {hashable : int}, optional
+            Dictionary of sizes for proper allocation and storage when using
+            ``map`` with functions that return an array of :term:`visual`.
+        **kwargs : mapping, optional
+            Extra keyword arguments to be passed to `fun`.
+        """
+        if orientation not in {"row", "col"}:
+            raise ValueError(
+                f"Invalid `orientation`. Options are 'row' or 'col', but got {orientation}"
+            )
+        if coords is None:
+            coords = {}
+        if fun_label is None:
+            fun_label = fun.__name__
+
+        data = self.data if data is None else data
+
+        if not isinstance(data, xr.Dataset):
+            raise TypeError("data argument must be an xarray.Dataset")
+
+        facet_dims = self.facet_dims
+        aes, all_loop_dims = self.update_aes(ignore_aes, coords)
+        aes_dims = [dim for dim in all_loop_dims if dim not in facet_dims]
+        aes_loopers = list(
+            xarray_sel_iter(
+                data[list(data.data_vars)[0]],
+                skip_dims={dim for dim in data.dims if dim not in aes_dims},
+            )
+        )
+        plotters = list(
+            xarray_sel_iter(data, skip_dims={dim for dim in data.dims if dim not in facet_dims})
+        )
+        if store_artist:
+            self.allocate_artist(
+                fun_label=fun_label,
+                data=data,
+                all_loop_dims=all_loop_dims,
+                artist_dims=artist_dims,
+                ignore_aes=ignore_aes,
+            )
+
+        var_name_fixed = var_name
+        sel_fixed_base = selection
+
+        for var_name_iter, sel_iter_base, isel_iter_base in plotters:
+            if orientation == "row":
+                var_name_y, sel_y_base = var_name_fixed, sel_fixed_base
+                var_name_x, sel_x_base, isel_x_base = var_name_iter, sel_iter_base, isel_iter_base
+                da = data[var_name_x].sel(sel_x_base)
+            else:
+                var_name_x, sel_x_base = var_name_fixed, sel_fixed_base
+                var_name_y, sel_y_base, isel_y_base = var_name_iter, sel_iter_base, isel_iter_base
+                da = data[var_name_y].sel(sel_y_base)
+
+            for _, aes_sel, aes_isel in aes_loopers:
+                da_final = da.sel(aes_sel)
+                sel_x = {**sel_x_base, **aes_sel}
+                sel_y = {**sel_y_base, **aes_sel}
+
+                if orientation == "row":
+                    isel_y = {}
+                    isel_x = {**isel_x_base, **aes_isel}
+                else:
+                    isel_x = {}
+                    isel_y = {**isel_y_base, **aes_isel}
+
+                sel_x_plus = {**sel_x, **coords}
+                sel_y_plus = {**sel_y, **coords}
+
+                target = self.get_target(var_name_x, sel_x_plus, var_name_y, sel_y_plus)
+
+                aes_kwargs = self.get_aes_kwargs(aes, var_name_x, aes_sel)
+                fun_kwargs = {
+                    **aes_kwargs,
+                    **{
+                        key: values
+                        for key, values in kwargs.items()
+                        if not isinstance(values, (xr.DataArray, xr.Dataset))
+                    },
+                    **{
+                        key: process_kwargs_subset(values, var_name_x, aes_sel)
+                        for key, values in kwargs.items()
+                        if isinstance(values, (xr.DataArray, xr.Dataset))
+                    },
+                }
+                if subset_info:
+                    if orientation == "row":
+                        fun_kwargs = {
+                            **fun_kwargs,
+                            "var_name": var_name_x,
+                            "sel": sel_x,
+                            "isel": isel_x,
+                        }
+                    elif orientation == "col":
+                        fun_kwargs = {
+                            **fun_kwargs,
+                            "var_name": var_name_y,
+                            "sel": sel_y,
+                            "isel": isel_y,
+                        }
+
+                aux_artist = fun(da_final, target=target, **fun_kwargs)
+                if store_artist:
+                    if np.size(aux_artist) == 1:
+                        aux_artist = np.squeeze(aux_artist)
+                    self.store_in_artist_da(
+                        aux_artist,
+                        fun_label,
+                        var_name_x,
+                        sel_x,
+                        var_name_y=var_name_y,
+                        sel_y=sel_y,
+                    )
+
     def map(
         self,
         fun,
         fun_label=None,
         *,
         data=None,
-        loop_data=None,
         coords=None,
         ignore_aes=frozenset(),
         subset_info=False,
@@ -494,7 +654,6 @@ class PlotMatrix(PlotCollection):
             fun=fun,
             fun_label=fun_label,
             data=data,
-            loop_data=loop_data,
             coords=coords,
             ignore_aes=ignore_aes,
             subset_info=subset_info,

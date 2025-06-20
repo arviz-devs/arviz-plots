@@ -689,13 +689,6 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a label to the y axis."""
     kwargs = {"size": size, "color": color}
-
-    # Check if the x axis is shared
-    is_shared_x_val = is_shared_x(target.figure)
-    row, _ = target.figure._get_subplot_rows_columns()  # pylint: disable=protected-access
-    if is_shared_x_val and target.row != row[len(row) - 1]:
-        return
-
     target.update_xaxes(
         title={"text": str_to_plotly_html(string), "font": _filter_kwargs(kwargs, artist_kws)}
     )

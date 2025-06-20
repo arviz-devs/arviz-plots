@@ -13,12 +13,14 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import backend_from_object
 
 
-def hist(da, target, **kwargs):
+def hist(da, target, axis_to_remove=False, **kwargs):
     """Plot a histogram bins(as two arrays of left and right bin edges) vs bin_height('y').
 
     The input argument `da` is split into l_e, r_e and y using the dimension ``plot_axis``.
     """
     plot_backend = backend_from_object(target)
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
     return plot_backend.hist(
         da.sel(plot_axis="histogram"),
         da.sel(plot_axis="left_edges"),
@@ -28,7 +30,7 @@ def hist(da, target, **kwargs):
     )
 
 
-def line_xy(da, target, x=None, y=None, **kwargs):
+def line_xy(da, target, x=None, y=None, axis_to_remove=False, **kwargs):
     """Plot a line x vs y.
 
     The input argument `da` is split into x and y using the dimension ``plot_axis``.
@@ -37,6 +39,8 @@ def line_xy(da, target, x=None, y=None, **kwargs):
     """
     plot_backend = backend_from_object(target)
     x, y = _process_da_x_y(da, x, y)
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
     return plot_backend.line(x, y, target, **kwargs)
 
 
@@ -114,20 +118,23 @@ def scatter_xy(da, target, x=None, y=None, mask=None, **kwargs):
     return plot_backend.scatter(x, y, target, **kwargs)
 
 
-def scatter_couple(da_x, da_y, target, mask_x=None, mask_y=None, **kwargs):
+def scatter_couple(da_x, da_y, target, axis_to_remove=False, mask=None, **kwargs):
     """Plot a scatter plot for a pairplot couple."""
     plot_backend = backend_from_object(target)
-    plot_backend.remove_axis(target, axis="both")
-    if mask_x is not None:
-        da_x = da_x[mask_x]
-    if mask_y is not None:
-        da_y = da_y[mask_y]
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
+    if mask is not None:
+        da_x = da_x[mask]
+        da_y = da_y[mask]
+
     return plot_backend.scatter(da_x.values, da_y.values, target, **kwargs)
 
 
-def ecdf_line(values, target, **kwargs):
+def ecdf_line(values, target, axis_to_remove=False, **kwargs):
     """Plot a step line."""
     plot_backend = backend_from_object(target)
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
     return plot_backend.step(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
 
 
@@ -262,21 +269,33 @@ def point_estimate_text(da, target, *, point_estimate, x=None, y=None, point_lab
 
 
 def label_plot(
-    da, target, text=None, x=0.5, y=0.5, labeller=None, var_name=None, sel=None, isel=None, **kwargs
+    da,
+    target,
+    text=None,
+    x=0.5,
+    y=0.5,
+    labeller=None,
+    var_name=None,
+    axis_to_remove=False,
+    sel=None,
+    isel=None,
+    **kwargs,
 ):
     """Add a label to a plot."""
     if text is None:
         if labeller is None:
             labeller = BaseLabeller()
-        text = labeller.make_label_flat(var_name, sel, isel)
+        text = labeller.make_label_vert(var_name, sel, isel)
     x, y = _ensure_scalar(x, y)
     plot_backend = backend_from_object(target)
-    plot_backend.remove_axis(target, axis="both")
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
     return plot_backend.text(
         x,
         y,
         text,
         target,
+        **kwargs,
     )
 
 

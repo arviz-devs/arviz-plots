@@ -20,6 +20,8 @@ pc = azp.plot_pair(
     data,
     var_names=["mu","theta","tau"],
     coords= {"school": ["Choate", "Deerfield"]},
+    marginal=True,
+    marginal_kind="kde",
     backend="none", # change to preferred backend
 )
 pc.show()
