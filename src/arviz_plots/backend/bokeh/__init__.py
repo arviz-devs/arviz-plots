@@ -650,7 +650,7 @@ def remove_axis(target, axis="y"):
     if axis == "y":
         target.yaxis.visible = False
     elif axis == "x":
-        target.yaxis.visible = False
+        target.xaxis.visible = False
     elif axis == "both":
         target.axis.visible = False
     else:
