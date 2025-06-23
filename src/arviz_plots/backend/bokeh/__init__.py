@@ -625,6 +625,11 @@ def xlim(lims, target, **artist_kws):
     target.x_range = Range1d(*lims, **artist_kws)
 
 
+def ylim(lims, target, **artist_kws):
+    """Interface to bokeh for setting limits for the y axis."""
+    target.y_range = Range1d(*lims, **artist_kws)
+
+
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to bokeh for setting ticks size."""
     kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
