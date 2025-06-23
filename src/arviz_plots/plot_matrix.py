@@ -160,48 +160,6 @@ class PlotMatrix(PlotCollection):
             )
         )
 
-    @property
-    def orientation(self):
-        """Orientation of targets we want to fetch through :meth:`~PlotMatrix.get_target`.
-
-        Orientation is always taken into account when using
-        :meth:`~PlotMatrix.get_target` to fetch target for plotting.
-        """
-        return self._orientation
-
-    @orientation.setter
-    def orientation(self, value):
-        self._orientation = value
-
-    @property
-    def fixed_var_name(self):
-        """Fixed variable's name of targets we fetch through :meth:`~PlotMatrix.get_target`.
-
-        fixed_var_name is taken into account when using :meth:`~PlotMatrix.get_target`
-        to fetch target for plotting and :attr:`~PlotMatrix.orientation` is
-        set to either `row` or `col`.
-
-        It tells the fixed variable name in a `row` or `col`
-        """
-        return self._fixed_var_name
-
-    @fixed_var_name.setter
-    def fixed_var_name(self, value):
-        self._fixed_var_name = value
-
-    @property
-    def fixed_selection(self):
-        """Fixed dictionary for subsetting of targets."""
-        return self._fixed_selection
-
-    @fixed_selection.setter
-    def fixed_selection(self, value):
-        self._fixed_selection = value
-
-    @fixed_var_name.setter
-    def fixed_var_name(self, value):
-        self._fixed_var_name = value
-
     def get_target(self, var_name, selection, var_name_y=None, selection_y=None):
         """Get the target that corresponds to the given variable and selection.
 
@@ -218,29 +176,19 @@ class PlotMatrix(PlotCollection):
             Mapping with with coordinate subset along the y dimension.
             If not provided it will be assumed as being `selection`
         """
-        if self.orientation == "diagonal":
-            var_name_x = var_name
+        if self._orientation == "row":
+            var_name_y = self._fixed_var_name
+            selection_y = self._fixed_selection
+        elif self._orientation == "col":
             var_name_y = var_name
-            selection_x = selection
+            var_name = self._fixed_var_name
             selection_y = selection
-        elif self.orientation == "row":
-            var_name_x = var_name
-            var_name_y = self.fixed_var_name
-            selection_x = selection
-            selection_y = self.fixed_selection
-        elif self.orientation == "col":
-            var_name_x = self.fixed_var_name
-            var_name_y = var_name
-            selection_x = self.fixed_selection
-            selection_y = selection
-        else:
-            var_name_x = var_name
-            selection_x = selection
+            selection = self._fixed_selection
 
         return subset_matrix_da(
             self.viz["plot"],
-            var_name_x=var_name_x,
-            selection_x=selection_x,
+            var_name_x=var_name,
+            selection_x=selection,
             var_name_y=var_name_y,
             selection_y=selection_y,
         )
@@ -419,7 +367,8 @@ class PlotMatrix(PlotCollection):
                 ignore_aes=ignore_aes,
             )
 
-        self.orientation = None
+        if self._orientation is not None:
+            raise ValueError(f"Orientation is set to {self._orientation}, it should be None")
 
         for i, (var_name_x, sel_x_base, isel_x_base) in enumerate(plotters):
             upper_elements = plotters[:i]
@@ -540,8 +489,6 @@ class PlotMatrix(PlotCollection):
         --------
         arviz_plots.PlotMatrix.map_row_col
         """
-        self.orientation = "diagonal"
-
         super().map(
             fun=fun,
             fun_label=fun_label,
@@ -564,9 +511,9 @@ class PlotMatrix(PlotCollection):
             if key not in remove_list and value.item() is not None
         }
         fixed_line_var_name = fixed_line.values.item()
-        self.fixed_var_name = fixed_line_var_name
-        self.fixed_selection = fixed_line_sel
-        self.orientation = orientation
+        self._fixed_var_name = fixed_line_var_name
+        self._fixed_selection = fixed_line_sel
+        self._orientation = orientation
 
     def map_row_col(
         self,
@@ -577,7 +524,7 @@ class PlotMatrix(PlotCollection):
         *,
         data=None,
         coords=None,
-        ignore_aes=frozenset(),
+        ignore_aes="all",
         subset_info=False,
         store_artist=True,
         artist_dims=None,
@@ -644,6 +591,9 @@ class PlotMatrix(PlotCollection):
             artist_dims=artist_dims,
             **kwargs,
         )
+        self._orientation = None
+        self._fixed_selection = None
+        self._fixed_var_name = None
 
     @property
     def viz(self):

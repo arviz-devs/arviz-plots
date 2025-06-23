@@ -487,6 +487,10 @@ def test_plot_mcse(datatree, rug, n_points, extra_methods, visuals):
             "divergence": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
+            "credible_interval": visuals_value,
+            "point_estimate": visuals_value,
+            "point_estimate_text": visuals_value,
+            "dist": visuals_value,
         },
     ),
 )
