@@ -124,14 +124,6 @@ def scatter_couple(da_x, da_y, target, mask=None, **kwargs):
     return plot_backend.scatter(da_x.values, da_y.values, target, **kwargs)
 
 
-def scatter_diagonal(da, target, mask=None, **kwargs):
-    """Plot a scatter plot for the diagonal of a pairplot."""
-    plot_backend = backend_from_object(target)
-    if mask is not None:
-        da = da[mask]
-    return plot_backend.scatter(da.values, da.values, target, **kwargs)
-
-
 def ecdf_line(values, target, **kwargs):
     """Plot a step line."""
     plot_backend = backend_from_object(target)
@@ -282,6 +274,37 @@ def annotate_label(
         isel = {key: value for key, value in isel.items() if key == dim}
         text = labeller.sel_to_str(sel, isel)
     plot_backend = backend_from_object(target)
+    return plot_backend.text(
+        x,
+        y,
+        text,
+        target,
+        **kwargs,
+    )
+
+
+def label_plot(
+    da,
+    target,
+    text=None,
+    x=0.5,
+    y=0.5,
+    labeller=None,
+    var_name=None,
+    axis_to_remove=False,
+    sel=None,
+    isel=None,
+    **kwargs,
+):
+    """Add a label to a plot."""
+    if text is None:
+        if labeller is None:
+            labeller = BaseLabeller()
+        text = labeller.make_label_vert(var_name, sel, isel)
+    x, y = _ensure_scalar(x, y)
+    plot_backend = backend_from_object(target)
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
     return plot_backend.text(
         x,
         y,

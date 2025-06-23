@@ -18,12 +18,12 @@ from arviz_plots.plots.utils import (
     set_grid_layout,
 )
 from arviz_plots.visuals import (
+    label_plot,
     labelled_x,
     labelled_y,
     remove_axis,
     remove_matrix_axis,
     scatter_couple,
-    scatter_diagonal,
 )
 
 
@@ -98,12 +98,16 @@ def plot_pair(
 
         * scatter -> passed to :func:`~.visuals.scatter_couple`
         * divergence -> passed to :func:`~.visuals.scatter_couple`. Defaults to False.
-        * marginal -> depending on the value of `marginal_kind` passed to:
+        * dist -> depending on the value of `marginal_kind` passed to:
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
+        * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
+        * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
+        * label -> passed to :func:`~.visuals.label_plot`
         * xlabel -> passed to :func:`~.visuals.labelled_x`
         * ylabel -> passed to :func:`~.visuals.labelled_y`
         * diag_xlabel -> passed to :func:`~.visuals.labelled_x` for the diagonal plots
@@ -112,7 +116,9 @@ def plot_pair(
     stats : mapping, optional
         Valid keys are:
 
-        * marginal -> passed to kde, ecdf, ...
+        * dist -> passed to kde, ecdf, ...
+        * credible_interval -> passed to eti or hdi
+        * point_estimate -> passed to mean, median or mode
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotMatrix`
@@ -155,10 +161,6 @@ def plot_pair(
     else:
         pc_kwargs = pc_kwargs.copy()
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     if labeller is None:
         labeller = BaseLabeller()
     if backend is None:
@@ -200,9 +202,20 @@ def plot_pair(
             **pc_kwargs,
         )
 
-    # scatter
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
+    else:
+        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals["scatter"] = {"overlay"}.union(
+        aes_by_visuals.get("scatter", plot_matrix.aes_set)
+    )
+    aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
+    aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
+    aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
+    aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
+    aes_by_visuals["point_estimate_text"] = aes_by_visuals.get("point_estimate_text", {})
 
-    aes_by_visuals["scatter"] = {"overlay"}.union(aes_by_visuals.get("scatter", {}))
+    # scatter
     scatter_kwargs = copy(visuals.get("scatter", {}))
     if scatter_kwargs is not False:
         _, scatter_aes, scatter_ignore = filter_aes(
@@ -235,20 +248,36 @@ def plot_pair(
             stats = {}
         else:
             stats = stats.copy()
-        marginal_kwargs = copy(visuals.get("marginal", {}))
+
         dist_plot_visuals = {}
         dist_plot_aes_by_visuals = {}
         dist_plot_stats = {}
-        dist_plot_visuals["dist"] = marginal_kwargs
+        marginal_dist_kwargs = copy(visuals.get("dist", {}))
+        marginal_ci_kwargs = copy(visuals.get("credible_interval", {}))
+        marginal_point_estimate_kwargs = copy(visuals.get("point_estimate", {}))
+        marginal_point_estimate_text_kwargs = copy(visuals.get("point_estimate_text", {}))
+
+        dist_plot_visuals["dist"] = marginal_dist_kwargs
+        dist_plot_visuals["credible_interval"] = marginal_ci_kwargs
+        dist_plot_visuals["point_estimate"] = marginal_point_estimate_kwargs
+        dist_plot_visuals["point_estimate_text"] = marginal_point_estimate_text_kwargs
         dist_plot_visuals["title"] = False
-        dist_plot_visuals["point_estimate"] = False
-        dist_plot_visuals["point_estimate_text"] = False
-        dist_plot_visuals["credible_interval"] = False
+
         if remove_axis_bool is False:
             dist_plot_visuals["remove_axis"] = False
         dist_plot_visuals["rug"] = False
-        dist_plot_aes_by_visuals["dist"] = aes_by_visuals.get("marginal", {})
-        dist_plot_stats["dist"] = stats.get("marginal", {})
+
+        dist_plot_aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
+        dist_plot_aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
+        dist_plot_aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
+        dist_plot_aes_by_visuals["point_estimate_text"] = aes_by_visuals.get(
+            "point_estimate_text", {}
+        )
+
+        dist_plot_stats["dist"] = stats.get("dist", {})
+        dist_plot_stats["credible_interval"] = stats.get("credible_interval", {})
+        dist_plot_stats["point_estimate"] = stats.get("point_estimate", {})
+
         plot_matrix = plot_dist(
             dt,
             var_names,
@@ -263,22 +292,29 @@ def plot_pair(
             aes_by_visuals=dist_plot_aes_by_visuals,
             visuals=dist_plot_visuals,
             stats=dist_plot_stats,
-            **pc_kwargs,
+            aes={"overlay": False},
         )
 
-    # diagonal scatter of plots
+    # diagonal labels of rows and cols
     else:
-        if scatter_kwargs is not False:
-            _, _, scatter_ignore = filter_aes(plot_matrix, aes_by_visuals, "scatter", sample_dims)
+        label_kwargs = copy(visuals.get("label", {}))
+        if label_kwargs is not False:
+            text_center = (
+                distribution.max(dim=sample_dims) + distribution.min(dim=sample_dims)
+            ) / 2
+            _, _, label_ignore = filter_aes(plot_matrix, aes_by_visuals, "label", sample_dims)
             plot_matrix.map(
-                scatter_diagonal,
-                "scatter",
-                ignore_aes=scatter_ignore,
-                **scatter_kwargs,
+                label_plot,
+                "label",
+                subset_info=True,
+                labeller=labeller,
+                x=text_center,
+                y=text_center,
+                ignore_aes=label_ignore,
+                **label_kwargs,
             )
 
     # divergence
-    aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
     div_kwargs = copy(visuals.get("divergence", False))
     if div_kwargs is True:
         div_kwargs = {}
@@ -306,17 +342,8 @@ def plot_pair(
             **div_kwargs,
         )
 
-        if marginal is False:
-            plot_matrix.map(
-                scatter_diagonal,
-                "divergence",
-                ignore_aes=div_ignore,
-                mask=divergence_mask,
-                **div_kwargs,
-            )
-
-    # bottom plots xlabel
-    if triangle in {"both", "lower"}:
+    # bottom plots xlabel and left plots ylabel
+    if marginal and triangle in {"both", "lower"}:
         total = len(plot_matrix.viz.col_index.values)
         xlabel_kwargs = copy(visuals.get("xlabel", {}))
         if xlabel_kwargs is not False:
@@ -347,7 +374,7 @@ def plot_pair(
                 subset_info=True,
                 **ylabel_kwargs,
             )
-    elif triangle == "upper":
+    elif marginal and triangle == "upper":
         diag_xlabel_kwargs = copy(visuals.get("diag_xlabel", {}))
 
         if diag_xlabel_kwargs is not False:
