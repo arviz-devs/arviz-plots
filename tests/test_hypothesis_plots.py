@@ -16,6 +16,7 @@ from arviz_plots import (
     plot_forest,
     plot_loo_pit,
     plot_mcse,
+    plot_pair,
     plot_pair_focus,
     plot_ppc_dist,
     plot_ppc_pava,
@@ -476,6 +477,44 @@ def test_plot_mcse(datatree, rug, n_points, extra_methods, visuals):
                 assert visual in pc.viz.children
         else:
             assert visual in pc.viz.children
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "scatter": visuals_value_no_false,
+            "divergence": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+        },
+    ),
+)
+def test_plot_pair(datatree, visuals):
+    pc = plot_pair(
+        datatree,
+        backend="none",
+        var_names=["mu", "theta", "tau"],
+        coords={"hierarchy": [0, 1]},
+        marginal=True,
+        marginal_kind="kde",
+        triangle="both",
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.data_vars
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.data_vars
+        else:
+            assert visual in pc.viz.data_vars
+            assert all(
+                var_name in pc.viz.coords["var_name_x"].values
+                for var_name in datatree["posterior"].data_vars
+            )
+            assert all(
+                var_name in pc.viz.coords["var_name_y"].values
+                for var_name in datatree["posterior"].data_vars
+            )
 
 
 @given(
