@@ -480,6 +480,11 @@ def xlim(lims, target, **artist_kws):
     target.set_xlim(lims, **artist_kws)
 
 
+def ylim(lims, target, **artist_kws):
+    """Interface to matplotlib for setting limits for the y axis."""
+    target.set_ylim(lims, **artist_kws)
+
+
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for setting ticks size."""
     kwargs = {"labelsize": size, "labelcolor": color}

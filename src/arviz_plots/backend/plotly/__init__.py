@@ -713,6 +713,11 @@ def xlim(lims, target, **artist_kws):
     target.update_xaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
 
 
+def ylim(lims, target, **artist_kws):
+    """Interface to plotly for setting limits for the y axis."""
+    target.update_yaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
+
+
 def set_y_scale(target, scale):
     """Interface to bokeh for setting the y scale of a plot."""
     if scale == "sqrt":

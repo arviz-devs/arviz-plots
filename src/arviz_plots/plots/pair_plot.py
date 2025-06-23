@@ -310,6 +310,8 @@ def plot_pair(
                 labeller=labeller,
                 x=text_center,
                 y=text_center,
+                lim_low=distribution.min(dim=sample_dims),
+                lim_high=distribution.max(dim=sample_dims),
                 ignore_aes=label_ignore,
                 **label_kwargs,
             )
