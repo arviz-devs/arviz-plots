@@ -22,6 +22,8 @@ Data plotting elements
    scatter_xy
    scatter_x
    scatter_xy
+   scatter_couple
+   scatter_diagonal
    trace_rug
    vline
    vspan
