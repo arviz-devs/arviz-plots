@@ -349,11 +349,10 @@ def plot_pair(
         xlabel_kwargs = copy(visuals.get("xlabel", {}))
         if xlabel_kwargs is not False:
             _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)
-            plot_matrix.map_row_col(
+            plot_matrix.map_row(
                 labelled_x,
                 "xlabel",
                 index=total - 1,
-                orientation="row",
                 data=distribution,
                 ignore_aes=xlabel_ignore,
                 labeller=labeller,
@@ -364,11 +363,10 @@ def plot_pair(
         ylabel_kwargs = copy(visuals.get("ylabel", {}))
         if ylabel_kwargs is not False:
             _, _, ylabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "ylabel", sample_dims)
-            plot_matrix.map_row_col(
+            plot_matrix.map_col(
                 labelled_y,
                 "ylabel",
                 index=0,
-                orientation="col",
                 data=distribution,
                 ignore_aes=ylabel_ignore,
                 labeller=labeller,
