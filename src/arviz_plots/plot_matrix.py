@@ -515,12 +515,11 @@ class PlotMatrix(PlotCollection):
         self._fixed_selection = fixed_line_sel
         self._orientation = orientation
 
-    def map_row_col(
+    def map_row(
         self,
         fun,
         fun_label=None,
         index=0,
-        orientation="col",
         *,
         data=None,
         coords=None,
@@ -530,7 +529,7 @@ class PlotMatrix(PlotCollection):
         artist_dims=None,
         **kwargs,
     ):
-        """Apply the given plotting function along the diagonal with the corresponding aesthetics.
+        """Apply the given plotting function along the row with the corresponding aesthetics.
 
         Parameters
         ----------
@@ -544,8 +543,7 @@ class PlotMatrix(PlotCollection):
             Variable name with which to store the object returned by `fun`.
             Defaults to ``fun.__name__``.
         index : int, default 0
-            Index of the row or column to be mapped by the given plotting function.
-        orientation : {"row","col"}, default "col"
+            Index of the row to be mapped by the given plotting function.
         data : Dataset, optional
             Data to be subsetted at each iteration and to pass to `fun` as first positional
             argument. Defaults to the data used to initialize the ``PlotMatrix``.
@@ -579,7 +577,85 @@ class PlotMatrix(PlotCollection):
         --------
         arviz_plots.PlotMatrix.map_triangle
         """
-        self.set_fixed_var_attributes(index, orientation)
+        self.set_fixed_var_attributes(index, "row")
+        super().map(
+            fun=fun,
+            fun_label=fun_label,
+            data=data,
+            coords=coords,
+            ignore_aes=ignore_aes,
+            subset_info=subset_info,
+            store_artist=store_artist,
+            artist_dims=artist_dims,
+            **kwargs,
+        )
+        self._orientation = None
+        self._fixed_selection = None
+        self._fixed_var_name = None
+
+    def map_col(
+        self,
+        fun,
+        fun_label=None,
+        index=0,
+        *,
+        data=None,
+        coords=None,
+        ignore_aes="all",
+        subset_info=False,
+        store_artist=True,
+        artist_dims=None,
+        **kwargs,
+    ):
+        """Apply the given plotting function along the column with the corresponding aesthetics.
+
+        Parameters
+        ----------
+        fun : callable
+            Function with signature ``fun(da, target, **fun_kwargs)`` which should
+            be applied for all combinations of :term:`plot` and :term:`aesthetic`.
+            The object returned by `fun` is assumed to be a scalar unless
+            `artist_dims` are provided. There is also the option of adding
+            extra required keyword arguments with the `subset_info` flag.
+        fun_label : str, optional
+            Variable name with which to store the object returned by `fun`.
+            Defaults to ``fun.__name__``.
+        index : int, default 0
+            Index of the column to be mapped by the given plotting function.
+        data : Dataset, optional
+            Data to be subsetted at each iteration and to pass to `fun` as first positional
+            argument. Defaults to the data used to initialize the ``PlotMatrix``.
+        coords : mapping, optional
+            Dictionary of {coordinate names : coordinate values} that should
+            be used to subset the aes, data and viz objects before any faceting
+            or aesthetics mapping is applied.
+        ignore_aes : set, optional
+            Set of aesthetics present in ``aes`` that should be ignore for this
+            ``map`` call.
+        subset_info : boolean, default False
+            Add the subset info from :func:`arviz_base.xarray_sel_iter` to
+            the keyword arguments passed to `fun`. If true, then `fun` must
+            accept the keyword arguments ``var_name``, ``sel`` and ``isel``.
+            Moreover, if those were to be keys present in `**kwargs` their
+            values in `**kwargs` would be ignored.
+        store_artist : boolean, default True
+        artist_dims : mapping of {hashable : int}, optional
+            Dictionary of sizes for proper allocation and storage when using
+            ``map`` with functions that return an array of :term:`visual`.
+        **kwargs : mapping, optional
+            Keyword arguments passed as is to `fun`. Values within `**kwargs`
+            with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
+            will be subsetted on the current selection (if possible) before calling `fun`.
+            Slicing with dims and coords is applied to the relevant subset present in the
+            xarray object so dimensions with mapped asethetics not being present is not an issue.
+            However, using Datasets that don't contain all the variable names in `data`
+            will raise an error.
+
+        See Also
+        --------
+        arviz_plots.PlotMatrix.map_triangle
+        """
+        self.set_fixed_var_attributes(index, "col")
         super().map(
             fun=fun,
             fun_label=fun_label,
