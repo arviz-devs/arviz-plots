@@ -292,7 +292,6 @@ def plot_pair(
             aes_by_visuals=dist_plot_aes_by_visuals,
             visuals=dist_plot_visuals,
             stats=dist_plot_stats,
-            aes={"overlay": False},
         )
 
     # diagonal labels of rows and cols
