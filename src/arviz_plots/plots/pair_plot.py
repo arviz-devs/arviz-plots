@@ -185,6 +185,7 @@ def plot_pair(
 
     if marginal_kind is None:
         marginal_kind = rcParams["plot.density_kind"]
+
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
@@ -226,7 +227,7 @@ def plot_pair(
         aes_by_visuals.get("scatter", plot_matrix.aes_set)
     )
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
-    aes_by_visuals[marginal_kind] = aes_by_visuals.get(marginal_kind, {})
+    aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
     aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
     aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
     aes_by_visuals["point_estimate_text"] = aes_by_visuals.get("point_estimate_text", {})
@@ -283,7 +284,7 @@ def plot_pair(
             dist_plot_visuals["remove_axis"] = False
         dist_plot_visuals["rug"] = False
 
-        dist_plot_aes_by_visuals[marginal_kind] = aes_by_visuals.get(marginal_kind, {})
+        dist_plot_aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
         dist_plot_aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
         dist_plot_aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
         dist_plot_aes_by_visuals["point_estimate_text"] = aes_by_visuals.get(
