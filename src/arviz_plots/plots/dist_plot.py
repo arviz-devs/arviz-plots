@@ -243,7 +243,7 @@ def plot_dist(
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
-    aes_by_visuals.setdefault(kind, plot_collection.aes_set.difference("y"))
+    aes_by_visuals.setdefault("dist", plot_collection.aes_set.difference("y"))
     if "model" in distribution:
         aes_by_visuals.setdefault("credible_interval", ["color", "y"])
         aes_by_visuals.setdefault("point_estimate", ["color", "y"])
@@ -257,7 +257,7 @@ def plot_dist(
 
     if density_kwargs is not False:
         density_dims, density_aes, density_ignore = filter_aes(
-            plot_collection, aes_by_visuals, kind, sample_dims
+            plot_collection, aes_by_visuals, "dist", sample_dims
         )
 
         default_color = plot_bknd.get_default_aes("color", 1, {})[0]
