@@ -5,6 +5,7 @@ from importlib import import_module
 from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import ecdf_pit
@@ -31,8 +32,6 @@ def plot_ecdf_pit(
     sample_dims=None,
     ci_prob=None,
     coverage=False,
-    n_simulations=1000,
-    method="simulation",
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -57,6 +56,7 @@ def plot_ecdf_pit(
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
+    stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Plot Δ-ECDF.
@@ -65,7 +65,7 @@ def plot_ecdf_pit(
     It assumes the values in the DataTree have already been transformed to PIT values,
     as in the case of SBC analysis or values from ``arviz_base.loo_pit``.
 
-    Simultaneous confidence bands are computed using the method described in [1]_.
+    Simultaneous confidence bands are computed using the simulation method described in [1]_.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -98,12 +98,6 @@ def plot_ecdf_pit(
         Defaults to ``rcParams["stats.ci_prob"]``
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
-    n_simulations : int, optional
-        Number of simulations to use to compute simultaneous confidence intervals when using the
-        `method="simulation"` ignored if method is "optimized". Defaults to 1000.
-    method : str, optional
-        Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -120,6 +114,12 @@ def plot_ecdf_pit(
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
+
+    stats : mapping, optional
+        Valid keys are:
+
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
+          ``{"n_simulation": 1000}``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -163,6 +163,14 @@ def plot_ecdf_pit(
         visuals = visuals.copy()
     visuals.setdefault("remove_axis", True)
 
+    if stats is None:
+        stats = {}
+    else:
+        stats = stats.copy()
+
+    ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
+    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
@@ -184,7 +192,7 @@ def plot_ecdf_pit(
     # Compute envelope
     dummy_vals_size = np.prod([len(distribution[dims]) for dims in sample_dims])
     dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, method, n_simulations)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 
