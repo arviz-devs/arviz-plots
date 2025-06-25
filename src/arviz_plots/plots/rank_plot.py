@@ -56,7 +56,7 @@ def plot_rank(
     To simplify comparison we compute the ordered fractional ranks, which are distributed
     uniformly in [0, 1]. Additionally, we plot the Δ-ECDF, that is, the difference between the
     expected CDF from the observed ECDF.
-    Simultaneous confidence bands are computed using the method described in [1]_.
+    Simultaneous confidence bands are computed using the simulation method described in [1]_.
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ def plot_rank(
         Valid keys are:
 
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"method": "simulation", "n_simulation": 1000}``.
+          ``{"n_simulation": 1000}``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -144,7 +144,7 @@ def plot_rank(
 
     ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
     ecdf_pit_kwargs.setdefault("n_simulations", 1000)
-    ecdf_pit_kwargs.setdefault("method", "simulation")
+    ecdf_pit_kwargs.setdefault("n_chains", dt.posterior.sizes["chain"])
     if visuals is None:
         visuals = {}
     else:

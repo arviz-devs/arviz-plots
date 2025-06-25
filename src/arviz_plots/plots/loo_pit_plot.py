@@ -2,6 +2,7 @@
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal
 
+import xarray as xr
 from arviz_base import convert_to_datatree
 from arviz_stats.loo import loo_pit
 
@@ -12,8 +13,6 @@ def plot_loo_pit(
     dt,
     ci_prob=None,
     coverage=False,
-    method="simulation",
-    n_simulations=1000,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
     group="posterior_predictive",
@@ -42,6 +41,7 @@ def plot_loo_pit(
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
+    stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     r"""LOO-PIT Δ-ECDF values with simultaneous confidence envelope.
@@ -75,12 +75,6 @@ def plot_loo_pit(
         Defaults to ``rcParams["stats.ci_prob"]``
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
-    n_simulations : int, optional
-        Number of simulations to use to compute simultaneous confidence intervals when using the
-        `method="simulation"` ignored if method is "optimized". Defaults to 1000.
-    method : str, optional
-        Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -108,6 +102,13 @@ def plot_loo_pit(
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+
+    stats : mapping, optional
+        Valid keys are:
+
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
+          ``{"n_simulation": 1000}``.
+
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -178,13 +179,12 @@ def plot_loo_pit(
         sample_dims=lpv.dims,
         ci_prob=ci_prob,
         coverage=coverage,
-        n_simulations=n_simulations,
-        method=method,
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
         aes_by_visuals=aes_by_visuals,
         visuals=visuals,
+        stats=stats,
         **pc_kwargs,
     )
 
