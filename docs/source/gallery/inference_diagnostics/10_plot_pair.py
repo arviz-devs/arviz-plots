@@ -23,7 +23,7 @@ pc = azp.plot_pair(
     coords={"school": ["Lawrenceville", "Mt. Hermon"]},
     visuals={"divergence":True},
     marginal=True,
-    marginal_kind="ecdf",
+    marginal_kind="kde",
     backend="none", # change to preferred backend
 )
 pc.show()

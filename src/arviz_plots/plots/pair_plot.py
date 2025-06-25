@@ -35,8 +35,8 @@ def plot_pair(
     coords=None,
     sample_dims=None,
     marginal=True,
-    marginal_kind="kde",
-    triangle="both",
+    marginal_kind=None,
+    triangle="lower",
     plot_matrix=None,
     backend=None,
     labeller=None,
@@ -44,7 +44,10 @@ def plot_pair(
         Literal[
             "scatter",
             "divergence",
-            "marginal",
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
         ],
         Sequence[str],
     ] = None,
@@ -52,11 +55,21 @@ def plot_pair(
         Literal[
             "scatter",
             "divergence",
-            "marginal",
+            "dist",
+            "credible_interval",
+            "point_estimate",
+            "point_estimate_text",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
-    stats: Mapping[Literal["marginal"], Mapping[str, Any] | xr.Dataset] = None,
+    stats: Mapping[
+        Literal[
+            "dist",
+            "credible_interval",
+            "point_estimate",
+        ],
+        Mapping[str, Any] | xr.Dataset,
+    ] = None,
     **pc_kwargs,
 ):
     """Plot all variables against each other in the dataset.
@@ -81,8 +94,9 @@ def plot_pair(
         Defaults to ``rcParams["data.sample_dims"]``
     marginal : bool, default True
         Whether to plot marginal distributions on the diagonal.
-    marginal_kind : {"kde", "hist", "ecdf"}, default "kde"
-        Kind of marginal distribution to plot on the diagonal.
+    marginal_kind : {"kde", "hist", "ecdf"}, optional
+        How to represent the marginal density.
+        Defaults to ``rcParams["plot.density_kind"]``
     triangle : {"both", "upper", "lower"}, Defaults to "both"
         Which triangle of the pair plot to plot.
     plot_matrix : PlotMatrix, optional
@@ -169,6 +183,8 @@ def plot_pair(
         else:
             backend = plot_matrix.backend
 
+    if marginal_kind is None:
+        marginal_kind = rcParams["plot.density_kind"]
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
@@ -210,7 +226,7 @@ def plot_pair(
         aes_by_visuals.get("scatter", plot_matrix.aes_set)
     )
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
-    aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
+    aes_by_visuals[marginal_kind] = aes_by_visuals.get(marginal_kind, {})
     aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
     aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
     aes_by_visuals["point_estimate_text"] = aes_by_visuals.get("point_estimate_text", {})
@@ -253,9 +269,9 @@ def plot_pair(
         dist_plot_aes_by_visuals = {}
         dist_plot_stats = {}
         marginal_dist_kwargs = copy(visuals.get("dist", {}))
-        marginal_ci_kwargs = copy(visuals.get("credible_interval", {}))
-        marginal_point_estimate_kwargs = copy(visuals.get("point_estimate", {}))
-        marginal_point_estimate_text_kwargs = copy(visuals.get("point_estimate_text", {}))
+        marginal_ci_kwargs = copy(visuals.get("credible_interval", False))
+        marginal_point_estimate_kwargs = copy(visuals.get("point_estimate", False))
+        marginal_point_estimate_text_kwargs = copy(visuals.get("point_estimate_text", False))
 
         dist_plot_visuals["dist"] = marginal_dist_kwargs
         dist_plot_visuals["credible_interval"] = marginal_ci_kwargs
@@ -267,7 +283,7 @@ def plot_pair(
             dist_plot_visuals["remove_axis"] = False
         dist_plot_visuals["rug"] = False
 
-        dist_plot_aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
+        dist_plot_aes_by_visuals[marginal_kind] = aes_by_visuals.get(marginal_kind, {})
         dist_plot_aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
         dist_plot_aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
         dist_plot_aes_by_visuals["point_estimate_text"] = aes_by_visuals.get(
