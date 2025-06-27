@@ -28,7 +28,7 @@ def hist(da, target, **kwargs):
     )
 
 
-def line_xy(da, target, x=None, y=None, **kwargs):
+def line_xy(da, target, x=None, y=None, negative=None, **kwargs):
     """Plot a line x vs y.
 
     The input argument `da` is split into x and y using the dimension ``plot_axis``.
@@ -37,6 +37,11 @@ def line_xy(da, target, x=None, y=None, **kwargs):
     """
     plot_backend = backend_from_object(target)
     x, y = _process_da_x_y(da, x, y)
+    if negative is not None:
+        if negative == "x":
+            x = -x
+        elif negative == "y":
+            y = -y
     return plot_backend.line(x, y, target, **kwargs)
 
 
@@ -60,6 +65,16 @@ def line_x(da, target, y=None, **kwargs):
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = backend_from_object(target)
     return plot_backend.line(da, y, target, **kwargs)
+
+
+def line_y(da, target, x=None, **kwargs):
+    """Plot a line along the y axis (x constant)."""
+    if x is None:
+        x = np.zeros_like(da)
+    if np.asarray(x).size == 1:
+        x = np.zeros_like(da) + (x.item() if hasattr(x, "item") else x)
+    plot_backend = backend_from_object(target)
+    return plot_backend.line(x, da, target, **kwargs)
 
 
 def line(da, target, xname=None, **kwargs):
@@ -114,9 +129,13 @@ def scatter_xy(da, target, x=None, y=None, mask=None, **kwargs):
     return plot_backend.scatter(x, y, target, **kwargs)
 
 
-def scatter_couple(da_x, da_y, target, **kwargs):
+def scatter_couple(da_x, da_y, target, mask=None, **kwargs):
     """Plot a scatter plot for a pairplot couple."""
     plot_backend = backend_from_object(target)
+    if mask is not None:
+        da_x = da_x[mask]
+        da_y = da_y[mask]
+
     return plot_backend.scatter(da_x.values, da_y.values, target, **kwargs)
 
 
@@ -279,6 +298,42 @@ def annotate_label(
     )
 
 
+def label_plot(
+    da,
+    target,
+    text=None,
+    x=0.5,
+    y=0.5,
+    lim_low=0,
+    lim_high=1,
+    labeller=None,
+    var_name=None,
+    axis_to_remove=False,
+    sel=None,
+    isel=None,
+    **kwargs,
+):
+    """Add a label to a plot."""
+    if text is None:
+        if labeller is None:
+            labeller = BaseLabeller()
+        text = labeller.make_label_vert(var_name, sel, isel)
+    x, y = _ensure_scalar(x, y)
+    lim_low, lim_high = _ensure_scalar(lim_low, lim_high)
+    plot_backend = backend_from_object(target)
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
+    plot_backend.xlim((lim_low, lim_high), target)
+    plot_backend.ylim((lim_low, lim_high), target)
+    return plot_backend.text(
+        x,
+        y,
+        text,
+        target,
+        **kwargs,
+    )
+
+
 def labelled_title(
     da, target, *, text=None, labeller=None, var_name=None, sel=None, isel=None, **kwargs
 ):
@@ -326,6 +381,12 @@ def ticklabel_props(da, target, **kwargs):
 
 
 def remove_axis(da, target, **kwargs):
+    """Dispatch to ``remove_axis`` function in backend."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.remove_axis(target, **kwargs)
+
+
+def remove_matrix_axis(da_x, da_y, target, **kwargs):
     """Dispatch to ``remove_axis`` function in backend."""
     plot_backend = backend_from_object(target)
     return plot_backend.remove_axis(target, **kwargs)
