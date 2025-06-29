@@ -19,11 +19,10 @@ azp.style.use("arviz-variat")
 dt = load_arviz_data("centered_eight")
 pc = azp.plot_pair(
     dt,
-    var_names=["theta", "mu"],
+    var_names=["theta", "tau"],
     coords={"school": ["Lawrenceville", "Mt. Hermon"]},
     visuals={"divergence":True},
-    marginal=True,
-    marginal_kind="kde",
+    marginal=False,
     backend="none", # change to preferred backend
 )
 pc.show()
