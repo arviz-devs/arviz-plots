@@ -1,5 +1,5 @@
 """
-# Scatterplot all variable against each other
+# Scatterplot all variables against each other
 
 Plot all variables against each other in the dataset.
 
@@ -20,8 +20,6 @@ pc = azp.plot_pair(
     data,
     var_names=["mu","theta","tau"],
     coords= {"school": ["Choate", "Deerfield"]},
-    marginal=True,
-    marginal_kind="kde",
     backend="none", # change to preferred backend
 )
 pc.show()

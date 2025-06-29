@@ -339,8 +339,6 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             datatree,
             var_names=["mu", "tau", "theta"],
             coords={"hierarchy": 0},
-            marginal=True,
-            marginal_kind="kde",
             triangle="both",
             visuals=visuals,
             backend=backend,
@@ -357,6 +355,36 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "col_index" in pc.viz["xlabel"].dims
         assert "row_index" in pc.viz["ylabel"].dims
         assert pc.viz["scatter"].dims == ("row_index", "col_index", "chain")
+
+    @pytest.mark.parametrize("triangle", ("both", "upper", "lower"))
+    @pytest.mark.parametrize("marginal", (True, False))
+    def test_plot_pair_triangle(self, datatree, marginal, triangle, backend):
+        visuals = {"divergence": True}
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau", "theta"],
+            coords={"hierarchy": 0},
+            marginal=marginal,
+            triangle=triangle,
+            visuals=visuals,
+            backend=backend,
+        )
+        rows = pc.viz.row_index.values
+        cols = pc.viz.col_index.values
+        for row_no in rows:
+            for col_no in cols:
+                if row_no == col_no:
+                    assert pc.viz.scatter[row_no, col_no].values[0] is None
+                elif row_no > col_no:
+                    if triangle in ("lower", "both"):
+                        assert pc.viz.scatter[row_no, col_no].values[0] is not None
+                    else:
+                        assert pc.viz.scatter[row_no, col_no].values[0] is None
+                else:
+                    if triangle in ("upper", "both"):
+                        assert pc.viz.scatter[row_no, col_no].values[0] is not None
+                    else:
+                        assert pc.viz.scatter[row_no, col_no].values[0] is None
 
     def test_plot_pair_sample(self, datatree_sample, backend):
         visuals = {"divergence": True}

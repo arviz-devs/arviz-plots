@@ -313,12 +313,14 @@ class PlotMatrix(PlotCollection):
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
             ``map`` with functions that return an array of :term:`visual`.
-        **kwargs : mapping, optional
+        **kwargs
             Extra keyword arguments to be passed to `fun`.
 
         See Also
         --------
         arviz_plots.PlotMatrix.map
+        arviz_plots.PlotMatrix.map_row
+        arviz_plots.PlotMatrix.map_col
         """
         if triangle not in {"lower", "upper", "both"}:
             raise ValueError(
@@ -476,7 +478,7 @@ class PlotMatrix(PlotCollection):
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
             ``map`` with functions that return an array of :term:`visual`.
-        **kwargs : mapping, optional
+        **kwargs
             Keyword arguments passed as is to `fun`. Values within `**kwargs`
             with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
             will be subsetted on the current selection (if possible) before calling `fun`.
@@ -487,7 +489,9 @@ class PlotMatrix(PlotCollection):
 
         See Also
         --------
-        arviz_plots.PlotMatrix.map_row_col
+        arviz_plots.PlotMatrix.map_triangle
+        arviz_plots.PlotMatrix.map_row
+        arviz_plots.PlotMatrix.map_col
         """
         super().map(
             fun=fun,
@@ -551,7 +555,7 @@ class PlotMatrix(PlotCollection):
             Dictionary of {coordinate names : coordinate values} that should
             be used to subset the aes, data and viz objects before any faceting
             or aesthetics mapping is applied.
-        ignore_aes : set, optional
+        ignore_aes : str or set of str, default "all"
             Set of aesthetics present in ``aes`` that should be ignore for this
             ``map`` call.
         subset_info : boolean, default False
@@ -564,7 +568,7 @@ class PlotMatrix(PlotCollection):
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
             ``map`` with functions that return an array of :term:`visual`.
-        **kwargs : mapping, optional
+        **kwargs
             Keyword arguments passed as is to `fun`. Values within `**kwargs`
             with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
             will be subsetted on the current selection (if possible) before calling `fun`.
@@ -575,6 +579,8 @@ class PlotMatrix(PlotCollection):
 
         See Also
         --------
+        arviz_plots.PlotMatrix.map_col
+        arviz_plots.PlotMatrix.map
         arviz_plots.PlotMatrix.map_triangle
         """
         self.set_fixed_var_attributes(index, "row")
@@ -629,7 +635,7 @@ class PlotMatrix(PlotCollection):
             Dictionary of {coordinate names : coordinate values} that should
             be used to subset the aes, data and viz objects before any faceting
             or aesthetics mapping is applied.
-        ignore_aes : set, optional
+        ignore_aes : str or set of str, default "all"
             Set of aesthetics present in ``aes`` that should be ignore for this
             ``map`` call.
         subset_info : boolean, default False
@@ -642,7 +648,7 @@ class PlotMatrix(PlotCollection):
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
             ``map`` with functions that return an array of :term:`visual`.
-        **kwargs : mapping, optional
+        **kwargs
             Keyword arguments passed as is to `fun`. Values within `**kwargs`
             with :class:`~xarray.DataArray` of :class:`~xarray.Dataset` type
             will be subsetted on the current selection (if possible) before calling `fun`.
@@ -653,6 +659,8 @@ class PlotMatrix(PlotCollection):
 
         See Also
         --------
+        arviz_plots.PlotMatrix.map_row
+        arviz_plots.PlotMatrix.map
         arviz_plots.PlotMatrix.map_triangle
         """
         self.set_fixed_var_attributes(index, "col")
