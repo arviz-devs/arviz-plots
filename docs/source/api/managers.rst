@@ -89,6 +89,8 @@ Plotting
    PlotMatrix.map_triangle
    PlotMatrix.map_lower
    PlotMatrix.map_upper
+   PlotMatrix.map_row
+   PlotMatrix.map_col
 
 Attributes
 ..........
