@@ -5,6 +5,7 @@ from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import difference_ecdf_pit
@@ -26,8 +27,6 @@ def plot_ppc_pit(
     dt,
     ci_prob=None,
     coverage=False,
-    method="simulation",
-    n_simulations=1000,
     var_names=None,
     data_pairs=None,
     filter_vars=None,  # pylint: disable=unused-argument
@@ -57,6 +56,7 @@ def plot_ppc_pit(
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
+    stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     r"""PIT Δ-ECDF values with simultaneous confidence envelope.
@@ -88,12 +88,6 @@ def plot_ppc_pit(
         Defaults to ``rcParams["stats.ci_prob"]``
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
-    n_simulations : int, optional
-        Number of simulations to use to compute simultaneous confidence intervals when using the
-        `method="simulation"` ignored if method is "optimized". Defaults to 1000.
-    method : str, optional
-        Method to compute the confidence intervals. Either "simulation" or "optimized".
-        Defaults to "simulation".e.
     data_pairs : dict, optional
         Dictionary of keys prior/posterior predictive data and values observed data variable names.
         If None, it will assume that the observed data and the predictive data have
@@ -128,6 +122,13 @@ def plot_ppc_pit(
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+
+    stats : mapping, optional
+        Valid keys are:
+
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
+          ``{"n_simulation": 1000}``.
+
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -177,6 +178,14 @@ def plot_ppc_pit(
     else:
         visuals = visuals.copy()
 
+    if stats is None:
+        stats = {}
+    else:
+        stats = stats.copy()
+
+    ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
+    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
@@ -207,7 +216,7 @@ def plot_ppc_pit(
             )
 
     ds_ecdf = difference_ecdf_pit(
-        dt, data_pairs, group, ci_prob, coverage, randomized, method, n_simulations
+        dt, data_pairs, group, ci_prob, coverage, randomized, **ecdf_pit_kwargs
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
