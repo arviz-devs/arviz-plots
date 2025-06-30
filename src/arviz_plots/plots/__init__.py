@@ -28,6 +28,7 @@ from .ridge_plot import plot_ridge
 from .trace_dist_plot import plot_trace_dist
 from .trace_plot import plot_trace
 from .utils import add_bands, add_lines
+from .violin_plot import plot_violin
 
 __all__ = [
     "combine_plots",
@@ -57,6 +58,7 @@ __all__ = [
     "plot_psense_dist",
     "plot_psense_quantities",
     "plot_pair_focus",
+    "plot_violin",
     "add_lines",
     "add_bands",
 ]
