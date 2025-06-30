@@ -142,9 +142,6 @@ def plot_rank(
     else:
         stats = stats.copy()
 
-    ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
-    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
-    ecdf_pit_kwargs.setdefault("n_chains", dt.posterior.sizes["chain"])
     if visuals is None:
         visuals = {}
     else:
@@ -162,6 +159,9 @@ def plot_rank(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
+    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+    ecdf_pit_kwargs.setdefault("n_chains", distribution.sizes["chain"])
     ecdf_dims = ["draw"]
 
     # Compute ranks
