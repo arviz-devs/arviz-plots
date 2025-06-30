@@ -640,6 +640,23 @@ def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kw
             setattr(target.xaxis, f"major_label_{key}", value)
 
 
+def set_ticklabel_visibility(target, *, axis="both", visible=True):
+    """Set the visibility of tick labels on a Bokeh plot."""
+    # Determine the font size to apply. 0pt effectively hides the labels.
+    font_size = "1em" if visible else "0pt"
+
+    if axis not in ["x", "y", "both"]:
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+
+    if axis in ["x", "both"]:
+        for ax in target.xaxis:
+            ax.major_label_text_font_size = font_size
+
+    if axis in ["y", "both"]:
+        for ax in target.yaxis:
+            ax.major_label_text_font_size = font_size
+
+
 def remove_ticks(target, *, axis="y"):  # pylint: disable=unused-argument
     """Interface to bokeh for removing ticks from a plot."""
     if axis in {"y", "both"}:

@@ -24,6 +24,7 @@ from arviz_plots.visuals import (
     remove_axis,
     remove_matrix_axis,
     scatter_couple,
+    set_ticklabel_visibility,
 )
 
 
@@ -404,6 +405,31 @@ def plot_pair(
                 ignore_aes=diag_xlabel_ignore,
                 labeller=labeller,
                 **diag_xlabel_kwargs,
+            )
+
+    # set ticklabel visibility
+    set_ticklabel_visibility_kwargs = {}
+    if triangle == "upper":
+        _, _, set_ticklabel_visibility_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "set_ticklabel_visibility", sample_dims
+        )
+        plot_matrix.map(
+            set_ticklabel_visibility,
+            "set_ticklabel_visibility",
+            axis="x",
+            visible=True,
+            ignore_aes=set_ticklabel_visibility_ignore,
+            **set_ticklabel_visibility_kwargs,
+        )
+
+        if not marginal and remove_axis_bool is False:
+            plot_matrix.map(
+                set_ticklabel_visibility,
+                "set_ticklabel_visibility",
+                axis="y",
+                visible=True,
+                ignore_aes=set_ticklabel_visibility_ignore,
+                **set_ticklabel_visibility_kwargs,
             )
 
     # remove_axis

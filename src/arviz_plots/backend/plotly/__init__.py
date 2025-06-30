@@ -713,6 +713,16 @@ def xlim(lims, target, **artist_kws):
     target.update_xaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
 
 
+def set_ticklabel_visibility(target, *, axis="both", visible=True):
+    """Interface to plotly for setting the visibility of tick labels."""
+    if axis not in ("y", "x", "both"):
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+    if axis in {"y", "both"}:
+        target.update_yaxes(showticklabels=visible)
+    if axis in {"x", "both"}:
+        target.update_xaxes(showticklabels=visible)
+
+
 def ylim(lims, target, **artist_kws):
     """Interface to plotly for setting limits for the y axis."""
     target.update_yaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin

@@ -306,10 +306,10 @@ def label_plot(
     x, y = _ensure_scalar(x, y)
     lim_low, lim_high = _ensure_scalar(lim_low, lim_high)
     plot_backend = backend_from_object(target)
-    if axis_to_remove:
-        plot_backend.remove_axis(target, axis=axis_to_remove)
     plot_backend.xlim((lim_low, lim_high), target)
     plot_backend.ylim((lim_low, lim_high), target)
+    if axis_to_remove:
+        plot_backend.remove_axis(target, axis=axis_to_remove)
     return plot_backend.text(
         x,
         y,
@@ -317,6 +317,12 @@ def label_plot(
         target,
         **kwargs,
     )
+
+
+def set_ticklabel_visibility(da, target, *, axis="both", visible=True, **kwargs):
+    """Set the visibility of tick labels on a plot."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.set_ticklabel_visibility(target, axis=axis, visible=visible, **kwargs)
 
 
 def labelled_title(
