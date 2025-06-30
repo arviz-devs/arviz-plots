@@ -534,10 +534,6 @@ def remove_axis(target, axis="y"):
         target.xaxis.set_ticks_position("bottom")
         target.tick_params(axis="y", direction="out", width=1, length=3)
     elif axis == "both":
-        # target.xaxis.set_ticks([])
-        # target.yaxis.set_ticks([])
-        # target.spines["left"].set_visible(False)
-        # target.spines["bottom"].set_visible(False)
         target.set_axis_off()
     else:
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
