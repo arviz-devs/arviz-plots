@@ -326,6 +326,15 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
 
+def multiple_lines(
+    target, x, y, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
+    """Interface to matplotlib for multiple line plot."""
+    artist_kws.setdefault("zorder", 2)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
+
+
 def scatter(
     x,
     y,

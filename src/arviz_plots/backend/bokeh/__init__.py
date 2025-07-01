@@ -420,6 +420,18 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 
+def multiple_lines(target, x, y, *, color="black", alpha=0.05, **artist_kws):
+    """Interface to bokeh for multiple lines."""
+    y = y.T
+    y = [np.atleast_1d(yi) for yi in y]
+    x = [list(range(len(x))) for _ in range(len(y))]
+    if len(x) != len(y):
+        raise ValueError("x and y must have the same length")
+    source = ColumnDataSource(data={"x": x, "y": y})
+    kwargs = {"line_color": color, "line_alpha": alpha}
+    return target.multi_line(xs="x", ys="y", source=source, **_filter_kwargs(kwargs, artist_kws))
+
+
 def scatter(
     x,
     y,
@@ -618,6 +630,34 @@ def yticks(ticks, labels, target, **artist_kws):
         }
     for key, value in _filter_kwargs({}, artist_kws).items():
         setattr(target.yaxis, f"major_label_{key}", value)
+
+
+def rotate_ticklabels(
+    target, *, axis="x", rotation=45, **artist_kws
+):  # pylint: disable=unused-argument
+    """Interface to Bokeh for rotating tick labels.
+
+    Parameters
+    ----------
+    target : bokeh.plotting.figure
+        The figure object to modify.
+    axis : {"x", "y", "both"}, default "x"
+        The axis whose tick labels should be rotated.
+    rotation : float, default 45
+        The rotation angle in degrees.
+    **artist_kws : dict, optional
+        Ignored for this backend.
+    """
+    if axis not in ("x", "y", "both"):
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+
+    # Bokeh uses radians for orientation. Convert from degrees.
+    rads = math.radians(rotation)
+
+    if axis in {"x", "both"}:
+        target.xaxis.major_label_orientation = rads
+    if axis in {"y", "both"}:
+        target.yaxis.major_label_orientation = rads
 
 
 def xlim(lims, target, **artist_kws):

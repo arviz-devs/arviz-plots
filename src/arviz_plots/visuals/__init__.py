@@ -72,6 +72,14 @@ def line(da, target, xname=None, **kwargs):
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
+def multiple_lines(da, target, xname=None, **kwargs):
+    """Plot a line along the y axis with x being the range of len(y)."""
+    yvalues = da.values.T
+    xvalues = np.arange(len(yvalues)) if xname is None else da[xname].values
+    plot_backend = backend_from_object(target)
+    return plot_backend.multiple_lines(target, xvalues, yvalues, **kwargs)
+
+
 def trace_rug(da, target, mask, xname=None, y=None, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
     xname = xname.item() if hasattr(xname, "item") else xname
@@ -363,6 +371,12 @@ def labelled_x(
         text = labeller.make_label_vert(var_name, sel, isel)
     plot_backend = backend_from_object(target)
     return plot_backend.xlabel(text, target, **kwargs)
+
+
+def rotate_ticklabels(da, target, *, axis="x", rotation=45, **kwargs):
+    """Rotate tick labels on the specified axis."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.rotate_ticklabels(target, axis=axis, rotation=rotation, **kwargs)
 
 
 def ticklabel_props(da, target, **kwargs):
