@@ -257,6 +257,20 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return artist_element
 
 
+def multiple_lines(target, x, y, **artist_kws):
+    """Interface to multiple lines."""
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    artist_element = {
+        "function": "multiple_lines",
+        "x": x,
+        "y": y,
+        **artist_kws,
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 def scatter(
     x,
     y,
@@ -502,6 +516,20 @@ def yticks(ticks, labels, target, **artist_kws):
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "yticks", "ticks": ticks, "labels": labels, **artist_kws}
+    target.append(artist_element)
+    return artist_element
+
+
+def rotate_ticklabels(target, *, axis="x", rotation=0, **artist_kws):
+    """Interface to rotating tick labels."""
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    artist_element = {
+        "function": "rotate_ticklabels",
+        "axis": axis,
+        "rotation": rotation,
+        **artist_kws,
+    }
     target.append(artist_element)
     return artist_element
 

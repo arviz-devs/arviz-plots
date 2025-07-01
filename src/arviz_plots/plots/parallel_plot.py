@@ -1,16 +1,18 @@
 """Pair focus plot code."""
+import re
 from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import dataset_to_dataarray, extract, rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_group, set_wrap_layout
-from arviz_plots.visuals import line, set_xticks
+from arviz_plots.visuals import multiple_lines, rotate_ticklabels, set_xticks
 
 
 def plot_parallel(
@@ -18,7 +20,7 @@ def plot_parallel(
     var_names=None,
     filter_vars=None,
     group="posterior",
-    coords=None,  # pylint: disable=unused-argument
+    coords=None,
     sample_dims=None,
     plot_collection=None,
     backend=None,
@@ -27,8 +29,7 @@ def plot_parallel(
         Literal[
             "line",
             "divergence",
-            "xlabel",
-            "ylabel",
+            "xtick_label",
         ],
         Sequence[str],
     ] = None,
@@ -36,8 +37,7 @@ def plot_parallel(
         Literal[
             "line",
             "divergence",
-            "xlabel",
-            "ylabel",
+            "xtick_label",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
@@ -74,8 +74,9 @@ def plot_parallel(
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
-        * line -> passed to :func:`~.visuals.line`
-        * divergence -> passed to :func:`~.visuals.line`. Defaults to False.
+        * line -> passed to :func:`~.visuals.multiple_lines`
+        * divergence -> passed to :func:`~.visuals.multiple_lines`. Defaults to False.
+        * xtick_label -> passed to :func:`~.visuals.set_xticks`. Defaults to False.
 
 
     **pc_kwargs
@@ -111,6 +112,9 @@ def plot_parallel(
     if labeller is None:
         labeller = BaseLabeller()
 
+    if coords is None:
+        coords = {}
+
     data = extract(
         dt,
         group=group,
@@ -118,7 +122,16 @@ def plot_parallel(
         sample_dims=sample_dims,
         filter_vars=filter_vars,
     )
+    data = data.sel(coords)
+    if isinstance(data, xr.DataArray):
+        data = data.to_dataset()
     data = dataset_to_dataarray(data, sample_dims=["sample"])
+    if len(data.coords["label"].values) <= 1:
+        raise ValueError(
+            "Parallel plot requires at least two variables to plot. "
+            "Please provide more than one variable."
+        )
+
     new_sample_dims = ["sample", "label"]
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
@@ -126,7 +139,6 @@ def plot_parallel(
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, data)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("overlay", ["sample"])
         plot_collection = PlotCollection.wrap(
             data.to_dataset(),
             backend=backend,
@@ -149,12 +161,14 @@ def plot_parallel(
             colors = plot_bknd.get_default_aes("color", 1, {})
             line_kwargs.setdefault("color", colors[0])
         if "alpha" not in line_aes:
-            line_kwargs.setdefault("alpha", 0.4)
+            line_kwargs.setdefault("alpha", 0.05)
         plot_collection.map(
-            line,
+            multiple_lines,
             "line",
             data=data,
+            xname="label",
             ignore_aes=line_ignore,
+            store_artist=backend == "none",
             **line_kwargs,
         )
 
@@ -179,17 +193,21 @@ def plot_parallel(
         if "color" not in div_aes:
             div_kwargs.setdefault("color", "black")
         if "alpha" not in div_aes:
-            div_kwargs.setdefault("alpha", 0.4)
+            div_kwargs.setdefault("alpha", 0.1)
         plot_collection.map(
-            line,
+            multiple_lines,
             "divergence",
             data=divergent_data,
+            xname="label",
             ignore_aes=div_ignore,
+            store_artist=backend == "none",
             **div_kwargs,
         )
 
     # x-axis label
     x_labels = data.coords["label"].values
+    # process labels to get vertical alignment
+    processed_labels = [re.sub(r"(.*?)\[(.*?)\]", r"\1\n\2", label) for label in x_labels]
     total = len(data.values[0])
     xtick_label_kwargs = copy(visuals.get("xtick_label", {}))
     if xtick_label_kwargs is not False:
@@ -200,8 +218,18 @@ def plot_parallel(
         plot_collection.map(
             set_xticks,
             "xtick_label",
-            labels=x_labels,
+            labels=processed_labels,
             values=values,
+            ignore_aes=xtick_ignore,
+            store_artist=backend == "none",
+            **xtick_label_kwargs,
+        )
+
+        plot_collection.map(
+            rotate_ticklabels,
+            "xtick_label",
+            axis="x",
+            rotation=0,
             ignore_aes=xtick_ignore,
             store_artist=backend == "none",
             **xtick_label_kwargs,
