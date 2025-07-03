@@ -474,34 +474,18 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to matplotlib for adding x ticks and labels to a plot."""
+    if rotation is not unset:
+        artist_kws["rotation"] = rotation
     return target.set_xticks(ticks, labels, **artist_kws)
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to matplotlib for adding y ticks and labels to a plot."""
+    if rotation is not unset:
+        artist_kws["rotation"] = rotation
     return target.set_yticks(ticks, labels, **artist_kws)
-
-
-def rotate_ticklabels(target, *, axis="x", rotation=45, **artist_kws):
-    """Interface to matplotlib for rotating tick labels.
-
-    Parameters
-    ----------
-    target : matplotlib.axes.Axes
-        The axes object to modify.
-    axis : {"x", "y", "both"}, default "x"
-        The axis whose tick labels should be rotated.
-    rotation : float, default 45
-        The rotation angle in degrees.
-    **artist_kws : dict, optional
-        Additional keywords passed to `matplotlib.axes.Axes.tick_params`.
-    """
-    if axis not in ("x", "y", "both"):
-        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
-    kwargs = {"rotation": rotation}
-    target.tick_params(axis=axis, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
 def xlim(lims, target, **artist_kws):

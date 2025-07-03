@@ -1,5 +1,4 @@
 """Pair focus plot code."""
-import re
 from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
@@ -12,7 +11,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_group, set_wrap_layout
-from arviz_plots.visuals import multiple_lines, rotate_ticklabels, set_xticks
+from arviz_plots.visuals import multiple_lines, set_xticks
 
 
 def plot_parallel(
@@ -29,7 +28,7 @@ def plot_parallel(
         Literal[
             "line",
             "divergence",
-            "xtick_label",
+            "xticks",
         ],
         Sequence[str],
     ] = None,
@@ -37,7 +36,7 @@ def plot_parallel(
         Literal[
             "line",
             "divergence",
-            "xtick_label",
+            "xticks",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
@@ -75,8 +74,8 @@ def plot_parallel(
         Valid keys are:
 
         * line -> passed to :func:`~.visuals.multiple_lines`
-        * divergence -> passed to :func:`~.visuals.multiple_lines`. Defaults to False.
-        * xtick_label -> passed to :func:`~.visuals.set_xticks`. Defaults to False.
+        * divergence -> passed to :func:`~.visuals.multiple_lines`.
+        * xticks -> passed to :func:`~.visuals.set_xticks`. Defaults to False.
 
 
     **pc_kwargs
@@ -90,6 +89,20 @@ def plot_parallel(
     Examples
     --------
     Default plot_parallel
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_parallel, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pair_focus(
+        >>>     dt,
+        >>>     coords={"school": ["Choate","Deerfield"]},
+        >>> )
+
+    .. minigallery:: plot_parallel
 
     """
     if sample_dims is None:
@@ -121,21 +134,50 @@ def plot_parallel(
         var_names=var_names,
         sample_dims=sample_dims,
         filter_vars=filter_vars,
+        keep_dataset=True,
     )
     data = data.sel(coords)
-    if isinstance(data, xr.DataArray):
-        data = data.to_dataset()
-    data = dataset_to_dataarray(data, sample_dims=["sample"])
-    if len(data.coords["label"].values) <= 1:
+    data = dataset_to_dataarray(data, labeller=labeller, sample_dims=["sample"], label_type="vert")
+    if len(data.coords["label"].values) <= 1 or data.ndim != 2:
         raise ValueError(
             "Parallel plot requires at least two variables to plot. "
             "Please provide more than one variable."
         )
 
+    # get labels and x-values
+    x_labels = data.coords["label"].values
+    x_values = np.arange(len(x_labels))
+
+    # create divergence mask
+    div_kwargs = copy(visuals.get("divergence", {}))
+    if div_kwargs is True:
+        div_kwargs = {}
+    sample_stats = get_group(dt, "sample_stats", allow_missing=True)
+    if (
+        div_kwargs is not False
+        and sample_stats is not None
+        and "diverging" in sample_stats.data_vars
+        and np.any(sample_stats.diverging)
+    ):
+        divergence_mask = dt.sample_stats.diverging
+        stacked_mask = divergence_mask.stack(sample=sample_dims)
+        aligned_mask = stacked_mask.sel(sample=data.coords["sample"])
+    else:
+        aligned_mask = xr.DataArray(
+            data=np.zeros(data.sizes["sample"], dtype=bool),
+            dims=["sample"],
+            coords={
+                coord: data.coords[coord]
+                for coord in data.coords
+                if "sample" in data.coords[coord].dims
+            },
+            name="diverging",
+        )
+
     new_sample_dims = ["sample", "label"]
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
-        pc_kwargs.setdefault("cols", [dim for dim in data.dims if dim not in new_sample_dims])
+        pc_kwargs.setdefault("cols", None)
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, data)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
@@ -162,30 +204,20 @@ def plot_parallel(
             line_kwargs.setdefault("color", colors[0])
         if "alpha" not in line_aes:
             line_kwargs.setdefault("alpha", 0.05)
+        non_divergence_data = data.where(~aligned_mask)
         plot_collection.map(
             multiple_lines,
             "line",
-            data=data,
-            xname="label",
+            data=non_divergence_data,
+            xvalues=x_values,
+            overlay_dim="sample",
             ignore_aes=line_ignore,
-            store_artist=backend == "none",
+            artist_dims={"sample": non_divergence_data.sizes["sample"]},
             **line_kwargs,
         )
 
     # divergence
-    div_kwargs = copy(visuals.get("divergence", False))
-    if div_kwargs is True:
-        div_kwargs = {}
-    sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-    if (
-        div_kwargs is not False
-        and sample_stats is not None
-        and "diverging" in sample_stats.data_vars
-        and np.any(sample_stats.diverging)
-    ):
-        divergence_mask = dt.sample_stats.diverging
-        stacked_mask = divergence_mask.stack(sample=sample_dims)
-        aligned_mask = stacked_mask.sel(sample=data.coords["sample"])
+    if aligned_mask.any().item():
         divergent_data = data.where(aligned_mask)
         _, div_aes, div_ignore = filter_aes(
             plot_collection, aes_by_visuals, "divergence", new_sample_dims
@@ -198,41 +230,26 @@ def plot_parallel(
             multiple_lines,
             "divergence",
             data=divergent_data,
-            xname="label",
+            xvalues=x_values,
+            overlay_dim="sample",
             ignore_aes=div_ignore,
-            store_artist=backend == "none",
+            artist_dims={"sample": divergent_data.sizes["sample"]},
             **div_kwargs,
         )
 
     # x-axis label
-    x_labels = data.coords["label"].values
-    # process labels to get vertical alignment
-    processed_labels = [re.sub(r"(.*?)\[(.*?)\]", r"\1\n\2", label) for label in x_labels]
-    total = len(data.values[0])
-    xtick_label_kwargs = copy(visuals.get("xtick_label", {}))
-    if xtick_label_kwargs is not False:
-        _, _, xtick_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "xtick_label", new_sample_dims
-        )
-        values = np.arange(total)
+    xticks_kwargs = copy(visuals.get("xticks", {}))
+    if xticks_kwargs is not False:
+        _, _, xticks_ignore = filter_aes(plot_collection, aes_by_visuals, "xticks", new_sample_dims)
         plot_collection.map(
             set_xticks,
-            "xtick_label",
-            labels=processed_labels,
-            values=values,
-            ignore_aes=xtick_ignore,
-            store_artist=backend == "none",
-            **xtick_label_kwargs,
-        )
-
-        plot_collection.map(
-            rotate_ticklabels,
-            "xtick_label",
-            axis="x",
+            "xticks",
+            labels=x_labels,
+            values=x_values,
             rotation=0,
-            ignore_aes=xtick_ignore,
-            store_artist=backend == "none",
-            **xtick_label_kwargs,
+            ignore_aes=xticks_ignore,
+            artist_dims={"labels": len(x_labels)},
+            **xticks_kwargs,
         )
 
     return plot_collection
