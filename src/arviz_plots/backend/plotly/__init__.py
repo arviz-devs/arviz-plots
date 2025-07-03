@@ -446,6 +446,45 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return line_object
 
 
+def multiple_lines(target, x, y, **kwargs):
+    """
+    Plot multiple lines on a single Plotly target using shared x-values.
+
+    Parameters
+    ----------
+    x : array-like of shape (n,)
+        Shared x-axis values for all lines.
+    y : array-like of shape (n, m)
+        Each column represents y-values for one line.
+    target : PlotlyPlot
+        The target subplot/figure to draw on.
+    **kwargs : dict
+        Additional keyword arguments passed to `line()` function.
+
+    Returns
+    -------
+    lines : list
+        List of line objects added to the target.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.ndim != 1:
+        raise ValueError("x must be 1-dimensional.")
+    if y.ndim != 2:
+        raise ValueError("y must be 2-dimensional (n, m).")
+    if x.shape[0] != y.shape[0]:
+        raise ValueError(
+            f"x and y must have same length along axis 0. Got x={x.shape}, y={y.shape}"
+        )
+
+    line_objects = []
+    for i in range(y.shape[1]):
+        line_obj = line(x, y[:, i], target, **kwargs)
+        line_objects.append(line_obj)
+    return line_objects
+
+
 def scatter(
     x,
     y,
@@ -694,84 +733,33 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     )
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the x axis."""
     if labels is None:
         labels = [str(label) for label in labels]
-    target.update_xaxes(tickmode="array", tickvals=ticks, ticktext=labels, **artist_kws)
+    kwargs = {
+        "tickmode": "array",
+        "tickvals": ticks,
+        "ticktext": labels,
+    }
+    if rotation is not unset:
+        kwargs["tickangle"] = rotation
+    target.update_xaxes(_filter_kwargs(kwargs, artist_kws))
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the y axis."""
     if labels is None:
         labels = [str(label) for label in labels]
-    target.update_yaxes(tickmode="array", tickvals=ticks, ticktext=labels, **artist_kws)
+    kwargs = {
+        "tickmode": "array",
+        "tickvals": ticks,
+        "ticktext": labels,
+    }
+    if rotation is not unset:
+        kwargs["tickangle"] = rotation
 
-
-def rotate_ticklabels(target, *, axis="x", rotation=45, **artist_kws):
-    """Interface to plotly for rotating tick labels.
-
-    Parameters
-    ----------
-    target : PlotlyPlot
-        The proxy object for the plot to modify.
-    axis : {"x", "y", "both"}, default "x"
-        The axis whose tick labels should be rotated.
-    rotation : float, default 45
-        The rotation angle in degrees.
-    **artist_kws : dict, optional
-        Additional keywords passed to `plotly.graph_objects.Figure.update_xaxes`
-        or `update_yaxes`.
-    """
-    if axis not in ("x", "y", "both"):
-        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
-
-    kwargs = {"tickangle": rotation}
-    kwargs = _filter_kwargs(kwargs, artist_kws)
-
-    if axis in {"x", "both"}:
-        target.update_xaxes(**kwargs)
-    if axis in {"y", "both"}:
-        target.update_yaxes(**kwargs)
-
-
-def multiple_lines(target, x, y, **kwargs):
-    """
-    Plot multiple lines on a single Plotly target using shared x-values.
-
-    Parameters
-    ----------
-    x : array-like of shape (n,)
-        Shared x-axis values for all lines.
-    y : array-like of shape (n, m)
-        Each column represents y-values for one line.
-    target : PlotlyPlot
-        The target subplot/figure to draw on.
-    **kwargs : dict
-        Additional keyword arguments passed to `line()` function.
-
-    Returns
-    -------
-    lines : list
-        List of line objects added to the target.
-    """
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    if x.ndim != 1:
-        raise ValueError("x must be 1-dimensional.")
-    if y.ndim != 2:
-        raise ValueError("y must be 2-dimensional (n, m).")
-    if x.shape[0] != y.shape[0]:
-        raise ValueError(
-            f"x and y must have same length along axis 0. Got x={x.shape}, y={y.shape}"
-        )
-
-    line_objects = []
-    for i in range(y.shape[1]):
-        line_obj = line(x, y[:, i], target, **kwargs)
-        line_objects.append(line_obj)
-    return line_objects
+    target.update_yaxes(_filter_kwargs(kwargs, artist_kws))
 
 
 def xlim(lims, target, **artist_kws):

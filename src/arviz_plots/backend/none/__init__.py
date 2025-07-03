@@ -502,16 +502,22 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return artist_element
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the x axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
-    artist_element = {"function": "xticks", "ticks": ticks, "labels": labels, **artist_kws}
+    artist_element = {
+        "function": "xticks",
+        "ticks": ticks,
+        "labels": labels,
+        "rotation": rotation,
+        **artist_kws,
+    }
     target.append(artist_element)
     return artist_element
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the y axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")

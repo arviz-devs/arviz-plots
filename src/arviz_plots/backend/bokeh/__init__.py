@@ -610,54 +610,30 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
         setattr(target.xaxis, f"axis_label_{key}", value)
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the x axis."""
     target.xaxis.ticker = ticks
     if labels is not None:
         target.xaxis.major_label_overrides = {
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
+    if rotation is not unset:
+        target.xaxis.major_label_orientation = math.radians(rotation)
     for key, value in _filter_kwargs({}, artist_kws).items():
         setattr(target.xaxis, f"major_label_{key}", value)
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the y axis."""
     target.yaxis.ticker = ticks
     if labels is not None:
         target.yaxis.major_label_overrides = {
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
+    if rotation is not unset:
+        target.yaxis.major_label_orientation = math.radians(rotation)
     for key, value in _filter_kwargs({}, artist_kws).items():
         setattr(target.yaxis, f"major_label_{key}", value)
-
-
-def rotate_ticklabels(
-    target, *, axis="x", rotation=45, **artist_kws
-):  # pylint: disable=unused-argument
-    """Interface to Bokeh for rotating tick labels.
-
-    Parameters
-    ----------
-    target : bokeh.plotting.figure
-        The figure object to modify.
-    axis : {"x", "y", "both"}, default "x"
-        The axis whose tick labels should be rotated.
-    rotation : float, default 45
-        The rotation angle in degrees.
-    **artist_kws : dict, optional
-        Ignored for this backend.
-    """
-    if axis not in ("x", "y", "both"):
-        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
-
-    # Bokeh uses radians for orientation. Convert from degrees.
-    rads = math.radians(rotation)
-
-    if axis in {"x", "both"}:
-        target.xaxis.major_label_orientation = rads
-    if axis in {"y", "both"}:
-        target.yaxis.major_label_orientation = rads
 
 
 def xlim(lims, target, **artist_kws):

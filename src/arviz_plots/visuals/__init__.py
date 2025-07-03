@@ -72,10 +72,33 @@ def line(da, target, xname=None, **kwargs):
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
-def multiple_lines(da, target, xname=None, **kwargs):
-    """Plot a line along the y axis with x being the range of len(y)."""
-    yvalues = da.values.T
-    xvalues = np.arange(len(yvalues)) if xname is None else da[xname].values
+def multiple_lines(da, target, xvalues=None, overlay_dim=None, xname=None, **kwargs):
+    """Plot multiple lines together."""
+    if da.ndim != 2:
+        raise ValueError(f"DataArray must be 2D, but has dims: {da.dims}")
+
+    if overlay_dim is None:
+        raise ValueError("You must specify the 'overlay_dim' argument.")
+
+    if overlay_dim not in da.dims:
+        raise ValueError(f"overlay_dim '{overlay_dim}' not found in DataArray dims {da.dims}")
+
+    dims = list(da.dims)
+    x_dim = dims[0] if dims[1] == overlay_dim else dims[1]
+    da = da.transpose(x_dim, overlay_dim)
+    yvalues = da.values
+
+    if xvalues is None:
+        if xname is not None:
+            xvalues = da.coords[xname].values
+        else:
+            xvalues = da.coords[x_dim].values
+
+    if len(xvalues) != yvalues.shape[0]:
+        raise ValueError(
+            f"xvalues length ({len(xvalues)}) does not match x-dim size ({yvalues.shape[0]})."
+        )
+
     plot_backend = backend_from_object(target)
     return plot_backend.multiple_lines(target, xvalues, yvalues, **kwargs)
 
@@ -371,12 +394,6 @@ def labelled_x(
         text = labeller.make_label_vert(var_name, sel, isel)
     plot_backend = backend_from_object(target)
     return plot_backend.xlabel(text, target, **kwargs)
-
-
-def rotate_ticklabels(da, target, *, axis="x", rotation=45, **kwargs):
-    """Rotate tick labels on the specified axis."""
-    plot_backend = backend_from_object(target)
-    return plot_backend.rotate_ticklabels(target, axis=axis, rotation=rotation, **kwargs)
 
 
 def ticklabel_props(da, target, **kwargs):

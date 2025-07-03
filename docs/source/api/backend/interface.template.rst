@@ -14,6 +14,7 @@ Geoms
    :toctree: generated/
 
    line
+   multiple_lines
    scatter
    text
 
