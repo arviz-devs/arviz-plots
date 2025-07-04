@@ -97,7 +97,7 @@ def plot_parallel(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
-        >>> plot_pair_focus(
+        >>> plot_parallel(
         >>>     dt,
         >>>     coords={"school": ["Choate","Deerfield"]},
         >>> )
