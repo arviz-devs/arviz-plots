@@ -99,7 +99,7 @@ def plot_parallel(
         >>> dt = load_arviz_data('centered_eight')
         >>> plot_parallel(
         >>>     dt,
-        >>>     coords={"school": ["Choate","Deerfield"]},
+        >>>     var_names=["mu", "tau"],
         >>> )
 
     .. minigallery:: plot_parallel
