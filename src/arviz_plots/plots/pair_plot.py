@@ -232,7 +232,7 @@ def plot_pair(
         >>> dt = load_arviz_data('centered_eight')
         >>> plot_pair(
         >>>     dt,
-        >>>     coords = {"school":"Choate"}
+        >>>     coords = {"school":"Choate"},
         >>>     visuals={"divergence": True},
         >>>     marginal=False,
         >>>     triangle="upper",
