@@ -21,7 +21,6 @@ from arviz_plots.visuals import (
     label_plot,
     labelled_x,
     labelled_y,
-    remove_axis,
     remove_matrix_axis,
     scatter_couple,
     set_ticklabel_visibility,
@@ -49,6 +48,10 @@ def plot_pair(
             "credible_interval",
             "point_estimate",
             "point_estimate_text",
+            "label",
+            "xlabel",
+            "ylabel",
+            "diag_xlabel",
         ],
         Sequence[str],
     ] = None,
@@ -122,11 +125,10 @@ def plot_pair(
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
-        * label -> passed to :func:`~.visuals.label_plot`
-        * xlabel -> passed to :func:`~.visuals.labelled_x`
-        * ylabel -> passed to :func:`~.visuals.labelled_y`
-        * diag_xlabel -> passed to :func:`~.visuals.labelled_x` for the diagonal plots
-        * remove_axis -> not passed anywhere, can only be ``True`` to  call this function
+        * label -> passed to :func:`~.visuals.label_plot`, applicable only if `marginal` is False
+        * xlabel -> passed to :func:`~.visuals.labelled_x`, applicable only if `marginal` is True
+        * ylabel -> passed to :func:`~.visuals.labelled_y`, applicable only if `marginal` is True
+        * diag_xlabel -> passed to :func:`~.visuals.labelled_x` for diag-plots if `marginal` is True
 
     stats : mapping, optional
         Valid keys are:
@@ -145,7 +147,7 @@ def plot_pair(
 
     Examples
     --------
-    Default plot_pair
+    plot_pair with divergence and marginal at diagonal (`triangle` is set to "lower" by default).
 
     .. plot::
         :context: close-figs
@@ -161,6 +163,110 @@ def plot_pair(
         >>>     marginal=True,
         >>>     marginal_kind="hist",
         >>> )
+
+    plot_pair with marginal at diagonal and without divergence.
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_pair, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pair(
+        >>>     dt,
+        >>>     var_names=["mu", "tau"],
+        >>>     marginal=True,
+        >>>     marginal_kind="hist",
+        >>> )
+
+    plot_pair with `triangle` set to "upper" (In this case the xlabels are on the diagonal plots).
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_pair, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pair(
+        >>>     dt,
+        >>>     var_names=["mu", "tau"],
+        >>>     visuals={"divergence": True},
+        >>>     marginal=True,
+        >>>     marginal_kind="hist",
+        >>>     triangle="upper",
+        >>> )
+
+    plot_pair with `triangle` set to "both" (x/y labels are on bottom/left most plots).
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_pair, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pair(
+        >>>     dt,
+        >>>     var_names=["mu", "tau"],
+        >>>     visuals={"divergence": True},
+        >>>     marginal=True,
+        >>>     marginal_kind="hist",
+        >>>     triangle="both",
+        >>> )
+
+    plot_pair without marginal ( in this case labels of variables take place of marginals).
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_pair, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pair(
+        >>>     dt,
+        >>>     var_names=["mu", "tau"],
+        >>>     visuals={"divergence": True},
+        >>>     marginal=False,
+        >>> )
+
+
+    plot_pair without marginal and `triangle` set to "upper".
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_pair, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pair(
+        >>>     dt,
+        >>>     var_names=["mu", "tau"],
+        >>>     visuals={"divergence": True},
+        >>>     marginal=False,
+        >>>     triangle="upper",
+        >>> )
+
+    plot_pair without marginal and `triangle` set to "both".
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_pair, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('centered_eight')
+        >>> plot_pair(
+        >>>     dt,
+        >>>     var_names=["mu", "tau"],
+        >>>     visuals={"divergence": True},
+        >>>     marginal=False,
+        >>>     triangle="both",
+        >>> )
+
 
     .. minigallery:: plot_pair
 
@@ -183,9 +289,6 @@ def plot_pair(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_matrix.backend
-
-    if marginal_kind is None:
-        marginal_kind = rcParams["plot.density_kind"]
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -228,7 +331,7 @@ def plot_pair(
         aes_by_visuals.get("scatter", plot_matrix.aes_set)
     )
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
-    aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
+    aes_by_visuals["dist"] = aes_by_visuals.get("dist", plot_matrix.aes_set.difference({"overlay"}))
     aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
     aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
     aes_by_visuals["point_estimate_text"] = aes_by_visuals.get("point_estimate_text", {})
@@ -260,7 +363,6 @@ def plot_pair(
         )
 
     # marginal
-    remove_axis_bool = copy(visuals.get("remove_axis", False))
     if marginal is not False:
         if stats is None:
             stats = {}
@@ -280,12 +382,12 @@ def plot_pair(
         dist_plot_visuals["point_estimate"] = marginal_point_estimate_kwargs
         dist_plot_visuals["point_estimate_text"] = marginal_point_estimate_text_kwargs
         dist_plot_visuals["title"] = False
-
-        if remove_axis_bool is False:
-            dist_plot_visuals["remove_axis"] = False
+        dist_plot_visuals["remove_axis"] = False
         dist_plot_visuals["rug"] = False
 
-        dist_plot_aes_by_visuals["dist"] = aes_by_visuals.get("dist", {})
+        dist_plot_aes_by_visuals["dist"] = aes_by_visuals.get(
+            "dist", plot_matrix.aes_set.difference({"overlay"})
+        )
         dist_plot_aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
         dist_plot_aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
         dist_plot_aes_by_visuals["point_estimate_text"] = aes_by_visuals.get(
@@ -297,13 +399,9 @@ def plot_pair(
         dist_plot_stats["point_estimate"] = stats.get("point_estimate", {})
 
         plot_matrix = plot_dist(
-            dt,
-            var_names,
-            filter_vars,
-            group,
-            coords,
-            sample_dims,
-            marginal_kind,
+            distribution,
+            sample_dims=sample_dims,
+            kind=marginal_kind,
             plot_collection=plot_matrix,
             backend=backend,
             labeller=labeller,
@@ -316,9 +414,9 @@ def plot_pair(
     else:
         label_kwargs = copy(visuals.get("label", {}))
         if label_kwargs is not False:
-            text_center = (
-                distribution.max(dim=sample_dims) + distribution.min(dim=sample_dims)
-            ) / 2
+            lim_low = distribution.min(dim=sample_dims)
+            lim_high = distribution.max(dim=sample_dims)
+            text_center = (lim_high + lim_low) / 2
             _, _, label_ignore = filter_aes(plot_matrix, aes_by_visuals, "label", sample_dims)
             plot_matrix.map(
                 label_plot,
@@ -327,8 +425,8 @@ def plot_pair(
                 labeller=labeller,
                 x=text_center,
                 y=text_center,
-                lim_low=distribution.min(dim=sample_dims),
-                lim_high=distribution.max(dim=sample_dims),
+                lim_low=lim_low,
+                lim_high=lim_high,
                 ignore_aes=label_ignore,
                 **label_kwargs,
             )
@@ -363,14 +461,13 @@ def plot_pair(
 
     # bottom plots xlabel and left plots ylabel
     if marginal and triangle in {"both", "lower"}:
-        total = len(plot_matrix.viz.col_index.values)
         xlabel_kwargs = copy(visuals.get("xlabel", {}))
         if xlabel_kwargs is not False:
             _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)
             plot_matrix.map_row(
                 labelled_x,
                 "xlabel",
-                index=total - 1,
+                index=-1,
                 data=distribution,
                 ignore_aes=xlabel_ignore,
                 labeller=labeller,
@@ -422,7 +519,7 @@ def plot_pair(
             **set_ticklabel_visibility_kwargs,
         )
 
-        if not marginal and remove_axis_bool is False:
+        if not marginal:
             plot_matrix.map(
                 set_ticklabel_visibility,
                 "set_ticklabel_visibility",
@@ -432,45 +529,7 @@ def plot_pair(
                 **set_ticklabel_visibility_kwargs,
             )
 
-    # remove_axis
-    if remove_axis_bool:
-        remove_axis_kwargs = {}
-        remove_axis_kwargs["axis"] = "y"
-        _, _, remove_axis_ignore = filter_aes(
-            plot_matrix, aes_by_visuals, "remove_axis", sample_dims
-        )
-
-        # remove axis from lower triangle
-        if triangle in {"both", "lower"}:
-            plot_matrix.map_triangle(
-                remove_matrix_axis,
-                "remove_axis",
-                triangle="lower",
-                ignore_aes=remove_axis_ignore,
-                **remove_axis_kwargs,
-            )
-
-        # remove axis from upper triangle
-        if triangle in {"both", "upper"}:
-            plot_matrix.map_triangle(
-                remove_matrix_axis,
-                "remove_axis",
-                triangle="upper",
-                ignore_aes=remove_axis_ignore,
-                **remove_axis_kwargs,
-            )
-
-        # remove axis from diagonal
-        plot_matrix.map(
-            remove_axis,
-            "remove_axis",
-            ignore_aes=remove_axis_ignore,
-            **remove_axis_kwargs,
-        )
-
     # default removal of axis for better visualization
-    default_remove_axis_kwargs = {}
-    default_remove_axis_kwargs["axis"] = "both"
     _, _, default_remove_axis_ignore = filter_aes(
         plot_matrix, aes_by_visuals, "default_remove_axis", sample_dims
     )
@@ -480,8 +539,8 @@ def plot_pair(
             remove_matrix_axis,
             "default_remove_axis",
             triangle="lower",
+            axis="both",
             ignore_aes=default_remove_axis_ignore,
-            **default_remove_axis_kwargs,
         )
     # if triangle="lower" then remove the upper triangle axes
     elif triangle == "lower":
@@ -489,7 +548,7 @@ def plot_pair(
             remove_matrix_axis,
             "default_remove_axis",
             triangle="upper",
+            axis="both",
             ignore_aes=default_remove_axis_ignore,
-            **default_remove_axis_kwargs,
         )
     return plot_matrix
