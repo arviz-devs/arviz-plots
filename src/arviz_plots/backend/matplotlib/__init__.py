@@ -326,6 +326,15 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
 
+def multiple_lines(
+    target, x, y, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
+    """Interface to matplotlib for multiple line plot."""
+    artist_kws.setdefault("zorder", 2)
+    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
+
+
 def scatter(
     x,
     y,
@@ -465,13 +474,17 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to matplotlib for adding x ticks and labels to a plot."""
+    if rotation is not unset:
+        artist_kws["rotation"] = rotation
     return target.set_xticks(ticks, labels, **artist_kws)
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to matplotlib for adding y ticks and labels to a plot."""
+    if rotation is not unset:
+        artist_kws["rotation"] = rotation
     return target.set_yticks(ticks, labels, **artist_kws)
 
 
