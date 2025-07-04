@@ -450,21 +450,26 @@ def multiple_lines(target, x, y, **kwargs):
     """
     Plot multiple lines on a single Plotly target using shared x-values.
 
+    This function uses a high-performance method by concatenating all line data
+    into single `x` and `y` arrays, separated by `np.nan`. This allows
+    Plotly to draw all lines in a single trace object.
+
     Parameters
     ----------
+    target : PlotlyPlot
+        The target subplot/figure to draw on.
     x : array-like of shape (n,)
         Shared x-axis values for all lines.
     y : array-like of shape (n, m)
-        Each column represents y-values for one line.
-    target : PlotlyPlot
-        The target subplot/figure to draw on.
+        Each of the `m` columns represents the y-values for one line.
     **kwargs : dict
-        Additional keyword arguments passed to `line()` function.
+        Styling keywords like `color`, `alpha`, `width`, `linestyle` are
+        handled and placed into the `line` dictionary of the trace.
 
     Returns
     -------
     lines : list
-        List of line objects added to the target.
+        A list containing the single `go.Scatter` object added to the target.
     """
     x = np.asarray(x)
     y = np.asarray(y)
@@ -478,11 +483,39 @@ def multiple_lines(target, x, y, **kwargs):
             f"x and y must have same length along axis 0. Got x={x.shape}, y={y.shape}"
         )
 
-    line_objects = []
-    for i in range(y.shape[1]):
-        line_obj = line(x, y[:, i], target, **kwargs)
-        line_objects.append(line_obj)
-    return line_objects
+    n_lines = y.shape[1]
+    x_stitched = np.tile(np.append(x, np.nan), n_lines)
+    y_stitched = np.vstack([y, np.full(n_lines, np.nan)]).flatten("F")
+    line_dict = {}
+    color = kwargs.pop("color", unset)
+    alpha = kwargs.pop("alpha", unset)
+    width = kwargs.pop("width", unset)
+    linestyle = kwargs.pop("linestyle", unset)
+
+    if alpha is not unset:
+        if color is unset:
+            color = get_default_aes("color", 1)[0]
+        final_color = combine_color_alpha(color, alpha)
+        line_dict["color"] = final_color
+    elif color is not unset:
+        line_dict["color"] = color
+
+    if width is not unset:
+        line_dict["width"] = width
+    if linestyle is not unset:
+        line_dict["dash"] = linestyle
+
+    kwargs.setdefault("showlegend", False)
+    line_object = go.Scatter(
+        x=x_stitched,
+        y=y_stitched,
+        mode="lines",
+        line=line_dict,
+        **kwargs,
+    )
+    target.add_trace(line_object)
+
+    return [line_object]
 
 
 def scatter(
