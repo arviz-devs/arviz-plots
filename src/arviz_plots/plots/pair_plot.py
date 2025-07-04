@@ -51,7 +51,6 @@ def plot_pair(
             "label",
             "xlabel",
             "ylabel",
-            "diag_xlabel",
         ],
         Sequence[str],
     ] = None,
@@ -63,6 +62,9 @@ def plot_pair(
             "credible_interval",
             "point_estimate",
             "point_estimate_text",
+            "label",
+            "xlabel",
+            "ylabel",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
@@ -125,10 +127,34 @@ def plot_pair(
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
-        * label -> passed to :func:`~.visuals.label_plot`, applicable only if `marginal` is False
-        * xlabel -> passed to :func:`~.visuals.labelled_x`, applicable only if `marginal` is True
-        * ylabel -> passed to :func:`~.visuals.labelled_y`, applicable only if `marginal` is True
-        * diag_xlabel -> passed to :func:`~.visuals.labelled_x` for diag-plots if `marginal` is True
+        * label -> Keyword arguments passed to :func:`~arviz_plots.visuals.label_plot`.
+
+          Used to customize the variable name labels on the diagonal. Applied only
+          if ``marginal=False``.
+
+        * xlabel -> passed to :func:`~.visuals.labelled_x`.
+
+          used to customize the xaxis labels on the bottom-most plots or diagonal plots depending
+          upon the value of ``triangle``. If ``triangle`` is "lower" or "both" then it is used to
+          map bottom-most row plots by using :meth:`arviz_plots.PlotMatrix.map_row` method and if
+          ``triangle`` is "upper" then it is used to map diagonal plots by using
+          :meth:`arviz_plots.PlotMatrix.map` method.It is applied only if ``marginal=True``, since
+          in this case diagonal plots won't have labels to map variables to columns.
+
+        * ylabel -> passed to :func:`~.visuals.labelled_y`.
+
+          used to customize the yaxis labels on the left-most plots. It is applied, only if
+          ``triangle`` is "lower" or "both" and ``marginal=True``, by using
+          :meth:`arviz_plots.PlotMatrix.map_col` method. Not applied if ``triangle`` is
+          "upper" or ``marginal=False``.
+
+        * default_remove_axis -> not passed anywhere.
+
+          It can only be set to ``False`` to disable the default removal of ``x`` and ``y`` axes
+          from the plots of other half triangle. If ``triangle`` is "upper" then the lower triangle
+          plot's axes will be removed and if ``triangle`` is "lower" then the upper triangle axes
+          will be removed, in case if it is not set ``False`` manually.
+
 
     stats : mapping, optional
         Valid keys are:
@@ -147,7 +173,11 @@ def plot_pair(
 
     Examples
     --------
-    plot_pair with divergence and marginal at diagonal (`triangle` is set to "lower" by default).
+    plot_pair with ``triangle`` set to "upper" and ``marginal=True`` with ``marginal_kind`` set to
+    "ecdf". In this case, since ``triangle`` is "upper", so the ``xlabels`` are mapped to the
+    diagonal plots. ``marginals`` are plotted on the diagonal and the ``point_estimate`` and
+    ``credible_interval`` are set to ``False`` by default. Also since ``marginal=True``, so
+    ``sharex`` is set to "col", while ``sharey`` is not set to anything by default.
 
     .. plot::
         :context: close-figs
@@ -161,44 +191,15 @@ def plot_pair(
         >>>     var_names=["mu", "tau"],
         >>>     visuals={"divergence": True},
         >>>     marginal=True,
-        >>>     marginal_kind="hist",
-        >>> )
-
-    plot_pair with marginal at diagonal and without divergence.
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import plot_pair, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('centered_eight')
-        >>> plot_pair(
-        >>>     dt,
-        >>>     var_names=["mu", "tau"],
-        >>>     marginal=True,
-        >>>     marginal_kind="hist",
-        >>> )
-
-    plot_pair with `triangle` set to "upper" (In this case the xlabels are on the diagonal plots).
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import plot_pair, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('centered_eight')
-        >>> plot_pair(
-        >>>     dt,
-        >>>     var_names=["mu", "tau"],
-        >>>     visuals={"divergence": True},
-        >>>     marginal=True,
-        >>>     marginal_kind="hist",
+        >>>     marginal_kind="ecdf",
         >>>     triangle="upper",
         >>> )
 
-    plot_pair with `triangle` set to "both" (x/y labels are on bottom/left most plots).
+    plot_pair with `triangle` set to "both", so in this case the ``xlabels`` are mapped to the
+    bottom-most plots and ``ylabels`` are mapped to the left-most plots. In this example we set
+    ``color`` as "red" for ``credible_interval`` and ``point_estimate``, which enables
+    ``credible_interval`` and ``point_estimate``. By default ``marginal`` is set to ``True`` and
+    ``marginal_kind`` is set to ``rcParams["plot.density_kind"]``.
 
     .. plot::
         :context: close-figs
@@ -207,16 +208,20 @@ def plot_pair(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
+        >>> visuals = {"credible_interval":{"color":"red"},"point_estimate":{"color":"red"}}
         >>> plot_pair(
         >>>     dt,
         >>>     var_names=["mu", "tau"],
-        >>>     visuals={"divergence": True},
-        >>>     marginal=True,
-        >>>     marginal_kind="hist",
+        >>>     visuals=visuals,
         >>>     triangle="both",
         >>> )
 
-    plot_pair without marginal ( in this case labels of variables take place of marginals).
+    plot_pair with ``marginal=False`` and ``triangle`` set to "upper". In this case, since
+    ``marginal=False``, so ``xlabel`` and ``ylabel`` are disabled by default, and diagonal
+    plots contain variable names as labels. ``xticks`` and ``yticks`` are also set on
+    diagonal plots along with ``ticklabels``, to map ticks to rows and columns.
+    Since ``marginal=False``, so ``sharex`` is set to "col" and ``sharey`` is set to "row"
+    by default.
 
     .. plot::
         :context: close-figs
@@ -227,46 +232,11 @@ def plot_pair(
         >>> dt = load_arviz_data('centered_eight')
         >>> plot_pair(
         >>>     dt,
-        >>>     var_names=["mu", "tau"],
-        >>>     visuals={"divergence": True},
-        >>>     marginal=False,
-        >>> )
-
-
-    plot_pair without marginal and `triangle` set to "upper".
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import plot_pair, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('centered_eight')
-        >>> plot_pair(
-        >>>     dt,
-        >>>     var_names=["mu", "tau"],
+        >>>     coords = {"school":"Choate"}
         >>>     visuals={"divergence": True},
         >>>     marginal=False,
         >>>     triangle="upper",
         >>> )
-
-    plot_pair without marginal and `triangle` set to "both".
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import plot_pair, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('centered_eight')
-        >>> plot_pair(
-        >>>     dt,
-        >>>     var_names=["mu", "tau"],
-        >>>     visuals={"divergence": True},
-        >>>     marginal=False,
-        >>>     triangle="both",
-        >>> )
-
 
     .. minigallery:: plot_pair
 
@@ -489,19 +459,17 @@ def plot_pair(
                 **ylabel_kwargs,
             )
     elif marginal and triangle == "upper":
-        diag_xlabel_kwargs = copy(visuals.get("diag_xlabel", {}))
+        xlabel_kwargs = copy(visuals.get("xlabel", {}))
 
-        if diag_xlabel_kwargs is not False:
-            _, _, diag_xlabel_ignore = filter_aes(
-                plot_matrix, aes_by_visuals, "diag_xlabel", sample_dims
-            )
+        if xlabel_kwargs is not False:
+            _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)
             plot_matrix.map(
                 labelled_x,
-                "diag_xlabel",
+                "xlabel",
                 subset_info=True,
-                ignore_aes=diag_xlabel_ignore,
+                ignore_aes=xlabel_ignore,
                 labeller=labeller,
-                **diag_xlabel_kwargs,
+                **xlabel_kwargs,
             )
 
     # set ticklabel visibility
@@ -530,25 +498,27 @@ def plot_pair(
             )
 
     # default removal of axis for better visualization
-    _, _, default_remove_axis_ignore = filter_aes(
-        plot_matrix, aes_by_visuals, "default_remove_axis", sample_dims
-    )
-    # if triangle="upper" then remove the lower triangle axes
-    if triangle == "upper":
-        plot_matrix.map_triangle(
-            remove_matrix_axis,
-            "default_remove_axis",
-            triangle="lower",
-            axis="both",
-            ignore_aes=default_remove_axis_ignore,
+    default_remove_axis_bool = visuals.get("default_remove_axis", True)
+    if default_remove_axis_bool:
+        _, _, default_remove_axis_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "default_remove_axis", sample_dims
         )
-    # if triangle="lower" then remove the upper triangle axes
-    elif triangle == "lower":
-        plot_matrix.map_triangle(
-            remove_matrix_axis,
-            "default_remove_axis",
-            triangle="upper",
-            axis="both",
-            ignore_aes=default_remove_axis_ignore,
-        )
+        # if triangle="upper" then remove the lower triangle axes
+        if triangle == "upper":
+            plot_matrix.map_triangle(
+                remove_matrix_axis,
+                "default_remove_axis",
+                triangle="lower",
+                axis="both",
+                ignore_aes=default_remove_axis_ignore,
+            )
+        # if triangle="lower" then remove the upper triangle axes
+        elif triangle == "lower":
+            plot_matrix.map_triangle(
+                remove_matrix_axis,
+                "default_remove_axis",
+                triangle="upper",
+                axis="both",
+                ignore_aes=default_remove_axis_ignore,
+            )
     return plot_matrix
