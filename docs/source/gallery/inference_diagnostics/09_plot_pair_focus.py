@@ -1,5 +1,5 @@
 """
-# Scatter plot with divergences
+# Scatter plot of one variable against all other variables with divergences
 
 Plot one variable against other variables in the dataset.
 

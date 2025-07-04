@@ -281,22 +281,24 @@ def plot_rank_dist(
         aes_by_visuals = aes_by_visuals.copy()
     if combined and "chain" in distribution.dims:
         if compact:
-            aes_by_visuals[kind] = aes_by_visuals.get(
-                kind, plot_collection.aes_set.difference({"overlay", "linestyle"})
+            aes_by_visuals["dist"] = aes_by_visuals.get(
+                "dist", plot_collection.aes_set.difference({"overlay", "linestyle"})
             )
         else:
-            aes_by_visuals[kind] = aes_by_visuals.get(
-                kind, plot_collection.aes_set.difference({"overlay", "color"})
+            aes_by_visuals["dist"] = aes_by_visuals.get(
+                "dist", plot_collection.aes_set.difference({"overlay", "color"})
             )
     else:
-        aes_by_visuals[kind] = {"overlay"}.union(aes_by_visuals.get(kind, plot_collection.aes_set))
+        aes_by_visuals["dist"] = {"overlay"}.union(
+            aes_by_visuals.get("dist", plot_collection.aes_set)
+        )
     aes_by_visuals["rank"] = {"overlay"}.union(aes_by_visuals.get("rank", plot_collection.aes_set))
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
 
     if combined and "chain" in distribution.dims:
         chain_mapped_to_aes = set(
             aes_key for aes_key, aes_dims in pc_kwargs["aes"].items() if "chain" in aes_dims
-        ).intersection(aes_by_visuals[kind])
+        ).intersection(aes_by_visuals["dist"])
         if chain_mapped_to_aes:
             raise ValueError(
                 f"Found properties {chain_mapped_to_aes} mapped to the chain dimension, "
@@ -306,20 +308,20 @@ def plot_rank_dist(
     if labeller is None:
         labeller = BaseLabeller()
 
-    _, dist_aes, _ = filter_aes(plot_collection, aes_by_visuals, kind, sample_dims)
+    _, dist_aes, _ = filter_aes(plot_collection, aes_by_visuals, "dist", sample_dims)
 
     # dens
     visuals_dist = {
         key: False
         for key in ("credible_interval", "point_estimate", "point_estimate_text", "title")
     }
-    dist_kwargs = copy(visuals.get(kind, {}))
+    dist_kwargs = copy(visuals.get("dist", {}))
     if dist_kwargs is not False:
         if neutral_color and "color" not in dist_aes:
             dist_kwargs.setdefault("color", neutral_color)
         if neutral_linestyle and "linestyle" not in dist_aes:
             dist_kwargs.setdefault("linestyle", neutral_linestyle)
-    visuals_dist[kind] = dist_kwargs
+    visuals_dist["dist"] = dist_kwargs
     if "remove_axis" in visuals:
         visuals_dist["remove_axis"] = visuals["remove_axis"]
     plot_collection.coords = {"column": "dist"}
@@ -333,7 +335,7 @@ def plot_rank_dist(
         kind=kind,
         plot_collection=plot_collection,
         labeller=labeller,
-        aes_by_visuals={key: value for key, value in aes_by_visuals.items() if key == kind},
+        aes_by_visuals={key: value for key, value in aes_by_visuals.items() if key == "dist"},
         visuals=visuals_dist,
         stats={"dist": stats.get("dist", {})},
     )

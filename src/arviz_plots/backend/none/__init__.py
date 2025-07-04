@@ -506,11 +506,31 @@ def yticks(ticks, labels, target, **artist_kws):
     return artist_element
 
 
+def set_ticklabel_visibility(target, *, axis="both", visible=True):
+    """Interface to setting visibility of tick labels."""
+    artist_element = {
+        "function": "set_ticklabel_visibility",
+        "axis": axis,
+        "visible": visible,
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 def xlim(lims, target, **artist_kws):
     """Interface to setting limits for the x axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xlim", "lims": lims, **artist_kws}
+    target.append(artist_element)
+    return artist_element
+
+
+def ylim(lims, target, **artist_kws):
+    """Interface to setting limits for the y axis."""
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    artist_element = {"function": "ylim", "lims": lims, **artist_kws}
     target.append(artist_element)
     return artist_element
 

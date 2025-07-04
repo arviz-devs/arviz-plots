@@ -317,31 +317,33 @@ def create_plotting_grid(
                 subplot_kws_i["y_range"] = shared_yrange[col]
             if width_ratios is not None:
                 subplot_kws["width"] = plot_widths[col]
+
+            if row * cols + (col + 1) > number:
+                figures[row, col] = None
+                continue
+
             if (row == 0) and (col == 0) and (sharex is True or sharey is True):
-                p = _figure(**subplot_kws_i)  # pylint: disable=invalid-name
-                figures[row, col] = p
+                p = _figure(**subplot_kws_i)
                 if sharex is True:
                     subplot_kws["x_range"] = p.x_range
                 if sharey is True:
                     subplot_kws["y_range"] = p.y_range
-            elif col == 0 and (sharex == "row" or sharey == "row"):
-                p = _figure(**subplot_kws_i)  # pylint: disable=invalid-name
                 figures[row, col] = p
+            else:
+                figures[row, col] = _figure(**subplot_kws_i)
+
+            p = figures[row, col]
+            if col == 0:
                 if sharex == "row":
                     shared_xrange[row] = p.x_range
                 if sharey == "row":
                     shared_yrange[row] = p.y_range
-            elif row == 0 and (sharex == "col" or sharey == "col"):
-                p = _figure(**subplot_kws_i)  # pylint: disable=invalid-name
-                figures[row, col] = p
+
+            if row == 0:
                 if sharex == "col":
                     shared_xrange[col] = p.x_range
                 if sharey == "col":
                     shared_yrange[col] = p.y_range
-            elif row * cols + (col + 1) > number:
-                figures[row, col] = None
-            else:
-                figures[row, col] = _figure(**subplot_kws_i)
     if squeeze and figures.size == 1:
         return None, figures[0, 0]
     layout = gridplot(figures.tolist(), **kwargs)
@@ -623,6 +625,11 @@ def xlim(lims, target, **artist_kws):
     target.x_range = Range1d(*lims, **artist_kws)
 
 
+def ylim(lims, target, **artist_kws):
+    """Interface to bokeh for setting limits for the y axis."""
+    target.y_range = Range1d(*lims, **artist_kws)
+
+
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to bokeh for setting ticks size."""
     kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
@@ -631,6 +638,23 @@ def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kw
             setattr(target.yaxis, f"major_label_{key}", value)
         if axis in {"x", "both"}:
             setattr(target.xaxis, f"major_label_{key}", value)
+
+
+def set_ticklabel_visibility(target, *, axis="both", visible=True):
+    """Set the visibility of tick labels on a Bokeh plot."""
+    # Determine the font size to apply. 0pt effectively hides the labels.
+    font_size = "1em" if visible else "0pt"
+
+    if axis not in ["x", "y", "both"]:
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+
+    if axis in ["x", "both"]:
+        for ax in target.xaxis:
+            ax.major_label_text_font_size = font_size
+
+    if axis in ["y", "both"]:
+        for ax in target.yaxis:
+            ax.major_label_text_font_size = font_size
 
 
 def remove_ticks(target, *, axis="y"):  # pylint: disable=unused-argument
@@ -650,7 +674,7 @@ def remove_axis(target, axis="y"):
     if axis == "y":
         target.yaxis.visible = False
     elif axis == "x":
-        target.yaxis.visible = False
+        target.xaxis.visible = False
     elif axis == "both":
         target.axis.visible = False
     else:

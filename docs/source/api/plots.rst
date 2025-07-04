@@ -30,6 +30,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_forest
    plot_loo_pit
    plot_mcse
+   plot_pair
    plot_pair_focus
    plot_ppc_dist
    plot_ppc_pava

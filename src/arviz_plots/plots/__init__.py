@@ -14,6 +14,7 @@ from .forest_plot import plot_forest
 from .loo_pit_plot import plot_loo_pit
 from .mcse_plot import plot_mcse
 from .pair_focus_plot import plot_pair_focus
+from .pair_plot import plot_pair
 from .pava_calibration_plot import plot_ppc_pava
 from .ppc_dist_plot import plot_ppc_dist
 from .ppc_pit_plot import plot_ppc_pit
@@ -45,6 +46,8 @@ __all__ = [
     "plot_ess_evolution",
     "plot_loo_pit",
     "plot_mcse",
+    "plot_pair",
+    "plot_pair_focus",
     "plot_ppc_dist",
     "plot_ppc_rootogram",
     "plot_prior_posterior",
@@ -56,7 +59,6 @@ __all__ = [
     "plot_ppc_tstat",
     "plot_psense_dist",
     "plot_psense_quantities",
-    "plot_pair_focus",
     "add_lines",
     "add_bands",
 ]
