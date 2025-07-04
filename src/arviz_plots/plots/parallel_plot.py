@@ -42,7 +42,7 @@ def plot_parallel(
     ] = None,
     **pc_kwargs,
 ):
-    """Plot a fixed variable against other variables in the dataset.
+    """Plot parallel coordinates plot showing posterior points with and without divergences.
 
     Parameters
     ----------
