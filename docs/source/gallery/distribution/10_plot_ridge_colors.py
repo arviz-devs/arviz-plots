@@ -1,7 +1,7 @@
 """
-# Color mapped ridge plot
+# Color-mapped ridge plot
 
-Visual representation of marginal distributions over the y axis for a single model
+A single model ridge plot with colors mapped to the variables
 
 ---
 
