@@ -1,5 +1,5 @@
 """
-# Single-model Ridge plot with ess estimations
+# Single-model ridge plot with ess estimations
 
 Visual representation of marginal distributions over the y axis with additional ess estimations
 
