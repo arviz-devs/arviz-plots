@@ -22,7 +22,7 @@ c_aux = centered["posterior"].dataset.expand_dims(column=3).assign_coords(column
 pc = azp.plot_ridge(
     c_aux,
     combined=True,
-    figure_kwargs={"figsize_units": "inches", "figsize": [5.7, 4]},
+    figure_kwargs={"figsize_units": "dots", "figsize": [570, 450]},
     backend="none"
 )
 pc.map(
