@@ -1,7 +1,7 @@
 """
 # Ridge plot for multiple models
 
-Visual representation of marginal distributions over the y axis showing centered and non-centered schools
+Visual representation of marginal distributions over the y axis showing for multiple models
 
 ---
 
@@ -23,7 +23,8 @@ pc = azp.plot_ridge(
         "centered": centered,
         "non-centered": non_centered
     },
-    backend="none"
+    coords={"school":["Deerfield", "St. Paul's", "Hotchkiss"]},
+    backend="none" # change to preferred backend
 )
 pc.add_legend("model")
 pc.show()

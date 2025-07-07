@@ -1,5 +1,5 @@
 """
-# Ridge plot for a single model
+# Ridge plot
 
 Visual representation of marginal distributions over the y axis for a single model
 
@@ -18,6 +18,6 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("centered_eight")
 pc = azp.plot_ridge(
     data,
-    backend="none"
+    backend="none" # change to preferred backend
 )
 pc.show()

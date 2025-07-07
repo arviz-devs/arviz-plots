@@ -143,23 +143,38 @@ def plot_ridge(
     in case they are present, which get a smaller spacing to give a sense of
     grouping among visual elements that only differ on their chain or model id.
 
+    See Also
+    --------
+    plot_forest : Plot 1D marginal credible intervals in a single plot
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_ridge``.
+    The following example focuses on behaviour specific to ``plot_ridge``.
     For a general introduction to batteries-included functions like this one and common
     usage examples see :ref:`plots_intro`
 
-    Default ridge plot for a single model:
+    This example shows a ridge plot for single model, with color mapped to a given
+    variable (which is also applied to the labels) and alternate shading per school.
+    To ensure the shading looks continuous, we'll specify we don't want to use
+    a constrained layout (set by the "arviz-variat" theme) and to avoid having the labels
+    too squished we'll set the ``width_ratios`` for
+    :func:`~arviz_plots.backend.create_plotting_grid` via ``pc_kwargs``.
 
     .. plot::
         :context: close-figs
 
         >>> from arviz_plots import plot_ridge, style
-        >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
+        >>> style.use("arviz-variat")
         >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_ridge(centered)
+        >>> pc = plot_ridge(
+        >>>     non_centered,
+        >>>     var_names=["theta", "mu", "theta_t", "tau"],
+        >>>     aes={"color": ["__variable__"]},
+        >>>     figure_kwargs={"width_ratios": [1, 2], "layout": "none"},
+        >>>     aes_by_visuals={"labels": ["color"]},
+        >>>     shade_label="school",
+        >>> )
 
     For more examples see below
 
