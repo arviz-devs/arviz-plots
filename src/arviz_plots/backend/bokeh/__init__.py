@@ -420,15 +420,17 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 
-def multiple_lines(target, x, y, *, color="black", alpha=0.05, **artist_kws):
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
     """Interface to bokeh for multiple lines."""
     y = y.T
     y = [np.atleast_1d(yi) for yi in y]
-    x = [list(range(len(x))) for _ in range(len(y))]
+    x = [list(x) for _ in range(len(y))]
     if len(x) != len(y):
         raise ValueError("x and y must have the same length")
     source = ColumnDataSource(data={"x": x, "y": y})
-    kwargs = {"line_color": color, "line_alpha": alpha}
+    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
     return target.multi_line(xs="x", ys="y", source=source, **_filter_kwargs(kwargs, artist_kws))
 
 
@@ -610,7 +612,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
         setattr(target.xaxis, f"axis_label_{key}", value)
 
 
-def xticks(ticks, labels, target, rotation=unset, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the x axis."""
     target.xaxis.ticker = ticks
     if labels is not None:
@@ -618,8 +620,8 @@ def xticks(ticks, labels, target, rotation=unset, **artist_kws):
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
     if rotation is not unset:
-        target.xaxis.major_label_orientation = math.radians(rotation)
-    for key, value in _filter_kwargs({}, artist_kws).items():
+        rotation = math.radians(rotation)
+    for key, value in _filter_kwargs({"orientation": rotation}, artist_kws).items():
         setattr(target.xaxis, f"major_label_{key}", value)
 
 

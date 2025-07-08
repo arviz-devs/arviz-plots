@@ -27,7 +27,6 @@ def plot_parallel(
     aes_by_visuals: Mapping[
         Literal[
             "line",
-            "divergence",
             "xticks",
         ],
         Sequence[str],
@@ -74,7 +73,7 @@ def plot_parallel(
         Valid keys are:
 
         * line -> passed to :func:`~.visuals.multiple_lines`
-        * divergence -> passed to :func:`~.visuals.multiple_lines`.
+        * divergence -> not passed anywhere, can only be set ``False`` to avoid divergence plotting.
         * xticks -> passed to :func:`~.visuals.set_xticks`. Defaults to False.
 
 
@@ -149,12 +148,10 @@ def plot_parallel(
     x_values = np.arange(len(x_labels))
 
     # create divergence mask
-    div_kwargs = copy(visuals.get("divergence", {}))
-    if div_kwargs is True:
-        div_kwargs = {}
+    div_bool = copy(visuals.get("divergence", True))
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
     if (
-        div_kwargs is not False
+        div_bool is not False
         and sample_stats is not None
         and "diverging" in sample_stats.data_vars
         and np.any(sample_stats.diverging)
@@ -173,7 +170,9 @@ def plot_parallel(
             },
             name="diverging",
         )
-
+    if "diverging" not in data.coords:
+        data = data.assign_coords(diverging=aligned_mask)
+        data = data.set_xindex("diverging")
     new_sample_dims = ["sample", "label"]
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
@@ -181,6 +180,11 @@ def plot_parallel(
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, data)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        colors = plot_bknd.get_default_aes("color", 1, {})
+        pc_kwargs["aes"].setdefault("color", ["diverging"])
+        pc_kwargs["aes"].setdefault("alpha", ["diverging"])
+        pc_kwargs["color"] = pc_kwargs.get("color", [colors[0], "black"])
+        pc_kwargs["alpha"] = pc_kwargs.get("alpha", [0.05, 0.1])
         plot_collection = PlotCollection.wrap(
             data.to_dataset(),
             backend=backend,
@@ -192,49 +196,20 @@ def plot_parallel(
     else:
         aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("line", plot_collection.aes_set)
-    aes_by_visuals.setdefault("divergence", plot_collection.aes_set)
 
+    # plot lines
     line_kwargs = copy(visuals.get("line", {}))
     if line_kwargs is not False:
-        _, line_aes, line_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "line", new_sample_dims
-        )
-        if "color" not in line_aes:
-            colors = plot_bknd.get_default_aes("color", 1, {})
-            line_kwargs.setdefault("color", colors[0])
-        if "alpha" not in line_aes:
-            line_kwargs.setdefault("alpha", 0.05)
-        non_divergence_data = data.where(~aligned_mask)
+        _, _, line_ignore = filter_aes(plot_collection, aes_by_visuals, "line", new_sample_dims)
         plot_collection.map(
             multiple_lines,
             "line",
-            data=non_divergence_data,
+            data=data,
+            x_dim="label",
             xvalues=x_values,
-            overlay_dim="sample",
             ignore_aes=line_ignore,
-            artist_dims={"sample": non_divergence_data.sizes["sample"]},
+            store_artist=False,
             **line_kwargs,
-        )
-
-    # divergence
-    if aligned_mask.any().item():
-        divergent_data = data.where(aligned_mask)
-        _, div_aes, div_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "divergence", new_sample_dims
-        )
-        if "color" not in div_aes:
-            div_kwargs.setdefault("color", "black")
-        if "alpha" not in div_aes:
-            div_kwargs.setdefault("alpha", 0.1)
-        plot_collection.map(
-            multiple_lines,
-            "divergence",
-            data=divergent_data,
-            xvalues=x_values,
-            overlay_dim="sample",
-            ignore_aes=div_ignore,
-            artist_dims={"sample": divergent_data.sizes["sample"]},
-            **div_kwargs,
         )
 
     # x-axis label

@@ -257,15 +257,18 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return artist_element
 
 
-def multiple_lines(target, x, y, **artist_kws):
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
     """Interface to multiple lines."""
+    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "multiple_lines",
         "x": x,
         "y": y,
-        **artist_kws,
+        **_filter_kwargs(kwargs, artist_kws),
     }
     target.append(artist_element)
     return artist_element
@@ -502,7 +505,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return artist_element
 
 
-def xticks(ticks, labels, target, rotation=unset, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the x axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")

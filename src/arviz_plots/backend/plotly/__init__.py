@@ -446,7 +446,9 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return line_object
 
 
-def multiple_lines(target, x, y, **kwargs):
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
     """
     Plot multiple lines on a single Plotly target using shared x-values.
 
@@ -487,10 +489,6 @@ def multiple_lines(target, x, y, **kwargs):
     x_stitched = np.tile(np.append(x, np.nan), n_lines)
     y_stitched = np.vstack([y, np.full(n_lines, np.nan)]).flatten("F")
     line_dict = {}
-    color = kwargs.pop("color", unset)
-    alpha = kwargs.pop("alpha", unset)
-    width = kwargs.pop("width", unset)
-    linestyle = kwargs.pop("linestyle", unset)
 
     if alpha is not unset:
         if color is unset:
@@ -505,17 +503,17 @@ def multiple_lines(target, x, y, **kwargs):
     if linestyle is not unset:
         line_dict["dash"] = linestyle
 
-    kwargs.setdefault("showlegend", False)
+    artist_kws.setdefault("showlegend", False)
     line_object = go.Scatter(
         x=x_stitched,
         y=y_stitched,
         mode="lines",
         line=line_dict,
-        **kwargs,
+        **artist_kws,
     )
     target.add_trace(line_object)
 
-    return [line_object]
+    return line_object
 
 
 def scatter(
@@ -766,7 +764,7 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     )
 
 
-def xticks(ticks, labels, target, rotation=unset, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the x axis."""
     if labels is None:
         labels = [str(label) for label in labels]
