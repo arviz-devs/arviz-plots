@@ -208,7 +208,6 @@ def plot_parallel(
             x_dim="label",
             xvalues=x_values,
             ignore_aes=line_ignore,
-            store_artist=False,
             **line_kwargs,
         )
 

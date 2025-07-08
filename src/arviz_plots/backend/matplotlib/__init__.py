@@ -15,7 +15,7 @@ import matplotlib.transforms as mtransforms
 import numpy as np
 from matplotlib import ticker
 from matplotlib.cbook import normalize_kwargs
-from matplotlib.collections import PathCollection
+from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.lines import Line2D
 from matplotlib.pyplot import rcParams
 from matplotlib.pyplot import show as _show
@@ -329,10 +329,23 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
 ):
-    """Interface to matplotlib for multiple line plot."""
+    """Interface to matplotlib for a multiple line plot using a single LineCollection."""
     artist_kws.setdefault("zorder", 2)
-    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
-    return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))
+    y_2d = np.atleast_2d(y)
+    segments = [np.column_stack([x, y_col]) for y_col in y_2d.T]
+    plot_kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    filtered_kwargs = _filter_kwargs(plot_kwargs, None, artist_kws)
+    collection_kwargs = {}
+    key_map = {"color": "colors", "linewidth": "linewidths", "linestyle": "linestyles"}
+    for key, value in filtered_kwargs.items():
+        collection_kwargs[key_map.get(key, key)] = value
+
+    line_collection = LineCollection(segments, **collection_kwargs)
+    target.add_collection(line_collection)
+
+    target.autoscale_view()
+
+    return line_collection
 
 
 def scatter(
