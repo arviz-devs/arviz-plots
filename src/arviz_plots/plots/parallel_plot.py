@@ -6,11 +6,16 @@ from typing import Any, Literal
 
 import numpy as np
 import xarray as xr
-from arviz_base import dataset_to_dataarray, extract, rcParams
+from arviz_base import dataset_to_dataarray, rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_group, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_group,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import multiple_lines, set_xticks
 
 
@@ -124,19 +129,40 @@ def plot_parallel(
     if labeller is None:
         labeller = BaseLabeller()
 
-    if coords is None:
-        coords = {}
-
-    data = extract(
+    data = process_group_variables_coords(
         dt,
         group=group,
         var_names=var_names,
-        sample_dims=sample_dims,
         filter_vars=filter_vars,
-        keep_dataset=True,
+        coords=coords,
+        allow_dict=False,
     )
-    data = data.sel(coords)
-    data = dataset_to_dataarray(data, labeller=labeller, sample_dims=["sample"], label_type="vert")
+    if len(sample_dims) > 1:
+        data = data.stack(sample=sample_dims)
+        combined_dim = "sample"
+    else:
+        combined_dim = sample_dims[0]
+
+    # create divergence mask
+    sample_stats = get_group(dt, "sample_stats", allow_missing=True)
+    if (
+        sample_stats is not None
+        and "diverging" in sample_stats.data_vars
+        and np.any(sample_stats.diverging)
+    ):
+        div_mask = sample_stats.diverging
+        if coords is not None:
+            div_mask = div_mask.sel(
+                {key: value for key, value in coords.items() if key in div_mask.dims}
+            )
+        if len(sample_dims) > 1:
+            div_mask = div_mask.stack(sample=sample_dims)
+    else:
+        div_mask = xr.zeros_like(data.coords[combined_dim], dtype=bool)
+    data = data.assign_coords(diverging=div_mask)
+    data = dataset_to_dataarray(
+        data, labeller=labeller, sample_dims=[combined_dim], label_type="vert"
+    )
     if len(data.coords["label"].values) <= 1 or data.ndim != 2:
         raise ValueError(
             "Parallel plot requires at least two variables to plot. "
@@ -147,33 +173,7 @@ def plot_parallel(
     x_labels = data.coords["label"].values
     x_values = np.arange(len(x_labels))
 
-    # create divergence mask
-    div_bool = copy(visuals.get("divergence", True))
-    sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-    if (
-        div_bool is not False
-        and sample_stats is not None
-        and "diverging" in sample_stats.data_vars
-        and np.any(sample_stats.diverging)
-    ):
-        divergence_mask = dt.sample_stats.diverging
-        stacked_mask = divergence_mask.stack(sample=sample_dims)
-        aligned_mask = stacked_mask.sel(sample=data.coords["sample"])
-    else:
-        aligned_mask = xr.DataArray(
-            data=np.zeros(data.sizes["sample"], dtype=bool),
-            dims=["sample"],
-            coords={
-                coord: data.coords[coord]
-                for coord in data.coords
-                if "sample" in data.coords[coord].dims
-            },
-            name="diverging",
-        )
-    if "diverging" not in data.coords:
-        data = data.assign_coords(diverging=aligned_mask)
-        data = data.set_xindex("diverging")
-    new_sample_dims = ["sample", "label"]
+    new_sample_dims = [combined_dim, "label"]
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
         pc_kwargs.setdefault("cols", None)
