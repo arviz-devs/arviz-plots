@@ -143,42 +143,30 @@ def plot_ridge(
     in case they are present, which get a smaller spacing to give a sense of
     grouping among visual elements that only differ on their chain or model id.
 
+    See Also
+    --------
+    plot_forest : Plot 1D marginal credible intervals in a single plot
+
     Examples
     --------
-    The following examples focus on behaviour specific to ``plot_ridge``.
+    The following example focuses on behaviour specific to ``plot_ridge``.
     For a general introduction to batteries-included functions like this one and common
     usage examples see :ref:`plots_intro`
 
-    Default ridge plot for a single model:
-
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import plot_ridge, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> centered = load_arviz_data('centered_eight')
-        >>> non_centered = load_arviz_data('non_centered_eight')
-        >>> pc = plot_ridge(centered)
-
-    Default ridge plot for multiple models:
-
-    .. plot::
-        :context: close-figs
-
-        >>> pc = plot_ridge({"centered": centered, "non centered": non_centered})
-        >>> pc.add_legend("model")
-
-    Single model ridge plot with color mapped to the variable (mapping which is also applied
-    to the labels) and alternate shading per school.
-    Moreover, to ensure the shading looks continuous, we'll specify we don't want to use
-    constrained layout (set by the "arviz-variat" theme) and to avoid having the labels
+    This example shows a ridge plot for single model, with color mapped to a given
+    variable (which is also applied to the labels) and alternate shading per school.
+    To ensure the shading looks continuous, we'll specify we don't want to use
+    a constrained layout (set by the "arviz-variat" theme) and to avoid having the labels
     too squished we'll set the ``width_ratios`` for
     :func:`~arviz_plots.backend.create_plotting_grid` via ``pc_kwargs``.
 
     .. plot::
         :context: close-figs
 
+        >>> from arviz_plots import plot_ridge, style
+        >>> from arviz_base import load_arviz_data
+        >>> style.use("arviz-variat")
+        >>> non_centered = load_arviz_data('non_centered_eight')
         >>> pc = plot_ridge(
         >>>     non_centered,
         >>>     var_names=["theta", "mu", "theta_t", "tau"],
@@ -188,30 +176,9 @@ def plot_ridge(
         >>>     shade_label="school",
         >>> )
 
-    Extend the ridge plot with an extra :term:`plot` with ess estimates.
-    To achieve that, we manually add a "column" dimension with size 3.
-    ``plot_ridge`` only plots on the "labels" and "ridge" coordinate values,
-    leaving the "ess" coordinate empty. Afterwards, we manually use
-    :meth:`.PlotCollection.map` with the ess result as data on the "ess" column
-    to plot their values.
+    For more examples see below
 
-    .. plot::
-        :context: close-figs
-
-        >>> from arviz_plots import visuals
-        >>> import arviz_stats  # make accessor available
-        >>>
-        >>> c_aux = centered["posterior"].dataset.expand_dims(
-        >>>     column=3
-        >>> ).assign_coords(column=["labels", "ridge", "ess"])
-        >>> pc = plot_ridge(c_aux, combined=True)
-        >>> pc.map(
-        >>>     visuals.scatter_x, "ess", data=centered.azstats.ess().ds,
-        >>>     coords={"column": "ess"}, color="C0"
-        >>> )
-
-    Note that we are using the same :class:`~.PlotCollection`, so when using
-    ``map`` all the same aesthetic mappings used by ``plot_ridge`` are used.
+    .. minigallery:: plot_ridge
 
     """
     if sample_dims is None:
