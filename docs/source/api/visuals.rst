@@ -22,6 +22,7 @@ Data plotting elements
    scatter_xy
    scatter_x
    scatter_xy
+   scatter_couple
    trace_rug
    vline
    vspan
@@ -38,6 +39,7 @@ Data and axis annotating elements
    labelled_title
    labelled_x
    labelled_y
+   label_plot
    point_estimate_text
 
 Plot customization elements

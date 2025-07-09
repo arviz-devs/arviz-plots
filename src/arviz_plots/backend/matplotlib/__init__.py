@@ -475,9 +475,26 @@ def yticks(ticks, labels, target, **artist_kws):
     return target.set_yticks(ticks, labels, **artist_kws)
 
 
+def set_ticklabel_visibility(target, *, axis="both", visible=True):
+    """Interface to matplotlib for setting visibility of tick labels."""
+    if axis == "both":
+        target.tick_params(axis="both", labelbottom=visible, labelleft=visible)
+    elif axis == "x":
+        target.tick_params(axis="x", labelbottom=visible)
+    elif axis == "y":
+        target.tick_params(axis="y", labelleft=visible)
+    else:
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+
+
 def xlim(lims, target, **artist_kws):
     """Interface to matplotlib for setting limits for the x axis."""
     target.set_xlim(lims, **artist_kws)
+
+
+def ylim(lims, target, **artist_kws):
+    """Interface to matplotlib for setting limits for the y axis."""
+    target.set_ylim(lims, **artist_kws)
 
 
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
@@ -517,10 +534,7 @@ def remove_axis(target, axis="y"):
         target.xaxis.set_ticks_position("bottom")
         target.tick_params(axis="y", direction="out", width=1, length=3)
     elif axis == "both":
-        target.xaxis.set_ticks([])
-        target.yaxis.set_ticks([])
-        target.spines["left"].set_visible(False)
-        target.spines["bottom"].set_visible(False)
+        target.set_axis_off()
     else:
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
 

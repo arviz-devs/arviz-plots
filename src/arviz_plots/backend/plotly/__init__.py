@@ -689,13 +689,6 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a label to the y axis."""
     kwargs = {"size": size, "color": color}
-
-    # Check if the x axis is shared
-    is_shared_x_val = is_shared_x(target.figure)
-    row, _ = target.figure._get_subplot_rows_columns()  # pylint: disable=protected-access
-    if is_shared_x_val and target.row != row[len(row) - 1]:
-        return
-
     target.update_xaxes(
         title={"text": str_to_plotly_html(string), "font": _filter_kwargs(kwargs, artist_kws)}
     )
@@ -718,6 +711,21 @@ def yticks(ticks, labels, target, **artist_kws):
 def xlim(lims, target, **artist_kws):
     """Interface to plotly for setting limits for the x axis."""
     target.update_xaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
+
+
+def set_ticklabel_visibility(target, *, axis="both", visible=True):
+    """Interface to plotly for setting the visibility of tick labels."""
+    if axis not in ("y", "x", "both"):
+        raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
+    if axis in {"y", "both"}:
+        target.update_yaxes(showticklabels=visible)
+    if axis in {"x", "both"}:
+        target.update_xaxes(showticklabels=visible)
+
+
+def ylim(lims, target, **artist_kws):
+    """Interface to plotly for setting limits for the y axis."""
+    target.update_yaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
 
 
 def set_y_scale(target, scale):

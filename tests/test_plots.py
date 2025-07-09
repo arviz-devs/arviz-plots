@@ -17,6 +17,7 @@ from arviz_plots import (
     plot_forest,
     plot_loo_pit,
     plot_mcse,
+    plot_pair,
     plot_pair_focus,
     plot_ppc_dist,
     plot_ppc_pava,
@@ -331,6 +332,87 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "/color" in pc.aes.groups
         assert "model" in pc.aes["color"].dims
         assert "/x" in pc.aes.groups
+
+    def test_plot_pair(self, datatree, backend):
+        visuals = {"divergence": True}
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau", "theta"],
+            coords={"hierarchy": 0},
+            triangle="both",
+            visuals=visuals,
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "divergence" in pc.viz.data_vars
+        assert "scatter" in pc.viz.data_vars
+        assert "xlabel" in pc.viz.data_vars
+        assert "ylabel" in pc.viz.data_vars
+        assert "chain" in pc.viz["scatter"].dims
+        assert "chain" in pc.viz["divergence"].dims
+        assert "chain" not in pc.viz["xlabel"].dims
+        assert "chain" not in pc.viz["ylabel"].dims
+        assert "col_index" in pc.viz["xlabel"].dims
+        assert "row_index" in pc.viz["ylabel"].dims
+        assert pc.viz["scatter"].dims == ("row_index", "col_index", "chain")
+
+    @pytest.mark.parametrize("triangle", ("both", "upper", "lower"))
+    @pytest.mark.parametrize("marginal", (True, False))
+    def test_plot_pair_triangle(self, datatree, marginal, triangle, backend):
+        visuals = {"divergence": True}
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau", "theta"],
+            coords={"hierarchy": 0},
+            marginal=marginal,
+            triangle=triangle,
+            visuals=visuals,
+            backend=backend,
+        )
+        rows = pc.viz.row_index.values
+        cols = pc.viz.col_index.values
+        for row_no in rows:
+            for col_no in cols:
+                if row_no == col_no:
+                    assert pc.viz.scatter[row_no, col_no].values[0] is None
+                elif row_no > col_no:
+                    if triangle in ("lower", "both"):
+                        assert pc.viz.scatter[row_no, col_no].values[0] is not None
+                    else:
+                        assert pc.viz.scatter[row_no, col_no].values[0] is None
+                else:
+                    if triangle in ("upper", "both"):
+                        assert pc.viz.scatter[row_no, col_no].values[0] is not None
+                    else:
+                        assert pc.viz.scatter[row_no, col_no].values[0] is None
+
+    def test_plot_pair_sample(self, datatree_sample, backend):
+        visuals = {"divergence": True}
+        sample_dims = ["sample"]
+        pc = plot_pair(
+            datatree_sample,
+            var_names=["mu", "tau", "theta"],
+            coords={"hierarchy": 0},
+            marginal=True,
+            marginal_kind="kde",
+            triangle="both",
+            sample_dims=sample_dims,
+            visuals=visuals,
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "divergence" in pc.viz.data_vars
+        assert "scatter" in pc.viz.data_vars
+        assert "xlabel" in pc.viz.data_vars
+        assert "ylabel" in pc.viz.data_vars
+        assert "chain" not in pc.viz["scatter"].dims
+        assert "chain" not in pc.viz["divergence"].dims
+        assert "chain" not in pc.viz["xlabel"].dims
+        assert "chain" not in pc.viz["ylabel"].dims
+        assert "col_index" in pc.viz["xlabel"].dims
+        assert "row_index" in pc.viz["ylabel"].dims
+        assert pc.viz["divergence"].dims == ("row_index", "col_index")
+        assert pc.viz["scatter"].dims == ("row_index", "col_index")
 
     def test_plot_pair_focus(self, datatree, backend):
         visuals = {"divergence": True}
