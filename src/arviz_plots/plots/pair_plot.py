@@ -65,6 +65,7 @@ def plot_pair(
             "label",
             "xlabel",
             "ylabel",
+            "remove_axis",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
@@ -148,7 +149,7 @@ def plot_pair(
           :meth:`arviz_plots.PlotMatrix.map_col` method. Not applied if ``triangle`` is
           "upper" or ``marginal=False``.
 
-        * default_remove_axis -> not passed anywhere.
+        * remove_axis -> not passed anywhere.
 
           It can only be set to ``False`` to disable the default removal of ``x`` and ``y`` axes
           from the plots of other half triangle. If ``triangle`` is "upper" then the lower triangle
@@ -204,10 +205,6 @@ def plot_pair(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_pair, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('centered_eight')
         >>> visuals = {"credible_interval":{"color":"red"},"point_estimate":{"color":"red"}}
         >>> plot_pair(
         >>>     dt,
@@ -226,10 +223,6 @@ def plot_pair(
     .. plot::
         :context: close-figs
 
-        >>> from arviz_plots import plot_pair, style
-        >>> style.use("arviz-variat")
-        >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('centered_eight')
         >>> plot_pair(
         >>>     dt,
         >>>     coords = {"school":"Choate"},
@@ -497,28 +490,28 @@ def plot_pair(
                 **set_ticklabel_visibility_kwargs,
             )
 
-    # default removal of axis for better visualization
-    default_remove_axis_bool = visuals.get("default_remove_axis", True)
-    if default_remove_axis_bool:
-        _, _, default_remove_axis_ignore = filter_aes(
-            plot_matrix, aes_by_visuals, "default_remove_axis", sample_dims
+    #  removal of axis for better visualization
+    remove_axis_bool = visuals.get("remove_axis", True)
+    if remove_axis_bool:
+        _, _, remove_axis_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "remove_axis", sample_dims
         )
         # if triangle="upper" then remove the lower triangle axes
         if triangle == "upper":
             plot_matrix.map_triangle(
                 remove_matrix_axis,
-                "default_remove_axis",
+                "remove_axis",
                 triangle="lower",
                 axis="both",
-                ignore_aes=default_remove_axis_ignore,
+                ignore_aes=remove_axis_ignore,
             )
         # if triangle="lower" then remove the upper triangle axes
         elif triangle == "lower":
             plot_matrix.map_triangle(
                 remove_matrix_axis,
-                "default_remove_axis",
+                "remove_axis",
                 triangle="upper",
                 axis="both",
-                ignore_aes=default_remove_axis_ignore,
+                ignore_aes=remove_axis_ignore,
             )
     return plot_matrix
