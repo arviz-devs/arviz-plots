@@ -524,7 +524,13 @@ def yticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the y axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
-    artist_element = {"function": "yticks", "ticks": ticks, "labels": labels, **artist_kws}
+    artist_element = {
+        "function": "yticks",
+        "ticks": ticks,
+        "labels": labels,
+        "rotation": rotation,
+        **artist_kws,
+    }
     target.append(artist_element)
     return artist_element
 

@@ -333,12 +333,11 @@ def multiple_lines(
     artist_kws.setdefault("zorder", 2)
     y_2d = np.atleast_2d(y)
     segments = [np.column_stack([x, y_col]) for y_col in y_2d.T]
-    plot_kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
-    filtered_kwargs = _filter_kwargs(plot_kwargs, None, artist_kws)
+    plot_kwargs = {"colors": color, "alpha": alpha, "linewidths": width, "linestyles": linestyle}
+    filtered_kwargs = _filter_kwargs(plot_kwargs, LineCollection, artist_kws)
     collection_kwargs = {}
-    key_map = {"color": "colors", "linewidth": "linewidths", "linestyle": "linestyles"}
     for key, value in filtered_kwargs.items():
-        collection_kwargs[key_map.get(key, key)] = value
+        collection_kwargs[key] = value
 
     line_collection = LineCollection(segments, **collection_kwargs)
     target.add_collection(line_collection)
