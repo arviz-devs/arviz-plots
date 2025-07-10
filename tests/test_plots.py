@@ -19,6 +19,7 @@ from arviz_plots import (
     plot_mcse,
     plot_pair,
     plot_pair_focus,
+    plot_parallel,
     plot_ppc_dist,
     plot_ppc_pava,
     plot_ppc_pit,
@@ -451,6 +452,43 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "hierarchy" in pc.viz["scatter"]["theta"].dims
         assert pc.viz["xlabel"]["mu"].dims == ()
         assert pc.viz["xlabel"]["theta"].dims == ("hierarchy",)
+
+    @pytest.mark.parametrize("norm_method", (None, "normal", "minmax", "rank"))
+    def test_plot_parallel(self, datatree, norm_method, backend):
+        visuals = {"xticks": {"rotation": 30}}
+        pc = plot_parallel(
+            datatree,
+            var_names=["theta", "tau", "mu"],
+            norm_method=norm_method,
+            label_type="vert",
+            visuals=visuals,
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "line" in pc.viz.children
+        assert "diverging" in pc.viz["line"].dims
+        assert "xticks" in pc.viz.children
+        assert "diverging" not in pc.viz["xticks"].dims
+        assert "labels" in pc.viz["xticks"].dims
+
+    @pytest.mark.parametrize("norm_method", (None, "normal", "minmax", "rank"))
+    def test_plot_parallel_sample(self, datatree_sample, norm_method, backend):
+        visuals = {"xticks": {"rotation": 30}}
+        pc = plot_parallel(
+            datatree_sample,
+            var_names=["theta", "tau", "mu"],
+            norm_method=norm_method,
+            label_type="vert",
+            visuals=visuals,
+            sample_dims="sample",
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "line" in pc.viz.children
+        assert "diverging" in pc.viz["line"].dims
+        assert "xticks" in pc.viz.children
+        assert "diverging" not in pc.viz["xticks"].dims
+        assert "labels" in pc.viz["xticks"].dims
 
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
     def test_plot_ppc_dist(self, datatree, kind, backend):

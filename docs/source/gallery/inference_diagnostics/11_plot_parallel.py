@@ -19,7 +19,7 @@ azp.style.use("arviz-variat")
 dt = load_arviz_data("centered_eight")
 pc = azp.plot_parallel(
     dt,
-    var_name=["theta","tau","mu"],
+    var_names=["theta","tau","mu"],
     norm_method="rank",
     label_type="vert",
     backend="none", # change to preferred backend
