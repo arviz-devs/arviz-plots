@@ -157,6 +157,7 @@ def plot_parallel(
 
     .. plot::
         :context: close-figs
+
         >>> plot_parallel(
         >>>     dt,
         >>>     var_names=["theta", "tau", "mu"],
