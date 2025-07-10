@@ -150,7 +150,6 @@ def plot_parallel(
         >>>     var_names=["theta", "tau", "mu"],
         >>>     norm_method="normal",
         >>>     label_type="vert",
-        >>>     visuals={"xticks": {"rotation": 30}},
         >>> )
 
     parallel_plot with ``norm_method`` set to "minmax".
@@ -162,7 +161,6 @@ def plot_parallel(
         >>>     dt,
         >>>     var_names=["theta", "tau", "mu"],
         >>>     norm_method="minmax",
-        >>>     visuals={"xticks": {"rotation": 30}},
         >>> )
 
 
@@ -274,7 +272,7 @@ def plot_parallel(
     xticks_kwargs = copy(visuals.get("xticks", {}))
     if xticks_kwargs is not False:
         _, _, xticks_ignore = filter_aes(plot_collection, aes_by_visuals, "xticks", new_sample_dims)
-        xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 45)
+        xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 90)
         plot_collection.map(
             set_xticks,
             "xticks",
