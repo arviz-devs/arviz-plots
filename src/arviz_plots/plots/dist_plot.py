@@ -253,7 +253,17 @@ def plot_dist(
     else:
         aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("dist", plot_collection.aes_set.difference("y"))
-    aes_by_visuals.setdefault("face", plot_collection.aes_set.difference("y"))
+    col_dim_list = ["model", "group", "energy", "alpha"]
+    col_dim_list_bool = [dim in distribution for dim in col_dim_list]
+    if any(col_dim_list_bool):
+        aes_by_visuals.setdefault(
+            "face", {"color"}.union(plot_collection.aes_set.difference({"y", "linestyle"}))
+        )
+    else:
+        aes_by_visuals.setdefault(
+            "face", plot_collection.aes_set.difference({"y", "linestyle", "color"})
+        )
+
     if "model" in distribution:
         aes_by_visuals.setdefault("credible_interval", ["color", "y"])
         aes_by_visuals.setdefault("point_estimate", ["color", "y"])
@@ -318,28 +328,33 @@ def plot_dist(
 
         else:
             raise NotImplementedError("coming soon")
-    if face_kwargs is not False and kind in {"kde", "ecdf"}:
-        _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
-        face_density = density.rename({"plot_axis": "kwarg"})
-        face_density = face_density.assign_coords(
-            kwarg=[
-                "y_top" if coord == "y" else coord for coord in face_density.coords["kwarg"].values
-            ]
-        )
-        zeros = xr.full_like(face_density.sel(kwarg="x"), 0)
-        zeros = zeros.assign_coords(kwarg=["y_bottom"])
-        face_density = xr.concat([face_density, zeros], dim="kwarg")
-        if "color" not in face_aes:
-            face_kwargs.setdefault("color", default_color)
-        if "alpha" not in face_aes:
-            face_kwargs.setdefault("alpha", 0.4)
-        plot_collection.map(
-            fill_between_y,
-            "face",
-            data=face_density,
-            ignore_aes=face_ignore,
-            **face_kwargs,
-        )
+
+        if face_kwargs is not False and kind in {"kde", "ecdf"}:
+            _, face_aes, face_ignore = filter_aes(
+                plot_collection, aes_by_visuals, "face", sample_dims
+            )
+            face_density = density.rename({"plot_axis": "kwarg"})
+            face_density = face_density.assign_coords(
+                kwarg=[
+                    "y_top" if coord == "y" else coord
+                    for coord in face_density.coords["kwarg"].values
+                ]
+            )
+            zeros = xr.full_like(face_density.sel(kwarg="x"), 0)
+            zeros = zeros.assign_coords(kwarg=["y_bottom"])
+            face_density = xr.concat([face_density, zeros], dim="kwarg")
+            if "color" not in face_aes:
+                face_kwargs.setdefault("color", default_color)
+            if "alpha" not in face_aes:
+                face_kwargs.setdefault("alpha", 0.4)
+
+            plot_collection.map(
+                fill_between_y,
+                "face",
+                data=face_density,
+                ignore_aes=face_ignore,
+                **face_kwargs,
+            )
 
     rug_kwargs = copy(visuals.get("rug", False))
 
