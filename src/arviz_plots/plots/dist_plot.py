@@ -253,6 +253,7 @@ def plot_dist(
     else:
         aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("dist", plot_collection.aes_set.difference("y"))
+    aes_by_visuals.setdefault("face", plot_collection.aes_set.difference("y"))
     if "model" in distribution:
         aes_by_visuals.setdefault("credible_interval", ["color", "y"])
         aes_by_visuals.setdefault("point_estimate", ["color", "y"])
@@ -317,7 +318,6 @@ def plot_dist(
 
         else:
             raise NotImplementedError("coming soon")
-
     if face_kwargs is not False and kind in {"kde", "ecdf"}:
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
         face_density = density.rename({"plot_axis": "kwarg"})
