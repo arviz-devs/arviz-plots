@@ -313,9 +313,10 @@ def plot_dist(
                 face_color = face_kwargs.pop("color", default_color)
                 alpha = face_kwargs.pop("alpha", 0.4)
                 density_kwargs["step"] = False
-                density_kwargs["edgecolor"] = edge_color
-                density_kwargs["facecolor"] = face_color
                 density_kwargs["alpha"] = alpha
+                if "color" not in density_aes:
+                    density_kwargs["edgecolor"] = edge_color
+                    density_kwargs["facecolor"] = face_color
             else:
                 density_kwargs["step"] = True
             plot_collection.map(
@@ -344,7 +345,7 @@ def plot_dist(
             zeros = zeros.assign_coords(kwarg=["y_bottom"])
             face_density = xr.concat([face_density, zeros], dim="kwarg")
             if "color" not in face_aes:
-                face_kwargs.setdefault("color", default_color)
+                face_kwargs.setdefault("color", density_kwargs)
             if "alpha" not in face_aes:
                 face_kwargs.setdefault("alpha", 0.4)
 
