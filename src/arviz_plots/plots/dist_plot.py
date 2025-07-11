@@ -345,7 +345,7 @@ def plot_dist(
             zeros = zeros.assign_coords(kwarg=["y_bottom"])
             face_density = xr.concat([face_density, zeros], dim="kwarg")
             if "color" not in face_aes:
-                face_kwargs.setdefault("color", density_kwargs)
+                face_kwargs.setdefault("color", default_color)
             if "alpha" not in face_aes:
                 face_kwargs.setdefault("alpha", 0.4)
 
