@@ -18,6 +18,7 @@ from arviz_plots import (
     plot_mcse,
     plot_pair,
     plot_pair_focus,
+    plot_parallel,
     plot_ppc_dist,
     plot_ppc_pava,
     plot_ppc_pit,
@@ -44,6 +45,7 @@ point_estimate_value = st.sampled_from(("mean", "median"))
 visuals_value = st.sampled_from(({}, False, {"color": "red"}))
 visuals_value_no_false = st.sampled_from(({}, {"color": "red"}))
 focus_var_value = st.sampled_from(("tau", "mu"))
+norm_method_value = st.sampled_from(("normal", "minmax", "rank", None))
 
 
 @st.composite
@@ -549,6 +551,32 @@ def test_plot_pair_focus(datatree, visuals, focus_var):
             assert all(
                 var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
             )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "line": visuals_value_no_false,
+            "xticks": st.sampled_from(({}, False, {"rotation": 45})),
+        },
+    ),
+    norm_method=norm_method_value,
+)
+def test_plot_parallel(datatree, visuals, norm_method):
+    pc = plot_parallel(
+        datatree,
+        var_names=["theta", "tau", "mu"],
+        backend="none",
+        norm_method=norm_method,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.data_vars
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
 
 
 @given(

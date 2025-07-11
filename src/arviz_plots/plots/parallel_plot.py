@@ -8,7 +8,6 @@ import numpy as np
 import xarray as xr
 from arviz_base import dataset_to_dataarray, rcParams
 from arviz_base.labels import BaseLabeller
-from scipy.stats import rankdata
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -18,35 +17,6 @@ from arviz_plots.plots.utils import (
     set_wrap_layout,
 )
 from arviz_plots.visuals import multiple_lines, set_xticks
-
-
-def normalize(da: xr.DataArray, norm_method: str, norm_dim: str) -> xr.DataArray:
-    """Apply normalization to an xarray DataArray along the given dimension."""
-    if norm_method is None:
-        return da
-
-    if norm_method == "normal":
-        mean = da.mean(dim=norm_dim)
-        std_dev = da.std(dim=norm_dim)
-        return (da - mean) / std_dev
-
-    if norm_method == "minmax":
-        min_val = da.min(dim=norm_dim)
-        max_val = da.max(dim=norm_dim)
-        return (da - min_val) / (max_val - min_val)
-
-    if norm_method == "rank":
-        return xr.apply_ufunc(
-            rankdata,
-            da,
-            input_core_dims=[[norm_dim]],
-            output_core_dims=[[norm_dim]],
-            kwargs={"method": "average", "axis": -1},
-            dask="parallelized",
-            output_dtypes=[float],
-        )
-
-    raise ValueError(f"{norm_method} is not supported. Use normal, minmax or rank.")
 
 
 def plot_parallel(
@@ -228,7 +198,19 @@ def plot_parallel(
     x_values = np.arange(len(x_labels))
 
     # normalize data
-    data = normalize(data, norm_method, combined_dim)
+    if norm_method is not None:
+        if norm_method == "normal":
+            mean = data.mean(dim=combined_dim)
+            std_dev = data.std(dim=combined_dim)
+            data = (data - mean) / std_dev
+        elif norm_method == "minmax":
+            min_val = data.min(dim=combined_dim)
+            max_val = data.max(dim=combined_dim)
+            data = (data - min_val) / (max_val - min_val)
+        elif norm_method == "rank":
+            data = data.azstats.compute_ranks(dim=combined_dim)
+        else:
+            raise ValueError(f"{norm_method} is not supported. Use normal, minmax or rank.")
 
     new_sample_dims = [combined_dim, "label"]
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
