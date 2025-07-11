@@ -15,6 +15,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import (
     ecdf_line,
+    fill_between_y,
     hist,
     labelled_title,
     line_x,
@@ -127,6 +128,14 @@ def plot_dist(
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
+        * face -> used to fill the area under the density curve.
+
+          passed to :func:`~arviz_plots.visuals.fill_between_y` when `kind`
+          is "kde" or "ecdf" and if the value corresponding to it is not False.
+          If `kind` is "hist", the aesthetics are passed to
+          :func:`~arviz_plots.visuals.hist` along with ``step=False``. While if
+          the corresponding value to ``face`` is False, then the aesthetics are passed
+          to :func:`~arviz_plots.visuals.hist` along with ``step=True``.
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
@@ -254,6 +263,7 @@ def plot_dist(
 
     # density
     density_kwargs = copy(visuals.get("dist", {}))
+    face_kwargs = copy(visuals.get("face", {}))
 
     if density_kwargs is not False:
         density_dims, density_aes, density_ignore = filter_aes(
@@ -287,7 +297,16 @@ def plot_dist(
             hist_kwargs = stats.pop("dist", {}).copy()
             hist_kwargs.setdefault("density", True)
             density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
-
+            if face_kwargs is not False:
+                edge_color = density_kwargs.pop("color", default_color)
+                face_color = face_kwargs.pop("color", default_color)
+                alpha = face_kwargs.pop("alpha", 0.4)
+                density_kwargs["step"] = False
+                density_kwargs["edgecolor"] = edge_color
+                density_kwargs["facecolor"] = face_color
+                density_kwargs["alpha"] = alpha
+            else:
+                density_kwargs["step"] = True
             plot_collection.map(
                 hist,
                 "dist",
@@ -298,6 +317,29 @@ def plot_dist(
 
         else:
             raise NotImplementedError("coming soon")
+
+    if face_kwargs is not False and kind in {"kde", "ecdf"}:
+        _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
+        face_density = density.rename({"plot_axis": "kwarg"})
+        face_density = face_density.assign_coords(
+            kwarg=[
+                "y_top" if coord == "y" else coord for coord in face_density.coords["kwarg"].values
+            ]
+        )
+        zeros = xr.full_like(face_density.sel(kwarg="x"), 0)
+        zeros = zeros.assign_coords(kwarg=["y_bottom"])
+        face_density = xr.concat([face_density, zeros], dim="kwarg")
+        if "color" not in face_aes:
+            face_kwargs.setdefault("color", default_color)
+        if "alpha" not in face_aes:
+            face_kwargs.setdefault("alpha", 0.4)
+        plot_collection.map(
+            fill_between_y,
+            "face",
+            data=face_density,
+            ignore_aes=face_ignore,
+            **face_kwargs,
+        )
 
     rug_kwargs = copy(visuals.get("rug", False))
 
