@@ -402,14 +402,16 @@ def hist(
             edgecolor = color
 
     if step:
-        step_x = np.repeat(np.concatenate(([l_e[0]], r_e)), 2)[1:-1]
-        step_y = np.repeat(np.concatenate(([0], height)), 2)
+        x_coords = np.concatenate((np.asarray(l_e), [r_e[-1]]))
+        y_coords = np.concatenate((np.asarray(height), [height[-1]]))
+
         hist_object = go.Scatter(
-            x=step_x,
-            y=step_y,
+            x=x_coords,
+            y=y_coords,
+            mode="lines",
+            line_shape="hv",
             fill="none",
             line={"color": edgecolor},
-            mode="lines",
             **_filter_kwargs({"opacity": alpha}, artist_kws),
         )
     else:

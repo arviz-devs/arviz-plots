@@ -404,7 +404,7 @@ def hist(
 
     kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
     if step:
-        step_mode = artist_kws.pop("step_mode", "center")
+        step_mode = artist_kws.pop("step_mode", "before")
         kwargs = {"line_color": edgecolor, "alpha": alpha}
 
         x = [l_e[0], l_e[0]]
@@ -418,7 +418,7 @@ def hist(
         p = target.step(x, y_step, mode=step_mode, **_filter_kwargs(kwargs, artist_kws))
 
         target.x_range = Range1d(float(l_e[0]), float(r_e[-1]))
-        target.y_range = Range1d(float(bottom), float(max(y)) * 1.2)  # Add padding to y-axis
+        target.y_range = Range1d(float(bottom), float(max(y)) * 1.2)
 
         return p
 
