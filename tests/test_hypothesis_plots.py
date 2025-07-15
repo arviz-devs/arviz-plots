@@ -1,4 +1,4 @@
-# pylint: disable=no-self-use, redefined-outer-name
+# pylint: disable=no-self-use, redefined-outer-name , too-many-lines
 """Test batteries-included plots using the none backend."""
 import arviz_stats  # pylint: disable=unused-import
 import hypothesis.strategies as st

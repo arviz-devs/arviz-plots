@@ -776,6 +776,7 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     if rotation is not unset:
         kwargs["tickangle"] = rotation
     target.update_xaxes(_filter_kwargs(kwargs, artist_kws))
+    target.update_xaxes(automargin="bottom")
 
 
 def yticks(ticks, labels, target, rotation=unset, **artist_kws):
