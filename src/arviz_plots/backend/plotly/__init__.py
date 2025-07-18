@@ -294,6 +294,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,  # pylint: disable=unused-argument
     width_ratios=None,
+    height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,  # pylint: disable=unused-argument
     **kwargs,
@@ -353,6 +354,7 @@ def create_plotting_grid(
         horizontal_spacing=plot_hspace,
         subplot_titles=[" " for i in range(int(rows) * int(cols))],
         column_widths=width_ratios if width_ratios is None else list(width_ratios),
+        row_heights=height_ratios if height_ratios is None else list(height_ratios),
         **kwargs,
     )
 
@@ -589,30 +591,38 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
+    rotation=unset,
     vertical_align="middle",
     horizontal_align="center",
     **artist_kws,
 ):
-    """Interface to plotly for adding text to a plot."""
-    artist_kws.setdefault("showlegend", False)
-    # plotly inverts the meaning of alignment with respect to matplotlib and bokeh
-    vertical_align = {"top": "bottom", "bottom": "top"}.get(vertical_align, vertical_align)
-    horizontal_align = {"right": "left", "left": "right"}.get(horizontal_align, horizontal_align)
+    """Interface to Plotly for adding text to a plot."""
+    artist_kws.setdefault("showarrow", False)
+    yanchor_map = {"top": "top", "middle": "middle", "center": "middle", "bottom": "bottom"}
+    yanchor = yanchor_map.get(vertical_align, "middle")
+    font_kwargs = _filter_kwargs({"size": size, "color": color}, artist_kws.pop("font", {}))
+    kwargs = {
+        "textangle": rotation,
+        "opacity": alpha,
+        "yanchor": yanchor,
+        "align": horizontal_align,
+    }
 
-    textfont_artist_kws = artist_kws.pop("textfont", {}).copy()
-    text_kwargs = {"color": color, "size": size}
-    kwargs = {"opacity": alpha}
-    text_object = go.Scatter(
-        x=np.atleast_1d(x),
-        y=np.atleast_1d(y),
-        text=np.vectorize(str_to_plotly_html)(np.atleast_1d(string)),
-        mode="text",
-        textfont=_filter_kwargs(text_kwargs, textfont_artist_kws),
-        textposition=f"{vertical_align} {horizontal_align}",
-        **_filter_kwargs(kwargs, artist_kws),
-    )
-    target.add_trace(text_object)
-    return text_object
+    x_vals = np.atleast_1d(x)
+    y_vals = np.atleast_1d(y)
+    strings = np.atleast_1d(string)
+
+    annotations = []
+    for x_i, y_i, s_i in zip(x_vals, y_vals, strings):
+        ann = target.add_annotation(
+            x=x_i,
+            y=y_i,
+            text=str_to_plotly_html(s_i),
+            font=font_kwargs,
+            **_filter_kwargs(kwargs, artist_kws),
+        )
+        annotations.append(ann)
+    return annotations
 
 
 def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **artist_kws):

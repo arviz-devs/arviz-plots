@@ -9,14 +9,9 @@ import xarray as xr
 from arviz_base import dataset_to_dataarray, rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_group,
-    process_group_variables_coords,
-    set_wrap_layout,
-)
-from arviz_plots.visuals import multiple_lines, set_xticks
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
+from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
+from arviz_plots.visuals import multiple_lines, remove_axis
 
 
 def plot_parallel(
@@ -215,21 +210,46 @@ def plot_parallel(
     new_sample_dims = [combined_dim, "label"]
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
-        pc_kwargs.setdefault("cols", None)
+        pc_data = data
+        if "row" not in pc_data:
+            pc_data = pc_data.expand_dims(row=2).assign_coords(row=["parallel", "labels"])
+        elif ("parallel" not in pc_data.row) or ("labels" not in pc_data.row):
+            raise ValueError(
+                "Found colum dimension in input data but required coordinates "
+                "'labels' and 'forest' are missing."
+            )
+
+        pc_kwargs.setdefault("rows", ["row"])
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
+        height_ratios = xr.ones_like(pc_data.row, dtype=float)
+        height_ratios.loc[{"row": "parallel"}] = 3
+        pc_kwargs["figure_kwargs"].setdefault("height_ratios", height_ratios.values)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, data)
         colors = plot_bknd.get_default_aes("color", 1, {})
         pc_kwargs["aes"].setdefault("color", ["diverging"])
         pc_kwargs["aes"].setdefault("alpha", ["diverging"])
         pc_kwargs["color"] = pc_kwargs.get("color", ["black", colors[0]])
         pc_kwargs["alpha"] = pc_kwargs.get("alpha", [0.03, 0.2])
-        plot_collection = PlotCollection.wrap(
-            data.to_dataset(),
+
+        figsize = pc_kwargs.get("figure_kwargs", {}).get("figsize", None)
+        figsize_units = pc_kwargs.get("figure_kwargs", {}).get("figsize_units", "inches")
+        if figsize is None:
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=process_facet_dims(pc_data.to_dataset(), pc_kwargs["rows"])[0],
+                cols=1,
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
+        plot_collection = PlotCollection.grid(
+            pc_data.to_dataset(),
             backend=backend,
             **pc_kwargs,
         )
 
+    if "row" in data.dims:
+        data = data.sel(row="parallel")
     if aes_by_visuals is None:
         aes_by_visuals = {}
     else:
@@ -246,23 +266,38 @@ def plot_parallel(
             data=data,
             x_dim="label",
             xvalues=x_values,
+            coords={"row": "parallel"},
             ignore_aes=line_ignore,
             **line_kwargs,
         )
 
-    # x-axis label
+    # remove axis
+    remove_axis_kwargs = copy(visuals.get("remove_axis", {}))
+    if remove_axis_kwargs is not False:
+        _, _, remove_axis_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "remove_axis", new_sample_dims
+        )
+        remove_axis_kwargs.setdefault("axis", "both")
+        plot_collection.map(
+            remove_axis,
+            "remove_axis",
+            ignore_aes=remove_axis_ignore,
+            coords={"row": "labels"},
+            **remove_axis_kwargs,
+        )
+
+    # x-axis labels
     xticks_kwargs = copy(visuals.get("xticks", {}))
     if xticks_kwargs is not False:
-        _, _, xticks_ignore = filter_aes(plot_collection, aes_by_visuals, "xticks", new_sample_dims)
+        plot_bknd.ylim((0, 1), plot_collection.get_target(None, {"row": "labels"}))
         xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 90)
-        plot_collection.map(
-            set_xticks,
-            "xticks",
-            labels=x_labels,
-            values=x_values,
-            ignore_aes=xticks_ignore,
-            artist_dims={"labels": len(x_labels)},
-            **xticks_kwargs,
-        )
+        for i, label in enumerate(x_labels):
+            plot_bknd.text(
+                i,
+                0.95,
+                label,
+                plot_collection.get_target(None, {"row": "labels"}),
+                **xticks_kwargs,
+            )
 
     return plot_collection

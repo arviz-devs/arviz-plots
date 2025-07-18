@@ -236,6 +236,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     width_ratios=None,
+    height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
     **kwargs,
@@ -301,6 +302,14 @@ def create_plotting_grid(
         width_ratios = np.array(width_ratios, dtype=float)
         width_ratios /= width_ratios.sum()
         plot_widths = np.ceil(figure_width * width_ratios).astype(int)
+    if height_ratios is not None:
+        if len(height_ratios) != rows:
+            raise ValueError("height_ratios must be an iterable of length rows")
+        plot_height = subplot_kws.get("height", 600)
+        figure_height = plot_height * rows
+        height_ratios = np.array(height_ratios, dtype=float)
+        height_ratios /= height_ratios.sum()
+        plot_height = np.ceil(figure_height * height_ratios).astype(int)
 
     shared_xrange = {}
     shared_yrange = {}
@@ -317,6 +326,8 @@ def create_plotting_grid(
                 subplot_kws_i["y_range"] = shared_yrange[col]
             if width_ratios is not None:
                 subplot_kws["width"] = plot_widths[col]
+            if height_ratios is not None:
+                subplot_kws["height"] = plot_height[row]
 
             if row * cols + (col + 1) > number:
                 figures[row, col] = None
@@ -490,15 +501,20 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
+    rotation=unset,
     vertical_align="middle",
     horizontal_align="center",
     **artist_kws,
 ):
     """Interface to bokeh for adding text to a plot."""
+    angle_rad = unset
+    if rotation is not unset:
+        angle_rad = np.deg2rad(rotation)
     kwargs = {
         "text_font_size": _float_or_str_size(size),
         "alpha": alpha,
         "color": color,
+        "angle": angle_rad,
         "text_align": horizontal_align,
         "text_baseline": vertical_align,
     }
