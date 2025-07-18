@@ -145,6 +145,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     width_ratios=None,
+    height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
     **kwargs,
@@ -194,6 +195,7 @@ def create_plotting_grid(
         "sharey": sharey,
         "polar": polar,
         "width_ratios": width_ratios,
+        "height_ratios": height_ratios,
         "plot_hspace": plot_hspace,
         "subplot_kws": subplot_kws,
         **kwargs,
@@ -251,6 +253,23 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
         "function": "line",
         "x": np.atleast_1d(x),
         "y": np.atleast_1d(y),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
+    """Interface to multiple lines."""
+    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    artist_element = {
+        "function": "multiple_lines",
+        "x": x,
+        "y": y,
         **_filter_kwargs(kwargs, artist_kws),
     }
     target.append(artist_element)
@@ -324,6 +343,7 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
+    rotation=unset,
     vertical_align=unset,
     horizontal_align=unset,
     **artist_kws,
@@ -333,6 +353,7 @@ def text(
         "size": size,
         "alpha": alpha,
         "color": color,
+        "rotation": rotation,
         "vertical_align": vertical_align,
         "horizontal_align": horizontal_align,
     }
@@ -488,20 +509,32 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return artist_element
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the x axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
-    artist_element = {"function": "xticks", "ticks": ticks, "labels": labels, **artist_kws}
+    artist_element = {
+        "function": "xticks",
+        "ticks": ticks,
+        "labels": labels,
+        "rotation": rotation,
+        **artist_kws,
+    }
     target.append(artist_element)
     return artist_element
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the y axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
-    artist_element = {"function": "yticks", "ticks": ticks, "labels": labels, **artist_kws}
+    artist_element = {
+        "function": "yticks",
+        "ticks": ticks,
+        "labels": labels,
+        "rotation": rotation,
+        **artist_kws,
+    }
     target.append(artist_element)
     return artist_element
 

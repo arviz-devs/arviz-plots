@@ -15,6 +15,7 @@ from .loo_pit_plot import plot_loo_pit
 from .mcse_plot import plot_mcse
 from .pair_focus_plot import plot_pair_focus
 from .pair_plot import plot_pair
+from .parallel_plot import plot_parallel
 from .pava_calibration_plot import plot_ppc_pava
 from .ppc_dist_plot import plot_ppc_dist
 from .ppc_pit_plot import plot_ppc_pit
@@ -48,6 +49,7 @@ __all__ = [
     "plot_mcse",
     "plot_pair",
     "plot_pair_focus",
+    "plot_parallel",
     "plot_ppc_dist",
     "plot_ppc_rootogram",
     "plot_prior_posterior",

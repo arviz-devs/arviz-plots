@@ -72,6 +72,32 @@ def line(da, target, xname=None, **kwargs):
     return plot_backend.line(xvalues, yvalues, target, **kwargs)
 
 
+def multiple_lines(da, target, x_dim, xvalues=None, **kwargs):
+    """Plot multiple lines together."""
+    if da.ndim != 2:
+        raise ValueError(f"DataArray must be 2D, but has dims: {da.dims}")
+
+    if x_dim is None:
+        raise ValueError("You must specify the 'x_dim' argument.")
+
+    if x_dim not in da.dims:
+        raise ValueError(f"overlay_dim '{x_dim}' not found in DataArray dims {da.dims}")
+
+    da = da.transpose(x_dim, ...)
+    yvalues = da.values
+
+    if xvalues is None:
+        xvalues = da.coords[x_dim].values
+
+    if len(xvalues) != yvalues.shape[0]:
+        raise ValueError(
+            f"xvalues length ({len(xvalues)}) does not match x-dim size ({yvalues.shape[0]})."
+        )
+
+    plot_backend = backend_from_object(target)
+    return plot_backend.multiple_lines(xvalues, yvalues, target, **kwargs)
+
+
 def trace_rug(da, target, mask, xname=None, y=None, **kwargs):
     """Create a rug plot with the subset of `da` indicated by `mask`."""
     xname = xname.item() if hasattr(xname, "item") else xname
