@@ -575,6 +575,7 @@ def test_plot_parallel(datatree, visuals, norm_method):
     for visual, value in visuals.items():
         if visual == "xticks":
             assert visual not in pc.viz.children
+            continue
         if value is False:
             assert visual not in pc.viz.children
         else:
