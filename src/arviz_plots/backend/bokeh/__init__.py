@@ -469,8 +469,11 @@ def scatter(
 
 def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to bokeh for a step line."""
+    edge_color = artist_kws.pop("edgecolor", unset)
+    if edge_color is unset:
+        edge_color = color
     step_mode = artist_kws.pop("step_mode", "after")
-    kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
+    kwargs = {"color": edge_color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
     return target.step(
         np.atleast_1d(x), np.atleast_1d(y), mode=step_mode, **_filter_kwargs(kwargs, artist_kws)
     )

@@ -340,7 +340,10 @@ def scatter(
 
 def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to a step line."""
-    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    edge_color = artist_kws.pop("edgecolor", unset)
+    if edge_color is not unset:
+        edge_color = color
+    kwargs = {"color": edge_color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {

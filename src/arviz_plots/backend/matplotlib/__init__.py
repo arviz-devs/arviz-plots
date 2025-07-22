@@ -377,7 +377,10 @@ def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to matplotlib for a step line."""
     artist_kws.setdefault("zorder", 2)
     artist_kws.setdefault("where", "post")
-    kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    edge_color = artist_kws.pop("edgecolor", unset)
+    if edge_color is unset:
+        edge_color = color
+    kwargs = {"color": edge_color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.step(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
 

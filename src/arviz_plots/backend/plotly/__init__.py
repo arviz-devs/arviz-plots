@@ -547,7 +547,10 @@ def scatter(
 def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to plotly for a step line."""
     artist_kws.setdefault("showlegend", False)
-    line_kwargs = {"color": color, "width": width, "dash": linestyle}
+    edge_color = artist_kws.pop("edgecolor", color)
+    if edge_color is unset:
+        edge_color = color
+    line_kwargs = {"color": edge_color, "width": width, "dash": linestyle}
     line_artist_kws = artist_kws.pop("line", {"shape": "hv"}).copy()
     kwargs = {"opacity": alpha}
     line_object = go.Scatter(
