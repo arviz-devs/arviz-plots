@@ -22,7 +22,7 @@ def plot_parallel(
     coords=None,
     sample_dims=None,
     norm_method=None,
-    label_type="flat",
+    label_type="vert",
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -261,7 +261,7 @@ def plot_parallel(
     xticks_kwargs = copy(visuals.get("xticks", {}))
     if xticks_kwargs is not False:
         _, _, xticks_ignore = filter_aes(plot_collection, aes_by_visuals, "xticks", new_sample_dims)
-        xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 90)
+        xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 0)
         plot_collection.map(
             set_xticks,
             "xticks",
