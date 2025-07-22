@@ -17,13 +17,13 @@ from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, 
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
-    hist,
     labelled_title,
     line_x,
     line_xy,
     point_estimate_text,
     remove_axis,
     scatter_x,
+    step_hist,
 )
 
 
@@ -310,12 +310,16 @@ def plot_dist(
             **pc_kwargs,
         )
 
+    face_kwargs = copy(visuals.get("face", False))
+    density_kwargs = copy(visuals.get("dist", {}))
+
     if aes_by_visuals is None:
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("dist", plot_collection.aes_set.difference("y"))
-    aes_by_visuals.setdefault("face", set(aes_by_visuals["dist"]).difference({"linestyle"}))
+    if face_kwargs is not False:
+        aes_by_visuals.setdefault("face", set(aes_by_visuals["dist"]).difference({"linestyle"}))
     if "model" in distribution:
         aes_by_visuals.setdefault("credible_interval", ["color", "y"])
         aes_by_visuals.setdefault("point_estimate", ["color", "y"])
@@ -325,9 +329,6 @@ def plot_dist(
         labeller = BaseLabeller()
 
     # density
-    density_kwargs = copy(visuals.get("dist", {}))
-    face_kwargs = copy(visuals.get("face", {}))
-
     if density_kwargs is not False:
         density_dims, density_aes, density_ignore = filter_aes(
             plot_collection, aes_by_visuals, "dist", sample_dims
@@ -360,9 +361,8 @@ def plot_dist(
             hist_kwargs = stats.pop("dist", {}).copy()
             hist_kwargs.setdefault("density", True)
             density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
-            density_kwargs["step"] = True
             plot_collection.map(
-                hist,
+                step_hist,
                 "dist",
                 data=density,
                 ignore_aes=density_ignore,

@@ -380,7 +380,6 @@ def hist(
     r_e,
     target,
     *,
-    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
@@ -401,33 +400,19 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    if step:
-        x_coords = np.concatenate((np.asarray(l_e), [r_e[-1]]))
-        y_coords = np.concatenate((np.asarray(height), [height[-1]]))
-
-        hist_object = go.Scatter(
-            x=x_coords,
-            y=y_coords,
-            mode="lines",
-            line_shape="hv",
-            fill="none",
-            line={"color": edgecolor},
-            **_filter_kwargs({"opacity": alpha}, artist_kws),
-        )
-    else:
-        marker_artist_kws = artist_kws.pop("marker", {}).copy()
-        line_kwargs = {"color": edgecolor}
-        line_artist_kws = marker_artist_kws.pop("line", {}).copy()
-        marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
-        marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
-        hist_object = go.Bar(
-            x=(l_e + r_e) / 2,
-            y=height,
-            base=bottom,
-            width=widths,
-            marker=marker_kwargs,
-            **_filter_kwargs({"opacity": alpha}, artist_kws),
-        )
+    marker_artist_kws = artist_kws.pop("marker", {}).copy()
+    line_kwargs = {"color": edgecolor}
+    line_artist_kws = marker_artist_kws.pop("line", {}).copy()
+    marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
+    marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
+    hist_object = go.Bar(
+        x=(l_e + r_e) / 2,
+        y=height,
+        base=bottom,
+        width=widths,
+        marker=marker_kwargs,
+        **_filter_kwargs({"opacity": alpha}, artist_kws),
+    )
 
     target.add_trace(hist_object)
     return hist_object

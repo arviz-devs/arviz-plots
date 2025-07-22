@@ -215,7 +215,6 @@ def hist(
     r_e,
     target,
     *,
-    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
@@ -231,7 +230,7 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"step": step, "bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
+    kwargs = {"bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
     artist_element = {
         "function": "hist",
         "l_e": np.atleast_1d(l_e),
