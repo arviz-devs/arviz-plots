@@ -490,27 +490,17 @@ def multiple_lines(
     n_lines = y.shape[1]
     x_stitched = np.tile(np.append(x, np.nan), n_lines)
     y_stitched = np.vstack([y, np.full(n_lines, np.nan)]).flatten("F")
-    line_dict = {}
-
-    if alpha is not unset:
-        if color is unset:
-            color = get_default_aes("color", 1)[0]
-        final_color = combine_color_alpha(color, alpha)
-        line_dict["color"] = final_color
-    elif color is not unset:
-        line_dict["color"] = color
-
-    if width is not unset:
-        line_dict["width"] = width
-    if linestyle is not unset:
-        line_dict["dash"] = linestyle
-
+    if color is unset:
+        color = get_default_aes("color", n_lines)[0]
+    final_color = combine_color_alpha(color, alpha)
+    line_kwargs = {"color": final_color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {}).copy()
     artist_kws.setdefault("showlegend", False)
     line_object = go.Scatter(
         x=x_stitched,
         y=y_stitched,
         mode="lines",
-        line=line_dict,
+        line=_filter_kwargs(line_kwargs, line_artist_kws),
         **artist_kws,
     )
     target.add_trace(line_object)
@@ -591,38 +581,30 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
-    rotation=unset,
     vertical_align="middle",
     horizontal_align="center",
     **artist_kws,
 ):
-    """Interface to Plotly for adding text to a plot."""
-    artist_kws.setdefault("showarrow", False)
-    yanchor_map = {"top": "top", "middle": "middle", "center": "middle", "bottom": "bottom"}
-    yanchor = yanchor_map.get(vertical_align, "middle")
-    font_kwargs = _filter_kwargs({"size": size, "color": color}, artist_kws.pop("font", {}))
-    kwargs = {
-        "textangle": rotation,
-        "opacity": alpha,
-        "yanchor": yanchor,
-        "align": horizontal_align,
-    }
+    """Interface to plotly for adding text to a plot."""
+    artist_kws.setdefault("showlegend", False)
+    # plotly inverts the meaning of alignment with respect to matplotlib and bokeh
+    vertical_align = {"top": "bottom", "bottom": "top"}.get(vertical_align, vertical_align)
+    horizontal_align = {"right": "left", "left": "right"}.get(horizontal_align, horizontal_align)
 
-    x_vals = np.atleast_1d(x)
-    y_vals = np.atleast_1d(y)
-    strings = np.atleast_1d(string)
-
-    annotations = []
-    for x_i, y_i, s_i in zip(x_vals, y_vals, strings):
-        ann = target.add_annotation(
-            x=x_i,
-            y=y_i,
-            text=str_to_plotly_html(s_i),
-            font=font_kwargs,
-            **_filter_kwargs(kwargs, artist_kws),
-        )
-        annotations.append(ann)
-    return annotations
+    textfont_artist_kws = artist_kws.pop("textfont", {}).copy()
+    text_kwargs = {"color": color, "size": size}
+    kwargs = {"opacity": alpha}
+    text_object = go.Scatter(
+        x=np.atleast_1d(x),
+        y=np.atleast_1d(y),
+        text=np.vectorize(str_to_plotly_html)(np.atleast_1d(string)),
+        mode="text",
+        textfont=_filter_kwargs(text_kwargs, textfont_artist_kws),
+        textposition=f"{vertical_align} {horizontal_align}",
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+    target.add_trace(text_object)
+    return text_object
 
 
 def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **artist_kws):
@@ -782,9 +764,10 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
         "tickmode": "array",
         "tickvals": ticks,
         "ticktext": labels,
+        "tickangle": rotation,
     }
     if rotation is not unset:
-        kwargs["tickangle"] = rotation
+        kwargs["tickangle"] = -rotation
     target.update_xaxes(_filter_kwargs(kwargs, artist_kws))
     target.update_xaxes(automargin="bottom")
 
@@ -797,9 +780,10 @@ def yticks(ticks, labels, target, rotation=unset, **artist_kws):
         "tickmode": "array",
         "tickvals": ticks,
         "ticktext": labels,
+        "tickangle": rotation,
     }
     if rotation is not unset:
-        kwargs["tickangle"] = rotation
+        kwargs["tickangle"] = -rotation
 
     target.update_yaxes(_filter_kwargs(kwargs, artist_kws))
 

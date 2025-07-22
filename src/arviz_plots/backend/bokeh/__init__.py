@@ -501,20 +501,15 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
-    rotation=unset,
     vertical_align="middle",
     horizontal_align="center",
     **artist_kws,
 ):
     """Interface to bokeh for adding text to a plot."""
-    angle_rad = unset
-    if rotation is not unset:
-        angle_rad = np.deg2rad(rotation)
     kwargs = {
         "text_font_size": _float_or_str_size(size),
         "alpha": alpha,
         "color": color,
-        "angle": angle_rad,
         "text_align": horizontal_align,
         "text_baseline": vertical_align,
     }
@@ -641,7 +636,7 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
         setattr(target.xaxis, f"major_label_{key}", value)
 
 
-def yticks(ticks, labels, target, rotation=unset, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the y axis."""
     target.yaxis.ticker = ticks
     if labels is not None:
@@ -649,8 +644,8 @@ def yticks(ticks, labels, target, rotation=unset, **artist_kws):
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
     if rotation is not unset:
-        target.yaxis.major_label_orientation = math.radians(rotation)
-    for key, value in _filter_kwargs({}, artist_kws).items():
+        rotation = math.radians(rotation)
+    for key, value in _filter_kwargs({"orientation": rotation}, artist_kws).items():
         setattr(target.yaxis, f"major_label_{key}", value)
 
 

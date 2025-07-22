@@ -343,7 +343,6 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
-    rotation=unset,
     vertical_align=unset,
     horizontal_align=unset,
     **artist_kws,
@@ -353,7 +352,6 @@ def text(
         "size": size,
         "alpha": alpha,
         "color": color,
-        "rotation": rotation,
         "vertical_align": vertical_align,
         "horizontal_align": horizontal_align,
     }

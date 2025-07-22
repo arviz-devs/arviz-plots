@@ -337,11 +337,7 @@ def multiple_lines(
     segments = [np.column_stack([x, y_col]) for y_col in y_2d.T]
     plot_kwargs = {"colors": color, "alpha": alpha, "linewidths": width, "linestyles": linestyle}
     filtered_kwargs = _filter_kwargs(plot_kwargs, LineCollection, artist_kws)
-    collection_kwargs = {}
-    for key, value in filtered_kwargs.items():
-        collection_kwargs[key] = value
-
-    line_collection = LineCollection(segments, **collection_kwargs)
+    line_collection = LineCollection(segments, **filtered_kwargs)
     target.add_collection(line_collection)
 
     target.autoscale_view()
@@ -402,7 +398,6 @@ def text(
     size=unset,
     alpha=unset,
     color=unset,
-    rotation=unset,
     vertical_align="center",
     horizontal_align="center",
     **artist_kws,
@@ -412,7 +407,6 @@ def text(
         "fontsize": size,
         "alpha": alpha,
         "color": color,
-        "rotation": rotation,
         "horizontalalignment": horizontal_align,
         "verticalalignment": vertical_align,
     }

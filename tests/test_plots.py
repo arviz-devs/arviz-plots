@@ -467,6 +467,9 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "figure" in pc.viz.data_vars
         assert "line" in pc.viz.children
         assert "diverging" in pc.viz["line"].dims
+        assert "xticks" in pc.viz.children
+        assert "diverging" not in pc.viz["xticks"].dims
+        assert "labels" in pc.viz["xticks"].dims
 
     @pytest.mark.parametrize("norm_method", (None, "normal", "minmax", "rank"))
     def test_plot_parallel_sample(self, datatree_sample, norm_method, backend):
@@ -483,6 +486,9 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "figure" in pc.viz.data_vars
         assert "line" in pc.viz.children
         assert "diverging" in pc.viz["line"].dims
+        assert "xticks" in pc.viz.children
+        assert "diverging" not in pc.viz["xticks"].dims
+        assert "labels" in pc.viz["xticks"].dims
 
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
     def test_plot_ppc_dist(self, datatree, kind, backend):

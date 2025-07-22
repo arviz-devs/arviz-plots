@@ -73,12 +73,13 @@ def line(da, target, xname=None, **kwargs):
 
 
 def multiple_lines(da, target, x_dim, xvalues=None, **kwargs):
-    """Plot multiple lines together."""
+    """Plot multiple lines together.
+
+    The input argument `da` is expected to be a 2D DataArray and `x_dim` should be
+    present in dimensions of `da`.
+    """
     if da.ndim != 2:
         raise ValueError(f"DataArray must be 2D, but has dims: {da.dims}")
-
-    if x_dim is None:
-        raise ValueError("You must specify the 'x_dim' argument.")
 
     if x_dim not in da.dims:
         raise ValueError(f"overlay_dim '{x_dim}' not found in DataArray dims {da.dims}")
