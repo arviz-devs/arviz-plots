@@ -28,6 +28,26 @@ def hist(da, target, **kwargs):
     )
 
 
+def step_hist(da, target, **kwargs):
+    """Plot step histogram."""
+    l_e = da.sel(plot_axis="left_edges").values
+    r_e = da.sel(plot_axis="right_edges").values
+    y = da.sel(plot_axis="histogram").values
+
+    bottom = kwargs.pop("bottom", 0)
+    if np.any(bottom != 0):
+        height = y - bottom
+    else:
+        height = y
+
+    x_coords = np.concatenate((l_e, [r_e[-1]]))
+    y_coords = np.concatenate((height, [height[-1]]))
+
+    plot_backend = backend_from_object(target)
+
+    return plot_backend.step(x_coords, y_coords, target, **kwargs)
+
+
 def line_xy(da, target, x=None, y=None, **kwargs):
     """Plot a line x vs y.
 
