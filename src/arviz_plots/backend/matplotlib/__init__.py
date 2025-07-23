@@ -282,7 +282,6 @@ def hist(
     r_e,
     target,
     *,
-    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
@@ -302,14 +301,6 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    if step:
-        kwargs = {"color": facecolor, "alpha": alpha}
-        return target.step(
-            np.r_[l_e, r_e[-1]],
-            np.r_[height, height[-1]],
-            where="post",
-            **_filter_kwargs(kwargs, None, artist_kws),
-        )
     kwargs = {"color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
     return target.fill_between(
         np.r_[l_e, r_e[-1]],
@@ -363,10 +354,28 @@ def scatter(
     return target.scatter(x, y, **_filter_kwargs(kwargs, None, artist_kws))
 
 
-def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+def step(
+    x,
+    y,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    step_mode=unset,
+    **artist_kws,
+):
     """Interface to matplotlib for a step line."""
     artist_kws.setdefault("zorder", 2)
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
+    if step_mode is not unset:
+        if step_mode == "before":
+            kwargs["where"] = "pre"
+        elif step_mode == "after":
+            kwargs["where"] = "post"
+        else:
+            kwargs["where"] = "mid"
     return target.step(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
 
