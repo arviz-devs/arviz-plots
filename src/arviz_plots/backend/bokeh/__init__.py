@@ -394,7 +394,7 @@ def hist(
     alpha=unset,
     **artist_kws,
 ):
-    """Interface to Bokeh for a histogram bar or step plot."""
+    """Interface to Bokeh for a histogram bar plot."""
     if color is not unset:
         if facecolor is unset:
             facecolor = color
@@ -410,20 +410,6 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to bokeh for a line plot."""
     kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
-
-
-def multiple_lines(
-    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
-):
-    """Interface to bokeh for multiple lines."""
-    y = y.T
-    y = [np.atleast_1d(yi) for yi in y]
-    x = [list(x) for _ in range(len(y))]
-    if len(x) != len(y):
-        raise ValueError("x and y must have the same length")
-    source = ColumnDataSource(data={"x": x, "y": y})
-    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
-    return target.multi_line(xs="x", ys="y", source=source, **_filter_kwargs(kwargs, artist_kws))
 
 
 def scatter(
@@ -467,16 +453,27 @@ def scatter(
     return target.scatter(x="x", y="y", source=source, **kwargs)
 
 
-def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+def step(
+    x,
+    y,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    step_mode=unset,
+    **artist_kws,
+):
     """Interface to bokeh for a step line."""
-    edge_color = artist_kws.pop("edgecolor", unset)
-    if edge_color is unset:
-        edge_color = color
-    step_mode = artist_kws.pop("step_mode", "after")
-    kwargs = {"color": edge_color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
-    return target.step(
-        np.atleast_1d(x), np.atleast_1d(y), mode=step_mode, **_filter_kwargs(kwargs, artist_kws)
-    )
+    kwargs = {
+        "color": color,
+        "alpha": alpha,
+        "line_width": width,
+        "line_dash": linestyle,
+        "mode": step_mode,
+    }
+    return target.step(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 
 def text(
@@ -610,16 +607,14 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
         setattr(target.xaxis, f"axis_label_{key}", value)
 
 
-def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
+def xticks(ticks, labels, target, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the x axis."""
     target.xaxis.ticker = ticks
     if labels is not None:
         target.xaxis.major_label_overrides = {
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
-    if rotation is not unset:
-        rotation = math.radians(rotation)
-    for key, value in _filter_kwargs({"orientation": rotation}, artist_kws).items():
+    for key, value in _filter_kwargs({}, artist_kws).items():
         setattr(target.xaxis, f"major_label_{key}", value)
 
 

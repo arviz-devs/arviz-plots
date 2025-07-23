@@ -45,7 +45,7 @@ def step_hist(da, target, **kwargs):
 
     plot_backend = backend_from_object(target)
 
-    return plot_backend.step(x_coords, y_coords, target, **kwargs)
+    return plot_backend.step(x_coords, y_coords, target, step_mode="after", **kwargs)
 
 
 def line_xy(da, target, x=None, y=None, **kwargs):
@@ -190,7 +190,9 @@ def scatter_couple(da_x, da_y, target, mask=None, **kwargs):
 def ecdf_line(values, target, **kwargs):
     """Plot a step line."""
     plot_backend = backend_from_object(target)
-    return plot_backend.step(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
+    return plot_backend.step(
+        values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, step_mode="before", **kwargs
+    )
 
 
 def vline(values, target, **kwargs):

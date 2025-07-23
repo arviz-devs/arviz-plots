@@ -88,6 +88,20 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert not pc.aes
         assert "mu" in pc.viz["dist"].data_vars
         visuals = ("plot", "dist", "credible_interval", "point_estimate")
+        assert "face" not in pc.viz.children
+        assert "dist" in pc.viz.children
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
+
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist_filled(self, datatree, backend, kind):
+        visuals = {"face": {}}
+        pc = plot_dist(datatree, backend=backend, kind=kind, visuals=visuals)
+        assert not pc.aes
+        assert "mu" in pc.viz["dist"].data_vars
+        visuals = ("plot", "dist", "face", "credible_interval", "point_estimate")
+        assert "face" in pc.viz.children
+        assert "dist" in pc.viz.children
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
@@ -97,6 +111,22 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert not pc.aes
         assert "mu" in pc.viz["dist"].data_vars
         visuals = ("plot", "dist", "credible_interval", "point_estimate")
+        assert "face" not in pc.viz.children
+        assert "dist" in pc.viz.children
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
+
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist_sample_filled(self, datatree_sample, backend, kind):
+        visuals = {"face": {}}
+        pc = plot_dist(
+            datatree_sample, backend=backend, sample_dims="sample", kind=kind, visuals=visuals
+        )
+        assert not pc.aes
+        assert "mu" in pc.viz["dist"].data_vars
+        visuals = ("plot", "dist", "face", "credible_interval", "point_estimate")
+        assert "face" in pc.viz.children
+        assert "dist" in pc.viz.children
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
