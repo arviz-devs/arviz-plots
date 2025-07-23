@@ -22,7 +22,7 @@ def plot_parallel(
     coords=None,
     sample_dims=None,
     norm_method=None,
-    label_type="vert",
+    label_type="flat",
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -218,17 +218,20 @@ def plot_parallel(
         pc_kwargs["aes"].setdefault("alpha", ["diverging"])
         pc_kwargs["color"] = pc_kwargs.get("color", ["black", colors[0]])
         pc_kwargs["alpha"] = pc_kwargs.get("alpha", [0.03, 0.2])
-        coeff = 0.2
         figsize = pc_kwargs.get("figure_kwargs", {}).get("figsize", None)
         figsize_units = pc_kwargs.get("figure_kwargs", {}).get("figsize_units", "inches")
         if figsize is None:
             figsize = plot_bknd.scale_fig_size(
                 figsize,
                 rows=2,
-                cols=1 + coeff * len(x_labels),
+                cols=1 + 0.2 * len(x_labels),
                 figsize_units=figsize_units,
             )
+            label_max_len = np.vectorize(len)(x_labels).max()
+            fontsize = 14
+            figsize = (figsize[0], figsize[1] + fontsize * label_max_len)
             figsize_units = "dots"
+
         pc_kwargs["figure_kwargs"]["figsize"] = figsize
         pc_kwargs["figure_kwargs"]["figsize_units"] = figsize_units
         plot_collection = PlotCollection.wrap(
@@ -261,7 +264,7 @@ def plot_parallel(
     xticks_kwargs = copy(visuals.get("xticks", {}))
     if xticks_kwargs is not False:
         _, _, xticks_ignore = filter_aes(plot_collection, aes_by_visuals, "xticks", new_sample_dims)
-        xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 0)
+        xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 90)
         plot_collection.map(
             set_xticks,
             "xticks",
@@ -275,7 +278,7 @@ def plot_parallel(
         plot_collection.map(
             ticklabel_props,
             "ticklabel_props",
-            size=10,
+            size=fontsize,
             ignore_aes=xticks_ignore,
         )
 
