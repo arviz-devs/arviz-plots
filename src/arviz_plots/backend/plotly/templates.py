@@ -74,3 +74,38 @@ arviz_vibrant_template.layout.colorway = [
     "#323232",
     "#616161",
 ]
+
+
+arviz_tumma_template = go.layout.Template()
+
+arviz_tumma_template.layout.paper_bgcolor = "black"
+arviz_tumma_template.layout.plot_bgcolor = "#0D0D0D"
+arviz_tumma_template.layout.polar.bgcolor = "#0D0D0D"
+arviz_tumma_template.layout.ternary.bgcolor = "#0D0D0D"
+arviz_tumma_template.layout.font.color = "#D9D9D9"
+arviz_tumma_template.layout.title.font.color = "#D9D9D9"
+arviz_tumma_template.layout.margin = {"l": 50, "r": 10, "t": 40, "b": 45}
+axis_common = {
+    "showgrid": False,
+    "ticks": "outside",
+    "showline": True,
+    "zeroline": False,
+    "linecolor": "#D9D9D9",
+    "tickcolor": "#D9D9D9",
+    "gridcolor": "#333333",
+}
+arviz_tumma_template.layout.xaxis = axis_common
+arviz_tumma_template.layout.yaxis = axis_common
+arviz_tumma_template.layout.legend.bgcolor = "rgba(0,0,0,0)"
+arviz_tumma_template.layout.colorway = [
+    "#008b92",
+    "#f15c58",
+    "#48cdef",
+    "#98d81a",
+    "#997ee5",
+    "#f5dc9d",
+    "#c90a4e",
+    "#145393",
+    "#ffffff",
+    "#616161",
+]
