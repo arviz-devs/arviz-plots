@@ -118,8 +118,11 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
         distribution = distribution.sel(coords)
     return distribution
 
-
 def filter_aes(pc, aes_by_visuals, visual, sample_dims):
+    reduce_dims, _, artist_aes, ignore_aes = filter_aes_new(pc, aes_by_visuals, visual, sample_dims)
+    return reduce_dims, artist_aes, ignore_aes
+
+def filter_aes_new(pc, aes_by_visuals, visual, sample_dims):
     """Split aesthetics and get relevant dimensions.
 
     Returns
@@ -235,7 +238,6 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
             groupby_dims = [dim for dim in active_dims if dim in da.dims]
             if groupby_dims:
                 reduced_size *= np.prod([np.min(np.unique(da.coords[dim], return_counts=True)[1]) for dim in groupby_dims])
-            print(f"{var_name=}, {reduced_size=}")
             if reduced_size < 100:
                 ecdf_vars.append(var_name)
             elif da.dtype.kind == "f":
