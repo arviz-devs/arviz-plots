@@ -17,6 +17,7 @@ from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, 
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
+    hist,
     labelled_title,
     line_x,
     line_xy,
@@ -188,16 +189,21 @@ def plot_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
 
         * face -> used to fill the area under the density curve.
 
-          passed to :func:`~arviz_plots.visuals.fill_between_y` when `kind`
-          is "kde" or "ecdf" and if the value corresponding to it is not False.
-          If `kind` is "hist", the aesthetics are passed to
-          :func:`~arviz_plots.visuals.hist` along with ``step=False``. While if
-          the corresponding value to ``face`` is False, then the aesthetics are passed
-          to :func:`~arviz_plots.visuals.hist` along with ``step=True``.
+          * passed to :func:`~arviz_plots.visuals.fill_between_y`
+
+            when `kind` is "kde" or "ecdf" and if the value corresponding
+            to ``face`` is not False.
+
+          * passed to :func:`~arviz_plots.visuals.hist`
+
+            when `kind` is "hist" and if the value corresponding to ``face``
+            is not False. When ``face`` is False, then histogram is plotted
+            as step histogram using :func:`~arviz_plots.visuals.step_hist`
+
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
@@ -368,23 +374,29 @@ def plot_dist(
                 ignore_aes=density_ignore,
                 **density_kwargs,
             )
+            if face_kwargs is not False:
+                plot_collection.map(
+                    hist,
+                    "face",
+                    data=density,
+                    ignore_aes=density_ignore,
+                    **density_kwargs,
+                )
 
         else:
             raise NotImplementedError("coming soon")
 
-        if face_kwargs is not False:
+        if face_kwargs is not False and kind in ("kde", "ecdf"):
             _, face_aes, face_ignore = filter_aes(
                 plot_collection, aes_by_visuals, "face", sample_dims
             )
-            if kind == "hist":
-                face_density = manipulate_hist_dataset_for_filling(density)
-            else:
-                face_density = (
-                    density.rename(plot_axis="kwarg")
-                    .sel(kwarg=["x", "y"])
-                    .pad(kwarg=(0, 1), constant_values=0)
-                    .assign_coords(kwarg=["x", "y_top", "y_bottom"])
-                )
+
+            face_density = (
+                density.rename(plot_axis="kwarg")
+                .sel(kwarg=["x", "y"])
+                .pad(kwarg=(0, 1), constant_values=0)
+                .assign_coords(kwarg=["x", "y_top", "y_bottom"])
+            )
 
             if "color" not in face_aes:
                 face_kwargs.setdefault("color", default_color)
