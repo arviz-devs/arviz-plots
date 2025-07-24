@@ -294,6 +294,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,  # pylint: disable=unused-argument
     width_ratios=None,
+    height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,  # pylint: disable=unused-argument
     **kwargs,
@@ -353,6 +354,7 @@ def create_plotting_grid(
         horizontal_spacing=plot_hspace,
         subplot_titles=[" " for i in range(int(rows) * int(cols))],
         column_widths=width_ratios if width_ratios is None else list(width_ratios),
+        row_heights=height_ratios if height_ratios is None else list(height_ratios),
         **kwargs,
     )
 
@@ -443,6 +445,68 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
         **_filter_kwargs(kwargs, artist_kws),
     )
     target.add_trace(line_object)
+    return line_object
+
+
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
+    """Plot multiple lines on a single Plotly target using shared x-values.
+
+    Parameters
+    ----------
+    x : (N,) array-like
+        Shared x-axis values for all lines.
+    y : (N, M) array-like
+        Each of the `m` columns represents the y-values for one line.
+    target : PlotlyPlot
+        The target :term:`plot` to draw on.
+    color, alpha, width, linestyle : Any, optional
+        See {ref}`backend_interface_arguments` for their description
+    **artist_kws
+        Extra keyword arguments. Passed to :class:`plotly.graph_objects.Scatter`
+
+    Returns
+    -------
+    plotly.graph_object.Scatter
+        Plotly trace representing all lines.
+
+    Notes
+    -----
+    This function uses a high-performance method by concatenating all line data
+    into single `x` and `y` arrays, separated by `np.nan`. This allows
+    Plotly to draw all lines in a single trace object.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.ndim != 1:
+        raise ValueError("x must be 1-dimensional.")
+    if y.ndim != 2:
+        raise ValueError("y must be 2-dimensional (n, m).")
+    if x.shape[0] != y.shape[0]:
+        raise ValueError(
+            f"x and y must have same length along axis 0. Got x={x.shape}, y={y.shape}"
+        )
+
+    n_lines = y.shape[1]
+    x_stitched = np.tile(np.append(x, np.nan), n_lines)
+    y_stitched = np.vstack([y, np.full(n_lines, np.nan)]).flatten("F")
+    if color is unset:
+        color = get_default_aes("color", n_lines)[0]
+    final_color = combine_color_alpha(color, alpha)
+    line_kwargs = {"color": final_color, "width": width, "dash": linestyle}
+    line_artist_kws = artist_kws.pop("line", {}).copy()
+    artist_kws.setdefault("showlegend", False)
+    line_object = go.Scatter(
+        x=x_stitched,
+        y=y_stitched,
+        mode="lines",
+        line=_filter_kwargs(line_kwargs, line_artist_kws),
+        **artist_kws,
+    )
+    target.add_trace(line_object)
+
     return line_object
 
 
@@ -694,18 +758,34 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     )
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the x axis."""
     if labels is None:
         labels = [str(label) for label in labels]
-    target.update_xaxes(tickmode="array", tickvals=ticks, ticktext=labels, **artist_kws)
+    kwargs = {
+        "tickmode": "array",
+        "tickvals": ticks,
+        "ticktext": labels,
+    }
+    if rotation is not unset:
+        kwargs["tickangle"] = -rotation
+    target.update_xaxes(_filter_kwargs(kwargs, artist_kws))
+    target.update_xaxes(automargin="bottom")
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the y axis."""
     if labels is None:
         labels = [str(label) for label in labels]
-    target.update_yaxes(tickmode="array", tickvals=ticks, ticktext=labels, **artist_kws)
+    kwargs = {
+        "tickmode": "array",
+        "tickvals": ticks,
+        "ticktext": labels,
+    }
+    if rotation is not unset:
+        kwargs["tickangle"] = -rotation
+
+    target.update_yaxes(_filter_kwargs(kwargs, artist_kws))
 
 
 def xlim(lims, target, **artist_kws):

@@ -145,6 +145,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     width_ratios=None,
+    height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
     **kwargs,
@@ -194,6 +195,7 @@ def create_plotting_grid(
         "sharey": sharey,
         "polar": polar,
         "width_ratios": width_ratios,
+        "height_ratios": height_ratios,
         "plot_hspace": plot_hspace,
         "subplot_kws": subplot_kws,
         **kwargs,
@@ -251,6 +253,43 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
         "function": "line",
         "x": np.atleast_1d(x),
         "y": np.atleast_1d(y),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
+    """Interface to multiple lines.
+
+    Parameters
+    ----------
+    x : (N,) array-like
+        Shared data for the x axis
+    y : (N, M) array-like
+        Data for the y values of the multiple lines
+    target : list[Any]
+    color, alpha, width, linestyle : Any, optional
+        See {ref}`backend_interface_arguments` for their description
+    **artist_kws
+        Extra keyword arguments. For the none backend they are stored as is
+        to allow for rendering of the plot later on.
+
+    Returns
+    -------
+    dict
+        dictionary with the provided arguments and a "function" key to identify
+        the backend function.
+    """
+    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    artist_element = {
+        "function": "multiple_lines",
+        "x": x,
+        "y": y,
         **_filter_kwargs(kwargs, artist_kws),
     }
     target.append(artist_element)
@@ -488,20 +527,32 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return artist_element
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the x axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
-    artist_element = {"function": "xticks", "ticks": ticks, "labels": labels, **artist_kws}
+    artist_element = {
+        "function": "xticks",
+        "ticks": ticks,
+        "labels": labels,
+        "rotation": rotation,
+        **artist_kws,
+    }
     target.append(artist_element)
     return artist_element
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the y axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
-    artist_element = {"function": "yticks", "ticks": ticks, "labels": labels, **artist_kws}
+    artist_element = {
+        "function": "yticks",
+        "ticks": ticks,
+        "labels": labels,
+        "rotation": rotation,
+        **artist_kws,
+    }
     target.append(artist_element)
     return artist_element
 

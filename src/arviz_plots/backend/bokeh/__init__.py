@@ -236,6 +236,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     width_ratios=None,
+    height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
     **kwargs,
@@ -301,6 +302,14 @@ def create_plotting_grid(
         width_ratios = np.array(width_ratios, dtype=float)
         width_ratios /= width_ratios.sum()
         plot_widths = np.ceil(figure_width * width_ratios).astype(int)
+    if height_ratios is not None:
+        if len(height_ratios) != rows:
+            raise ValueError("height_ratios must be an iterable of length rows")
+        plot_height = subplot_kws.get("height", 600)
+        figure_height = plot_height * rows
+        height_ratios = np.array(height_ratios, dtype=float)
+        height_ratios /= height_ratios.sum()
+        plot_height = np.ceil(figure_height * height_ratios).astype(int)
 
     shared_xrange = {}
     shared_yrange = {}
@@ -317,6 +326,8 @@ def create_plotting_grid(
                 subplot_kws_i["y_range"] = shared_yrange[col]
             if width_ratios is not None:
                 subplot_kws["width"] = plot_widths[col]
+            if height_ratios is not None:
+                subplot_kws["height"] = plot_height[row]
 
             if row * cols + (col + 1) > number:
                 figures[row, col] = None
@@ -418,6 +429,20 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     """Interface to bokeh for a line plot."""
     kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
+
+
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
+    """Interface to bokeh for multiple lines."""
+    y = y.T
+    y = [np.atleast_1d(yi) for yi in y]
+    x = [list(x) for _ in range(len(y))]
+    if len(x) != len(y):
+        raise ValueError("x and y must have the same length")
+    source = ColumnDataSource(data={"x": x, "y": y})
+    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
+    return target.multi_line(xs="x", ys="y", source=source, **_filter_kwargs(kwargs, artist_kws))
 
 
 def scatter(
@@ -598,25 +623,29 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
         setattr(target.xaxis, f"axis_label_{key}", value)
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the x axis."""
     target.xaxis.ticker = ticks
     if labels is not None:
         target.xaxis.major_label_overrides = {
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
-    for key, value in _filter_kwargs({}, artist_kws).items():
+    if rotation is not unset:
+        rotation = math.radians(rotation)
+    for key, value in _filter_kwargs({"orientation": rotation}, artist_kws).items():
         setattr(target.xaxis, f"major_label_{key}", value)
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the y axis."""
     target.yaxis.ticker = ticks
     if labels is not None:
         target.yaxis.major_label_overrides = {
             key.item() if hasattr(key, "item") else key: value for key, value in zip(ticks, labels)
         }
-    for key, value in _filter_kwargs({}, artist_kws).items():
+    if rotation is not unset:
+        rotation = math.radians(rotation)
+    for key, value in _filter_kwargs({"orientation": rotation}, artist_kws).items():
         setattr(target.yaxis, f"major_label_{key}", value)
 
 

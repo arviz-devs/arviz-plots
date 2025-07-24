@@ -15,7 +15,7 @@ import matplotlib.transforms as mtransforms
 import numpy as np
 from matplotlib import ticker
 from matplotlib.cbook import normalize_kwargs
-from matplotlib.collections import PathCollection
+from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.lines import Line2D
 from matplotlib.pyplot import rcParams
 from matplotlib.pyplot import show as _show
@@ -199,6 +199,7 @@ def create_plotting_grid(
     sharey=False,
     polar=False,
     width_ratios=None,
+    height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
     **kwargs,
@@ -250,6 +251,7 @@ def create_plotting_grid(
         sharey=sharey,
         squeeze=squeeze,
         width_ratios=width_ratios,
+        height_ratios=height_ratios,
         figsize=figsize,
         subplot_kw=subplot_kws,
         **kwargs,
@@ -324,6 +326,23 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     artist_kws.setdefault("zorder", 2)
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
+
+
+def multiple_lines(
+    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+):
+    """Interface to matplotlib for a multiple line plot using a single LineCollection."""
+    artist_kws.setdefault("zorder", 2)
+    y_2d = np.atleast_2d(y)
+    segments = [np.column_stack([x, y_col]) for y_col in y_2d.T]
+    plot_kwargs = {"colors": color, "alpha": alpha, "linewidths": width, "linestyles": linestyle}
+    filtered_kwargs = _filter_kwargs(plot_kwargs, LineCollection, artist_kws)
+    line_collection = LineCollection(segments, **filtered_kwargs)
+    target.add_collection(line_collection)
+
+    target.autoscale_view()
+
+    return line_collection
 
 
 def scatter(
@@ -465,13 +484,17 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
-def xticks(ticks, labels, target, **artist_kws):
+def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to matplotlib for adding x ticks and labels to a plot."""
+    if rotation is not unset:
+        artist_kws["rotation"] = rotation
     return target.set_xticks(ticks, labels, **artist_kws)
 
 
-def yticks(ticks, labels, target, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to matplotlib for adding y ticks and labels to a plot."""
+    if rotation is not unset:
+        artist_kws["rotation"] = rotation
     return target.set_yticks(ticks, labels, **artist_kws)
 
 

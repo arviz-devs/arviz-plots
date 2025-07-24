@@ -17,6 +17,7 @@ Data plotting elements
    hist
    hspan
    line
+   multiple_lines
    line_xy
    line_x
    scatter_xy
