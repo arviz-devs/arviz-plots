@@ -94,6 +94,9 @@ Common interface definition
     marker
         Marker to be added to the plot.
 
+    rotation
+        Rotation of axis labels in degrees.
+
     vertical_align
         Vertical alignment between the visual element and the data coordinates provided.
 

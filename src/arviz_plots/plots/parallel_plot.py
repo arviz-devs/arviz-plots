@@ -62,9 +62,11 @@ def plot_parallel(
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    norm_method : Method for normalizing the data.
-        Methods include normal, minmax and rank. Defaults to None
+    norm_method : {None, "normal", "minmax", "rank"}, default None
+        Transformation to apply to the samples before plotting.
     label_type : {"flat", "vert"}, default "flat"
+        Indicator of which `labeller` method to use when generating the
+        labels of the x axis.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly", "none"}, optional
         Plotting backend to use. Defaults to ``rcParams["plot.backend"]``
@@ -72,13 +74,13 @@ def plot_parallel(
     aes_by_visuals : mapping, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
-        By default, there are no aesthetic mappings at all
+        By default, there is a mapping from the value of `diverging` variable to
+        color and alpha which is only active for the "line" visual.
     visuals : mapping of {str : mapping or False}, optional
         Valid keys are:
 
         * line -> passed to :func:`~.visuals.multiple_lines`
         * xticks -> passed to :func:`~.visuals.set_xticks`. Defaults to False.
-
 
     **pc_kwargs
         Passed to :meth:`arviz_plots.PlotCollection.wrap`
@@ -90,7 +92,7 @@ def plot_parallel(
 
     Examples
     --------
-    Default plot_parallel without normalization and with default ``label_type`` as "flat".
+    Default plot_parallel without normalization and with default `label_type` as "flat".
 
     .. plot::
         :context: close-figs
@@ -99,35 +101,20 @@ def plot_parallel(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('centered_eight')
-        >>> plot_parallel(
-        >>>     dt,
-        >>>     var_names=["theta", "tau", "mu"],
-        >>> )
+        >>> plot_parallel(dt)
 
-    parallel_plot with ``norm_method`` set to "normal" and ``label_type`` set to "vert"
-    and ``xticks`` rotation set to 30 degrees.
+    parallel_plot with `norm_method` set to "normal" and `label_type` set to "vert"
+    and rotation of xaxis labels set to 30 degrees.
 
     .. plot::
         :context: close-figs
 
         >>> plot_parallel(
         >>>     dt,
-        >>>     var_names=["theta", "tau", "mu"],
         >>>     norm_method="normal",
         >>>     label_type="vert",
+        >>>     visuals={"xticks": {"rotation": 30}},
         >>> )
-
-    parallel_plot with ``norm_method`` set to "minmax".
-
-    .. plot::
-        :context: close-figs
-
-        >>> plot_parallel(
-        >>>     dt,
-        >>>     var_names=["theta", "tau", "mu"],
-        >>>     norm_method="minmax",
-        >>> )
-
 
     .. minigallery:: plot_parallel
 
@@ -264,7 +251,7 @@ def plot_parallel(
     xticks_kwargs = copy(visuals.get("xticks", {}))
     if xticks_kwargs is not False:
         _, _, xticks_ignore = filter_aes(plot_collection, aes_by_visuals, "xticks", new_sample_dims)
-        xticks_kwargs["rotation"] = xticks_kwargs.get("rotation", 90)
+        xticks_kwargs.setdefault("rotation", 90)
         plot_collection.map(
             set_xticks,
             "xticks",
@@ -273,13 +260,6 @@ def plot_parallel(
             ignore_aes=xticks_ignore,
             artist_dims={"labels": len(x_labels)},
             **xticks_kwargs,
-        )
-
-        plot_collection.map(
-            ticklabel_props,
-            "ticklabel_props",
-            size=fontsize,
-            ignore_aes=xticks_ignore,
         )
 
     return plot_collection

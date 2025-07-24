@@ -75,8 +75,24 @@ def line(da, target, xname=None, **kwargs):
 def multiple_lines(da, target, x_dim, xvalues=None, **kwargs):
     """Plot multiple lines together.
 
-    The input argument `da` is expected to be a 2D DataArray and `x_dim` should be
-    present in dimensions of `da`.
+    Parameters
+    ----------
+    da : DataArray
+        2d DataArray with `x_dim` as one of its dimensions.
+    target : Any
+        Object representing the target :term:`plot`
+    x_dim : hashable
+        Dimension of `da` to be encoded along the x axis of the plot.
+    xvalues : array-like, optional
+        Specific values for the positions of the data along the x axis.
+        Defaults to ``da.coords[x_dim].values``
+    **kwargs
+        Passed to the backend function :func:`~arviz_plots.backend.none.multiple_lines`
+
+    Returns
+    -------
+    Any
+        Object representing the generated :term:`visual`
     """
     if da.ndim != 2:
         raise ValueError(f"DataArray must be 2D, but has dims: {da.dims}")

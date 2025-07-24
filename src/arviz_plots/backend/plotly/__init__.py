@@ -451,29 +451,31 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
 ):
-    """
-    Plot multiple lines on a single Plotly target using shared x-values.
-
-    This function uses a high-performance method by concatenating all line data
-    into single `x` and `y` arrays, separated by `np.nan`. This allows
-    Plotly to draw all lines in a single trace object.
+    """Plot multiple lines on a single Plotly target using shared x-values.
 
     Parameters
     ----------
-    target : PlotlyPlot
-        The target subplot/figure to draw on.
-    x : array-like of shape (n,)
+    x : (N,) array-like
         Shared x-axis values for all lines.
-    y : array-like of shape (n, m)
+    y : (N, M) array-like
         Each of the `m` columns represents the y-values for one line.
-    **kwargs : dict
-        Styling keywords like `color`, `alpha`, `width`, `linestyle` are
-        handled and placed into the `line` dictionary of the trace.
+    target : PlotlyPlot
+        The target :term:`plot` to draw on.
+    color, alpha, width, linestyle : Any, optional
+        See {ref}`backend_interface_arguments` for their description
+    **artist_kws
+        Extra keyword arguments. Passed to :class:`plotly.graph_objects.Scatter`
 
     Returns
     -------
-    lines : list
-        A list containing the single `go.Scatter` object added to the target.
+    plotly.graph_object.Scatter
+        Plotly trace representing all lines.
+
+    Notes
+    -----
+    This function uses a high-performance method by concatenating all line data
+    into single `x` and `y` arrays, separated by `np.nan`. This allows
+    Plotly to draw all lines in a single trace object.
     """
     x = np.asarray(x)
     y = np.asarray(y)
@@ -764,7 +766,6 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
         "tickmode": "array",
         "tickvals": ticks,
         "ticktext": labels,
-        "tickangle": rotation,
     }
     if rotation is not unset:
         kwargs["tickangle"] = -rotation
@@ -772,7 +773,7 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     target.update_xaxes(automargin="bottom")
 
 
-def yticks(ticks, labels, target, rotation=unset, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the y axis."""
     if labels is None:
         labels = [str(label) for label in labels]
@@ -780,7 +781,6 @@ def yticks(ticks, labels, target, rotation=unset, **artist_kws):
         "tickmode": "array",
         "tickvals": ticks,
         "ticktext": labels,
-        "tickangle": rotation,
     }
     if rotation is not unset:
         kwargs["tickangle"] = -rotation

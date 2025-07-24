@@ -491,7 +491,7 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     return target.set_xticks(ticks, labels, **artist_kws)
 
 
-def yticks(ticks, labels, target, rotation=unset, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to matplotlib for adding y ticks and labels to a plot."""
     if rotation is not unset:
         artist_kws["rotation"] = rotation

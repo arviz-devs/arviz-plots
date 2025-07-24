@@ -262,7 +262,27 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
 ):
-    """Interface to multiple lines."""
+    """Interface to multiple lines.
+
+    Parameters
+    ----------
+    x : (N,) array-like
+        Shared data for the x axis
+    y : (N, M) array-like
+        Data for the y values of the multiple lines
+    target : list[Any]
+    color, alpha, width, linestyle : Any, optional
+        See {ref}`backend_interface_arguments` for their description
+    **artist_kws
+        Extra keyword arguments. For the none backend they are stored as is
+        to allow for rendering of the plot later on.
+
+    Returns
+    -------
+    dict
+        dictionary with the provided arguments and a "function" key to identify
+        the backend function.
+    """
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -522,7 +542,7 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     return artist_element
 
 
-def yticks(ticks, labels, target, rotation=unset, **artist_kws):
+def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     """Interface to setting ticks and tick labels of the y axis."""
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
