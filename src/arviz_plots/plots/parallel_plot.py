@@ -11,7 +11,7 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
-from arviz_plots.visuals import multiple_lines, set_xticks, ticklabel_props
+from arviz_plots.visuals import multiple_lines, set_xticks
 
 
 def plot_parallel(
