@@ -52,7 +52,7 @@ axes.labelcolor:        .85
 axes.labelweight:       normal
 
 # color-blind friendly cycle, adapted for dark theme (includes white)
-axes.prop_cycle: cycler(color=["008b92", "f15c58", "48cdef", "98d81a", "997ee5", "f5dc9d", "c90a4e", "145393", "ffffff", "616161"])
+axes.prop_cycle: cycler(color=["#90E0EF", "#FDE74C", "#FB8500", "#6776CC", "#C69EFF","#F10DD3", "#94B2C5", "#FF6161", "#FFFFFF", "#CD74AC",])
 
 image.cmap: viridis
 

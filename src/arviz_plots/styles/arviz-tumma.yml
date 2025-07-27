@@ -24,6 +24,52 @@ attrs:
         border_line_alpha: 0
     Cycler:
         colors : [
-                '#008b92', '#f15c58', '#48cdef', '#98d81a', '#997ee5',
-                '#f5dc9d', '#c90a4e', '#145393', '#ffffff', '#616161',
+                '#90E0EF', '#FDE74C', '#FB8500', '#6776CC', '#C69EFF',
+                '#F10DD3', '#94B2C5', '#FF6161', '#FFFFFF', '#CD74AC',
             ]
+
+# FFFFFF
+# FDE74C
+# FB8500
+# D00000 fail 3
+# 6776CC fail 1
+# 94B2C5
+# 90E0EF
+# 4E00BD fail all
+# B3418A fail 3
+# F10DD3 fail 1
+
+# FFFFFF
+# FDE74C
+# FB8500
+# FF6161 fail 1
+# 6776CC fail 1
+# 94B2C5
+# 90E0EF
+# 4E00BD fail all
+# B3418A fail 3
+# F10DD3 fail 1
+
+
+# FFFFFF
+# FDE74C
+# FB8500
+# FF6161 fail 1
+# 6776CC fail 1
+# 94B2C5
+# 90E0EF
+# C69EFF 
+# B3418A fail 3
+# F10DD3 fail 1
+
+
+# FFFFFF done
+# FDE74C done
+# FB8500 done
+# FF6161 fail 1 done
+# 6776CC fail 1 done
+# 94B2C5 done
+# 90E0EF done
+# C69EFF done
+# CD74AC fail 1 done
+# F10DD3 fail 1 done
