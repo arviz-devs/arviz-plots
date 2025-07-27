@@ -266,27 +266,37 @@ def plot_dist(
     if labeller is None:
         labeller = BaseLabeller()
 
-    # density
-    if density_kwargs is not False:
-        density_dims, density_aes, density_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "dist", sample_dims
-        )
-
-        default_color = plot_bknd.get_default_aes("color", 1, {})[0]
-        if "color" not in density_aes:
-            density_kwargs.setdefault("color", default_color)
-
+    density = distribution
+    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
+    if density_kwargs is not False or face_kwargs is not False:
+        density_dims, _, _ = filter_aes(plot_collection, aes_by_visuals, "dist", sample_dims)
         if kind == "kde":
             with warnings.catch_warnings():
                 if "model" in distribution:
                     warnings.filterwarnings("ignore", message="Your data appears to have a single")
-                density = distribution.azstats.kde(dim=density_dims, **stats.get("dist", {}))
+                density = density.azstats.kde(dim=density_dims, **stats.get("dist", {}))
+        elif kind == "ecdf":
+            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
+        elif kind == "hist":
+            hist_kwargs = stats.pop("dist", {}).copy()
+            hist_kwargs.setdefault("density", True)
+            density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
+
+    # density
+    if density_kwargs is not False:
+        _, density_aes, density_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "dist", sample_dims
+        )
+
+        if "color" not in density_aes:
+            density_kwargs.setdefault("color", default_color)
+
+        if kind == "kde":
             plot_collection.map(
                 line_xy, "dist", data=density, ignore_aes=density_ignore, **density_kwargs
             )
 
         elif kind == "ecdf":
-            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
             plot_collection.map(
                 ecdf_line,
                 "dist",
@@ -296,9 +306,6 @@ def plot_dist(
             )
 
         elif kind == "hist":
-            hist_kwargs = stats.pop("dist", {}).copy()
-            hist_kwargs.setdefault("density", True)
-            density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
             plot_collection.map(
                 step_hist,
                 "dist",
@@ -309,41 +316,40 @@ def plot_dist(
         else:
             raise NotImplementedError("coming soon")
 
-        if face_kwargs is not False:
-            _, face_aes, face_ignore = filter_aes(
-                plot_collection, aes_by_visuals, "face", sample_dims
+    # filled face
+    if face_kwargs is not False:
+        _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
+
+        if "color" not in face_aes:
+            face_kwargs.setdefault("color", default_color)
+        if "alpha" not in face_aes:
+            face_kwargs.setdefault("alpha", 0.4)
+
+        face_density = (
+            density.rename(plot_axis="kwarg")
+            .sel(kwarg=["x", "y"])
+            .pad(kwarg=(0, 1), constant_values=0)
+            .assign_coords(kwarg=["x", "y_top", "y_bottom"])
+        )
+
+        if kind in ("kde", "ecdf"):
+            plot_collection.map(
+                fill_between_y,
+                "face",
+                data=face_density,
+                ignore_aes=face_ignore,
+                **face_kwargs,
             )
-
-            if "color" not in face_aes:
-                face_kwargs.setdefault("color", default_color)
-            if "alpha" not in face_aes:
-                face_kwargs.setdefault("alpha", 0.4)
-
-            face_density = (
-                density.rename(plot_axis="kwarg")
-                .sel(kwarg=["x", "y"])
-                .pad(kwarg=(0, 1), constant_values=0)
-                .assign_coords(kwarg=["x", "y_top", "y_bottom"])
+        elif kind == "hist":
+            plot_collection.map(
+                hist,
+                "face",
+                data=density,
+                ignore_aes=density_ignore,
+                **density_kwargs,
             )
-
-            if kind in ("kde", "ecdf"):
-                plot_collection.map(
-                    fill_between_y,
-                    "face",
-                    data=face_density,
-                    ignore_aes=face_ignore,
-                    **face_kwargs,
-                )
-            elif kind == "hist":
-                plot_collection.map(
-                    hist,
-                    "face",
-                    data=density,
-                    ignore_aes=density_ignore,
-                    **density_kwargs,
-                )
-            else:
-                raise NotImplementedError("coming soon")
+        else:
+            raise NotImplementedError("coming soon")
 
     rug_kwargs = copy(visuals.get("rug", False))
 
