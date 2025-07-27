@@ -7,7 +7,6 @@ from importlib import import_module
 from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
-import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
@@ -26,67 +25,6 @@ from arviz_plots.visuals import (
     scatter_x,
     step_hist,
 )
-
-
-def _manipulate_single_hist_var(hist_data_var):
-    """Manipulate a single histogram DataArray to create a fillable polygon."""
-    left_edges = hist_data_var.sel(plot_axis="left_edges")
-    right_edges = hist_data_var.sel(plot_axis="right_edges")
-    heights = hist_data_var.sel(plot_axis="histogram")
-
-    matching_dims = [d for d in heights.dims if d.startswith("hist_dim")]
-
-    if matching_dims:
-        hist_dim = matching_dims[0]
-    else:
-        raise ValueError(
-            "The provided DataArray does not have a dimension starting with 'hist_dim'. "
-            f"Available dimensions: {heights.dims}"
-        )
-
-    def to_steps_x(left, right):
-        return np.stack((left, right), axis=-1).reshape(*left.shape[:-1], -1)
-
-    def to_steps_y(vals):
-        return np.repeat(vals, 2, axis=-1)
-
-    x_coords = xr.apply_ufunc(
-        to_steps_x,
-        left_edges,
-        right_edges,
-        input_core_dims=[[hist_dim], [hist_dim]],
-        output_core_dims=[["fill_dim"]],
-        exclude_dims={hist_dim},
-        vectorize=True,
-    )
-
-    y_top = xr.apply_ufunc(
-        to_steps_y,
-        heights,
-        input_core_dims=[[hist_dim]],
-        output_core_dims=[["fill_dim"]],
-        exclude_dims={hist_dim},
-        vectorize=True,
-    )
-
-    face_density_precursor = xr.concat([x_coords, y_top], dim="kwarg").assign_coords(
-        kwarg=["x", "y_top"]
-    )
-
-    face_density = face_density_precursor.pad(kwarg=(0, 1), constant_values=0).assign_coords(
-        kwarg=["x", "y_top", "y_bottom"]
-    )
-
-    return face_density
-
-
-def manipulate_hist_dataset_for_filling(hist_dataset):
-    """Manipulate a histogram dataset to create a fillable polygon."""
-    manipulated_vars = {}
-    for var_name, data_array in hist_dataset.data_vars.items():
-        manipulated_vars[var_name] = _manipulate_single_hist_var(data_array)
-
-    return xr.Dataset(manipulated_vars, attrs=hist_dataset.attrs)
 
 
 def plot_dist(
@@ -191,18 +129,12 @@ def plot_dist(
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
 
-        * face -> used to fill the area under the density curve.
+        * face -> :term:`visual` that fills the area under the marginal distribution representation.
 
-          * passed to :func:`~arviz_plots.visuals.fill_between_y`
+          Defaults to False. Depending on the value of `kind` it is passed to:
 
-            when `kind` is "kde" or "ecdf" and if the value corresponding
-            to ``face`` is not False.
-
-          * passed to :func:`~arviz_plots.visuals.hist`
-
-            when `kind` is "hist" and if the value corresponding to ``face``
-            is not False. When ``face`` is False, then histogram is plotted
-            as step histogram using :func:`~arviz_plots.visuals.step_hist`
+          * "kde" or "ecdf" -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+          * * "hist" -> passed to :func:`~arviz_plots.visuals.hist`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -374,22 +306,18 @@ def plot_dist(
                 ignore_aes=density_ignore,
                 **density_kwargs,
             )
-            if face_kwargs is not False:
-                plot_collection.map(
-                    hist,
-                    "face",
-                    data=density,
-                    ignore_aes=density_ignore,
-                    **density_kwargs,
-                )
-
         else:
             raise NotImplementedError("coming soon")
 
-        if face_kwargs is not False and kind in ("kde", "ecdf"):
+        if face_kwargs is not False:
             _, face_aes, face_ignore = filter_aes(
                 plot_collection, aes_by_visuals, "face", sample_dims
             )
+
+            if "color" not in face_aes:
+                face_kwargs.setdefault("color", default_color)
+            if "alpha" not in face_aes:
+                face_kwargs.setdefault("alpha", 0.4)
 
             face_density = (
                 density.rename(plot_axis="kwarg")
@@ -398,18 +326,24 @@ def plot_dist(
                 .assign_coords(kwarg=["x", "y_top", "y_bottom"])
             )
 
-            if "color" not in face_aes:
-                face_kwargs.setdefault("color", default_color)
-            if "alpha" not in face_aes:
-                face_kwargs.setdefault("alpha", 0.4)
-
-            plot_collection.map(
-                fill_between_y,
-                "face",
-                data=face_density,
-                ignore_aes=face_ignore,
-                **face_kwargs,
-            )
+            if kind in ("kde", "ecdf"):
+                plot_collection.map(
+                    fill_between_y,
+                    "face",
+                    data=face_density,
+                    ignore_aes=face_ignore,
+                    **face_kwargs,
+                )
+            elif kind == "hist":
+                plot_collection.map(
+                    hist,
+                    "face",
+                    data=density,
+                    ignore_aes=density_ignore,
+                    **density_kwargs,
+                )
+            else:
+                raise NotImplementedError("coming soon")
 
     rug_kwargs = copy(visuals.get("rug", False))
 
