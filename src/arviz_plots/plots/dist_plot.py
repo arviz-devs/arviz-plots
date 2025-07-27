@@ -325,14 +325,13 @@ def plot_dist(
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
 
-        face_density = (
-            density.rename(plot_axis="kwarg")
-            .sel(kwarg=["x", "y"])
-            .pad(kwarg=(0, 1), constant_values=0)
-            .assign_coords(kwarg=["x", "y_top", "y_bottom"])
-        )
-
         if kind in ("kde", "ecdf"):
+            face_density = (
+                density.rename(plot_axis="kwarg")
+                .sel(kwarg=["x", "y"])
+                .pad(kwarg=(0, 1), constant_values=0)
+                .assign_coords(kwarg=["x", "y_top", "y_bottom"])
+            )
             plot_collection.map(
                 fill_between_y,
                 "face",
@@ -345,8 +344,8 @@ def plot_dist(
                 hist,
                 "face",
                 data=density,
-                ignore_aes=density_ignore,
-                **density_kwargs,
+                ignore_aes=face_ignore,
+                **face_kwargs,
             )
         else:
             raise NotImplementedError("coming soon")
