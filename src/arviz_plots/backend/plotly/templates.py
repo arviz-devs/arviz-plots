@@ -98,14 +98,14 @@ arviz_tumma_template.layout.xaxis = axis_common
 arviz_tumma_template.layout.yaxis = axis_common
 arviz_tumma_template.layout.legend.bgcolor = "rgba(0,0,0,0)"
 arviz_tumma_template.layout.colorway = [
-    "#008b92",
-    "#f15c58",
-    "#48cdef",
-    "#98d81a",
-    "#997ee5",
-    "#f5dc9d",
-    "#c90a4e",
-    "#145393",
-    "#ffffff",
-    "#616161",
+    "#90E0EF",
+    "#FDE74C",
+    "#FB8500",
+    "#6776CC",
+    "#C69EFF",
+    "#F10DD3",
+    "#94B2C5",
+    "#FF6161",
+    "#FFFFFF",
+    "#CD74AC",
 ]
