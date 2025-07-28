@@ -380,7 +380,6 @@ def hist(
     r_e,
     target,
     *,
-    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
@@ -401,31 +400,19 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    if step:
-        step_x = np.repeat(np.concatenate(([l_e[0]], r_e)), 2)[1:-1]
-        step_y = np.repeat(np.concatenate(([0], height)), 2)
-        hist_object = go.Scatter(
-            x=step_x,
-            y=step_y,
-            fill="none",
-            line={"color": edgecolor},
-            mode="lines",
-            **_filter_kwargs({"opacity": alpha}, artist_kws),
-        )
-    else:
-        marker_artist_kws = artist_kws.pop("marker", {}).copy()
-        line_kwargs = {"color": edgecolor}
-        line_artist_kws = marker_artist_kws.pop("line", {}).copy()
-        marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
-        marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
-        hist_object = go.Bar(
-            x=(l_e + r_e) / 2,
-            y=height,
-            base=bottom,
-            width=widths,
-            marker=marker_kwargs,
-            **_filter_kwargs({"opacity": alpha}, artist_kws),
-        )
+    marker_artist_kws = artist_kws.pop("marker", {}).copy()
+    line_kwargs = {"color": edgecolor}
+    line_artist_kws = marker_artist_kws.pop("line", {}).copy()
+    marker_kwargs = _filter_kwargs({"color": facecolor}, marker_artist_kws)
+    marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
+    hist_object = go.Bar(
+        x=(l_e + r_e) / 2,
+        y=height,
+        base=bottom,
+        width=widths,
+        marker=marker_kwargs,
+        **_filter_kwargs({"opacity": alpha}, artist_kws),
+    )
 
     target.add_trace(hist_object)
     return hist_object
@@ -557,11 +544,29 @@ def scatter(
     return scatter_object
 
 
-def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+def step(
+    x,
+    y,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    step_mode=unset,
+    **artist_kws,
+):
     """Interface to plotly for a step line."""
     artist_kws.setdefault("showlegend", False)
     line_kwargs = {"color": color, "width": width, "dash": linestyle}
-    line_artist_kws = artist_kws.pop("line", {"shape": "hv"}).copy()
+    if step_mode is not unset:
+        if step_mode == "before":
+            line_kwargs["shape"] = "vh"
+        elif step_mode == "after":
+            line_kwargs["shape"] = "hv"
+        else:
+            line_kwargs["shape"] = "hvh"
+    line_artist_kws = artist_kws.pop("line", {}).copy()
     kwargs = {"opacity": alpha}
     line_object = go.Scatter(
         x=np.atleast_1d(x),

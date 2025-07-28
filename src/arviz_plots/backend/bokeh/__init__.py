@@ -387,7 +387,6 @@ def hist(
     r_e,
     target,
     *,
-    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
@@ -395,7 +394,7 @@ def hist(
     alpha=unset,
     **artist_kws,
 ):
-    """Interface to Bokeh for a histogram bar or step plot."""
+    """Interface to Bokeh for a histogram bar plot."""
     if color is not unset:
         if facecolor is unset:
             facecolor = color
@@ -403,24 +402,6 @@ def hist(
             edgecolor = color
 
     kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
-    if step:
-        step_mode = artist_kws.pop("step_mode", "center")
-        kwargs = {"line_color": edgecolor, "alpha": alpha}
-
-        x = [l_e[0], l_e[0]]
-        y_step = [0, y[0]]
-        for i, y_i in enumerate(y):
-            x.append(r_e[i])
-            y_step.append(y_i)
-        x.append(r_e[-1])
-        y_step.append(bottom)
-
-        p = target.step(x, y_step, mode=step_mode, **_filter_kwargs(kwargs, artist_kws))
-
-        target.x_range = Range1d(float(l_e[0]), float(r_e[-1]))
-        target.y_range = Range1d(float(bottom), float(max(y)) * 1.2)  # Add padding to y-axis
-
-        return p
 
     return target.quad(top=y, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws))
 
@@ -486,9 +467,26 @@ def scatter(
     return target.scatter(x="x", y="y", source=source, **kwargs)
 
 
-def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+def step(
+    x,
+    y,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    step_mode=unset,
+    **artist_kws,
+):
     """Interface to bokeh for a step line."""
-    kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
+    kwargs = {
+        "color": color,
+        "alpha": alpha,
+        "line_width": width,
+        "line_dash": linestyle,
+        "mode": step_mode,
+    }
     return target.step(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 

@@ -174,6 +174,7 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
         {},
         optional={
             "dist": visuals_value,
+            "face": visuals_value,
             "credible_interval": visuals_value,
             "point_estimate": visuals_value,
             "point_estimate_text": visuals_value,

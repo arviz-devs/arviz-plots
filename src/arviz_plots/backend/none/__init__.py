@@ -215,7 +215,6 @@ def hist(
     r_e,
     target,
     *,
-    step=False,  # pylint: disable=redefined-outer-name
     bottom=0,
     color=unset,
     facecolor=unset,
@@ -231,7 +230,7 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-    kwargs = {"step": step, "bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
+    kwargs = {"bottom": bottom, "facecolor": facecolor, "edgecolor": edgecolor}
     artist_element = {
         "function": "hist",
         "l_e": np.atleast_1d(l_e),
@@ -339,9 +338,26 @@ def scatter(
     return artist_element
 
 
-def step(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+def step(
+    x,
+    y,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    step_mode=unset,
+    **artist_kws,
+):
     """Interface to a step line."""
-    kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
+    kwargs = {
+        "color": color,
+        "alpha": alpha,
+        "width": width,
+        "linestyle": linestyle,
+        "step_mode": step_mode,
+    }
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {

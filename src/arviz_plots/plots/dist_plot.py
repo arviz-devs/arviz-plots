@@ -15,6 +15,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import (
     ecdf_line,
+    fill_between_y,
     hist,
     labelled_title,
     line_x,
@@ -22,6 +23,7 @@ from arviz_plots.visuals import (
     point_estimate_text,
     remove_axis,
     scatter_x,
+    step_hist,
 )
 
 
@@ -125,7 +127,14 @@ def plot_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+
+        * face -> :term:`visual` that fills the area under the marginal distribution representation.
+
+          Defaults to False. Depending on the value of `kind` it is passed to:
+
+          * "kde" or "ecdf" -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+          * * "hist" -> passed to :func:`~arviz_plots.visuals.hist`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -239,11 +248,16 @@ def plot_dist(
             **pc_kwargs,
         )
 
+    face_kwargs = copy(visuals.get("face", False))
+    density_kwargs = copy(visuals.get("dist", {}))
+
     if aes_by_visuals is None:
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("dist", plot_collection.aes_set.difference("y"))
+    if face_kwargs is not False:
+        aes_by_visuals.setdefault("face", set(aes_by_visuals["dist"]).difference({"linestyle"}))
     if "model" in distribution:
         aes_by_visuals.setdefault("credible_interval", ["color", "y"])
         aes_by_visuals.setdefault("point_estimate", ["color", "y"])
@@ -252,29 +266,37 @@ def plot_dist(
     if labeller is None:
         labeller = BaseLabeller()
 
-    # density
-    density_kwargs = copy(visuals.get("dist", {}))
-
-    if density_kwargs is not False:
-        density_dims, density_aes, density_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "dist", sample_dims
-        )
-
-        default_color = plot_bknd.get_default_aes("color", 1, {})[0]
-        if "color" not in density_aes:
-            density_kwargs.setdefault("color", default_color)
-
+    density = distribution
+    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
+    if density_kwargs is not False or face_kwargs is not False:
+        density_dims, _, _ = filter_aes(plot_collection, aes_by_visuals, "dist", sample_dims)
         if kind == "kde":
             with warnings.catch_warnings():
                 if "model" in distribution:
                     warnings.filterwarnings("ignore", message="Your data appears to have a single")
-                density = distribution.azstats.kde(dim=density_dims, **stats.get("dist", {}))
+                density = density.azstats.kde(dim=density_dims, **stats.get("dist", {}))
+        elif kind == "ecdf":
+            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
+        elif kind == "hist":
+            hist_kwargs = stats.pop("dist", {}).copy()
+            hist_kwargs.setdefault("density", True)
+            density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
+
+    # density
+    if density_kwargs is not False:
+        _, density_aes, density_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "dist", sample_dims
+        )
+
+        if "color" not in density_aes:
+            density_kwargs.setdefault("color", default_color)
+
+        if kind == "kde":
             plot_collection.map(
                 line_xy, "dist", data=density, ignore_aes=density_ignore, **density_kwargs
             )
 
         elif kind == "ecdf":
-            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
             plot_collection.map(
                 ecdf_line,
                 "dist",
@@ -284,18 +306,47 @@ def plot_dist(
             )
 
         elif kind == "hist":
-            hist_kwargs = stats.pop("dist", {}).copy()
-            hist_kwargs.setdefault("density", True)
-            density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
-
             plot_collection.map(
-                hist,
+                step_hist,
                 "dist",
                 data=density,
                 ignore_aes=density_ignore,
                 **density_kwargs,
             )
+        else:
+            raise NotImplementedError("coming soon")
 
+    # filled face
+    if face_kwargs is not False:
+        _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
+
+        if "color" not in face_aes:
+            face_kwargs.setdefault("color", default_color)
+        if "alpha" not in face_aes:
+            face_kwargs.setdefault("alpha", 0.4)
+
+        if kind in ("kde", "ecdf"):
+            face_density = (
+                density.rename(plot_axis="kwarg")
+                .sel(kwarg=["x", "y"])
+                .pad(kwarg=(0, 1), constant_values=0)
+                .assign_coords(kwarg=["x", "y_top", "y_bottom"])
+            )
+            plot_collection.map(
+                fill_between_y,
+                "face",
+                data=face_density,
+                ignore_aes=face_ignore,
+                **face_kwargs,
+            )
+        elif kind == "hist":
+            plot_collection.map(
+                hist,
+                "face",
+                data=density,
+                ignore_aes=face_ignore,
+                **face_kwargs,
+            )
         else:
             raise NotImplementedError("coming soon")
 

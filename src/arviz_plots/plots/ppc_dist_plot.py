@@ -257,7 +257,7 @@ def plot_ppc_dist(
         visuals["dist"].setdefault("alpha", 0.3)
         if kind == "hist":
             if visuals["dist"] is not False:
-                visuals["dist"].setdefault("edgecolor", None)
+                visuals["dist"].setdefault("color", None)
 
         plot_collection = plot_dist(
             predictive_dist,

@@ -221,8 +221,6 @@ def plot_prior_posterior(
     if kind == "hist":
         visuals.setdefault("dist", {})
         visuals.setdefault("remove_axis", True)
-        if visuals["dist"] is not False:
-            visuals["dist"].setdefault("step", True)
 
     plot_collection = plot_dist(
         distribution,

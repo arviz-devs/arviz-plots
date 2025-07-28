@@ -28,6 +28,26 @@ def hist(da, target, **kwargs):
     )
 
 
+def step_hist(da, target, **kwargs):
+    """Plot step histogram."""
+    l_e = da.sel(plot_axis="left_edges").values
+    r_e = da.sel(plot_axis="right_edges").values
+    y = da.sel(plot_axis="histogram").values
+
+    bottom = kwargs.pop("bottom", 0)
+    if np.any(bottom != 0):
+        height = y - bottom
+    else:
+        height = y
+
+    x_coords = np.concatenate((l_e, [r_e[-1]]))
+    y_coords = np.concatenate((height, [height[-1]]))
+
+    plot_backend = backend_from_object(target)
+
+    return plot_backend.step(x_coords, y_coords, target, step_mode="after", **kwargs)
+
+
 def line_xy(da, target, x=None, y=None, **kwargs):
     """Plot a line x vs y.
 
@@ -170,7 +190,9 @@ def scatter_couple(da_x, da_y, target, mask=None, **kwargs):
 def ecdf_line(values, target, **kwargs):
     """Plot a step line."""
     plot_backend = backend_from_object(target)
-    return plot_backend.step(values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, **kwargs)
+    return plot_backend.step(
+        values.sel(plot_axis="x"), values.sel(plot_axis="y"), target, step_mode="before", **kwargs
+    )
 
 
 def vline(values, target, **kwargs):
