@@ -13,6 +13,7 @@ from arviz_plots.plot_matrix import PlotMatrix
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrasting_text_color,
     get_group,
     process_group_variables_coords,
     set_grid_layout,
@@ -253,6 +254,7 @@ def plot_pair(
         else:
             backend = plot_matrix.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
@@ -408,7 +410,7 @@ def plot_pair(
         divergence_mask = dt.sample_stats.diverging
         _, div_aes, div_ignore = filter_aes(plot_matrix, aes_by_visuals, "divergence", sample_dims)
         if "color" not in div_aes:
-            div_kwargs.setdefault("color", "black")
+            div_kwargs.setdefault("color", contrast_color)
         if "alpha" not in div_aes:
             div_kwargs.setdefault("alpha", 0.5)
 

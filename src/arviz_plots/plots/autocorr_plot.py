@@ -10,7 +10,12 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrasting_text_color,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import fill_between_y, labelled_title, labelled_x, line, line_xy
 
 
@@ -117,6 +122,7 @@ def plot_autocorr(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     labeller = BaseLabeller()
 
     # Default max lag to 100
@@ -198,7 +204,7 @@ def plot_autocorr(
     ci_kwargs = copy(visuals.get("credible_interval", {}))
     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", "draw")
     if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", "black")
+        ci_kwargs.setdefault("color", contrast_color)
         ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
@@ -220,7 +226,7 @@ def plot_autocorr(
     xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         xlabel_kwargs.setdefault("text", "Lag")
         plot_collection.map(

@@ -10,7 +10,12 @@ from arviz_stats.psense import power_scale_dataset
 from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_grid_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrasting_text_color,
+    process_group_variables_coords,
+    set_grid_layout,
+)
 from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scatter_xy, set_xticks
 
 
@@ -161,6 +166,7 @@ def plot_psense_quantities(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     if alphas is None:
         alphas = (0.8, 1.25)
 
@@ -403,7 +409,7 @@ def plot_psense_quantities(
     xlabel_kwargs = visuals.get("xlabel", {}).copy()
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         xlabel_kwargs.setdefault("text", "Power-scaling α")
 
