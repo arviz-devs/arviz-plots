@@ -54,9 +54,8 @@ axes.labelcolor:        .15
 axes.labelweight:       normal      # weight of the x and y labels
 
 # color-blind friendly cycle designed using https://colorcyclepicker.mpetroff.net/
-# see preview and check for colorblindness here https://coolors.co/009988-9238b2-d2225f-ec8f26-fcd026-3cd186-a57119-2f5e14-f225f4-8f9fbf
-axes.prop_cycle: cycler(color=["009988", "9238b2", "d2225f", "ec8f26", "fcd026", "3cd186", "a57119", "2f5e14", "f225f4", "8f9fbf"])
-
+# see preview and check for colorblindness here https://coolors.co/3cd186-fcd026-ec8f26-c969eb-2b8c92-a91a32-2f2cec-958152
+axes.prop_cycle: cycler(color=["3cd186","fcd026","ec8f26","c969eb","2b8c92","a91a32","2f2cec","958152"])
 image.cmap: viridis
 
 ## ***************************************************************************
