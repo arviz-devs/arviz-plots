@@ -434,11 +434,15 @@ def get_contrasting_text_color(backend=None):
     elif backend == "plotly":
         background_color = pio.templates[pio.templates.default].layout.paper_bgcolor
     elif backend == "bokeh":
-        background_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
+        try:
+            background_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
+        except KeyError:
+            background_color = "white"
     elif backend == "none":
         return "#000000"
     else:
         raise ValueError(f"Unsupported backend: {backend}")
+
     background_color = name_to_hex(background_color)
     background_color = background_color.lstrip("#")
     r = int(background_color[0:2], 16)
