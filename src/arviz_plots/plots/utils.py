@@ -435,7 +435,7 @@ def get_contrasting_text_color(backend=None):
         background_color = pio.templates[pio.templates.default].layout.paper_bgcolor
     elif backend == "bokeh":
         background_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
-    elif backend is None:
+    elif backend == "none":
         return "#000000"
     else:
         raise ValueError(f"Unsupported backend: {backend}")
@@ -444,8 +444,7 @@ def get_contrasting_text_color(backend=None):
     r = int(background_color[0:2], 16)
     g = int(background_color[2:4], 16)
     b = int(background_color[4:6], 16)
-
-    # YIQ brightness formula — weighted brightness perception
+    # calculating the YIQ brightness value
     yiq = (r * 299 + g * 587 + b * 114) / 1000
 
     return "#000000" if yiq >= 128 else "#FFFFFF"
