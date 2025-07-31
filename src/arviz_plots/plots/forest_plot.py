@@ -11,7 +11,11 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrasting_text_color,
+    process_group_variables_coords,
+)
 from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x
 
 
@@ -233,6 +237,8 @@ def plot_forest(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+
+    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     given_plotcollection = True
     if plot_collection is None:
@@ -465,7 +471,7 @@ def plot_forest(
         lab_ignore = set(lab_ignore).union(extra_ignore_aes)
         lab_kwargs = labels_kwargs.copy()
         if "color" not in lab_aes:
-            lab_kwargs.setdefault("color", "black")
+            lab_kwargs.setdefault("color", contrast_color)
         if x == 0:
             lab_kwargs.setdefault("horizontal_align", "left")
         if x == len(labels) - 1:

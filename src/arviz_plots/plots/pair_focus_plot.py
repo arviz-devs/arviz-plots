@@ -12,6 +12,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrasting_text_color,
     get_group,
     process_group_variables_coords,
     set_wrap_layout,
@@ -142,6 +143,7 @@ def plot_pair_focus(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
@@ -226,7 +228,7 @@ def plot_pair_focus(
             plot_collection, aes_by_visuals, "divergence", sample_dims
         )
         if "color" not in div_aes:
-            div_kwargs.setdefault("color", "black")
+            div_kwargs.setdefault("color", contrast_color)
         if "alpha" not in div_aes:
             div_kwargs.setdefault("alpha", 0.4)
         plot_collection.map(

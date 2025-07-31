@@ -9,7 +9,12 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import point_interval_unique, point_unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrasting_text_color,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import (
     ci_line_y,
     grid,
@@ -171,6 +176,7 @@ def plot_ppc_rootogram(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     labeller = BaseLabeller()
 
     if data_pairs is None:
@@ -286,7 +292,7 @@ def plot_ppc_rootogram(
         _, _, observed_ms_ignore = filter_aes(
             plot_collection, aes_by_visuals, "observed_markers", sample_dims
         )
-        observed_ms_kwargs.setdefault("color", "black")
+        observed_ms_kwargs.setdefault("color", contrast_color)
         observed_ms_kwargs.setdefault("marker", markers[6])
 
         plot_collection.map(
@@ -319,7 +325,7 @@ def plot_ppc_rootogram(
     xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         xlabel_kwargs.setdefault("text", "counts")
 
@@ -338,7 +344,7 @@ def plot_ppc_rootogram(
     ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", "black")
+            ylabel_kwargs.setdefault("color", contrast_color)
 
         ylabel_kwargs.setdefault("text", "frequency")
 

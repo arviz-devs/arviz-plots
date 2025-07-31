@@ -10,7 +10,11 @@ import xarray as xr
 from arviz_base import rcParams
 
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrasting_text_color,
+    process_group_variables_coords,
+)
 from arviz_plots.visuals import vline
 
 
@@ -205,6 +209,8 @@ def plot_convergence_dist(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+
+    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     dt = process_group_variables_coords(
@@ -257,7 +263,7 @@ def plot_convergence_dist(
             plot_collection, aes_by_visuals, "ref_line", sample_dims
         )
         if "color" not in ref_aes:
-            ref_line_kwargs.setdefault("color", "black")
+            ref_line_kwargs.setdefault("color", contrast_color)
         if "linestyle" not in ref_aes:
             default_linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
             ref_line_kwargs.setdefault("linestyle", default_linestyle)

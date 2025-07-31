@@ -1,11 +1,16 @@
 """Utilities for batteries included plots."""
+# pylint: disable=protected-access
 from copy import copy
 from importlib import import_module
 
+import matplotlib.colors as mcolors
 import numpy as np
+import plotly.io as pio
 import xarray as xr
 from arviz_base import references_to_dataset
 from arviz_base.utils import _var_names
+from bokeh.io import curdoc
+from matplotlib.pyplot import rcParams
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
 from arviz_plots.visuals import hline, hspan, vline, vspan
@@ -412,3 +417,35 @@ def add_bands(
         plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)
 
     return plot_collection
+
+
+def name_to_hex(color_name):
+    """Convert a color name to a hex color code."""
+    try:
+        return mcolors.to_hex(color_name)
+    except ValueError as exc:
+        raise ValueError(f"Invalid color name: {color_name}") from exc
+
+
+def get_contrasting_text_color(backend=None):
+    """Get a contrasting text color based on the current plotting backend."""
+    if backend == "matplotlib":
+        background_color = rcParams["figure.facecolor"]
+    elif backend == "plotly":
+        background_color = pio.templates[pio.templates.default].layout.paper_bgcolor
+    elif backend == "bokeh":
+        background_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
+    elif backend is None:
+        return "#000000"
+    else:
+        raise ValueError(f"Unsupported backend: {backend}")
+    background_color = name_to_hex(background_color)
+    background_color = background_color.lstrip("#")
+    r = int(background_color[0:2], 16)
+    g = int(background_color[2:4], 16)
+    b = int(background_color[4:6], 16)
+
+    # YIQ brightness formula — weighted brightness perception
+    yiq = (r * 299 + g * 587 + b * 114) / 1000
+
+    return "#000000" if yiq >= 128 else "#FFFFFF"

@@ -5,10 +5,11 @@ from copy import copy
 from typing import Any, Literal
 
 import xarray as xr
+from arviz_base import rcParams
 from arviz_stats.bayes_factor import bayes_factor
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
-from arviz_plots.plots.utils import add_lines, filter_aes
+from arviz_plots.plots.utils import add_lines, filter_aes, get_contrasting_text_color
 
 
 def plot_bf(
@@ -116,6 +117,13 @@ def plot_bf(
     else:
         aes_by_visuals = aes_by_visuals.copy()
 
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+
+    contrast_color = get_contrasting_text_color(backend)
     bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)
 
     if isinstance(var_names, str):
@@ -156,7 +164,7 @@ def plot_bf(
     if ref_val is not False:
         _, ref_aes, _ = filter_aes(plot_collection, aes_by_visuals, "ref_line", "sample")
         if "color" not in ref_aes:
-            ref_line_kwargs.setdefault("color", "black")
+            ref_line_kwargs.setdefault("color", contrast_color)
         if "alpha" not in ref_aes:
             ref_line_kwargs.setdefault("alpha", 0.5)
         add_lines(

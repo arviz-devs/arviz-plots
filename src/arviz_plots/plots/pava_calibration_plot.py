@@ -9,7 +9,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import isotonic_fit
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, set_wrap_layout
+from arviz_plots.plots.utils import filter_aes, get_contrasting_text_color, set_wrap_layout
 from arviz_plots.visuals import (
     dline,
     fill_between_y,
@@ -168,6 +168,7 @@ def plot_ppc_pava(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     labeller = BaseLabeller()
 
     visuals.setdefault("markers", False)
@@ -275,7 +276,7 @@ def plot_ppc_pava(
     xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         xlabel_kwargs.setdefault("text", "predicted value")
 
@@ -294,7 +295,7 @@ def plot_ppc_pava(
     ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", "black")
+            ylabel_kwargs.setdefault("color", contrast_color)
 
         ylabel_kwargs.setdefault("text", "CEP")
 

@@ -8,6 +8,7 @@ from arviz_base import rcParams
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import get_contrasting_text_color
 
 
 def plot_compare(
@@ -95,6 +96,7 @@ def plot_compare(
     if visuals is None:
         visuals = {}
 
+    contrast_color = get_contrasting_text_color(backend)
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
 
@@ -138,7 +140,7 @@ def plot_compare(
 
     # Plot ELPD standard error bars
     if (error_kwargs := visuals.get("error_bar", {})) is not False:
-        error_kwargs.setdefault("color", "black")
+        error_kwargs.setdefault("color", contrast_color)
 
         # Compute values for standard error bars
         se_list = list(zip((cmp_df["elpd"] - cmp_df["se"]), (cmp_df["elpd"] + cmp_df["se"])))
@@ -159,12 +161,12 @@ def plot_compare(
 
     # Plot ELPD point estimates
     if (pe_kwargs := visuals.get("point_estimate", {})) is not False:
-        pe_kwargs.setdefault("color", "black")
+        pe_kwargs.setdefault("color", contrast_color)
         p_be.scatter(cmp_df["elpd"], yticks_pos, target, **pe_kwargs)
 
     # Add shade for statistically undistinguishable models
     if similar_shade and (shade_kwargs := visuals.get("shade", {})) is not False:
-        shade_kwargs.setdefault("color", "black")
+        shade_kwargs.setdefault("color", contrast_color)
         shade_kwargs.setdefault("alpha", 0.1)
 
         x_0, x_1 = cmp_df["elpd"].iloc[0] - 4, cmp_df["elpd"].iloc[0]
