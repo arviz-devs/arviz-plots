@@ -134,7 +134,7 @@ def plot_dist(
           Defaults to False. Depending on the value of `kind` it is passed to:
 
           * "kde" or "ecdf" -> passed to :func:`~arviz_plots.visuals.fill_between_y`
-          * * "hist" -> passed to :func:`~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func:`~arviz_plots.visuals.hist`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -431,7 +431,7 @@ def plot_dist(
 
     # point estimate text
     if pet_kwargs is not False:
-        if density_kwargs is False:
+        if density_kwargs is False and face_kwargs is False:
             point_y = xr.full_like(point, 0.02)
         elif kind == "kde":
             point_density_diff = [
