@@ -12,7 +12,7 @@ from arviz_stats.ecdf_utils import difference_ecdf_pit
 from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, set_wrap_layout
+from arviz_plots.plots.utils import filter_aes, get_contrasting_text_color, set_wrap_layout
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
@@ -192,6 +192,7 @@ def plot_ppc_pit(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     labeller = BaseLabeller()
 
     if data_pairs is None:
@@ -270,7 +271,7 @@ def plot_ppc_pit(
     ci_kwargs = copy(visuals.get("credible_interval", {}))
     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", "black")
+        ci_kwargs.setdefault("color", contrast_color)
         ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
@@ -291,7 +292,7 @@ def plot_ppc_pit(
     xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         if coverage:
             xlabel_kwargs.setdefault("text", "ETI %")
@@ -313,7 +314,7 @@ def plot_ppc_pit(
     ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", "black")
+            ylabel_kwargs.setdefault("color", contrast_color)
 
         ylabel_kwargs.setdefault("text", "Δ ECDF")
 

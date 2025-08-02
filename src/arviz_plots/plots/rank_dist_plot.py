@@ -15,6 +15,7 @@ from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.rank_plot import plot_rank
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrasting_text_color,
     get_group,
     process_group_variables_coords,
     set_grid_layout,
@@ -220,6 +221,7 @@ def plot_rank_dist(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
@@ -384,7 +386,7 @@ def plot_rank_dist(
             plot_collection, aes_by_visuals, "divergence", sample_dims
         )
         if "color" not in div_aes:
-            div_kwargs.setdefault("color", "black")
+            div_kwargs.setdefault("color", contrast_color)
         if "marker" not in div_aes:
             div_kwargs.setdefault("marker", "|")
         if "size" not in div_aes:
@@ -408,7 +410,7 @@ def plot_rank_dist(
     label_kwargs = copy(visuals.get("label", {}))
     if label_kwargs is not False:
         if "color" not in labels_aes:
-            label_kwargs.setdefault("color", "black")
+            label_kwargs.setdefault("color", contrast_color)
 
         plot_collection.map(
             labelled_x,

@@ -14,6 +14,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrasting_text_color,
     get_group,
     process_group_variables_coords,
     set_wrap_layout,
@@ -277,6 +278,7 @@ def plot_ess(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     # getting backend specific linestyles
     linestyles = plot_bknd.get_default_aes("linestyle", 4, {})
@@ -392,7 +394,7 @@ def plot_ess(
         rug_mask = dt.sample_stats[rug_kind]
         _, div_aes, div_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)
         if "color" not in div_aes:
-            rug_kwargs.setdefault("color", "black")
+            rug_kwargs.setdefault("color", contrast_color)
         if "marker" not in div_aes:
             rug_kwargs.setdefault("marker", "|")
         if "size" not in div_aes:
@@ -480,7 +482,7 @@ def plot_ess(
             )
 
             if "color" not in mean_text_aes:
-                mean_text_kwargs.setdefault("color", "black")
+                mean_text_kwargs.setdefault("color", contrast_color)
 
             mean_text_kwargs.setdefault("x", 1)
             mean_text_kwargs.setdefault("horizontal_align", "right")
@@ -507,7 +509,7 @@ def plot_ess(
             )
 
             if "color" not in sd_text_aes:
-                sd_text_kwargs.setdefault("color", "black")
+                sd_text_kwargs.setdefault("color", contrast_color)
 
             sd_text_kwargs.setdefault("x", 1)
             sd_text_kwargs.setdefault("horizontal_align", "right")
@@ -563,7 +565,7 @@ def plot_ess(
             plot_collection, aes_by_visuals, "title", sample_dims
         )
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", "black")
+            title_kwargs.setdefault("color", contrast_color)
         plot_collection.map(
             labelled_title,
             "title",
@@ -581,7 +583,7 @@ def plot_ess(
     xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in labels_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         # formatting ylabel and setting xlabel
         xlabel_kwargs.setdefault("text", "Quantile")
@@ -600,7 +602,7 @@ def plot_ess(
     ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in labels_aes:
-            ylabel_kwargs.setdefault("color", "black")
+            ylabel_kwargs.setdefault("color", contrast_color)
 
         if relative is not False:
             ylabel_text = ylabel.format("Relative ESS")

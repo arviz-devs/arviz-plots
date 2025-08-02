@@ -1,0 +1,1132 @@
+check: commands[0]> pre-commit install
+pre-commit installed at .git/hooks/pre-commit
+check: commands[1]> pre-commit run --all-files --show-diff-on-failure
+check for added large files..............................................[42mPassed[m
+check for merge conflicts................................................[42mPassed[m
+isort....................................................................[42mPassed[m
+black....................................................................[42mPassed[m
+pydocstyle...............................................................[42mPassed[m
+pylint...................................................................[41mFailed[m
+[2m- hook id: pylint[m
+[2m- exit code: 4[m
+
+************* Module arviz_plots.plots.utils
+src/arviz_plots/plots/utils.py:436:27: W0212: Access to a protected member _json of a client class (protected-access)
+
+pre-commit hook(s) made changes.
+If you are seeing this message in CI, reproduce locally with: `pre-commit run --all-files`.
+To run `pre-commit` as part of git workflow, use `pre-commit install`.
+All changes made by hooks:
+[1mdiff --git a/src/arviz_plots/plots/autocorr_plot.py b/src/arviz_plots/plots/autocorr_plot.py[m
+[1mindex ffb6c2c..f65c5f7 100644[m
+[1m--- a/src/arviz_plots/plots/autocorr_plot.py[m
+[1m+++ b/src/arviz_plots/plots/autocorr_plot.py[m
+[36m@@ -10,7 +10,12 @@[m [mfrom arviz_base import rcParams[m
+ from arviz_base.labels import BaseLabeller[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import fill_between_y, labelled_title, labelled_x, line, line_xy[m
+ [m
+ [m
+[36m@@ -117,6 +122,7 @@[m [mdef plot_autocorr([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     labeller = BaseLabeller()[m
+ [m
+     # Default max lag to 100[m
+[36m@@ -198,7 +204,7 @@[m [mdef plot_autocorr([m
+     ci_kwargs = copy(visuals.get("credible_interval", {}))[m
+     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", "draw")[m
+     if ci_kwargs is not False:[m
+[31m-        ci_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        ci_kwargs.setdefault("color", contrast_color)[m
+         ci_kwargs.setdefault("alpha", 0.1)[m
+ [m
+         plot_collection.map([m
+[36m@@ -220,7 +226,7 @@[m [mdef plot_autocorr([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         xlabel_kwargs.setdefault("text", "Lag")[m
+         plot_collection.map([m
+[1mdiff --git a/src/arviz_plots/plots/bf_plot.py b/src/arviz_plots/plots/bf_plot.py[m
+[1mindex 1a564f1..5822c19 100644[m
+[1m--- a/src/arviz_plots/plots/bf_plot.py[m
+[1m+++ b/src/arviz_plots/plots/bf_plot.py[m
+[36m@@ -5,10 +5,11 @@[m [mfrom copy import copy[m
+ from typing import Any, Literal[m
+ [m
+ import xarray as xr[m
+[32m+[m[32mfrom arviz_base import rcParams[m
+ from arviz_stats.bayes_factor import bayes_factor[m
+ [m
+ from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior[m
+[31m-from arviz_plots.plots.utils import add_lines, filter_aes[m
+[32m+[m[32mfrom arviz_plots.plots.utils import add_lines, filter_aes, get_contrasting_text_color[m
+ [m
+ [m
+ def plot_bf([m
+[36m@@ -116,6 +117,13 @@[m [mdef plot_bf([m
+     else:[m
+         aes_by_visuals = aes_by_visuals.copy()[m
+ [m
+[32m+[m[32m    if backend is None:[m
+[32m+[m[32m        if plot_collection is None:[m
+[32m+[m[32m            backend = rcParams["plot.backend"][m
+[32m+[m[32m        else:[m
+[32m+[m[32m            backend = plot_collection.backend[m
+[32m+[m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)[m
+ [m
+     if isinstance(var_names, str):[m
+[36m@@ -156,7 +164,7 @@[m [mdef plot_bf([m
+     if ref_val is not False:[m
+         _, ref_aes, _ = filter_aes(plot_collection, aes_by_visuals, "ref_line", "sample")[m
+         if "color" not in ref_aes:[m
+[31m-            ref_line_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ref_line_kwargs.setdefault("color", contrast_color)[m
+         if "alpha" not in ref_aes:[m
+             ref_line_kwargs.setdefault("alpha", 0.5)[m
+         add_lines([m
+[1mdiff --git a/src/arviz_plots/plots/compare_plot.py b/src/arviz_plots/plots/compare_plot.py[m
+[1mindex 2531517..f046fee 100644[m
+[1m--- a/src/arviz_plots/plots/compare_plot.py[m
+[1m+++ b/src/arviz_plots/plots/compare_plot.py[m
+[36m@@ -8,6 +8,7 @@[m [mfrom arviz_base import rcParams[m
+ from xarray import Dataset, DataTree[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[32m+[m[32mfrom arviz_plots.plots.utils import get_contrasting_text_color[m
+ [m
+ [m
+ def plot_compare([m
+[36m@@ -95,6 +96,7 @@[m [mdef plot_compare([m
+     if visuals is None:[m
+         visuals = {}[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     # Get plotting backend[m
+     p_be = import_module(f"arviz_plots.backend.{backend}")[m
+ [m
+[36m@@ -138,7 +140,7 @@[m [mdef plot_compare([m
+ [m
+     # Plot ELPD standard error bars[m
+     if (error_kwargs := visuals.get("error_bar", {})) is not False:[m
+[31m-        error_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        error_kwargs.setdefault("color", contrast_color)[m
+ [m
+         # Compute values for standard error bars[m
+         se_list = list(zip((cmp_df["elpd"] - cmp_df["se"]), (cmp_df["elpd"] + cmp_df["se"])))[m
+[36m@@ -159,12 +161,12 @@[m [mdef plot_compare([m
+ [m
+     # Plot ELPD point estimates[m
+     if (pe_kwargs := visuals.get("point_estimate", {})) is not False:[m
+[31m-        pe_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        pe_kwargs.setdefault("color", contrast_color)[m
+         p_be.scatter(cmp_df["elpd"], yticks_pos, target, **pe_kwargs)[m
+ [m
+     # Add shade for statistically undistinguishable models[m
+     if similar_shade and (shade_kwargs := visuals.get("shade", {})) is not False:[m
+[31m-        shade_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        shade_kwargs.setdefault("color", contrast_color)[m
+         shade_kwargs.setdefault("alpha", 0.1)[m
+ [m
+         x_0, x_1 = cmp_df["elpd"].iloc[0] - 4, cmp_df["elpd"].iloc[0][m
+[1mdiff --git a/src/arviz_plots/plots/convergence_dist_plot.py b/src/arviz_plots/plots/convergence_dist_plot.py[m
+[1mindex cd43dde..ec02ea9 100644[m
+[1m--- a/src/arviz_plots/plots/convergence_dist_plot.py[m
+[1m+++ b/src/arviz_plots/plots/convergence_dist_plot.py[m
+[36m@@ -10,7 +10,11 @@[m [mimport xarray as xr[m
+ from arviz_base import rcParams[m
+ [m
+ from arviz_plots.plots.dist_plot import plot_dist[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import vline[m
+ [m
+ [m
+[36m@@ -205,6 +209,8 @@[m [mdef plot_convergence_dist([m
+             backend = rcParams["plot.backend"][m
+         else:[m
+             backend = plot_collection.backend[m
+[32m+[m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     dt = process_group_variables_coords([m
+[36m@@ -257,7 +263,7 @@[m [mdef plot_convergence_dist([m
+             plot_collection, aes_by_visuals, "ref_line", sample_dims[m
+         )[m
+         if "color" not in ref_aes:[m
+[31m-            ref_line_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ref_line_kwargs.setdefault("color", contrast_color)[m
+         if "linestyle" not in ref_aes:[m
+             default_linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1][m
+             ref_line_kwargs.setdefault("linestyle", default_linestyle)[m
+[1mdiff --git a/src/arviz_plots/plots/dist_plot.py b/src/arviz_plots/plots/dist_plot.py[m
+[1mindex 6ca89ef..fbc33b3 100644[m
+[1m--- a/src/arviz_plots/plots/dist_plot.py[m
+[1m+++ b/src/arviz_plots/plots/dist_plot.py[m
+[36m@@ -12,7 +12,12 @@[m [mfrom arviz_base import rcParams[m
+ from arviz_base.labels import BaseLabeller[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import ([m
+     ecdf_line,[m
+     hist,[m
+[36m@@ -214,6 +219,8 @@[m [mdef plot_dist([m
+             backend = rcParams["plot.backend"][m
+         else:[m
+             backend = plot_collection.backend[m
+[32m+[m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     if plot_collection is None:[m
+[36m@@ -308,7 +315,7 @@[m [mdef plot_dist([m
+         _, rug_aes, rug_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)[m
+ [m
+         if "color" not in rug_aes:[m
+[31m-            rug_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            rug_kwargs.setdefault("color", contrast_color)[m
+         if "marker" not in rug_aes:[m
+             rug_kwargs.setdefault("marker", "|")[m
+         if "size" not in rug_aes:[m
+[36m@@ -426,7 +433,7 @@[m [mdef plot_dist([m
+             plot_collection, aes_by_visuals, "title", sample_dims[m
+         )[m
+         if "color" not in title_aes:[m
+[31m-            title_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            title_kwargs.setdefault("color", contrast_color)[m
+         plot_collection.map([m
+             labelled_title,[m
+             "title",[m
+[1mdiff --git a/src/arviz_plots/plots/ecdf_plot.py b/src/arviz_plots/plots/ecdf_plot.py[m
+[1mindex 0a83ea3..c5f7349 100644[m
+[1m--- a/src/arviz_plots/plots/ecdf_plot.py[m
+[1m+++ b/src/arviz_plots/plots/ecdf_plot.py[m
+[36m@@ -11,7 +11,12 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_stats.ecdf_utils import ecdf_pit[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import ([m
+     ecdf_line,[m
+     fill_between_y,[m
+[36m@@ -177,6 +182,7 @@[m [mdef plot_ecdf_pit([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     labeller = BaseLabeller()[m
+ [m
+     distribution = process_group_variables_coords([m
+[36m@@ -248,7 +254,7 @@[m [mdef plot_ecdf_pit([m
+     ci_kwargs = copy(visuals.get("credible_interval", {}))[m
+     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)[m
+     if ci_kwargs is not False:[m
+[31m-        ci_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        ci_kwargs.setdefault("color", contrast_color)[m
+         ci_kwargs.setdefault("alpha", 0.1)[m
+ [m
+         plot_collection.map([m
+[36m@@ -269,7 +275,7 @@[m [mdef plot_ecdf_pit([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         if coverage:[m
+             xlabel_kwargs.setdefault("text", "ETI %")[m
+[36m@@ -291,7 +297,7 @@[m [mdef plot_ecdf_pit([m
+     ylabel_kwargs = copy(visuals.get("ylabel", False))[m
+     if ylabel_kwargs is not False:[m
+         if "color" not in ylabels_aes:[m
+[31m-            ylabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ylabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         ylabel_kwargs.setdefault("text", "Δ ECDF")[m
+ [m
+[1mdiff --git a/src/arviz_plots/plots/ess_plot.py b/src/arviz_plots/plots/ess_plot.py[m
+[1mindex fedb415..b7411b3 100644[m
+[1m--- a/src/arviz_plots/plots/ess_plot.py[m
+[1m+++ b/src/arviz_plots/plots/ess_plot.py[m
+[36m@@ -14,6 +14,7 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_plots.plot_collection import PlotCollection[m
+ from arviz_plots.plots.utils import ([m
+     filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+     get_group,[m
+     process_group_variables_coords,[m
+     set_wrap_layout,[m
+[36m@@ -277,6 +278,7 @@[m [mdef plot_ess([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+     # getting backend specific linestyles[m
+     linestyles = plot_bknd.get_default_aes("linestyle", 4, {})[m
+[36m@@ -392,7 +394,7 @@[m [mdef plot_ess([m
+         rug_mask = dt.sample_stats[rug_kind][m
+         _, div_aes, div_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)[m
+         if "color" not in div_aes:[m
+[31m-            rug_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            rug_kwargs.setdefault("color", contrast_color)[m
+         if "marker" not in div_aes:[m
+             rug_kwargs.setdefault("marker", "|")[m
+         if "size" not in div_aes:[m
+[36m@@ -480,7 +482,7 @@[m [mdef plot_ess([m
+             )[m
+ [m
+             if "color" not in mean_text_aes:[m
+[31m-                mean_text_kwargs.setdefault("color", "black")[m
+[32m+[m[32m                mean_text_kwargs.setdefault("color", contrast_color)[m
+ [m
+             mean_text_kwargs.setdefault("x", 1)[m
+             mean_text_kwargs.setdefault("horizontal_align", "right")[m
+[36m@@ -507,7 +509,7 @@[m [mdef plot_ess([m
+             )[m
+ [m
+             if "color" not in sd_text_aes:[m
+[31m-                sd_text_kwargs.setdefault("color", "black")[m
+[32m+[m[32m                sd_text_kwargs.setdefault("color", contrast_color)[m
+ [m
+             sd_text_kwargs.setdefault("x", 1)[m
+             sd_text_kwargs.setdefault("horizontal_align", "right")[m
+[36m@@ -563,7 +565,7 @@[m [mdef plot_ess([m
+             plot_collection, aes_by_visuals, "title", sample_dims[m
+         )[m
+         if "color" not in title_aes:[m
+[31m-            title_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            title_kwargs.setdefault("color", contrast_color)[m
+         plot_collection.map([m
+             labelled_title,[m
+             "title",[m
+[36m@@ -581,7 +583,7 @@[m [mdef plot_ess([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in labels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         # formatting ylabel and setting xlabel[m
+         xlabel_kwargs.setdefault("text", "Quantile")[m
+[36m@@ -600,7 +602,7 @@[m [mdef plot_ess([m
+     ylabel_kwargs = copy(visuals.get("ylabel", {}))[m
+     if ylabel_kwargs is not False:[m
+         if "color" not in labels_aes:[m
+[31m-            ylabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ylabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         if relative is not False:[m
+             ylabel_text = ylabel.format("Relative ESS")[m
+[1mdiff --git a/src/arviz_plots/plots/evolution_plot.py b/src/arviz_plots/plots/evolution_plot.py[m
+[1mindex 581b9b3..735ce3d 100644[m
+[1m--- a/src/arviz_plots/plots/evolution_plot.py[m
+[1m+++ b/src/arviz_plots/plots/evolution_plot.py[m
+[36m@@ -12,7 +12,12 @@[m [mfrom arviz_base import rcParams[m
+ from arviz_base.labels import BaseLabeller[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import ([m
+     annotate_xy,[m
+     labelled_title,[m
+[36m@@ -266,6 +271,7 @@[m [mdef plot_ess_evolution([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     # set plot collection initialization defaults if it doesnt exist[m
+[36m@@ -529,7 +535,7 @@[m [mdef plot_ess_evolution([m
+             )[m
+ [m
+             if "color" not in mean_text_aes:[m
+[31m-                mean_text_kwargs.setdefault("color", "black")[m
+[32m+[m[32m                mean_text_kwargs.setdefault("color", contrast_color)[m
+ [m
+             mean_text_kwargs.setdefault("x", max(xdata))[m
+             mean_text_kwargs.setdefault("horizontal_align", "right")[m
+[36m@@ -559,7 +565,7 @@[m [mdef plot_ess_evolution([m
+             )[m
+ [m
+             if "color" not in sd_text_aes:[m
+[31m-                sd_text_kwargs.setdefault("color", "black")[m
+[32m+[m[32m                sd_text_kwargs.setdefault("color", contrast_color)[m
+ [m
+             sd_text_kwargs.setdefault("x", max(xdata))[m
+             sd_text_kwargs.setdefault("horizontal_align", "right")[m
+[36m@@ -614,7 +620,7 @@[m [mdef plot_ess_evolution([m
+             plot_collection, aes_by_visuals, "title", sample_dims[m
+         )[m
+         if "color" not in title_aes:[m
+[31m-            title_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            title_kwargs.setdefault("color", contrast_color)[m
+         plot_collection.map([m
+             labelled_title,[m
+             "title",[m
+[36m@@ -632,7 +638,7 @@[m [mdef plot_ess_evolution([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         xlabel_kwargs.setdefault([m
+             "text", sample_dims[0] if len(sample_dims) == 1 else "Total Number of Draws"[m
+[36m@@ -652,7 +658,7 @@[m [mdef plot_ess_evolution([m
+     ylabel_kwargs = copy(visuals.get("ylabel", {}))[m
+     if ylabel_kwargs is not False:[m
+         if "color" not in ylabels_aes:[m
+[31m-            ylabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ylabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         ylabel = "{}"[m
+         ylabel_kwargs.setdefault([m
+[1mdiff --git a/src/arviz_plots/plots/forest_plot.py b/src/arviz_plots/plots/forest_plot.py[m
+[1mindex d90d8fe..2a6c16a 100644[m
+[1m--- a/src/arviz_plots/plots/forest_plot.py[m
+[1m+++ b/src/arviz_plots/plots/forest_plot.py[m
+[36m@@ -11,7 +11,11 @@[m [mfrom arviz_base import rcParams[m
+ from arviz_base.labels import BaseLabeller[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection, process_facet_dims[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x[m
+ [m
+ [m
+[36m@@ -233,6 +237,8 @@[m [mdef plot_forest([m
+             backend = rcParams["plot.backend"][m
+         else:[m
+             backend = plot_collection.backend[m
+[32m+[m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+     given_plotcollection = True[m
+     if plot_collection is None:[m
+[36m@@ -465,7 +471,7 @@[m [mdef plot_forest([m
+         lab_ignore = set(lab_ignore).union(extra_ignore_aes)[m
+         lab_kwargs = labels_kwargs.copy()[m
+         if "color" not in lab_aes:[m
+[31m-            lab_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            lab_kwargs.setdefault("color", contrast_color)[m
+         if x == 0:[m
+             lab_kwargs.setdefault("horizontal_align", "left")[m
+         if x == len(labels) - 1:[m
+[1mdiff --git a/src/arviz_plots/plots/mcse_plot.py b/src/arviz_plots/plots/mcse_plot.py[m
+[1mindex 7a5af7d..0569289 100644[m
+[1m--- a/src/arviz_plots/plots/mcse_plot.py[m
+[1m+++ b/src/arviz_plots/plots/mcse_plot.py[m
+[36m@@ -14,6 +14,7 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_plots.plot_collection import PlotCollection[m
+ from arviz_plots.plots.utils import ([m
+     filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+     get_group,[m
+     process_group_variables_coords,[m
+     set_wrap_layout,[m
+[36m@@ -246,6 +247,7 @@[m [mdef plot_mcse([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+     # getting backend specific linestyles[m
+     linestyles = plot_bknd.get_default_aes("linestyle", 4, {})[m
+[36m@@ -354,7 +356,7 @@[m [mdef plot_mcse([m
+         rug_mask = dt.sample_stats[rug_kind][m
+         _, div_aes, div_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)[m
+         if "color" not in div_aes:[m
+[31m-            rug_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            rug_kwargs.setdefault("color", contrast_color)[m
+         if "marker" not in div_aes:[m
+             rug_kwargs.setdefault("marker", "|")[m
+         if "size" not in div_aes:[m
+[36m@@ -442,7 +444,7 @@[m [mdef plot_mcse([m
+             )[m
+ [m
+             if "color" not in mean_text_aes:[m
+[31m-                mean_text_kwargs.setdefault("color", "black")[m
+[32m+[m[32m                mean_text_kwargs.setdefault("color", contrast_color)[m
+ [m
+             mean_text_kwargs.setdefault("x", 1)[m
+             mean_text_kwargs.setdefault("horizontal_align", "right")[m
+[36m@@ -469,7 +471,7 @@[m [mdef plot_mcse([m
+             )[m
+ [m
+             if "color" not in sd_text_aes:[m
+[31m-                sd_text_kwargs.setdefault("color", "black")[m
+[32m+[m[32m                sd_text_kwargs.setdefault("color", contrast_color)[m
+ [m
+             sd_text_kwargs.setdefault("x", 1)[m
+             sd_text_kwargs.setdefault("horizontal_align", "right")[m
+[36m@@ -498,7 +500,7 @@[m [mdef plot_mcse([m
+             plot_collection, aes_by_visuals, "title", sample_dims[m
+         )[m
+         if "color" not in title_aes:[m
+[31m-            title_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            title_kwargs.setdefault("color", contrast_color)[m
+         plot_collection.map([m
+             labelled_title,[m
+             "title",[m
+[36m@@ -516,7 +518,7 @@[m [mdef plot_mcse([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in labels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         # formatting ylabel and setting xlabel[m
+         xlabel_kwargs.setdefault("text", "Quantile")[m
+[36m@@ -535,7 +537,7 @@[m [mdef plot_mcse([m
+     ylabel_kwargs = copy(visuals.get("ylabel", {}))[m
+     if ylabel_kwargs is not False:[m
+         if "color" not in labels_aes:[m
+[31m-            ylabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ylabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         ylabel_kwargs.setdefault("text", "mcse")[m
+ [m
+[1mdiff --git a/src/arviz_plots/plots/pair_focus_plot.py b/src/arviz_plots/plots/pair_focus_plot.py[m
+[1mindex 68032c7..d3c8a5b 100644[m
+[1m--- a/src/arviz_plots/plots/pair_focus_plot.py[m
+[1m+++ b/src/arviz_plots/plots/pair_focus_plot.py[m
+[36m@@ -12,6 +12,7 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_plots.plot_collection import PlotCollection[m
+ from arviz_plots.plots.utils import ([m
+     filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+     get_group,[m
+     process_group_variables_coords,[m
+     set_wrap_layout,[m
+[36m@@ -142,6 +143,7 @@[m [mdef plot_pair_focus([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     distribution = process_group_variables_coords([m
+         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords[m
+     )[m
+[36m@@ -226,7 +228,7 @@[m [mdef plot_pair_focus([m
+             plot_collection, aes_by_visuals, "divergence", sample_dims[m
+         )[m
+         if "color" not in div_aes:[m
+[31m-            div_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            div_kwargs.setdefault("color", contrast_color)[m
+         if "alpha" not in div_aes:[m
+             div_kwargs.setdefault("alpha", 0.4)[m
+         plot_collection.map([m
+[1mdiff --git a/src/arviz_plots/plots/pair_plot.py b/src/arviz_plots/plots/pair_plot.py[m
+[1mindex 7a9d27d..b7d23c6 100644[m
+[1m--- a/src/arviz_plots/plots/pair_plot.py[m
+[1m+++ b/src/arviz_plots/plots/pair_plot.py[m
+[36m@@ -13,6 +13,7 @@[m [mfrom arviz_plots.plot_matrix import PlotMatrix[m
+ from arviz_plots.plots.dist_plot import plot_dist[m
+ from arviz_plots.plots.utils import ([m
+     filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+     get_group,[m
+     process_group_variables_coords,[m
+     set_grid_layout,[m
+[36m@@ -253,6 +254,7 @@[m [mdef plot_pair([m
+         else:[m
+             backend = plot_matrix.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     distribution = process_group_variables_coords([m
+         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords[m
+     )[m
+[36m@@ -408,7 +410,7 @@[m [mdef plot_pair([m
+         divergence_mask = dt.sample_stats.diverging[m
+         _, div_aes, div_ignore = filter_aes(plot_matrix, aes_by_visuals, "divergence", sample_dims)[m
+         if "color" not in div_aes:[m
+[31m-            div_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            div_kwargs.setdefault("color", contrast_color)[m
+         if "alpha" not in div_aes:[m
+             div_kwargs.setdefault("alpha", 0.5)[m
+ [m
+[1mdiff --git a/src/arviz_plots/plots/pava_calibration_plot.py b/src/arviz_plots/plots/pava_calibration_plot.py[m
+[1mindex b341d57..9c31d45 100644[m
+[1m--- a/src/arviz_plots/plots/pava_calibration_plot.py[m
+[1m+++ b/src/arviz_plots/plots/pava_calibration_plot.py[m
+[36m@@ -9,7 +9,7 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_stats.helper_stats import isotonic_fit[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import filter_aes, get_contrasting_text_color, set_wrap_layout[m
+ from arviz_plots.visuals import ([m
+     dline,[m
+     fill_between_y,[m
+[36m@@ -167,6 +167,7 @@[m [mdef plot_ppc_pava([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     labeller = BaseLabeller()[m
+ [m
+     visuals.setdefault("markers", False)[m
+[36m@@ -277,7 +278,7 @@[m [mdef plot_ppc_pava([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         xlabel_kwargs.setdefault("text", "predicted value")[m
+ [m
+[36m@@ -296,7 +297,7 @@[m [mdef plot_ppc_pava([m
+     ylabel_kwargs = copy(visuals.get("ylabel", {}))[m
+     if ylabel_kwargs is not False:[m
+         if "color" not in ylabels_aes:[m
+[31m-            ylabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ylabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         ylabel_kwargs.setdefault("text", "CEP")[m
+ [m
+[1mdiff --git a/src/arviz_plots/plots/ppc_dist_plot.py b/src/arviz_plots/plots/ppc_dist_plot.py[m
+[1mindex b0098db..36e2dfa 100644[m
+[1m--- a/src/arviz_plots/plots/ppc_dist_plot.py[m
+[1m+++ b/src/arviz_plots/plots/ppc_dist_plot.py[m
+[36m@@ -13,7 +13,12 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+ from arviz_plots.plots.dist_plot import plot_dist[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import ecdf_line, hist, line_xy[m
+ [m
+ [m
+[36m@@ -170,6 +175,7 @@[m [mdef plot_ppc_dist([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     rng = np.random.default_rng(4214)[m
+[36m@@ -279,7 +285,7 @@[m [mdef plot_ppc_dist([m
+ [m
+     if observed_density_kwargs is not False:[m
+         observed_stats_kwargs = stats.get("observed_dist", {}).copy()[m
+[31m-        observed_density_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        observed_density_kwargs.setdefault("color", contrast_color)[m
+         if kind == "hist":[m
+             observed_density_kwargs.setdefault("alpha", 0.3)[m
+             observed_density_kwargs.setdefault("edgecolor", None)[m
+[1mdiff --git a/src/arviz_plots/plots/ppc_pit_plot.py b/src/arviz_plots/plots/ppc_pit_plot.py[m
+[1mindex 215977c..922239b 100644[m
+[1m--- a/src/arviz_plots/plots/ppc_pit_plot.py[m
+[1m+++ b/src/arviz_plots/plots/ppc_pit_plot.py[m
+[36m@@ -12,7 +12,7 @@[m [mfrom arviz_stats.ecdf_utils import difference_ecdf_pit[m
+ from numpy import unique[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import filter_aes, get_contrasting_text_color, set_wrap_layout[m
+ from arviz_plots.visuals import ([m
+     ecdf_line,[m
+     fill_between_y,[m
+[36m@@ -192,6 +192,7 @@[m [mdef plot_ppc_pit([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     labeller = BaseLabeller()[m
+ [m
+     if data_pairs is None:[m
+[36m@@ -270,7 +271,7 @@[m [mdef plot_ppc_pit([m
+     ci_kwargs = copy(visuals.get("credible_interval", {}))[m
+     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)[m
+     if ci_kwargs is not False:[m
+[31m-        ci_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        ci_kwargs.setdefault("color", contrast_color)[m
+         ci_kwargs.setdefault("alpha", 0.1)[m
+ [m
+         plot_collection.map([m
+[36m@@ -291,7 +292,7 @@[m [mdef plot_ppc_pit([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         if coverage:[m
+             xlabel_kwargs.setdefault("text", "ETI %")[m
+[36m@@ -313,7 +314,7 @@[m [mdef plot_ppc_pit([m
+     ylabel_kwargs = copy(visuals.get("ylabel", {}))[m
+     if ylabel_kwargs is not False:[m
+         if "color" not in ylabels_aes:[m
+[31m-            ylabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ylabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         ylabel_kwargs.setdefault("text", "Δ ECDF")[m
+ [m
+[1mdiff --git a/src/arviz_plots/plots/ppc_rootogram_plot.py b/src/arviz_plots/plots/ppc_rootogram_plot.py[m
+[1mindex 9199900..7380f7a 100644[m
+[1m--- a/src/arviz_plots/plots/ppc_rootogram_plot.py[m
+[1m+++ b/src/arviz_plots/plots/ppc_rootogram_plot.py[m
+[36m@@ -9,7 +9,12 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_stats.helper_stats import point_interval_unique, point_unique[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import ([m
+     ci_line_y,[m
+     grid,[m
+[36m@@ -171,6 +176,7 @@[m [mdef plot_ppc_rootogram([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     labeller = BaseLabeller()[m
+ [m
+     if data_pairs is None:[m
+[36m@@ -286,7 +292,7 @@[m [mdef plot_ppc_rootogram([m
+         _, _, observed_ms_ignore = filter_aes([m
+             plot_collection, aes_by_visuals, "observed_markers", sample_dims[m
+         )[m
+[31m-        observed_ms_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        observed_ms_kwargs.setdefault("color", contrast_color)[m
+         observed_ms_kwargs.setdefault("marker", markers[6])[m
+ [m
+         plot_collection.map([m
+[36m@@ -319,7 +325,7 @@[m [mdef plot_ppc_rootogram([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         xlabel_kwargs.setdefault("text", "counts")[m
+ [m
+[36m@@ -338,7 +344,7 @@[m [mdef plot_ppc_rootogram([m
+     ylabel_kwargs = copy(visuals.get("ylabel", {}))[m
+     if ylabel_kwargs is not False:[m
+         if "color" not in ylabels_aes:[m
+[31m-            ylabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            ylabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         ylabel_kwargs.setdefault("text", "frequency")[m
+ [m
+[1mdiff --git a/src/arviz_plots/plots/ppc_tstat.py b/src/arviz_plots/plots/ppc_tstat.py[m
+[1mindex 7f5d4f1..f4b9320 100644[m
+[1m--- a/src/arviz_plots/plots/ppc_tstat.py[m
+[1m+++ b/src/arviz_plots/plots/ppc_tstat.py[m
+[36m@@ -11,7 +11,11 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+ from arviz_plots.plots.dist_plot import plot_dist[m
+[31m-from arviz_plots.plots.utils import process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import scatter_x[m
+ [m
+ [m
+[36m@@ -213,6 +217,7 @@[m [mdef plot_ppc_tstat([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+     if aes_by_visuals is None:[m
+         aes_by_visuals = {}[m
+[36m@@ -333,7 +338,7 @@[m [mdef plot_ppc_tstat([m
+ [m
+     # Plot the observed data[m
+     if observed_tstat_kwargs is not False:[m
+[31m-        observed_tstat_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        observed_tstat_kwargs.setdefault("color", contrast_color)[m
+         plot_collection.map([m
+             scatter_x, "observed_tstat", data=observed_dist.mean(), **observed_tstat_kwargs[m
+         )[m
+[1mdiff --git a/src/arviz_plots/plots/psense_dist_plot.py b/src/arviz_plots/plots/psense_dist_plot.py[m
+[1mindex 25bb950..49ac328 100644[m
+[1m--- a/src/arviz_plots/plots/psense_dist_plot.py[m
+[1m+++ b/src/arviz_plots/plots/psense_dist_plot.py[m
+[36m@@ -10,7 +10,11 @@[m [mfrom xarray import Dataset, concat[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+ from arviz_plots.plots.dist_plot import plot_dist[m
+[31m-from arviz_plots.plots.utils import process_group_variables_coords, set_grid_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_grid_layout,[m
+[32m+[m[32m)[m
+ [m
+ [m
+ def plot_psense_dist([m
+[36m@@ -213,6 +217,7 @@[m [mdef plot_psense_dist([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 2, {}))[m
+[36m@@ -228,7 +233,7 @@[m [mdef plot_psense_dist([m
+         pc_kwargs["figure_kwargs"].setdefault("sharey", "row")[m
+ [m
+         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()[m
+[31m-        pc_kwargs.setdefault("color", [color_cycle[0], "black", color_cycle[1]])[m
+[32m+[m[32m        pc_kwargs.setdefault("color", [color_cycle[0], contrast_color, color_cycle[1]])[m
+         pc_kwargs.setdefault("y", [-0.05, -0.225, -0.4])[m
+         pc_kwargs["aes"].setdefault("color", ["alpha"])[m
+         pc_kwargs["aes"].setdefault("y", ["alpha"])[m
+[1mdiff --git a/src/arviz_plots/plots/psense_quantities_plot.py b/src/arviz_plots/plots/psense_quantities_plot.py[m
+[1mindex 8343768..988fb1b 100644[m
+[1m--- a/src/arviz_plots/plots/psense_quantities_plot.py[m
+[1m+++ b/src/arviz_plots/plots/psense_quantities_plot.py[m
+[36m@@ -10,7 +10,12 @@[m [mfrom arviz_stats.psense import power_scale_dataset[m
+ from xarray import concat[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_grid_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_grid_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scatter_xy, set_xticks[m
+ [m
+ [m
+[36m@@ -161,6 +166,7 @@[m [mdef plot_psense_quantities([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     if alphas is None:[m
+         alphas = (0.8, 1.25)[m
+ [m
+[36m@@ -403,7 +409,7 @@[m [mdef plot_psense_quantities([m
+     xlabel_kwargs = visuals.get("xlabel", {}).copy()[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         xlabel_kwargs.setdefault("text", "Power-scaling α")[m
+ [m
+[1mdiff --git a/src/arviz_plots/plots/rank_dist_plot.py b/src/arviz_plots/plots/rank_dist_plot.py[m
+[1mindex 6f96ae3..7600055 100644[m
+[1m--- a/src/arviz_plots/plots/rank_dist_plot.py[m
+[1m+++ b/src/arviz_plots/plots/rank_dist_plot.py[m
+[36m@@ -15,6 +15,7 @@[m [mfrom arviz_plots.plots.dist_plot import plot_dist[m
+ from arviz_plots.plots.rank_plot import plot_rank[m
+ from arviz_plots.plots.utils import ([m
+     filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+     get_group,[m
+     process_group_variables_coords,[m
+     set_grid_layout,[m
+[36m@@ -220,6 +221,7 @@[m [mdef plot_rank_dist([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))[m
+[36m@@ -384,7 +386,7 @@[m [mdef plot_rank_dist([m
+             plot_collection, aes_by_visuals, "divergence", sample_dims[m
+         )[m
+         if "color" not in div_aes:[m
+[31m-            div_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            div_kwargs.setdefault("color", contrast_color)[m
+         if "marker" not in div_aes:[m
+             div_kwargs.setdefault("marker", "|")[m
+         if "size" not in div_aes:[m
+[36m@@ -408,7 +410,7 @@[m [mdef plot_rank_dist([m
+     label_kwargs = copy(visuals.get("label", {}))[m
+     if label_kwargs is not False:[m
+         if "color" not in labels_aes:[m
+[31m-            label_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            label_kwargs.setdefault("color", contrast_color)[m
+ [m
+         plot_collection.map([m
+             labelled_x,[m
+[1mdiff --git a/src/arviz_plots/plots/rank_plot.py b/src/arviz_plots/plots/rank_plot.py[m
+[1mindex a84c254..41799fc 100644[m
+[1m--- a/src/arviz_plots/plots/rank_plot.py[m
+[1m+++ b/src/arviz_plots/plots/rank_plot.py[m
+[36m@@ -11,7 +11,12 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_stats.ecdf_utils import ecdf_pit[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m    set_wrap_layout,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, labelled_x, remove_axis[m
+ [m
+ [m
+[36m@@ -154,6 +159,7 @@[m [mdef plot_rank([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     labeller = BaseLabeller()[m
+ [m
+     distribution = process_group_variables_coords([m
+[36m@@ -224,7 +230,7 @@[m [mdef plot_rank([m
+     ci_kwargs = copy(visuals.get("credible_interval", {}))[m
+     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)[m
+     if ci_kwargs is not False:[m
+[31m-        ci_kwargs.setdefault("color", "black")[m
+[32m+[m[32m        ci_kwargs.setdefault("color", contrast_color)[m
+         ci_kwargs.setdefault("alpha", 0.1)[m
+ [m
+         plot_collection.map([m
+[36m@@ -245,7 +251,7 @@[m [mdef plot_rank([m
+     xlabel_kwargs = copy(visuals.get("xlabel", {}))[m
+     if xlabel_kwargs is not False:[m
+         if "color" not in xlabels_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         xlabel_kwargs.setdefault("text", "Fractional ranks")[m
+         plot_collection.map([m
+[1mdiff --git a/src/arviz_plots/plots/ridge_plot.py b/src/arviz_plots/plots/ridge_plot.py[m
+[1mindex 89c5576..17f1dda 100644[m
+[1m--- a/src/arviz_plots/plots/ridge_plot.py[m
+[1m+++ b/src/arviz_plots/plots/ridge_plot.py[m
+[36m@@ -13,7 +13,11 @@[m [mfrom arviz_base import rcParams[m
+ from arviz_base.labels import BaseLabeller[m
+ [m
+ from arviz_plots.plot_collection import PlotCollection[m
+[31m-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords[m
+[32m+[m[32mfrom arviz_plots.plots.utils import ([m
+[32m+[m[32m    filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+[32m+[m[32m    process_group_variables_coords,[m
+[32m+[m[32m)[m
+ from arviz_plots.visuals import annotate_label, fill_between_y, line_xy, remove_axis[m
+ [m
+ [m
+[36m@@ -217,6 +221,8 @@[m [mdef plot_ridge([m
+             backend = rcParams["plot.backend"][m
+         else:[m
+             backend = plot_collection.backend[m
+[32m+[m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     given_plotcollection = True[m
+     if plot_collection is None:[m
+         given_plotcollection = False[m
+[36m@@ -418,7 +424,7 @@[m [mdef plot_ridge([m
+         lab_ignore = set(lab_ignore).union(extra_ignore_aes)[m
+         lab_kwargs = labels_kwargs.copy()[m
+         if "color" not in lab_aes:[m
+[31m-            lab_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            lab_kwargs.setdefault("color", contrast_color)[m
+         if x == 0:[m
+             lab_kwargs.setdefault("horizontal_align", "left")[m
+         if x == len(labels) - 1:[m
+[1mdiff --git a/src/arviz_plots/plots/trace_dist_plot.py b/src/arviz_plots/plots/trace_dist_plot.py[m
+[1mindex 3b90a26..68f3c3f 100644[m
+[1m--- a/src/arviz_plots/plots/trace_dist_plot.py[m
+[1m+++ b/src/arviz_plots/plots/trace_dist_plot.py[m
+[36m@@ -14,6 +14,7 @@[m [mfrom arviz_plots.plots.dist_plot import plot_dist[m
+ from arviz_plots.plots.trace_plot import plot_trace[m
+ from arviz_plots.plots.utils import ([m
+     filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+     get_group,[m
+     process_group_variables_coords,[m
+     set_grid_layout,[m
+[36m@@ -208,6 +209,7 @@[m [mdef plot_trace_dist([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))[m
+[36m@@ -376,7 +378,7 @@[m [mdef plot_trace_dist([m
+             plot_collection, aes_by_visuals, "divergence", sample_dims[m
+         )[m
+         if "color" not in div_aes:[m
+[31m-            div_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            div_kwargs.setdefault("color", contrast_color)[m
+         if "marker" not in div_aes:[m
+             div_kwargs.setdefault("marker", "|")[m
+         if "size" not in div_aes:[m
+[36m@@ -400,7 +402,7 @@[m [mdef plot_trace_dist([m
+     label_kwargs = copy(visuals.get("label", {}))[m
+     if label_kwargs is not False:[m
+         if "color" not in labels_aes:[m
+[31m-            label_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            label_kwargs.setdefault("color", contrast_color)[m
+ [m
+         plot_collection.map([m
+             labelled_x,[m
+[1mdiff --git a/src/arviz_plots/plots/trace_plot.py b/src/arviz_plots/plots/trace_plot.py[m
+[1mindex 02eaf9c..dc351e4 100644[m
+[1m--- a/src/arviz_plots/plots/trace_plot.py[m
+[1m+++ b/src/arviz_plots/plots/trace_plot.py[m
+[36m@@ -11,6 +11,7 @@[m [mfrom arviz_base.labels import BaseLabeller[m
+ from arviz_plots.plot_collection import PlotCollection[m
+ from arviz_plots.plots.utils import ([m
+     filter_aes,[m
+[32m+[m[32m    get_contrasting_text_color,[m
+     get_group,[m
+     process_group_variables_coords,[m
+     set_wrap_layout,[m
+[36m@@ -123,6 +124,7 @@[m [mdef plot_trace([m
+         else:[m
+             backend = plot_collection.backend[m
+ [m
+[32m+[m[32m    contrast_color = get_contrasting_text_color(backend)[m
+     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")[m
+ [m
+     if plot_collection is None:[m
+[36m@@ -190,7 +192,7 @@[m [mdef plot_trace([m
+             plot_collection, aes_by_visuals, "divergence", sample_dims[m
+         )[m
+         if "color" not in div_aes:[m
+[31m-            divergence_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            divergence_kwargs.setdefault("color", contrast_color)[m
+         if "marker" not in div_aes:[m
+             divergence_kwargs.setdefault("marker", "|")[m
+         if "size" not in div_aes:[m
+[36m@@ -215,7 +217,7 @@[m [mdef plot_trace([m
+             plot_collection, aes_by_visuals, "title", sample_dims[m
+         )[m
+         if "color" not in title_aes:[m
+[31m-            title_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            title_kwargs.setdefault("color", contrast_color)[m
+         plot_collection.map([m
+             labelled_title,[m
+             "title",[m
+[36m@@ -233,7 +235,7 @@[m [mdef plot_trace([m
+         )[m
+ [m
+         if "color" not in xlabel_aes:[m
+[31m-            xlabel_kwargs.setdefault("color", "black")[m
+[32m+[m[32m            xlabel_kwargs.setdefault("color", contrast_color)[m
+ [m
+         plot_collection.map([m
+             labelled_x,[m
+[1mdiff --git a/src/arviz_plots/plots/utils.py b/src/arviz_plots/plots/utils.py[m
+[1mindex 4e4c90d..eacf65e 100644[m
+[1m--- a/src/arviz_plots/plots/utils.py[m
+[1m+++ b/src/arviz_plots/plots/utils.py[m
+[36m@@ -2,10 +2,14 @@[m
+ from copy import copy[m
+ from importlib import import_module[m
+ [m
+[32m+[m[32mimport matplotlib.colors as mcolors[m
+ import numpy as np[m
+[32m+[m[32mimport plotly.io as pio[m
+ import xarray as xr[m
+ from arviz_base import references_to_dataset[m
+ from arviz_base.utils import _var_names[m
+[32m+[m[32mfrom bokeh.io import curdoc[m
+[32m+[m[32mfrom matplotlib.pyplot import rcParams[m
+ [m
+ from arviz_plots.plot_collection import concat_model_dict, process_facet_dims[m
+ from arviz_plots.visuals import hline, hspan, vline, vspan[m
+[36m@@ -412,3 +416,37 @@[m [mdef add_bands([m
+         plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)[m
+ [m
+     return plot_collection[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef name_to_hex(color_name):[m
+[32m+[m[32m    """Convert a color name to a hex color code."""[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        return mcolors.to_hex(color_name)[m
+[32m+[m[32m    except ValueError as exc:[m
+[32m+[m[32m        raise ValueError(f"Invalid color name: {color_name}") from exc[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef get_contrasting_text_color(backend=None):[m
+[32m+[m[32m    """Get a contrasting text color based on the current plotting backend."""[m
+[32m+[m[32m    if backend == "matplotlib":[m
+[32m+[m[32m        background_color = rcParams["figure.facecolor"][m
+[32m+[m[32m    elif backend == "plotly":[m
+[32m+[m[32m        background_color = pio.templates[pio.templates.default].layout.paper_bgcolor[m
+[32m+[m[32m    elif backend == "bokeh":[m
+[32m+[m[32m        background_color = curdoc().theme._json["attrs"]["Plot"][[m
+[32m+[m[32m            "background_fill_color"[m
+[32m+[m[32m        ]  # pylint: disable=protected-access[m
+[32m+[m[32m    elif backend is None:[m
+[32m+[m[32m        return "#000000"[m
+[32m+[m[32m    else:[m
+[32m+[m[32m        raise ValueError(f"Unsupported backend: {backend}")[m
+[32m+[m[32m    background_color = name_to_hex(background_color)[m
+[32m+[m[32m    background_color = background_color.lstrip("#")[m
+[32m+[m[32m    r = int(background_color[0:2], 16)[m
+[32m+[m[32m    g = int(background_color[2:4], 16)[m
+[32m+[m[32m    b = int(background_color[4:6], 16)[m
+[32m+[m
+[32m+[m[32m    # YIQ brightness formula — weighted brightness perception[m
+[32m+[m[32m    yiq = (r * 299 + g * 587 + b * 114) / 1000[m
+[32m+[m
+[32m+[m[32m    return "#000000" if yiq >= 128 else "#FFFFFF"[m
+check: exit 1 (8.56 seconds) /home/shrey/arviz/arviz-plots> pre-commit run --all-files --show-diff-on-failure pid=73420
+  check: FAIL code 1 (8.70=setup[0.03]+cmd[0.11,8.56] seconds)
+  evaluation failed :( (8.75 seconds)

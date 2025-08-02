@@ -11,7 +11,11 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import process_group_variables_coords, set_wrap_layout
+from arviz_plots.plots.utils import (
+    get_contrasting_text_color,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import scatter_x
 
 
@@ -213,6 +217,7 @@ def plot_ppc_tstat(
         else:
             backend = plot_collection.backend
 
+    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if aes_by_visuals is None:
         aes_by_visuals = {}
@@ -333,7 +338,7 @@ def plot_ppc_tstat(
 
     # Plot the observed data
     if observed_tstat_kwargs is not False:
-        observed_tstat_kwargs.setdefault("color", "black")
+        observed_tstat_kwargs.setdefault("color", contrast_color)
         plot_collection.map(
             scatter_x, "observed_tstat", data=observed_dist.mean(), **observed_tstat_kwargs
         )
