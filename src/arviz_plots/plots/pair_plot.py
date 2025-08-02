@@ -254,12 +254,13 @@ def plot_pair(
         else:
             backend = plot_matrix.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
     if plot_matrix is None:
         pc_kwargs.setdefault(
             "facet_dims",

@@ -14,6 +14,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrasting_gray_color,
     get_contrasting_text_color,
     process_group_variables_coords,
     set_wrap_layout,
@@ -271,8 +272,10 @@ def plot_ess_evolution(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_gray_color = get_contrasting_gray_color(bg_color)
 
     # set plot collection initialization defaults if it doesnt exist
     if plot_collection is None:
@@ -600,7 +603,7 @@ def plot_ess_evolution(
         min_ess_kwargs.setdefault("linestyle", linestyles[3])
 
         if "color" not in min_ess_aes:
-            min_ess_kwargs.setdefault("color", "gray")
+            min_ess_kwargs.setdefault("color", contrast_gray_color)
 
         plot_collection.map(
             line_xy,

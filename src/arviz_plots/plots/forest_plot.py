@@ -13,6 +13,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrasting_gray_color,
     get_contrasting_text_color,
     process_group_variables_coords,
 )
@@ -238,8 +239,10 @@ def plot_forest(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_gray_color = get_contrasting_gray_color(bg_color)
     given_plotcollection = True
     if plot_collection is None:
         given_plotcollection = False
@@ -431,7 +434,7 @@ def plot_forest(
                 plot_collection, aes_by_visuals, "shade", sample_dims
             )
             if "color" not in shade_aes:
-                shade_kwargs.setdefault("color", "gray")
+                shade_kwargs.setdefault("color", contrast_gray_color)
             shade_data = xr.concat((y_min, y_max), "kwarg").assign_coords(
                 kwarg=["y_bottom", "y_top"]
             )

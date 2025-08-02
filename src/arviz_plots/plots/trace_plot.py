@@ -124,8 +124,9 @@ def plot_trace(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
 
     if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()

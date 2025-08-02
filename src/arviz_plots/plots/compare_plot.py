@@ -8,7 +8,7 @@ from arviz_base import rcParams
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import get_contrasting_text_color
+from arviz_plots.plots.utils import get_contrasting_gray_color, get_contrasting_text_color
 
 
 def plot_compare(
@@ -96,9 +96,11 @@ def plot_compare(
     if visuals is None:
         visuals = {}
 
-    contrast_color = get_contrasting_text_color(backend)
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
+    bg_color = p_be.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_gray_color = get_contrasting_gray_color(bg_color)
 
     # Get figure params and create figure and axis
     figure_kwargs = pc_kwargs.pop("figure_kwargs", {}).copy()
@@ -150,7 +152,7 @@ def plot_compare(
 
     # Add reference line for the best model
     if (ref_kwargs := visuals.get("ref_line", {})) is not False:
-        ref_kwargs.setdefault("color", "gray")
+        ref_kwargs.setdefault("color", contrast_gray_color)
         ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
         p_be.line(
             (cmp_df["elpd"].iloc[0], cmp_df["elpd"].iloc[0]),

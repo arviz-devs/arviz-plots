@@ -1,6 +1,6 @@
 attrs:
     Plot:
-        background_fill_color: '#0D0D0D'
+        background_fill_color: 'black'
         border_fill_color: 'black'
         outline_line_width: 0
         outline_line_color: null
@@ -24,52 +24,6 @@ attrs:
         border_line_alpha: 0
     Cycler:
         colors : [
-                '#90E0EF', '#FDE74C', '#FB8500', '#6776CC', '#C69EFF',
-                '#F10DD3', '#94B2C5', '#FF6161', '#FFFFFF', '#CD74AC',
+                "#36acc6", "#f66d7f", "#fac364", "#7c2695",
+                "#228306", "#a252f4", "#63f0ea", "#a77e4f",
             ]
-
-# FFFFFF
-# FDE74C
-# FB8500
-# D00000 fail 3
-# 6776CC fail 1
-# 94B2C5
-# 90E0EF
-# 4E00BD fail all
-# B3418A fail 3
-# F10DD3 fail 1
-
-# FFFFFF
-# FDE74C
-# FB8500
-# FF6161 fail 1
-# 6776CC fail 1
-# 94B2C5
-# 90E0EF
-# 4E00BD fail all
-# B3418A fail 3
-# F10DD3 fail 1
-
-
-# FFFFFF
-# FDE74C
-# FB8500
-# FF6161 fail 1
-# 6776CC fail 1
-# 94B2C5
-# 90E0EF
-# C69EFF 
-# B3418A fail 3
-# F10DD3 fail 1
-
-
-# FFFFFF done
-# FDE74C done
-# FB8500 done
-# FF6161 fail 1 done
-# 6776CC fail 1 done
-# 94B2C5 done
-# 90E0EF done
-# C69EFF done
-# CD74AC fail 1 done
-# F10DD3 fail 1 done

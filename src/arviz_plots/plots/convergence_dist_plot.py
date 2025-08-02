@@ -210,8 +210,9 @@ def plot_convergence_dist(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
 
     dt = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords

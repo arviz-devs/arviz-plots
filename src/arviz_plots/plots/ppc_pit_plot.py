@@ -192,7 +192,6 @@ def plot_ppc_pit(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     labeller = BaseLabeller()
 
     if data_pairs is None:
@@ -221,6 +220,9 @@ def plot_ppc_pit(
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
+
     colors = plot_bknd.get_default_aes("color", 1, {})
 
     if plot_collection is None:

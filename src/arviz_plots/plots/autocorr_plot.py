@@ -12,6 +12,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrasting_gray_color,
     get_contrasting_text_color,
     process_group_variables_coords,
     set_wrap_layout,
@@ -122,7 +123,6 @@ def plot_autocorr(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     labeller = BaseLabeller()
 
     # Default max lag to 100
@@ -138,6 +138,9 @@ def plot_autocorr(
     x_ci = np.arange(0, max_lag).astype(float)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_gray_color = get_contrasting_gray_color(bg_color)
     default_linestyle = plot_bknd.get_default_aes("linestyle", 2, {})[1]
 
     if plot_collection is None:
@@ -173,7 +176,7 @@ def plot_autocorr(
 
     if ref_ls_kwargs is not False:
         _, _, ac_ls_ignore = filter_aes(plot_collection, aes_by_visuals, "ref_line", sample_dims)
-        ref_ls_kwargs.setdefault("color", "gray")
+        ref_ls_kwargs.setdefault("color", contrast_gray_color)
         ref_ls_kwargs.setdefault("linestyle", default_linestyle)
 
         plot_collection.map(

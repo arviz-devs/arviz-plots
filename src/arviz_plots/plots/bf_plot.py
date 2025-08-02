@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping, Sequence
 from copy import copy
+from importlib import import_module
 from typing import Any, Literal
 
 import xarray as xr
@@ -123,7 +124,9 @@ def plot_bf(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
     bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)
 
     if isinstance(var_names, str):

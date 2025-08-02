@@ -166,7 +166,6 @@ def plot_psense_quantities(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     if alphas is None:
         alphas = (0.8, 1.25)
 
@@ -264,6 +263,9 @@ def plot_psense_quantities(
         max_ = baseline_quantities + mcse_quantities * 2
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
+
     colors = plot_bknd.get_default_aes("color", 2, {})
     markers = plot_bknd.get_default_aes("marker", 6, {})
     lines = plot_bknd.get_default_aes("linestyle", 2, {})

@@ -168,7 +168,6 @@ def plot_ppc_pava(
         else:
             backend = plot_collection.backend
 
-    contrast_color = get_contrasting_text_color(backend)
     labeller = BaseLabeller()
 
     visuals.setdefault("markers", False)
@@ -176,6 +175,9 @@ def plot_ppc_pava(
     ds_calibration = isotonic_fit(dt, var_names, group, n_bootstaps, ci_prob, data_type)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrasting_text_color(bg_color)
+
     colors = plot_bknd.get_default_aes("color", 1, {})
     markers = plot_bknd.get_default_aes("marker", 7, {})
     lines = plot_bknd.get_default_aes("linestyle", 2, {})

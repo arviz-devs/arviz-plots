@@ -3,14 +3,10 @@
 from copy import copy
 from importlib import import_module
 
-import matplotlib.colors as mcolors
 import numpy as np
-import plotly.io as pio
 import xarray as xr
 from arviz_base import references_to_dataset
 from arviz_base.utils import _var_names
-from bokeh.io import curdoc
-from matplotlib.pyplot import rcParams
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
 from arviz_plots.visuals import hline, hspan, vline, vspan
@@ -260,6 +256,8 @@ def add_lines(
         sample_dims = [sample_dims]
 
     plot_bknd = import_module(f".backend.{plot_collection.backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_gray_color = get_contrasting_gray_color(bg_color)
 
     plot_func = vline if orientation == "vertical" else hline
 
@@ -289,7 +287,7 @@ def add_lines(
     ref_kwargs = copy(visuals.get("ref_line", {}))
     if ref_kwargs is not False:
         if "color" not in ref_aes:
-            ref_kwargs.setdefault("color", "gray")
+            ref_kwargs.setdefault("color", contrast_gray_color)
         if "linestyle" not in ref_aes:
             ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2)[1])
 
@@ -394,6 +392,10 @@ def add_bands(
         values, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
     )
 
+    plot_bknd = import_module(f".backend.{plot_collection.backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_gray_color = get_contrasting_gray_color(bg_color)
+
     requested_aes = set(aes_by_visuals["ref_band"]).difference(plot_collection.aes_set)
     *ref_dim, band_dim = ref_dim
     if ref_ds.sizes[band_dim] != 2:
@@ -411,7 +413,7 @@ def add_bands(
     ref_kwargs = copy(visuals.get("ref_band", {}))
     if ref_kwargs is not False:
         if "color" not in ref_aes:
-            ref_kwargs.setdefault("color", "gray")
+            ref_kwargs.setdefault("color", contrast_gray_color)
         if "alpha" not in ref_aes:
             ref_kwargs.setdefault("alpha", 0.25)
         plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)
@@ -419,36 +421,25 @@ def add_bands(
     return plot_collection
 
 
-def name_to_hex(color_name):
-    """Convert a color name to a hex color code."""
-    try:
-        return mcolors.to_hex(color_name)
-    except ValueError as exc:
-        raise ValueError(f"Invalid color name: {color_name}") from exc
-
-
-def get_contrasting_text_color(backend=None):
-    """Get a contrasting text color based on the current plotting backend."""
-    if backend == "matplotlib":
-        background_color = rcParams["figure.facecolor"]
-    elif backend == "plotly":
-        background_color = pio.templates[pio.templates.default].layout.paper_bgcolor
-    elif backend == "bokeh":
-        try:
-            background_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
-        except KeyError:
-            background_color = "white"
-    elif backend == "none":
-        return "#000000"
-    else:
-        raise ValueError(f"Unsupported backend: {backend}")
-
-    background_color = name_to_hex(background_color)
-    background_color = background_color.lstrip("#")
-    r = int(background_color[0:2], 16)
-    g = int(background_color[2:4], 16)
-    b = int(background_color[4:6], 16)
+def get_contrasting_text_color(color):
+    """Get a contrasting color."""
+    color = color.lstrip("#")
+    r = int(color[0:2], 16)
+    g = int(color[2:4], 16)
+    b = int(color[4:6], 16)
     # calculating the YIQ brightness value
     yiq = (r * 299 + g * 587 + b * 114) / 1000
 
     return "#000000" if yiq >= 128 else "#FFFFFF"
+
+
+def get_contrasting_gray_color(color):
+    """Get a contrasting gray color."""
+    color = color.lstrip("#")
+    r = int(color[0:2], 16)
+    g = int(color[2:4], 16)
+    b = int(color[4:6], 16)
+    # calculating the YIQ brightness value
+    yiq = (r * 299 + g * 587 + b * 114) / 1000
+
+    return "#333333" if yiq >= 128 else "#E0E0E0"
