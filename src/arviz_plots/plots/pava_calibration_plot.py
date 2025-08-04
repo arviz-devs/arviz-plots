@@ -23,9 +23,9 @@ from arviz_plots.visuals import (
 
 def plot_ppc_pava(
     dt,
+    data_type="binary",
     n_bootstaps=1000,
     ci_prob=None,
-    data_pairs=None,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
     group="posterior_predictive",
@@ -70,15 +70,17 @@ def plot_ppc_pava(
     ----------
     dt : DataTree
         Input data
+    data_type : str
+        Defaults to "binary". Other options are "categorical" and "ordinal".
+        In case of "categorical" the plot will reflect the "one vs others" calibration.
+        And it will generate as many plots as there are categories.
+        In case of "ordinal" the plot will reflect the cumulative conditional event
+        probabilities. And it will generate a number of plot equal to the number of categories-1.
     n_bootstaps : int, optional
         Number of bootstrap samples to use for estimating the confidence intervals.
         defaults to 1000.
     ci_prob : float, optional
         Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
-    data_pairs : dict, optional
-        Dictionary of keys prior/posterior predictive data and values observed data variable names.
-        If None, it will assume that the observed data and the predictive data have
-        the same variable name.
     num_samples : int, optional
         Number of samples to use for the plot. Defaults to 100.
     var_names : str or list of str, optional
@@ -171,10 +173,7 @@ def plot_ppc_pava(
 
     visuals.setdefault("markers", False)
 
-    if data_pairs is None:
-        data_pairs = {var_names: var_names}
-
-    ds_calibration = isotonic_fit(dt, data_pairs, group, n_bootstaps, ci_prob)
+    ds_calibration = isotonic_fit(dt, var_names, group, n_bootstaps, ci_prob, data_type)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     colors = plot_bknd.get_default_aes("color", 1, {})
