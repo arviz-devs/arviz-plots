@@ -91,7 +91,7 @@ class SquareRootScale(mscale.ScaleBase):
 mscale.register_scale(SquareRootScale)
 
 
-def get_background_color():
+def get_contrast_colors(gray_flag=False):
     """Get the background color."""
     bg_color = rcParams["figure.facecolor"]
     try:
@@ -102,7 +102,15 @@ def get_background_color():
             "Returning the default value '#ffffff'."
         )
         bg_color = "#ffffff"
-    return bg_color
+    color = bg_color.lstrip("#")
+    r = int(color[0:2], 16)
+    g = int(color[2:4], 16)
+    b = int(color[4:6], 16)
+    # calculating the YIQ brightness value
+    yiq = (r * 299 + g * 587 + b * 114) / 1000
+    if gray_flag:
+        return ("#ffffff", "#E0E0E0") if yiq < 128 else ("#000000", "#333333")
+    return "#000000" if yiq >= 128 else "#ffffff"
 
 
 # generation of default values for aesthetics

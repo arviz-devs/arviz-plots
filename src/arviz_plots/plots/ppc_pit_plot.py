@@ -12,7 +12,7 @@ from arviz_stats.ecdf_utils import difference_ecdf_pit
 from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_contrasting_text_color, set_wrap_layout
+from arviz_plots.plots.utils import filter_aes, set_wrap_layout
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
@@ -220,8 +220,7 @@ def plot_ppc_pit(
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_color = plot_bknd.get_contrast_colors()
 
     colors = plot_bknd.get_default_aes("color", 1, {})
 

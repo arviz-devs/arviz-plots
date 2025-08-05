@@ -124,15 +124,24 @@ def combine_color_alpha(color, alpha=1):
     return f"rgba({color[0]}, {color[1]}, {color[2]}, {alpha:.3f})"
 
 
-def get_background_color():
+def get_contrast_colors(gray_flag=False):
     """Get the background color of the current plotly template."""
     try:
         bg_color = pio.templates[pio.templates.default].layout.paper_bgcolor
         hex_code = name_to_hex(bg_color)
-        return hex_code
+        color = hex_code.lstrip("#")
+        r = int(color[0:2], 16)
+        g = int(color[2:4], 16)
+        b = int(color[4:6], 16)
+        # calculating the YIQ brightness value
+        yiq = (r * 299 + g * 587 + b * 114) / 1000
+        if gray_flag:
+            return ("#ffffff", "#E0E0E0") if yiq < 128 else ("#000000", "#333333")
+        return "#000000" if yiq >= 128 else "#ffffff"
     except ValueError:
-        print(f"Warning: Color '{bg_color}' not recognized by Plotly.")
-        return "#ffffff"
+        if gray_flag:
+            return ("#000000", "#333333")
+        return "#000000"
 
 
 # generation of default values for aesthetics

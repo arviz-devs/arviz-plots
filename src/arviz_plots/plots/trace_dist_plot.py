@@ -14,7 +14,6 @@ from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.trace_plot import plot_trace
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrasting_text_color,
     get_group,
     process_group_variables_coords,
     set_grid_layout,
@@ -210,8 +209,7 @@ def plot_trace_dist(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_color = plot_bknd.get_contrast_colors()
 
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
     if len(color_cycle) <= 2:

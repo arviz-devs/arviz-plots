@@ -11,7 +11,6 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrasting_text_color,
     get_group,
     process_group_variables_coords,
     set_wrap_layout,
@@ -125,8 +124,7 @@ def plot_trace(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_color = plot_bknd.get_contrast_colors()
 
     if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()

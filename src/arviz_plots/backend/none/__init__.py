@@ -23,9 +23,11 @@ class UnsetDefault:
 unset = UnsetDefault()
 
 
-def get_background_color():
+def get_contrast_colors(gray_flag=False):
     """Get the background color."""
-    return "#ffffff"
+    if gray_flag:
+        return ("#000000", "#333333")
+    return "#000000"
 
 
 # generation of default values for aesthetics

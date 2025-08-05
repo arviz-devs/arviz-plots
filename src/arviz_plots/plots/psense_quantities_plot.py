@@ -10,12 +10,7 @@ from arviz_stats.psense import power_scale_dataset
 from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_contrasting_text_color,
-    process_group_variables_coords,
-    set_grid_layout,
-)
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_grid_layout
 from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scatter_xy, set_xticks
 
 
@@ -263,8 +258,7 @@ def plot_psense_quantities(
         max_ = baseline_quantities + mcse_quantities * 2
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_color = plot_bknd.get_contrast_colors()
 
     colors = plot_bknd.get_default_aes("color", 2, {})
     markers = plot_bknd.get_default_aes("marker", 6, {})

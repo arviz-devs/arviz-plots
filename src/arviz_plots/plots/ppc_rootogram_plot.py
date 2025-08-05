@@ -9,12 +9,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import point_interval_unique, point_unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_contrasting_text_color,
-    process_group_variables_coords,
-    set_wrap_layout,
-)
+from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
 from arviz_plots.visuals import (
     ci_line_y,
     grid,
@@ -217,8 +212,7 @@ def plot_ppc_rootogram(
     ds_predictive = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrasting_text_color(bg_color)
+    contrast_color = plot_bknd.get_contrast_colors()
 
     colors = plot_bknd.get_default_aes("color", 1, {})
     markers = plot_bknd.get_default_aes("marker", 7, {})
