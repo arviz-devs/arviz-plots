@@ -8,6 +8,7 @@ from arviz_base import rcParams
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import get_contrast_colors
 
 
 def plot_compare(
@@ -97,7 +98,8 @@ def plot_compare(
 
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
-    contrast_color, contrast_gray_color = p_be.get_contrast_colors(gray_flag=True)
+    bg_color = p_be.get_background_color()
+    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     # Get figure params and create figure and axis
     figure_kwargs = pc_kwargs.pop("figure_kwargs", {}).copy()

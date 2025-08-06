@@ -110,26 +110,16 @@ def get_hex_from_color_name(color_name: str) -> str:
         raise ValueError(f"Color '{color_name}' is not a valid Bokeh named color.") from exc
 
 
-def get_contrast_colors(gray_flag=False):
+def get_background_color():
     """Get the background color of the current Bokeh document."""
     try:
         from bokeh.io import curdoc
 
         bg_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
         hex_bg_color = get_hex_from_color_name(bg_color)
-        color = hex_bg_color.lstrip("#")
-        r = int(color[0:2], 16)
-        g = int(color[2:4], 16)
-        b = int(color[4:6], 16)
-        # calculating the YIQ brightness value
-        yiq = (r * 299 + g * 587 + b * 114) / 1000
-        if gray_flag:
-            return ("#ffffff", "#E0E0E0") if yiq < 128 else ("#000000", "#333333")
-        return "#000000" if yiq >= 128 else "#ffffff"
+        return hex_bg_color
     except (ImportError, KeyError):
-        if gray_flag:
-            return ("#000000", "#333333")
-        return "#000000"
+        return "#ffffff"
 
 
 # generation of default values for aesthetics

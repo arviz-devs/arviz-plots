@@ -258,7 +258,6 @@ def plot_pair(
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    contrast_color = plot_bknd.get_contrast_colors()
 
     if plot_matrix is None:
         pc_kwargs.setdefault(
@@ -301,6 +300,7 @@ def plot_pair(
     aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
     aes_by_visuals["point_estimate_text"] = aes_by_visuals.get("point_estimate_text", {})
 
+    colors = plot_bknd.get_default_aes("color", 2, {})
     # scatter
     scatter_kwargs = copy(visuals.get("scatter", {}))
     if scatter_kwargs is not False:
@@ -309,7 +309,6 @@ def plot_pair(
         )
 
         if "color" not in scatter_aes:
-            colors = plot_bknd.get_default_aes("color", 1, {})
             scatter_kwargs.setdefault("color", colors[0])
 
         if "width" not in scatter_aes:
@@ -410,7 +409,7 @@ def plot_pair(
         divergence_mask = dt.sample_stats.diverging
         _, div_aes, div_ignore = filter_aes(plot_matrix, aes_by_visuals, "divergence", sample_dims)
         if "color" not in div_aes:
-            div_kwargs.setdefault("color", contrast_color)
+            div_kwargs.setdefault("color", colors[1])
         if "alpha" not in div_aes:
             div_kwargs.setdefault("alpha", 0.5)
 

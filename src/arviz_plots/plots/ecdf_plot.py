@@ -11,7 +11,12 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import ecdf_pit
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
@@ -197,7 +202,8 @@ def plot_ecdf_pit(
     upper_ci = upper_ci - x_ci
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    contrast_color = plot_bknd.get_contrast_colors()
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrast_colors(bg_color=bg_color)
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
