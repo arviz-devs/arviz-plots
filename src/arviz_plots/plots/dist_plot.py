@@ -12,7 +12,12 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
@@ -223,7 +228,10 @@ def plot_dist(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrast_colors(bg_color=bg_color)
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -359,7 +367,7 @@ def plot_dist(
         _, rug_aes, rug_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)
 
         if "color" not in rug_aes:
-            rug_kwargs.setdefault("color", "black")
+            rug_kwargs.setdefault("color", contrast_color)
         if "marker" not in rug_aes:
             rug_kwargs.setdefault("marker", "|")
         if "size" not in rug_aes:
@@ -477,7 +485,7 @@ def plot_dist(
             plot_collection, aes_by_visuals, "title", sample_dims
         )
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", "black")
+            title_kwargs.setdefault("color", contrast_color)
         plot_collection.map(
             labelled_title,
             "title",

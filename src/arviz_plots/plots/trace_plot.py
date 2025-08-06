@@ -11,6 +11,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
+    get_contrast_colors,
     get_group,
     process_group_variables_coords,
     set_wrap_layout,
@@ -124,6 +125,8 @@ def plot_trace(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrast_colors(bg_color=bg_color)
 
     if plot_collection is None:
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
@@ -190,7 +193,7 @@ def plot_trace(
             plot_collection, aes_by_visuals, "divergence", sample_dims
         )
         if "color" not in div_aes:
-            divergence_kwargs.setdefault("color", "black")
+            divergence_kwargs.setdefault("color", contrast_color)
         if "marker" not in div_aes:
             divergence_kwargs.setdefault("marker", "|")
         if "size" not in div_aes:
@@ -215,7 +218,7 @@ def plot_trace(
             plot_collection, aes_by_visuals, "title", sample_dims
         )
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", "black")
+            title_kwargs.setdefault("color", contrast_color)
         plot_collection.map(
             labelled_title,
             "title",
@@ -233,7 +236,7 @@ def plot_trace(
         )
 
         if "color" not in xlabel_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         plot_collection.map(
             labelled_x,

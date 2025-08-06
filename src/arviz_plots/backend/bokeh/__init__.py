@@ -4,7 +4,9 @@
 import math
 import warnings
 
+import bokeh.colors.named as named_colors
 import numpy as np
+from bokeh.colors import Color
 from bokeh.io.export import export_png, export_svg
 from bokeh.layouts import GridBox, gridplot
 from bokeh.models import (
@@ -96,6 +98,28 @@ def set_sqrt_yscale(target):
 
             renderer.glyph.y0 = "y_bottom_sqrt"
             renderer.glyph.y1 = "y_top_sqrt"
+
+
+def get_hex_from_color_name(color_name: str) -> str:
+    """Convert a standard CSS color name into its HEX code using Bokeh."""
+    try:
+        color_obj: Color = getattr(named_colors, color_name.lower())
+        return color_obj.to_hex()
+
+    except AttributeError as exc:
+        raise ValueError(f"Color '{color_name}' is not a valid Bokeh named color.") from exc
+
+
+def get_background_color():
+    """Get the background color of the current Bokeh document."""
+    try:
+        from bokeh.io import curdoc
+
+        bg_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
+        hex_bg_color = get_hex_from_color_name(bg_color)
+        return hex_bg_color
+    except (ImportError, KeyError):
+        return "#ffffff"
 
 
 # generation of default values for aesthetics

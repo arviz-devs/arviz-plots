@@ -1,0 +1,29 @@
+attrs:
+    Plot:
+        background_fill_color: 'black'
+        border_fill_color: 'black'
+        outline_line_width: 0
+        outline_line_color: null
+    Axis:
+        major_tick_line_color: '#D9D9D9'
+        minor_tick_line_alpha: 0
+        axis_line_color: '#D9D9D9'
+        major_label_text_color: '#D9D9D9'
+        axis_label_text_color: '#D9D9D9'
+    Grid:
+        grid_line_color: null
+    Title:
+        text_color: '#D9D9D9'
+        text_font_style: 'bold'
+        align: 'center'
+    Text:
+        text_color: '#D9D9D9'
+    Legend:
+        label_text_color: '#D9D9D9'
+        background_fill_alpha: 0
+        border_line_alpha: 0
+    Cycler:
+        colors : [
+                "#36acc6", "#f66d7f", "#fac364", "#7c2695",
+                "#228306", "#a252f4", "#63f0ea", "#a77e4f",
+            ]

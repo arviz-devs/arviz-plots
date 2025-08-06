@@ -10,6 +10,7 @@ on are on top of previous ones.
 import warnings
 from typing import Any, Dict
 
+import matplotlib.colors as mcolors
 import matplotlib.scale as mscale
 import matplotlib.transforms as mtransforms
 import numpy as np
@@ -88,6 +89,20 @@ class SquareRootScale(mscale.ScaleBase):
 
 
 mscale.register_scale(SquareRootScale)
+
+
+def get_background_color():
+    """Get the background color."""
+    bg_color = rcParams["figure.facecolor"]
+    try:
+        bg_color = mcolors.to_hex(bg_color)
+    except ValueError:
+        warnings.warn(
+            "The background color is not a valid matplotlib color. "
+            "Returning the default value '#ffffff'."
+        )
+        bg_color = "#ffffff"
+    return bg_color
 
 
 # generation of default values for aesthetics

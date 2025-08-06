@@ -164,7 +164,7 @@ def plot_pair_focus(
         raise ValueError(f"focus variable has unexpected dimensions: {dims_y}.")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-
+    colors = plot_bknd.get_default_aes("color", 2, {})
     if plot_collection is None:
         pc_kwargs.setdefault(
             "cols", ["__variable__"] + [dim for dim in distribution.dims if dim not in sample_dims]
@@ -191,7 +191,6 @@ def plot_pair_focus(
         )
 
         if "color" not in scatter_aes:
-            colors = plot_bknd.get_default_aes("color", 1, {})
             scatter_kwargs.setdefault("color", colors[0])
 
         if "width" not in scatter_aes:
@@ -226,7 +225,7 @@ def plot_pair_focus(
             plot_collection, aes_by_visuals, "divergence", sample_dims
         )
         if "color" not in div_aes:
-            div_kwargs.setdefault("color", "black")
+            div_kwargs.setdefault("color", colors[1])
         if "alpha" not in div_aes:
             div_kwargs.setdefault("alpha", 0.4)
         plot_collection.map(

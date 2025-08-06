@@ -1,0 +1,88 @@
+## ***************************************************************************
+## * FIGURE                                                                  *
+## ***************************************************************************
+
+figure.facecolor:   black
+figure.edgecolor:   None
+figure.titleweight: bold
+figure.titlesize:   18
+
+figure.figsize:     6, 5
+figure.dpi:         200.0
+figure.constrained_layout.use: True
+
+## ***************************************************************************
+## * FONT                                                                    *
+## ***************************************************************************
+
+font.size:      12
+font.style:     normal
+font.variant:   normal
+font.weight:    normal
+font.stretch:   normal
+
+text.color:     .85
+
+## ***************************************************************************
+## * AXES                                                                    *
+## ***************************************************************************
+
+axes.facecolor:         0.05
+axes.edgecolor:         white
+axes.linewidth:         0.8
+
+axes.grid:              False
+axes.axisbelow:         True
+
+grid.color:             .2
+grid.linestyle:         -
+grid.linewidth:         0.8
+grid.alpha:             1.0
+
+lines.solid_capstyle:   round
+
+axes.spines.right:      False
+axes.spines.top:        False
+
+axes.titlesize:         16
+axes.titleweight:       bold
+
+axes.labelsize:         14
+axes.labelcolor:        .85
+axes.labelweight:       normal
+
+# color-blind friendly cycle designed using https://colorcyclepicker.mpetroff.net/
+# see preview and check for colorblindness here https://coolors.co/36acc6-f66d7f-fac364-7c2695-228306-a252f4-63f0ea-a77e4f
+axes.prop_cycle: cycler(color=["#36ACC6", "#F66D7F", "#FAC364", "#7C2695", "#228306","#A252F4", "#63F0EA", "#A77E4F",])
+
+image.cmap: viridis
+
+## ***************************************************************************
+## * TICKS                                                                   *
+## ***************************************************************************
+
+xtick.labelsize:    14
+xtick.color:        .85
+xtick.top:          False
+xtick.bottom:       True
+xtick.direction:    out
+
+ytick.labelsize:    14
+ytick.color:        .85
+ytick.left:         True
+ytick.right:        False
+ytick.direction:    out
+
+## ***************************************************************************
+## * LEGEND                                                                  *
+## ***************************************************************************
+
+legend.framealpha:  0.5
+legend.frameon:     False
+legend.fancybox:    False
+legend.labelcolor:  .85
+
+legend.numpoints: 1
+legend.scatterpoints: 1
+
+legend.fontsize: 14

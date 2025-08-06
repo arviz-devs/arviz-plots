@@ -10,10 +10,11 @@ import re
 import warnings
 
 import numpy as np
+import plotly.colors as pcolors
 import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
-from webcolors import hex_to_rgb, name_to_rgb
+from webcolors import hex_to_rgb, name_to_hex, name_to_rgb
 
 from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
@@ -121,6 +122,16 @@ def combine_color_alpha(color, alpha=1):
     if len(color) != 3:
         raise ValueError("Invalid color")
     return f"rgba({color[0]}, {color[1]}, {color[2]}, {alpha:.3f})"
+
+
+def get_background_color():
+    """Get the background color of the current plotly template."""
+    try:
+        bg_color = pio.templates[pio.templates.default].layout.paper_bgcolor
+        hex_code = name_to_hex(bg_color)
+        return hex_code
+    except ValueError:
+        return "#ffffff"
 
 
 # generation of default values for aesthetics
