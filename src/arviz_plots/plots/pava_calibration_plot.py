@@ -72,10 +72,9 @@ def plot_ppc_pava(
         Input data
     data_type : str
         Defaults to "binary". Other options are "categorical" and "ordinal".
-        In case of "categorical" the plot will reflect the "one vs others" calibration.
-        And it will generate as many plots as there are categories.
-        In case of "ordinal" the plot will reflect the cumulative conditional event
-        probabilities. And it will generate a number of plot equal to the number of categories-1.
+        If "categorical", the plot will show the "one-vs-others" calibration and generate one plot
+        per category. If "ordinal", the plot will display cumulative conditional event
+        probabilities and generate (number of categories - 1) plots.
     n_bootstaps : int, optional
         Number of bootstrap samples to use for estimating the confidence intervals.
         defaults to 1000.
