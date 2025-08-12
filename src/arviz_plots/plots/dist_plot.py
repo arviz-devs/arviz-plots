@@ -231,7 +231,7 @@ def plot_dist(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
+    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -409,7 +409,7 @@ def plot_dist(
             )
 
         if "color" not in ci_aes:
-            ci_kwargs.setdefault("color", "#4c4c4c")
+            ci_kwargs.setdefault("color", contrast_gray_color)
         plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
 
     # point estimate
@@ -428,7 +428,7 @@ def plot_dist(
 
     if pe_kwargs is not False:
         if "color" not in pe_aes:
-            pe_kwargs.setdefault("color", "#4c4c4c")
+            pe_kwargs.setdefault("color", contrast_gray_color)
         plot_collection.map(
             scatter_x,
             "point_estimate",
@@ -466,7 +466,7 @@ def plot_dist(
             plot_collection, aes_by_visuals, "point_estimate_text", sample_dims
         )
         if "color" not in pet_aes:
-            pet_kwargs.setdefault("color", "#4c4c4c")
+            pet_kwargs.setdefault("color", contrast_gray_color)
         pet_kwargs.setdefault("horizontal_align", "center")
         pet_kwargs.setdefault("point_label", "x")
         plot_collection.map(

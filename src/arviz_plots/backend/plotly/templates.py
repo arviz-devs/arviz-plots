@@ -85,9 +85,9 @@ arviz_vibrant_template.layout.colorway = [
 arviz_tumma_template = go.layout.Template()
 
 arviz_tumma_template.layout.paper_bgcolor = "black"
-arviz_tumma_template.layout.plot_bgcolor = "#0D0D0D"
-arviz_tumma_template.layout.polar.bgcolor = "#0D0D0D"
-arviz_tumma_template.layout.ternary.bgcolor = "#0D0D0D"
+arviz_tumma_template.layout.plot_bgcolor = "black"
+arviz_tumma_template.layout.polar.bgcolor = "black"
+arviz_tumma_template.layout.ternary.bgcolor = "black"
 arviz_tumma_template.layout.font.color = "#D9D9D9"
 arviz_tumma_template.layout.title.font.color = "#D9D9D9"
 arviz_tumma_template.layout.margin = {"l": 50, "r": 10, "t": 40, "b": 45}

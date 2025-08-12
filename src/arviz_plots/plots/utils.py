@@ -429,5 +429,5 @@ def get_contrast_colors(bg_color="#ffffff", gray_flag=False):
     # calculating the YIQ brightness value
     yiq = (r * 299 + g * 587 + b * 114) / 1000
     if gray_flag:
-        return ("#ffffff", "#E0E0E0") if yiq < 128 else ("#000000", "#333333")
+        return ("#ffffff", "#b3b3b3") if yiq < 128 else ("#000000", "#4c4c4c")
     return "#000000" if yiq >= 128 else "#ffffff"
