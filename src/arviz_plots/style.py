@@ -33,7 +33,7 @@ def use(name):
         pass
 
     try:
-        if name in ["arviz-cetrino", "arviz-tenui", "arviz-variat", "arviz-vibrant"]:
+        if name in ["arviz-cetrino", "arviz-tenui", "arviz-tumma", "arviz-variat", "arviz-vibrant"]:
             from bokeh.io import curdoc
             from bokeh.themes import Theme
 

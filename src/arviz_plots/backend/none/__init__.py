@@ -23,6 +23,11 @@ class UnsetDefault:
 unset = UnsetDefault()
 
 
+def get_background_color():
+    """Get the background color."""
+    return "#ffffff"
+
+
 # generation of default values for aesthetics
 def get_default_aes(aes_key, n, kwargs=None):
     """Generate `n` default values for a given aesthetics keyword.

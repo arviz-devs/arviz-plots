@@ -12,7 +12,12 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import (
     annotate_xy,
     labelled_title,
@@ -267,6 +272,8 @@ def plot_ess_evolution(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     # set plot collection initialization defaults if it doesnt exist
     if plot_collection is None:
@@ -529,7 +536,7 @@ def plot_ess_evolution(
             )
 
             if "color" not in mean_text_aes:
-                mean_text_kwargs.setdefault("color", "black")
+                mean_text_kwargs.setdefault("color", contrast_color)
 
             mean_text_kwargs.setdefault("x", max(xdata))
             mean_text_kwargs.setdefault("horizontal_align", "right")
@@ -559,7 +566,7 @@ def plot_ess_evolution(
             )
 
             if "color" not in sd_text_aes:
-                sd_text_kwargs.setdefault("color", "black")
+                sd_text_kwargs.setdefault("color", contrast_color)
 
             sd_text_kwargs.setdefault("x", max(xdata))
             sd_text_kwargs.setdefault("horizontal_align", "right")
@@ -594,7 +601,7 @@ def plot_ess_evolution(
         min_ess_kwargs.setdefault("linestyle", linestyles[3])
 
         if "color" not in min_ess_aes:
-            min_ess_kwargs.setdefault("color", "gray")
+            min_ess_kwargs.setdefault("color", contrast_gray_color)
 
         plot_collection.map(
             line_xy,
@@ -614,7 +621,7 @@ def plot_ess_evolution(
             plot_collection, aes_by_visuals, "title", sample_dims
         )
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", "black")
+            title_kwargs.setdefault("color", contrast_color)
         plot_collection.map(
             labelled_title,
             "title",
@@ -632,7 +639,7 @@ def plot_ess_evolution(
     xlabel_kwargs = copy(visuals.get("xlabel", {}))
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", "black")
+            xlabel_kwargs.setdefault("color", contrast_color)
 
         xlabel_kwargs.setdefault(
             "text", sample_dims[0] if len(sample_dims) == 1 else "Total Number of Draws"
@@ -652,7 +659,7 @@ def plot_ess_evolution(
     ylabel_kwargs = copy(visuals.get("ylabel", {}))
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", "black")
+            ylabel_kwargs.setdefault("color", contrast_color)
 
         ylabel = "{}"
         ylabel_kwargs.setdefault(

@@ -321,12 +321,14 @@ try:
         arviz_tenui_template,
         arviz_variat_template,
         arviz_vibrant_template,
+        arviz_tumma_template,
     )
 
     pio.templates["arviz-cetrino"] = arviz_cetrino_template
     pio.templates["arviz-tenui"] = arviz_tenui_template
     pio.templates["arviz-variat"] = arviz_variat_template
     pio.templates["arviz-vibrant"] = arviz_vibrant_template
+    pio.templates["arviz-tumma"] = arviz_tumma_template
 
 
 except ImportError:
