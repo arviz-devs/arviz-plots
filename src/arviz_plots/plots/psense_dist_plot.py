@@ -10,7 +10,11 @@ from xarray import Dataset, concat
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import process_group_variables_coords, set_grid_layout
+from arviz_plots.plots.utils import (
+    get_contrast_colors,
+    process_group_variables_coords,
+    set_grid_layout,
+)
 
 
 def plot_psense_dist(
@@ -214,6 +218,8 @@ def plot_psense_dist(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrast_colors(bg_color=bg_color)
 
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 2, {}))
     if len(color_cycle) < 2:
@@ -228,7 +234,7 @@ def plot_psense_dist(
         pc_kwargs["figure_kwargs"].setdefault("sharey", "row")
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("color", [color_cycle[0], "black", color_cycle[1]])
+        pc_kwargs.setdefault("color", [color_cycle[0], contrast_color, color_cycle[1]])
         pc_kwargs.setdefault("y", [-0.05, -0.225, -0.4])
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])

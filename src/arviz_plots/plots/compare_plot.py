@@ -8,6 +8,7 @@ from arviz_base import rcParams
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plots.utils import get_contrast_colors
 
 
 def plot_compare(
@@ -97,6 +98,8 @@ def plot_compare(
 
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
+    bg_color = p_be.get_background_color()
+    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     # Get figure params and create figure and axis
     figure_kwargs = pc_kwargs.pop("figure_kwargs", {}).copy()
@@ -138,7 +141,7 @@ def plot_compare(
 
     # Plot ELPD standard error bars
     if (error_kwargs := visuals.get("error_bar", {})) is not False:
-        error_kwargs.setdefault("color", "black")
+        error_kwargs.setdefault("color", contrast_color)
 
         # Compute values for standard error bars
         se_list = list(zip((cmp_df["elpd"] - cmp_df["se"]), (cmp_df["elpd"] + cmp_df["se"])))
@@ -148,7 +151,7 @@ def plot_compare(
 
     # Add reference line for the best model
     if (ref_kwargs := visuals.get("ref_line", {})) is not False:
-        ref_kwargs.setdefault("color", "gray")
+        ref_kwargs.setdefault("color", contrast_gray_color)
         ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
         p_be.line(
             (cmp_df["elpd"].iloc[0], cmp_df["elpd"].iloc[0]),
@@ -159,12 +162,12 @@ def plot_compare(
 
     # Plot ELPD point estimates
     if (pe_kwargs := visuals.get("point_estimate", {})) is not False:
-        pe_kwargs.setdefault("color", "black")
+        pe_kwargs.setdefault("color", contrast_color)
         p_be.scatter(cmp_df["elpd"], yticks_pos, target, **pe_kwargs)
 
     # Add shade for statistically undistinguishable models
     if similar_shade and (shade_kwargs := visuals.get("shade", {})) is not False:
-        shade_kwargs.setdefault("color", "black")
+        shade_kwargs.setdefault("color", contrast_color)
         shade_kwargs.setdefault("alpha", 0.1)
 
         x_0, x_1 = cmp_df["elpd"].iloc[0] - 4, cmp_df["elpd"].iloc[0]
