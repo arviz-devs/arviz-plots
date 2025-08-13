@@ -180,13 +180,15 @@ def plot_bf(
         )
 
     # legend
-    legend_kwargs = copy(visuals.get("legend", {}))
-    if legend_kwargs is not False:
-        legend_kwargs.setdefault("dim", ["__variable__", "BF_type"])
-        legend_kwargs.setdefault("loc", "upper left")
-        legend_kwargs.setdefault("fontsize", 10)
-        legend_kwargs.setdefault("text_only", True)
 
-        plot_collection.add_legend(**legend_kwargs)
+    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
+        legend_kwargs = copy(visuals.get("legend", {}))
+        if legend_kwargs is not False:
+            legend_kwargs.setdefault("dim", ["__variable__", "BF_type"])
+            legend_kwargs.setdefault("loc", "upper left")
+            legend_kwargs.setdefault("fontsize", 10)
+            legend_kwargs.setdefault("text_only", True)
+
+            plot_collection.add_legend(**legend_kwargs)
 
     return plot_collection
