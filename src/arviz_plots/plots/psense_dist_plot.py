@@ -1,5 +1,6 @@
 """PsenseDist plot code."""
 from collections.abc import Mapping, Sequence
+from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -54,6 +55,7 @@ def plot_psense_dist(
             "point_estimate_text",
             "title",
             "rug",
+            "legend",
             "remove_axis",
         ],
         Mapping[str, Any] | Literal[False],
@@ -125,6 +127,7 @@ def plot_psense_dist(
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats : mapping, optional
@@ -301,10 +304,12 @@ def plot_psense_dist(
         stats=stats,
     )
 
-    # Add legend for alpha parameter automatically
-    plot_collection.add_legend(
-        "alpha",
-        title="Power Scale Factor",
-    )
+    # legend
+    legend_kwargs = copy(visuals.get("legend", {}))
+    if legend_kwargs is not False:
+        legend_kwargs.setdefault("dim", ["alpha"])
+        legend_kwargs.setdefault("title", "Power Scale Factor")
+
+        plot_collection.add_legend(**legend_kwargs)
 
     return plot_collection

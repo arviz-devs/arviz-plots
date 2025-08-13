@@ -192,6 +192,7 @@ def plot_dist(
     ----------
     .. [1] Kruschke. Doing Bayesian Data Analysis, Second Edition: A Tutorial with R,
         JAGS, and Stan. Academic Press, 2014. ISBN 978-0-12-405888-0.
+        https://www.sciencedirect.com/book/9780124058880
     """
     if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")

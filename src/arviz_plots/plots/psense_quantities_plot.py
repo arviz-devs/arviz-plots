@@ -56,6 +56,7 @@ def plot_psense_quantities(
             "mcse",
             "ticks",
             "title",
+            "legend",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
@@ -116,6 +117,7 @@ def plot_psense_quantities(
         * mcse -> passed to :func:`~arviz_plots.visuals.hline`
         * ticks -> passed to :func:`~arviz_plots.visuals.set_xticks`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -437,6 +439,11 @@ def plot_psense_quantities(
             **title_kwargs,
         )
 
-    plot_collection.add_legend("component_group")
+    # legend
+    legend_kwargs = copy(visuals.get("legend", {}))
+    if legend_kwargs is not False:
+        legend_kwargs.setdefault("dim", ["component_group"])
+
+        plot_collection.add_legend(**legend_kwargs)
 
     return plot_collection

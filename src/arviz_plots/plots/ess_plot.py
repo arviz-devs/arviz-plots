@@ -51,14 +51,14 @@ def plot_ess(
         Literal[
             "ess",
             "rug",
-            "title",
-            "xlabel",
-            "ylabel",
             "mean",
             "mean_text",
             "sd",
             "sd_text",
             "min_ess",
+            "title",
+            "xlabel",
+            "ylabel",
         ],
         Sequence[str],
     ] = None,
@@ -66,14 +66,15 @@ def plot_ess(
         Literal[
             "ess",
             "rug",
-            "title",
-            "xlabel",
-            "ylabel",
             "mean",
             "mean_text",
             "sd",
             "sd_text",
             "min_ess",
+            "title",
+            "xlabel",
+            "ylabel",
+            "legend",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
@@ -146,14 +147,15 @@ def plot_ess(
 
         * ess -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * rug -> passed to :func:`~.visuals.trace_rug`
-        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
-        * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
-        * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * mean -> passed to :func:`~arviz.plots.visuals.line_xy`
         * mean_text -> passed to :func:`~arviz.plots.visuals.annotate_xy`
         * sd_text -> passed to :func:`~arviz.plots.visuals.annotate_xy`
         * sd -> passed to :func:`~arviz.plots.visuals.line_xy`
         * min_ess -> passed to :func:`~arviz.plots.visuals.line_xy`
+        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
+        * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
+        * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
 
     stats : mapping, optional
         Valid keys are:
@@ -620,7 +622,11 @@ def plot_ess(
             **ylabel_kwargs,
         )
 
+    # legend
     if "model" in distribution:
-        plot_collection.add_legend("model")
+        legend_kwargs = copy(visuals.get("legend", {}))
+        if legend_kwargs is not False:
+            legend_kwargs.setdefault("dim", ["model"])
+            plot_collection.add_legend(**legend_kwargs)
 
     return plot_collection

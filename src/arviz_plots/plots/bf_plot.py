@@ -35,6 +35,7 @@ def plot_bf(
             "dist",
             "ref_line",
             "title",
+            "legend",
         ],
         Mapping[str, Any] | Literal[False],
     ] = None,
@@ -81,6 +82,7 @@ def plot_bf(
 
         * ref_line -> passed to :func: `~arviz_plots.visuals.vline`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
 
     stats : mapping, optional
         Valid keys are:
@@ -177,9 +179,14 @@ def plot_bf(
             visuals={"ref_line": ref_line_kwargs},
         )
 
-    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        plot_collection.add_legend(
-            ["__variable__", "BF_type"], loc="upper left", fontsize=10, text_only=True
-        )
+    # legend
+    legend_kwargs = copy(visuals.get("legend", {}))
+    if legend_kwargs is not False:
+        legend_kwargs.setdefault("dim", ["__variable__", "BF_type"])
+        legend_kwargs.setdefault("loc", "upper left")
+        legend_kwargs.setdefault("fontsize", 10)
+        legend_kwargs.setdefault("text_only", True)
+
+        plot_collection.add_legend(**legend_kwargs)
 
     return plot_collection
