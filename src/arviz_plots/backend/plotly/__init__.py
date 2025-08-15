@@ -62,19 +62,23 @@ def apply_square_root_scale(plotly_plot):
     figure_grid = figure.layout.grid
     num_cols = figure_grid.columns if figure_grid.columns is not None else 1
     index = (row - 1) * num_cols + col
-
     yaxis_ref = "y" if index == 1 else f"y{index}"
     layout_yaxis = "yaxis" if index == 1 else f"yaxis{index}"
 
     y_transformed_all = []
+    y_original_all = []
+
     for trace in figure.data:
         if getattr(trace, "yaxis", None) == yaxis_ref:
             if hasattr(trace, "y") and trace.y is not None:
                 y_data = np.array(trace.y, dtype=float)
-                y_data = np.maximum(y_data, 0.0)  # Clamp negative values
+                y_data = np.maximum(y_data, 0.0)
                 y_transformed = np.sqrt(y_data)
+                trace.customdata = y_data.tolist()
                 trace.y = y_transformed.tolist()
+                trace.hovertemplate = "x: %{x:.2~g}<br>y: %{customdata:.2~g}<extra></extra>"
                 y_transformed_all.extend(y_transformed)
+                y_original_all.extend(y_data)
 
     if not y_transformed_all:
         return
@@ -88,18 +92,17 @@ def apply_square_root_scale(plotly_plot):
     end_tick = step_size * num_ticks
     tickvals_transformed = [i**0.5 for i in range(start_tick, end_tick + 1, step_size)]
 
-    if len(tickvals_transformed) == 0:
-        tickvals_transformed = np.array([y_min, y_max])
+    if not tickvals_transformed:
+        tickvals_transformed = [y_min, y_max]
 
     ticktext_original = [f"{round(tv**2)}" for tv in tickvals_transformed]
 
     figure.layout[layout_yaxis].update(
         tickvals=tickvals_transformed,
         ticktext=ticktext_original,
+        range=[y_min, y_max + 0.5],
         title=figure.layout[layout_yaxis].title,
     )
-
-    figure.layout[layout_yaxis].range = [y_min, y_max + 0.5]
 
 
 def str_to_plotly_html(string):
@@ -682,6 +685,7 @@ def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
         x1=xmax,
         y0=0,
         y1=1,
+        line={"width": 0},
         **_filter_kwargs(kwargs, artist_kws),
     )
     target.add_shape(vbox)
@@ -699,6 +703,7 @@ def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
         y1=ymax,
         x0=0,
         x1=1,
+        line={"width": 0},
         **_filter_kwargs(kwargs, artist_kws),
     )
     target.add_shape(hbox)
