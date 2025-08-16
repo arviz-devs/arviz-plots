@@ -802,6 +802,7 @@ def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
         "tickmode": "array",
         "tickvals": ticks,
         "ticktext": labels,
+        "automargin": True,
     }
     if rotation is not unset:
         kwargs["tickangle"] = -rotation

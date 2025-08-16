@@ -37,7 +37,9 @@ def plot_compare(
         Result of the :func:`arviz_stats.compare` method.
     similar_shade : bool, optional
         If True, a shade is drawn to indicate models with similar
-        predictive performance to the best model. Defaults to True.
+        predictive performance to the best model. Following [3]_,
+        models are considered similar if the difference in ELPD is
+        less than 4. Defaults to True.
     relative_scale : bool, optional.
         If True scale the ELPD values relative to the best model.
         Defaults to False.
@@ -79,6 +81,9 @@ def plot_compare(
     .. [2] Vehtari et al. *Pareto Smoothed Importance Sampling*.
         Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
         arXiv preprint https://arxiv.org/abs/1507.02646
+
+    .. [3] Sivula et al. *Uncertainty in Bayesian Leave-One-Out Cross-Validation Based Model
+        Comparison*. (2025). https://doi.org/10.48550/arXiv.2008.10296
     """
     # Check if cmp_df contains the required information
 
@@ -189,11 +194,11 @@ def plot_compare(
             **title_kwargs,
         )
 
+    if (ticklabels_kwargs := visuals.get("ticklabels", {})) is not False:
+        p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
+
     if (labels_kwargs := visuals.get("labels", {})) is not False:
         p_be.ylabel("ranked models", target, **labels_kwargs)
         p_be.xlabel("ELPD", target, **labels_kwargs)
-
-    if (ticklabels_kwargs := visuals.get("ticklabels", {})) is not False:
-        p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
 
     return plot_collection
