@@ -19,8 +19,7 @@ def legend(
     artist_type="line",
     artist_kwargs=None,
     legend_target=None,
-    side="auto",
-    legend_placement_threshold=600,  # Magic number
+    side="right",
     **kwargs,
 ):
     """Generate a legend on a figure given lists of labels and property kwargs.
@@ -38,6 +37,9 @@ def legend(
         artist_kwargs = {}
     if legend_target is None:
         legend_target = (0, -1)
+    if side == "right":
+        kwargs.setdefault("margin", -55)
+
     # TODO: improve selection of Figure object from what is stored as "figure"
     children = target.children
     if not isinstance(children[0], tuple):
@@ -63,17 +65,11 @@ def legend(
         glyph = artist_fun(**{**artist_kwargs, **kws})
         glyph_list.append(glyph)
 
-    if side == "auto":
-        plot_width = target_plot.width
-        if plot_width >= legend_placement_threshold:
-            side = "right"
-        else:
-            side = "center"
-
     leg = Legend(
         items=[(str(label), [glyph]) for label, glyph in zip(label_list, glyph_list)],
         title=title,
         **kwargs,
     )
+
     target_plot.add_layout(leg, side)
     return leg
