@@ -2,8 +2,11 @@
 import plotly.graph_objects as go
 
 axis_common = {"showgrid": False, "ticks": "outside", "showline": True, "zeroline": False}
+h_template = [{"hovertemplate": "x: %{x:.2~g}<br>y: %{y:.2~g}<extra></extra>"}]
 
 arviz_cetrino_template = go.layout.Template()
+arviz_cetrino_template.data.scatter = h_template
+arviz_cetrino_template.data.bar = h_template
 arviz_cetrino_template.layout.paper_bgcolor = "white"
 arviz_cetrino_template.layout.plot_bgcolor = "white"
 arviz_cetrino_template.layout.polar.bgcolor = "white"
@@ -23,6 +26,8 @@ arviz_cetrino_template.layout.colorway = [
 ]
 
 arviz_tenui_template = go.layout.Template()
+arviz_tenui_template.data.scatter = h_template
+arviz_tenui_template.data.bar = h_template
 arviz_tenui_template.layout.paper_bgcolor = "white"
 arviz_tenui_template.layout.plot_bgcolor = "white"
 arviz_tenui_template.layout.polar.bgcolor = "white"
@@ -43,6 +48,8 @@ arviz_tenui_template.layout.colorway = [
 
 
 arviz_variat_template = go.layout.Template()
+arviz_variat_template.data.scatter = h_template
+arviz_variat_template.data.bar = h_template
 arviz_variat_template.layout.paper_bgcolor = "white"
 arviz_variat_template.layout.plot_bgcolor = "white"
 arviz_variat_template.layout.polar.bgcolor = "white"
@@ -63,6 +70,8 @@ arviz_variat_template.layout.colorway = [
 
 
 arviz_vibrant_template = go.layout.Template()
+arviz_vibrant_template.data.scatter = h_template
+arviz_vibrant_template.data.bar = h_template
 arviz_vibrant_template.layout.paper_bgcolor = "white"
 arviz_vibrant_template.layout.plot_bgcolor = "white"
 arviz_vibrant_template.layout.polar.bgcolor = "white"
@@ -82,8 +91,14 @@ arviz_vibrant_template.layout.colorway = [
 ]
 
 
+axis_tumma = axis_common | {
+    "linecolor": "#D9D9D9",
+    "tickcolor": "#D9D9D9",
+    "gridcolor": "#333333",
+}
 arviz_tumma_template = go.layout.Template()
-
+arviz_tumma_template.data.scatter = h_template
+arviz_tumma_template.data.bar = h_template
 arviz_tumma_template.layout.paper_bgcolor = "black"
 arviz_tumma_template.layout.plot_bgcolor = "black"
 arviz_tumma_template.layout.polar.bgcolor = "black"
@@ -91,17 +106,8 @@ arviz_tumma_template.layout.ternary.bgcolor = "black"
 arviz_tumma_template.layout.font.color = "#D9D9D9"
 arviz_tumma_template.layout.title.font.color = "#D9D9D9"
 arviz_tumma_template.layout.margin = {"l": 50, "r": 10, "t": 40, "b": 45}
-axis_common = {
-    "showgrid": False,
-    "ticks": "outside",
-    "showline": True,
-    "zeroline": False,
-    "linecolor": "#D9D9D9",
-    "tickcolor": "#D9D9D9",
-    "gridcolor": "#333333",
-}
-arviz_tumma_template.layout.xaxis = axis_common
-arviz_tumma_template.layout.yaxis = axis_common
+arviz_tumma_template.layout.xaxis = axis_tumma
+arviz_tumma_template.layout.yaxis = axis_tumma
 arviz_tumma_template.layout.legend.bgcolor = "rgba(0,0,0,0)"
 arviz_tumma_template.layout.colorway = [
     "#36acc6",

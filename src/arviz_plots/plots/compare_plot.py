@@ -175,8 +175,8 @@ def plot_compare(
         padding = (yticks_pos[0] - yticks_pos[-1]) * 0.05
         p_be.fill_between_y(
             x=[x_0, x_1],
-            y_bottom=yticks_pos[-1] - padding,
-            y_top=yticks_pos[0] + padding,
+            y_bottom=np.repeat(yticks_pos[-1], 2) - padding,
+            y_top=np.repeat(yticks_pos[0], 2) + padding,
             target=target,
             **shade_kwargs,
         )
