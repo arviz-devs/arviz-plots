@@ -1,6 +1,7 @@
 """Contain functions for Bayes Factor plotting."""
 
 from collections.abc import Mapping, Sequence
+from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -98,6 +99,7 @@ def plot_prior_posterior(
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
 
     stats : mapping, optional
         Valid keys are:
@@ -235,11 +237,15 @@ def plot_prior_posterior(
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
+        aes_by_visuals=aes_by_visuals,
         visuals=visuals,
         stats=stats,
         **pc_kwargs,
     )
 
-    plot_collection.add_legend("group")
+    legend_kwargs = copy(visuals.get("legend", {}))
+    if legend_kwargs is not False:
+        legend_kwargs.setdefault("dim", ["group"])
+        plot_collection.add_legend(**legend_kwargs)
 
     return plot_collection

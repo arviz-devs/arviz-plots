@@ -1,5 +1,6 @@
 """Energy plot code."""
 from collections.abc import Mapping, Sequence
+from copy import copy
 from typing import Any, Literal
 
 import numpy as np
@@ -27,6 +28,7 @@ def plot_energy(
         Literal[
             "dist",
             "title",
+            "legend",
             "remove_axis",
         ],
         Mapping[str, Any] | Literal[False],
@@ -69,6 +71,7 @@ def plot_energy(
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats : mapping, optional
@@ -145,7 +148,11 @@ def plot_energy(
         **pc_kwargs,
     )
 
-    plot_collection.add_legend("energy")
+    # legend
+    legend_kwargs = copy(visuals.get("legend", {}))
+    if legend_kwargs is not False:
+        legend_kwargs.setdefault("dim", ["energy"])
+        plot_collection.add_legend(**legend_kwargs)
 
     if bfmi:
         raise NotImplementedError("BFMI is not implemented yet")
