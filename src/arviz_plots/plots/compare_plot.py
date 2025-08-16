@@ -194,11 +194,11 @@ def plot_compare(
             **title_kwargs,
         )
 
-    if (ticklabels_kwargs := visuals.get("ticklabels", {})) is not False:
-        p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
-
     if (labels_kwargs := visuals.get("labels", {})) is not False:
         p_be.ylabel("ranked models", target, **labels_kwargs)
         p_be.xlabel("ELPD", target, **labels_kwargs)
+
+    if (ticklabels_kwargs := visuals.get("ticklabels", {})) is not False:
+        p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
 
     return plot_collection
