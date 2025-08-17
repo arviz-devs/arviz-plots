@@ -1,6 +1,5 @@
 """ppc t-stat plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -13,6 +12,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
     get_contrast_colors,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -114,7 +114,7 @@ def plot_ppc_tstat(
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals` exept for "remove_axis"
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -133,7 +133,7 @@ def plot_ppc_tstat(
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
         observed_tstat defaults to False, no observed data is plotted, if group is
-        "prior_predictive". Pass an (empty) mapping to plot the observed tstats.
+        "prior_predictive".
 
     stats : mapping, optional
         Valid keys are:
@@ -246,8 +246,8 @@ def plot_ppc_tstat(
 
     # we use observed_tstat_kwargs as a flag to indicate if
     # we should compute and plot the observed t-statistics
-    observed_tstat_kwargs = copy(
-        visuals.get("observed_tstat", False if group == "prior_predictive" else {})
+    observed_tstat_kwargs = get_visual_kwargs(
+        visuals, "observed_tstat", False if group == "prior_predictive" else None
     )
 
     predictive_dist = predictive_dist.stack(sample=sample_dims)

@@ -1,6 +1,5 @@
 """Trace plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -13,6 +12,7 @@ from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
     get_group,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -73,7 +73,7 @@ def plot_trace(
     aes_by_visuals : mapping, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Defaults to only mapping properties to the trace lines.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * trace -> passed to :func:`~.visuals.line`
@@ -159,7 +159,7 @@ def plot_trace(
         labeller = BaseLabeller()
 
     # trace
-    trace_kwargs = copy(visuals.get("trace", {}))
+    trace_kwargs = get_visual_kwargs(visuals, "trace")
     if trace_kwargs is False:
         xname = None
     else:
@@ -181,7 +181,7 @@ def plot_trace(
 
     # divergences
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
-    divergence_kwargs = copy(visuals.get("divergence", {}))
+    divergence_kwargs = get_visual_kwargs(visuals, "divergence")
     if (
         sample_stats is not None
         and "diverging" in sample_stats.data_vars
@@ -212,7 +212,7 @@ def plot_trace(
         )
 
     # aesthetics
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
     if title_kwargs is not False:
         _, title_aes, title_ignore = filter_aes(
             plot_collection, aes_by_visuals, "title", sample_dims
@@ -229,7 +229,7 @@ def plot_trace(
         )
 
     # Add "Steps" as x_label for trace
-    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         _, xlabel_aes, xlabel_ignore = filter_aes(
             plot_collection, aes_by_visuals, "xlabel", sample_dims
@@ -247,7 +247,7 @@ def plot_trace(
         )
 
     # Adjust tick labels
-    ticklabels_kwargs = copy(visuals.get("ticklabels", {}))
+    ticklabels_kwargs = get_visual_kwargs(visuals, "ticklabels")
     if ticklabels_kwargs is not False:
         _, _, ticklabels_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ticklabels", sample_dims

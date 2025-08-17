@@ -1,6 +1,5 @@
 """Plot ppc using PAV-adjusted calibration plot."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -9,7 +8,12 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import isotonic_fit
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_contrast_colors, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    get_visual_kwargs,
+    set_wrap_layout,
+)
 from arviz_plots.visuals import (
     dline,
     fill_between_y,
@@ -105,7 +109,7 @@ def plot_ppc_pava(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * lines -> passed to :func:`~arviz_plots.visuals.line_xy`
@@ -201,7 +205,7 @@ def plot_ppc_pava(
         aes_by_visuals = aes_by_visuals.copy()
 
     ## reference line
-    reference_ls_kwargs = copy(visuals.get("reference_line", {}))
+    reference_ls_kwargs = get_visual_kwargs(visuals, "reference_line")
 
     if reference_ls_kwargs is not False:
         _, _, reference_ls_ignore = filter_aes(
@@ -220,7 +224,7 @@ def plot_ppc_pava(
         )
 
     ## markers
-    calibration_ms_kwargs = copy(visuals.get("markers", {}))
+    calibration_ms_kwargs = get_visual_kwargs(visuals, "markers")
 
     if calibration_ms_kwargs is not False:
         _, _, calibration_ms_ignore = filter_aes(
@@ -238,7 +242,7 @@ def plot_ppc_pava(
         )
 
     ## lines
-    calibration_ls_kwargs = copy(visuals.get("lines", {}))
+    calibration_ls_kwargs = get_visual_kwargs(visuals, "lines")
 
     if calibration_ls_kwargs is not False:
         _, _, calibration_ls_ignore = filter_aes(
@@ -254,7 +258,7 @@ def plot_ppc_pava(
             **calibration_ls_kwargs,
         )
 
-    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", colors[0])
@@ -275,7 +279,7 @@ def plot_ppc_pava(
     _, xlabels_aes, xlabels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "xlabel", sample_dims
     )
-    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", contrast_color)
@@ -294,7 +298,7 @@ def plot_ppc_pava(
     _, ylabels_aes, ylabels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "ylabel", sample_dims
     )
-    ylabel_kwargs = copy(visuals.get("ylabel", {}))
+    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", contrast_color)
@@ -310,7 +314,7 @@ def plot_ppc_pava(
         )
 
     # title
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
     _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     if title_kwargs is not False:

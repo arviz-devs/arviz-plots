@@ -1,6 +1,5 @@
 """PsenseDist plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -13,6 +12,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
     get_contrast_colors,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_grid_layout,
 )
@@ -114,7 +114,7 @@ def plot_psense_dist(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals` except for "remove_axis"
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -305,7 +305,7 @@ def plot_psense_dist(
     )
 
     # legend
-    legend_kwargs = copy(visuals.get("legend", {}))
+    legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["alpha"])
         legend_kwargs.setdefault("title", "Power Scale Factor")

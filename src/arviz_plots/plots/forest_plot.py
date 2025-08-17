@@ -1,6 +1,5 @@
 """Forest plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -11,7 +10,12 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, get_contrast_colors, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    get_visual_kwargs,
+    process_group_variables_coords,
+)
 from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x
 
 
@@ -121,7 +125,7 @@ def plot_forest(
         "overlay" is a dummy aesthetic to trigger looping over variables and/or
         dimensions using all aesthetics in every iteration. "alpha" gets two
         values (0, 0.3) in order to trigger the alternate shading effect.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * trunk, twig -> passed to :func:`~.visuals.line_x`
@@ -218,10 +222,10 @@ def plot_forest(
     if not combined and "chain" not in distribution.dims:
         combined = True
 
-    labels_kwargs = copy(visuals.get("labels", {}))
+    labels_kwargs = get_visual_kwargs(visuals, "labels")
     if labels_kwargs is False:
         raise ValueError("visuals['labels'] can't be False, use labels=[] to remove all labels")
-    shade_kwargs = copy(visuals.get("shade", {}))
+    shade_kwargs = get_visual_kwargs(visuals, "shade")
     if shade_kwargs is False:
         raise ValueError("visuals['shade'] can't be False, use shade_label=None to remove shading")
 
@@ -359,8 +363,8 @@ def plot_forest(
     ci_dims, ci_aes, ci_ignore = filter_aes(
         plot_collection, aes_by_visuals, "credible_interval", sample_dims
     )
-    twig_kwargs = copy(visuals.get("twig", {}))
-    trunk_kwargs = copy(visuals.get("trunk", {}))
+    twig_kwargs = get_visual_kwargs(visuals, "twig")
+    trunk_kwargs = get_visual_kwargs(visuals, "trunk")
     if ci_kind == "eti":
         ci_fun = distribution.azstats.eti
     elif ci_kind == "hdi":
@@ -379,7 +383,7 @@ def plot_forest(
             ci_trunk = ci_fun(prob=ci_probs[0], dim=ci_dims, **trunk_stats)
 
     # compute point estimate
-    pe_kwargs = copy(visuals.get("point_estimate", {}))
+    pe_kwargs = get_visual_kwargs(visuals, "point_estimate")
     if pe_kwargs is not None:
         pe_dims, pe_aes, pe_ignore = filter_aes(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
@@ -486,7 +490,7 @@ def plot_forest(
             **lab_kwargs,
         )
         x += 1
-    ticklabel_kwargs = copy(visuals.get("ticklabels", {}))
+    ticklabel_kwargs = get_visual_kwargs(visuals, "ticklabels")
     if ticklabel_kwargs is not False:
         plot_bknd.xticks(
             np.arange(len(labels)),
