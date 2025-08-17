@@ -20,7 +20,7 @@ def plot_compare(
         Literal[
             "point_estimate", "error_bar", "ref_line", "shade", "labels", "title", "ticklabels"
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):

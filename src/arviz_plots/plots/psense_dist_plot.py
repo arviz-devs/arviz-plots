@@ -58,7 +58,7 @@ def plot_psense_dist(
             "legend",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | Dataset

@@ -49,7 +49,7 @@ def plot_rank_dist(
             "xlabel_rank",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["dist", "ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,

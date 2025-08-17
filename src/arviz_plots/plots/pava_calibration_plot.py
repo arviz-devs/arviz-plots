@@ -60,7 +60,7 @@ def plot_ppc_pava(
             "ylabel",
             "title",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):

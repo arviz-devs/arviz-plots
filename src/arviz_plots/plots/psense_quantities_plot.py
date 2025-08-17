@@ -58,7 +58,7 @@ def plot_psense_quantities(
             "title",
             "legend",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):

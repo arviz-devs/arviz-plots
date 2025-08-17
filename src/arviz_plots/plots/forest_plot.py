@@ -54,7 +54,7 @@ def plot_forest(
             "ticklabels",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal["trunk", "twig", "point_estimate"], Mapping[str, Any] | xr.Dataset

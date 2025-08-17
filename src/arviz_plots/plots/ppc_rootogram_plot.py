@@ -1,6 +1,5 @@
 """Plot ppc rootogram for discrete (count) data."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -62,7 +61,7 @@ def plot_ppc_rootogram(
             "grid",
             "title",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):
@@ -287,8 +286,8 @@ def plot_ppc_rootogram(
         )
 
     ## observed_markers
-    observed_ms_kwargs = copy(
-        visuals.get("observed_markers", False if group == "prior_predictive" else {})
+    observed_ms_kwargs = get_visual_kwargs(
+        visuals, "observed_markers", False if group == "prior_predictive" else None
     )
 
     if observed_ms_kwargs is not False:

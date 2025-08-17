@@ -42,7 +42,7 @@ def plot_parallel(
             "line",
             "xticks",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):

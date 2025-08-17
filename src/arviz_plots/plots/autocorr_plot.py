@@ -35,7 +35,7 @@ def plot_autocorr(
     ] = None,
     visuals: Mapping[
         Literal["lines", "ref_line", "credible_interval", "xlabel", "title"],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):

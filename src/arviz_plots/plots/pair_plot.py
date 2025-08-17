@@ -67,7 +67,7 @@ def plot_pair(
             "ylabel",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal[

@@ -70,7 +70,7 @@ def plot_mcse(
             "sd",
             "sd_text",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["mcse", "mean", "sd"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,

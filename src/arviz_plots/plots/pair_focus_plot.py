@@ -47,7 +47,7 @@ def plot_pair_focus(
             "xlabel",
             "ylabel",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):
