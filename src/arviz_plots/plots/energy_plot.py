@@ -1,6 +1,5 @@
 """Energy plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from typing import Any, Literal
 
 import numpy as np
@@ -8,6 +7,7 @@ import xarray as xr
 from arviz_base import convert_to_dataset, rcParams
 
 from arviz_plots.plots.dist_plot import plot_dist
+from arviz_plots.plots.utils import get_visual_kwargs
 
 
 def plot_energy(
@@ -31,7 +31,7 @@ def plot_energy(
             "legend",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -61,7 +61,7 @@ def plot_energy(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -149,7 +149,7 @@ def plot_energy(
     )
 
     # legend
-    legend_kwargs = copy(visuals.get("legend", {}))
+    legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["energy"])
         plot_collection.add_legend(**legend_kwargs)

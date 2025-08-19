@@ -39,7 +39,7 @@ def plot_loo_pit(
             "ylabel",
             "title",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -94,7 +94,7 @@ def plot_loo_pit(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`

@@ -20,7 +20,7 @@ def plot_compare(
         Literal[
             "point_estimate", "error_bar", "ref_line", "shade", "labels", "title", "ticklabels"
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):
@@ -47,7 +47,7 @@ def plot_compare(
         Select plotting backend. Defaults to rcParams["plot.backend"].
     figsize : tuple of (float, float), optional
         If `None`, size is (10, num of models) inches.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * point_estimate -> passed to :func:`~arviz_plots.backend.none.scatter`

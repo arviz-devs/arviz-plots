@@ -1,7 +1,6 @@
 """Contain functions for Bayes Factor plotting."""
 
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -10,7 +9,7 @@ from arviz_base import rcParams
 from arviz_stats.bayes_factor import bayes_factor
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
-from arviz_plots.plots.utils import add_lines, filter_aes, get_contrast_colors
+from arviz_plots.plots.utils import add_lines, filter_aes, get_contrast_colors, get_visual_kwargs
 
 
 def plot_bf(
@@ -37,7 +36,7 @@ def plot_bf(
             "title",
             "legend",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -71,7 +70,7 @@ def plot_bf(
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -160,7 +159,7 @@ def plot_bf(
 
     plot_collection.update_aes_from_dataset("bf_aes", bf_aes_ds)
 
-    ref_line_kwargs = copy(visuals.get("ref_line", {}))
+    ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_line_kwargs is False:
         raise ValueError(
             "visuals['ref_line'] can't be False, use ref_val=False to remove this element"
@@ -182,7 +181,7 @@ def plot_bf(
     # legend
 
     if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        legend_kwargs = copy(visuals.get("legend", {}))
+        legend_kwargs = get_visual_kwargs(visuals, "legend")
         if legend_kwargs is not False:
             legend_kwargs.setdefault("dim", ["__variable__", "BF_type"])
             legend_kwargs.setdefault("loc", "upper left")

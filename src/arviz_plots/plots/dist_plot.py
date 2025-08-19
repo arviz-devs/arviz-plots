@@ -2,7 +2,6 @@
 
 import warnings
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -15,6 +14,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -67,7 +67,7 @@ def plot_dist(
             "rug",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
@@ -125,7 +125,7 @@ def plot_dist(
 
         When "point_estimate" key is provided but "point_estimate_text" isn't,
         the values assigned to the first are also used for the second.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -257,8 +257,8 @@ def plot_dist(
             **pc_kwargs,
         )
 
-    face_kwargs = copy(visuals.get("face", False))
-    density_kwargs = copy(visuals.get("dist", {}))
+    face_kwargs = get_visual_kwargs(visuals, "face", False)
+    density_kwargs = get_visual_kwargs(visuals, "dist")
 
     if aes_by_visuals is None:
         aes_by_visuals = {}
@@ -359,7 +359,7 @@ def plot_dist(
         else:
             raise NotImplementedError("coming soon")
 
-    rug_kwargs = copy(visuals.get("rug", False))
+    rug_kwargs = get_visual_kwargs(visuals, "rug", False)
 
     if rug_kwargs is not False:
         if not isinstance(rug_kwargs, dict):
@@ -395,7 +395,7 @@ def plot_dist(
         plot_collection.update_aes_from_dataset("y", y_ds)
 
     # credible interval
-    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
     if ci_kwargs is not False:
         ci_dims, ci_aes, ci_ignore = filter_aes(
             plot_collection, aes_by_visuals, "credible_interval", sample_dims
@@ -414,8 +414,8 @@ def plot_dist(
         plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
 
     # point estimate
-    pe_kwargs = copy(visuals.get("point_estimate", {}))
-    pet_kwargs = copy(visuals.get("point_estimate_text", {}))
+    pe_kwargs = get_visual_kwargs(visuals, "point_estimate")
+    pet_kwargs = get_visual_kwargs(visuals, "point_estimate_text")
     if (pe_kwargs is not False) or (pet_kwargs is not False):
         pe_dims, pe_aes, pe_ignore = filter_aes(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
@@ -480,7 +480,7 @@ def plot_dist(
         )
 
     # aesthetics
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
     if title_kwargs is not False:
         _, title_aes, title_ignore = filter_aes(
             plot_collection, aes_by_visuals, "title", sample_dims

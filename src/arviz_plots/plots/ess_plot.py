@@ -1,7 +1,6 @@
 """ess plot code."""
 
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -16,6 +15,7 @@ from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
     get_group,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -76,7 +76,7 @@ def plot_ess(
             "ylabel",
             "legend",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["ess", "mean", "sd"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -142,7 +142,7 @@ def plot_ess(
         or ``sd_text`` are not, the respective ``_text`` key will be added
         with the same values as ``mean`` or ``sd`` ones.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * ess -> passed to :func:`~arviz_plots.visuals.scatter_xy`
@@ -270,7 +270,7 @@ def plot_ess(
     )
 
     # ensuring visuals['rug'] is not False
-    rug_kwargs = copy(visuals.get("rug", {}))
+    rug_kwargs = get_visual_kwargs(visuals, "rug")
     if rug_kwargs is False:
         raise ValueError("visuals['rug'] can't be False, use rug=False to remove the rug")
 
@@ -342,7 +342,7 @@ def plot_ess(
         labeller = BaseLabeller()
 
     # compute and add ess subplots
-    ess_kwargs = copy(visuals.get("ess", {}))
+    ess_kwargs = get_visual_kwargs(visuals, "ess")
 
     if ess_kwargs is not False:
         ess_dims, ess_aes, ess_ignore = filter_aes(
@@ -423,10 +423,10 @@ def plot_ess(
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
-        mean_kwargs = copy(visuals.get("mean", {}))
-        mean_text_kwargs = copy(visuals.get("mean_text", {}))
-        sd_kwargs = copy(visuals.get("sd", {}))
-        sd_text_kwargs = copy(visuals.get("sd_text", {}))
+        mean_kwargs = get_visual_kwargs(visuals, "mean")
+        mean_text_kwargs = get_visual_kwargs(visuals, "mean_text")
+        sd_kwargs = get_visual_kwargs(visuals, "sd")
+        sd_text_kwargs = get_visual_kwargs(visuals, "sd_text")
 
         # computing mean_ess
         mean_dims, mean_aes, mean_ignore = filter_aes(
@@ -535,7 +535,7 @@ def plot_ess(
             )
 
     # plot minimum ess
-    min_ess_kwargs = copy(visuals.get("min_ess", {}))
+    min_ess_kwargs = get_visual_kwargs(visuals, "min_ess")
 
     if min_ess_kwargs is not False:
         _, min_ess_aes, min_ess_ignore = filter_aes(
@@ -562,7 +562,7 @@ def plot_ess(
         )
 
     # plot titles for each faceted subplot
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
 
     if title_kwargs is not False:
         _, title_aes, title_ignore = filter_aes(
@@ -584,7 +584,7 @@ def plot_ess(
     _, labels_aes, labels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "xlabel", sample_dims
     )
-    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in labels_aes:
             xlabel_kwargs.setdefault("color", contrast_color)
@@ -603,7 +603,7 @@ def plot_ess(
     _, labels_aes, labels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "ylabel", sample_dims
     )
-    ylabel_kwargs = copy(visuals.get("ylabel", {}))
+    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in labels_aes:
             ylabel_kwargs.setdefault("color", contrast_color)
@@ -624,7 +624,7 @@ def plot_ess(
 
     # legend
     if "model" in distribution:
-        legend_kwargs = copy(visuals.get("legend", {}))
+        legend_kwargs = get_visual_kwargs(visuals, "legend")
         if legend_kwargs is not False:
             legend_kwargs.setdefault("dim", ["model"])
             plot_collection.add_legend(**legend_kwargs)

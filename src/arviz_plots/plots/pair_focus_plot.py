@@ -1,6 +1,5 @@
 """Pair focus plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -13,6 +12,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
     get_group,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -47,7 +47,7 @@ def plot_pair_focus(
             "xlabel",
             "ylabel",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):
@@ -83,7 +83,7 @@ def plot_pair_focus(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
         By default, there are no aesthetic mappings at all
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * scatter -> passed to :func:`~.visuals.scatter_x`
@@ -184,7 +184,7 @@ def plot_pair_focus(
     # scatter
 
     aes_by_visuals["scatter"] = {"overlay"}.union(aes_by_visuals.get("scatter", {}))
-    scatter_kwargs = copy(visuals.get("scatter", {}))
+    scatter_kwargs = get_visual_kwargs(visuals, "scatter")
     if scatter_kwargs is not False:
         _, scatter_aes, scatter_ignore = filter_aes(
             plot_collection, aes_by_visuals, "scatter", sample_dims
@@ -210,7 +210,7 @@ def plot_pair_focus(
     # divergence
 
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
-    div_kwargs = copy(visuals.get("divergence", False))
+    div_kwargs = get_visual_kwargs(visuals, "divergence", False)
     if div_kwargs is True:
         div_kwargs = {}
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
@@ -242,7 +242,7 @@ def plot_pair_focus(
 
     # xlabel of plots
 
-    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
 
     if xlabel_kwargs is not False:
         _, _, xlabel_ignore = filter_aes(plot_collection, aes_by_visuals, "xlabel", sample_dims)
@@ -257,7 +257,7 @@ def plot_pair_focus(
 
     # ylabel of plots
 
-    ylabel_kwargs = copy(visuals.get("ylabel", {}))
+    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         _, _, ylabel_ignore = filter_aes(plot_collection, aes_by_visuals, "ylabel", sample_dims)
 

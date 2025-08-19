@@ -1,7 +1,6 @@
 """Contain functions for Bayes Factor plotting."""
 
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -12,7 +11,11 @@ from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import process_group_variables_coords, set_wrap_layout
+from arviz_plots.plots.utils import (
+    get_visual_kwargs,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
 
 
 def plot_prior_posterior(
@@ -47,7 +50,7 @@ def plot_prior_posterior(
             "rug",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
@@ -89,7 +92,7 @@ def plot_prior_posterior(
         when plotted. The prior and posterior groups are combined creating a new
         dimension "group". By default, there is an aesthetic mapping from group to color.
         Valid keys are the same as for `visuals`.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -243,7 +246,7 @@ def plot_prior_posterior(
         **pc_kwargs,
     )
 
-    legend_kwargs = copy(visuals.get("legend", {}))
+    legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["group"])
         plot_collection.add_legend(**legend_kwargs)

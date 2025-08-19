@@ -86,7 +86,7 @@ def plot_xyz(
         when plotted. Valid keys are the same as for `visuals`.
 
         [[Description of default aesthetic mappings]]
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * [[first visual id]] -> [[function called when drawing the first visual]]

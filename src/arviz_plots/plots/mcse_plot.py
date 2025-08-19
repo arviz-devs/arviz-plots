@@ -1,7 +1,6 @@
 """mcse plot code."""
 
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -16,6 +15,7 @@ from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
     get_group,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -70,7 +70,7 @@ def plot_mcse(
             "sd",
             "sd_text",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["mcse", "mean", "sd"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -123,7 +123,7 @@ def plot_mcse(
         or ``sd_text`` are not, the respective ``_text`` key will be added
         with the same values as ``mean`` or ``sd`` ones.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * mcse -> passed to :func:`~arviz_plots.visuals.scatter_xy`
@@ -237,7 +237,7 @@ def plot_mcse(
     )
 
     # ensuring visuals['rug'] is not False
-    rug_kwargs = copy(visuals.get("rug", {}))
+    rug_kwargs = get_visual_kwargs(visuals, "rug")
     if rug_kwargs is False:
         raise ValueError("visuals['rug'] can't be False, use rug=False to remove the rug")
 
@@ -307,7 +307,7 @@ def plot_mcse(
         labeller = BaseLabeller()
 
     # compute and add mcse subplots
-    mcse_kwargs = copy(visuals.get("mcse", {}))
+    mcse_kwargs = get_visual_kwargs(visuals, "mcse")
 
     if mcse_kwargs is not False:
         mcse_dims, mcse_aes, mcse_ignore = filter_aes(
@@ -382,10 +382,10 @@ def plot_mcse(
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
-        mean_kwargs = copy(visuals.get("mean", {}))
-        mean_text_kwargs = copy(visuals.get("mean_text", {}))
-        sd_kwargs = copy(visuals.get("sd", {}))
-        sd_text_kwargs = copy(visuals.get("sd_text", {}))
+        mean_kwargs = get_visual_kwargs(visuals, "mean")
+        mean_text_kwargs = get_visual_kwargs(visuals, "mean_text")
+        sd_kwargs = get_visual_kwargs(visuals, "sd")
+        sd_text_kwargs = get_visual_kwargs(visuals, "sd_text")
 
         # computing mean_mcse
         mean_dims, mean_aes, mean_ignore = filter_aes(
@@ -494,7 +494,7 @@ def plot_mcse(
             )
 
     # plot titles for each faceted subplot
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
 
     if title_kwargs is not False:
         _, title_aes, title_ignore = filter_aes(
@@ -516,7 +516,7 @@ def plot_mcse(
     _, labels_aes, labels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "xlabel", sample_dims
     )
-    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in labels_aes:
             xlabel_kwargs.setdefault("color", contrast_color)
@@ -535,7 +535,7 @@ def plot_mcse(
     _, labels_aes, labels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "ylabel", sample_dims
     )
-    ylabel_kwargs = copy(visuals.get("ylabel", {}))
+    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in labels_aes:
             ylabel_kwargs.setdefault("color", contrast_color)

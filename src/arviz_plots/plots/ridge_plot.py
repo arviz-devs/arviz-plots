@@ -2,7 +2,6 @@
 
 import warnings
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -13,7 +12,12 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_contrast_colors, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    get_visual_kwargs,
+    process_group_variables_coords,
+)
 from arviz_plots.visuals import annotate_label, fill_between_y, line_xy, remove_axis
 
 
@@ -49,7 +53,7 @@ def plot_ridge(
             "ticklabels",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -113,7 +117,7 @@ def plot_ridge(
         "overlay" is a dummy aesthetic to trigger looping over variables and/or
         dimensions using all aesthetics in every iteration. "alpha" gets two
         values (0, 0.3) in order to trigger the alternate shading effect.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * edge -> passed to :func:`~visuals.line_xy`
@@ -202,10 +206,10 @@ def plot_ridge(
     if not combined and "chain" not in distribution.dims:
         combined = True
 
-    labels_kwargs = copy(visuals.get("labels", {}))
+    labels_kwargs = get_visual_kwargs(visuals, "labels")
     if labels_kwargs is False:
         raise ValueError("visuals['labels'] can't be False, use labels=[] to remove all labels")
-    shade_kwargs = copy(visuals.get("shade", {}))
+    shade_kwargs = get_visual_kwargs(visuals, "shade")
     if shade_kwargs is False:
         raise ValueError("visuals['shade'] can't be False, use shade_label=None to remove shading")
 
@@ -320,8 +324,8 @@ def plot_ridge(
         labeller = BaseLabeller()
 
     # compute kde density if at least one of edge or face element needs to be plotted
-    edge_kwargs = copy(visuals.get("edge", {}))
-    face_kwargs = copy(visuals.get("face", {}))
+    edge_kwargs = get_visual_kwargs(visuals, "edge")
+    face_kwargs = get_visual_kwargs(visuals, "face")
 
     if edge_kwargs is not False or face_kwargs is not False:
         edge_dims, edge_aes, edge_ignore = filter_aes(
@@ -441,7 +445,7 @@ def plot_ridge(
         )
         x += 1
 
-    ticklabel_kwargs = copy(visuals.get("ticklabels", {}))
+    ticklabel_kwargs = get_visual_kwargs(visuals, "ticklabels")
     if ticklabel_kwargs is not False:
         plot_bknd.xticks(
             np.arange(len(labels)),

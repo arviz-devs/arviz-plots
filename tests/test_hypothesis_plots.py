@@ -42,7 +42,7 @@ t_stat_value = st.sampled_from(("mean", "median", "std", "var", "min", "max", "i
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 ci_prob_value = st.floats(min_value=0.1, max_value=0.99, allow_nan=False, allow_infinity=False)
 point_estimate_value = st.sampled_from(("mean", "median"))
-visuals_value = st.sampled_from(({}, False, {"color": "red"}))
+visuals_value = st.sampled_from(({}, False, True, {"color": "red"}))
 visuals_value_no_false = st.sampled_from(({}, {"color": "red"}))
 focus_var_value = st.sampled_from(("tau", "mu"))
 norm_method_value = st.sampled_from(("normal", "minmax", "rank", None))

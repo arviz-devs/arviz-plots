@@ -1,6 +1,5 @@
 """psense quantities plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -13,6 +12,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_grid_layout,
 )
@@ -58,7 +58,7 @@ def plot_psense_quantities(
             "title",
             "legend",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):
@@ -107,7 +107,7 @@ def plot_psense_quantities(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * prior_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
@@ -306,7 +306,7 @@ def plot_psense_quantities(
 
     # plot quantities for prior-perturbations
     ## markers
-    prior_ms_kwargs = copy(visuals.get("prior_markers", {}))
+    prior_ms_kwargs = get_visual_kwargs(visuals, "prior_markers")
 
     if prior_ms_kwargs is not False:
         _, _, prior_ms_ignore = filter_aes(
@@ -324,7 +324,7 @@ def plot_psense_quantities(
             **prior_ms_kwargs,
         )
     ## lines
-    prior_ls_kwargs = copy(visuals.get("prior_lines", {}))
+    prior_ls_kwargs = get_visual_kwargs(visuals, "prior_lines")
 
     if prior_ls_kwargs is not False:
         _, _, prior_ls_ignore = filter_aes(
@@ -343,7 +343,7 @@ def plot_psense_quantities(
 
     # plot quantities for likelihood-perturbations
     ## markers
-    likelihood_ms_kwargs = copy(visuals.get("likelihood_markers", {}))
+    likelihood_ms_kwargs = get_visual_kwargs(visuals, "likelihood_markers")
 
     if likelihood_ms_kwargs is not False:
         _, _, likelihood_ms_ignore = filter_aes(
@@ -362,7 +362,7 @@ def plot_psense_quantities(
             **likelihood_ms_kwargs,
         )
     ## lines
-    likelihood_ls_kwargs = copy(visuals.get("likelihood_lines", {}))
+    likelihood_ls_kwargs = get_visual_kwargs(visuals, "likelihood_lines")
 
     if likelihood_ls_kwargs is not False:
         _, _, likelihood_ls_ignore = filter_aes(
@@ -382,7 +382,7 @@ def plot_psense_quantities(
 
     # plot mcse
     if mcse:
-        mcse_kwargs = copy(visuals.get("mcse", {}))
+        mcse_kwargs = get_visual_kwargs(visuals, "mcse")
         _, _, mcse_ignore = filter_aes(plot_collection, aes_by_visuals, "mcse", sample_dims)
         if mcse_kwargs is not False:
             mcse_kwargs.setdefault("color", "grey")
@@ -392,7 +392,7 @@ def plot_psense_quantities(
             plot_collection.map(hline, "mcse", data=max_, ignore_aes=mcse_ignore, **mcse_kwargs)
 
     # set ticks
-    ticks_kwargs = copy(visuals.get("ticks", {}))
+    ticks_kwargs = get_visual_kwargs(visuals, "ticks")
     _, _, ticks_ignore = filter_aes(plot_collection, aes_by_visuals, "ticks", sample_dims)
 
     if ticks_kwargs is not False:
@@ -426,7 +426,7 @@ def plot_psense_quantities(
         )
 
     # title
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
     _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     if title_kwargs is not False:
@@ -440,7 +440,7 @@ def plot_psense_quantities(
         )
 
     # legend
-    legend_kwargs = copy(visuals.get("legend", {}))
+    legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["component_group"])
 

@@ -2,7 +2,6 @@
 
 import warnings
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -16,6 +15,7 @@ from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -40,7 +40,7 @@ def plot_ppc_dist(
     ] = None,
     visuals: Mapping[
         Literal["predictive_dist", "observed_dist", "title", "remove_axis"],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal["predictive_dist", "observed_dist"], Mapping[str, Any] | xr.Dataset
@@ -97,7 +97,7 @@ def plot_ppc_dist(
 
         When "point_estimate" key is provided but "point_estimate_text" isn't,
         the values assigned to the first are also used for the second.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * predictive_dist, observed_dist -> passed to a function that depends on
@@ -111,7 +111,7 @@ def plot_ppc_dist(
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
         observed_dist defaults to False, no observed data is plotted, if group is
-        "prior_predictive". Pass an (empty) mapping to plot the observed data.
+        "prior_predictive".
 
     stats : mapping, optional
         Valid keys are:
@@ -258,7 +258,7 @@ def plot_ppc_dist(
     visuals.setdefault("rug_plot", False)
 
     # Plot the predictive density
-    pred_density_kwargs = copy(visuals.get("predictive_dist", {}))
+    pred_density_kwargs = get_visual_kwargs(visuals, "predictive_dist")
     if pred_density_kwargs is not False:
         visuals.setdefault("dist", pred_density_kwargs)
         visuals["dist"].setdefault("alpha", 0.3)
@@ -280,8 +280,8 @@ def plot_ppc_dist(
         plot_collection.rename_visuals(dist="predictive_dist")
 
     # Plot the observed density
-    observed_density_kwargs = copy(
-        visuals.get("observed_dist", False if group == "prior_predictive" else {})
+    observed_density_kwargs = get_visual_kwargs(
+        visuals, "observed_dist", False if group == "prior_predictive" else None
     )
 
     if observed_density_kwargs is not False:

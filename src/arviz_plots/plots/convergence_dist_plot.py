@@ -1,7 +1,6 @@
 """Convergence diagnostic distribution plot code."""
 import warnings
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -10,7 +9,12 @@ import xarray as xr
 from arviz_base import rcParams
 
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import filter_aes, get_contrast_colors, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    get_visual_kwargs,
+    process_group_variables_coords,
+)
 from arviz_plots.visuals import vline
 
 
@@ -46,7 +50,7 @@ def plot_convergence_dist(
             "title",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -97,7 +101,7 @@ def plot_convergence_dist(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals` except for "remove_axis"
         By default, no mappings are defined for this plot.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -184,7 +188,7 @@ def plot_convergence_dist(
     else:
         visuals = visuals.copy()
 
-    ref_line_kwargs = copy(visuals.get("ref_line", {}))
+    ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_line_kwargs is False:
         raise ValueError(
             "visuals['ref_line'] can't be False, use ref_line=False to remove this element"

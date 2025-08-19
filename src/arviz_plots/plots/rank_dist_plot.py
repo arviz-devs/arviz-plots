@@ -1,7 +1,6 @@
 # pylint: disable=R0801
 """rankDist plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -17,6 +16,7 @@ from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
     get_group,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_grid_layout,
 )
@@ -49,7 +49,7 @@ def plot_rank_dist(
             "xlabel_rank",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["dist", "ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
@@ -100,7 +100,7 @@ def plot_rank_dist(
         plotted. The defaults depend on the combination of `compact` and `combined`,
         see the examples section for an illustrated description.
         Valid keys are the same as for `visuals`.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * dist -> depending on the value of `kind` passed to:
@@ -318,7 +318,7 @@ def plot_rank_dist(
         key: False
         for key in ("credible_interval", "point_estimate", "point_estimate_text", "title")
     }
-    dist_kwargs = copy(visuals.get("dist", {}))
+    dist_kwargs = get_visual_kwargs(visuals, "dist")
     if dist_kwargs is not False:
         if neutral_color and "color" not in dist_aes:
             dist_kwargs.setdefault("color", neutral_color)
@@ -345,9 +345,9 @@ def plot_rank_dist(
     plot_collection.coords = None
 
     # rank
-    rank_kwargs = copy(visuals.get("rank", {}))
-    div_kwargs = copy(visuals.get("divergence", {}))
-    xlabel_kwargs = copy(visuals.get("xlabel_rank", {}))
+    rank_kwargs = get_visual_kwargs(visuals, "rank")
+    div_kwargs = get_visual_kwargs(visuals, "divergence")
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel_rank")
     visuals_rank = {"rank": rank_kwargs, "divergence": div_kwargs, "xlabel": xlabel_kwargs}
     visuals_rank["title"] = False
     visuals_rank["ticklabels"] = False
@@ -408,7 +408,7 @@ def plot_rank_dist(
     ## aesthetics
     # Add varnames as x and y labels
     _, labels_aes, labels_ignore = filter_aes(plot_collection, aes_by_visuals, "label", sample_dims)
-    label_kwargs = copy(visuals.get("label", {}))
+    label_kwargs = get_visual_kwargs(visuals, "label")
     if label_kwargs is not False:
         if "color" not in labels_aes:
             label_kwargs.setdefault("color", contrast_color)
@@ -436,7 +436,7 @@ def plot_rank_dist(
         )
 
     # Adjust tick labels
-    ticklabels_kwargs = copy(visuals.get("ticklabels", {}))
+    ticklabels_kwargs = get_visual_kwargs(visuals, "ticklabels")
     if ticklabels_kwargs is not False:
         _, _, ticklabels_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ticklabels", sample_dims

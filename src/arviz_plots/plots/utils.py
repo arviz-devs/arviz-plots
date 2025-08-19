@@ -50,6 +50,32 @@ def get_group(data, group, allow_missing=False):
     return data.ds
 
 
+def get_visual_kwargs(visuals, name, default=None):
+    """Get the kwargs for a visual from the visuals dict.
+
+    Parameterss
+    ----------
+    visuals : dict
+        Dictionary of visuals.
+    name : str
+        Name of the visual to get kwargs for.
+    default : dict or False, optional
+        Default kwargs to return if the visual is not found in `visuals`.
+
+    Returns
+    -------
+    dict
+        The kwargs for the visual if found, otherwise the default value.
+
+    """
+    if default is None:
+        default = {}
+    vis_kwargs = copy(visuals.get(name, default))
+    if vis_kwargs is True:
+        vis_kwargs = {}
+    return vis_kwargs
+
+
 def process_group_variables_coords(dt, group, var_names, filter_vars, coords, allow_dict=True):
     """Process main input arguments of batteries included plotting functions."""
     if coords is None:
@@ -200,7 +226,7 @@ def add_lines(
         It is possible to request aesthetics without mappings defined in the
         provided `plot_collection`. In those cases, a mapping of "ref_dim" to the requested
         aesthetic will be automatically added.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * "ref_line" -> passed to :func:`~arviz_plots.visuals.vline` for vertical `orientation`
@@ -283,7 +309,7 @@ def add_lines(
             )
 
     _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_by_visuals, "ref_line", sample_dims)
-    ref_kwargs = copy(visuals.get("ref_line", {}))
+    ref_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_kwargs is not False:
         if "color" not in ref_aes:
             ref_kwargs.setdefault("color", contrast_gray_color)
@@ -334,7 +360,7 @@ def add_bands(
         provided `plot_collection`. In those cases, a mapping of the dimensions in
         `ref_dim` minus its last element to the requested aesthetic will be
         automatically added.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * "ref_band" -> passed to :func:`~arviz_plots.visuals.vspan` for vertical `orientation`
@@ -409,7 +435,7 @@ def add_bands(
         plot_collection.update_aes_from_dataset(aes, child.dataset)
 
     _, ref_aes, ref_ignore = filter_aes(plot_collection, aes_by_visuals, "ref_band", sample_dims)
-    ref_kwargs = copy(visuals.get("ref_band", {}))
+    ref_kwargs = get_visual_kwargs(visuals, "ref_band")
     if ref_kwargs is not False:
         if "color" not in ref_aes:
             ref_kwargs.setdefault("color", contrast_gray_color)

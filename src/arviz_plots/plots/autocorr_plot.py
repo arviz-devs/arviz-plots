@@ -1,7 +1,6 @@
 """Autocorrelation plot code."""
 
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -13,6 +12,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -35,7 +35,7 @@ def plot_autocorr(
     ] = None,
     visuals: Mapping[
         Literal["lines", "ref_line", "credible_interval", "xlabel", "title"],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):
@@ -73,7 +73,7 @@ def plot_autocorr(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
@@ -170,7 +170,7 @@ def plot_autocorr(
     aes_by_visuals.setdefault("lines", plot_collection.aes_set)
 
     ## reference line
-    ref_ls_kwargs = copy(visuals.get("ref_line", {}))
+    ref_ls_kwargs = get_visual_kwargs(visuals, "ref_line")
 
     if ref_ls_kwargs is not False:
         _, _, ac_ls_ignore = filter_aes(plot_collection, aes_by_visuals, "ref_line", sample_dims)
@@ -188,7 +188,7 @@ def plot_autocorr(
         )
 
     ## autocorrelation line
-    acf_ls_kwargs = copy(visuals.get("lines", {}))
+    acf_ls_kwargs = get_visual_kwargs(visuals, "lines")
 
     if acf_ls_kwargs is not False:
         _, _, ac_ls_ignore = filter_aes(plot_collection, aes_by_visuals, "lines", sample_dims)
@@ -202,7 +202,7 @@ def plot_autocorr(
         )
 
     # Plot confidence intervals
-    ci_kwargs = copy(visuals.get("credible_interval", {}))
+    ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", "draw")
     if ci_kwargs is not False:
         ci_kwargs.setdefault("color", contrast_color)
@@ -224,7 +224,7 @@ def plot_autocorr(
     _, xlabels_aes, xlabels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "xlabel", sample_dims
     )
-    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", contrast_color)
@@ -239,7 +239,7 @@ def plot_autocorr(
         )
 
     # title
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
     _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
 
     if title_kwargs is not False:

@@ -1,7 +1,6 @@
 """evolution ess plot."""
 
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -15,6 +14,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
     get_contrast_colors,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
@@ -74,7 +74,7 @@ def plot_ess_evolution(
             "sd_text",
             "min_ess",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal["ess_bulk", "ess_tail", "mean", "sd"], Mapping[str, Any] | xr.Dataset
@@ -121,7 +121,7 @@ def plot_ess_evolution(
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
 
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * ess_bulk -> passed to :func:`~arviz_plots.visuals.scatter_xy`
@@ -366,7 +366,7 @@ def plot_ess_evolution(
 
         return ess_dataset
 
-    bulk_kwargs = copy(visuals.get("ess_bulk", {}))
+    bulk_kwargs = get_visual_kwargs(visuals, "ess_bulk")
     if bulk_kwargs is not False:
         bulk_dims, bulk_aes, bulk_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ess_bulk", sample_dims
@@ -389,7 +389,7 @@ def plot_ess_evolution(
             scatter_xy, "ess_bulk", data=ess_bulk_dataset, ignore_aes=bulk_ignore, **bulk_kwargs
         )
 
-    bulk_line_kwargs = copy(visuals.get("ess_bulk_line", {}))
+    bulk_line_kwargs = get_visual_kwargs(visuals, "ess_bulk_line")
     if bulk_line_kwargs is not False:
         bulk_line_dims, bulk_line_aes, bulk_line_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ess_bulk_line", sample_dims
@@ -419,7 +419,7 @@ def plot_ess_evolution(
 
     ess_tail_dataset = None
 
-    tail_kwargs = copy(visuals.get("ess_tail", {}))
+    tail_kwargs = get_visual_kwargs(visuals, "ess_tail")
 
     if tail_kwargs is not False:
         tail_dims, tail_aes, tail_ignore = filter_aes(
@@ -443,7 +443,7 @@ def plot_ess_evolution(
             scatter_xy, "ess_tail", data=ess_tail_dataset, ignore_aes=tail_ignore, **tail_kwargs
         )
 
-    tail_line_kwargs = copy(visuals.get("ess_tail_line", {}))
+    tail_line_kwargs = get_visual_kwargs(visuals, "ess_tail_line")
 
     if tail_line_kwargs is not False:
         tail_line_dims, tail_line_aes, tail_line_ignore = filter_aes(
@@ -493,7 +493,7 @@ def plot_ess_evolution(
             sample_dims=sd_dims, method="sd", relative=relative, **stats.get("sd", {})
         )
 
-        mean_kwargs = copy(visuals.get("mean", {}))
+        mean_kwargs = get_visual_kwargs(visuals, "mean")
         if mean_kwargs is not False:
             # getting 2nd default linestyle for chosen backend and assigning it by default
             mean_kwargs.setdefault("linestyle", linestyles[1])
@@ -510,7 +510,7 @@ def plot_ess_evolution(
                 **mean_kwargs,
             )
 
-        sd_kwargs = copy(visuals.get("sd", {}))
+        sd_kwargs = get_visual_kwargs(visuals, "sd")
         if sd_kwargs is not False:
             sd_kwargs.setdefault("linestyle", linestyles[2])
 
@@ -527,7 +527,7 @@ def plot_ess_evolution(
             sd_va_align = xr.where(mean_ess < sd_ess, "bottom", "top")
             mean_va_align = xr.where(mean_ess < sd_ess, "top", "bottom")
 
-        mean_text_kwargs = copy(visuals.get("mean_text", {}))
+        mean_text_kwargs = get_visual_kwargs(visuals, "mean_text")
         if (
             mean_text_kwargs is not False and mean_ess is not None
         ):  # mean_ess has to exist for an annotation to be applied
@@ -557,7 +557,7 @@ def plot_ess_evolution(
                 **mean_text_kwargs,
             )
 
-        sd_text_kwargs = copy(visuals.get("sd_text", {}))
+        sd_text_kwargs = get_visual_kwargs(visuals, "sd_text")
         if (
             sd_text_kwargs is not False and sd_ess is not None
         ):  # sd_ess has to exist for an annotation to be applied
@@ -588,7 +588,7 @@ def plot_ess_evolution(
             )
 
     # plot minimum ess
-    min_ess_kwargs = copy(visuals.get("min_ess", {}))
+    min_ess_kwargs = get_visual_kwargs(visuals, "min_ess")
 
     if min_ess_kwargs is not False:
         _, min_ess_aes, min_ess_ignore = filter_aes(
@@ -614,7 +614,7 @@ def plot_ess_evolution(
         )
 
     # plot titles for each faceted subplot
-    title_kwargs = copy(visuals.get("title", {}))
+    title_kwargs = get_visual_kwargs(visuals, "title")
 
     if title_kwargs is not False:
         _, title_aes, title_ignore = filter_aes(
@@ -636,7 +636,7 @@ def plot_ess_evolution(
     _, xlabels_aes, xlabels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "xlabel", sample_dims
     )
-    xlabel_kwargs = copy(visuals.get("xlabel", {}))
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
             xlabel_kwargs.setdefault("color", contrast_color)
@@ -656,7 +656,7 @@ def plot_ess_evolution(
     _, ylabels_aes, ylabels_ignore = filter_aes(
         plot_collection, aes_by_visuals, "ylabel", sample_dims
     )
-    ylabel_kwargs = copy(visuals.get("ylabel", {}))
+    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", contrast_color)

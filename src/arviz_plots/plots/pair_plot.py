@@ -1,6 +1,5 @@
 """Pair plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -14,6 +13,7 @@ from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
     filter_aes,
     get_group,
+    get_visual_kwargs,
     process_group_variables_coords,
     set_grid_layout,
 )
@@ -67,7 +67,7 @@ def plot_pair(
             "ylabel",
             "remove_axis",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
         Literal[
@@ -114,7 +114,7 @@ def plot_pair(
         Mapping of visuals to aesthetics that should use their mapping in `plot_matrix`
         when plotted. Valid keys are the same as for `visuals`.
         By default, there are no aesthetic mappings at all
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * scatter -> passed to :func:`~.visuals.scatter_couple`
@@ -302,7 +302,7 @@ def plot_pair(
 
     colors = plot_bknd.get_default_aes("color", 2, {})
     # scatter
-    scatter_kwargs = copy(visuals.get("scatter", {}))
+    scatter_kwargs = get_visual_kwargs(visuals, "scatter")
     if scatter_kwargs is not False:
         _, scatter_aes, scatter_ignore = filter_aes(
             plot_matrix, aes_by_visuals, "scatter", sample_dims
@@ -336,10 +336,12 @@ def plot_pair(
         dist_plot_visuals = {}
         dist_plot_aes_by_visuals = {}
         dist_plot_stats = {}
-        marginal_dist_kwargs = copy(visuals.get("dist", {}))
-        marginal_ci_kwargs = copy(visuals.get("credible_interval", False))
-        marginal_point_estimate_kwargs = copy(visuals.get("point_estimate", False))
-        marginal_point_estimate_text_kwargs = copy(visuals.get("point_estimate_text", False))
+        marginal_dist_kwargs = get_visual_kwargs(visuals, "dist")
+        marginal_ci_kwargs = get_visual_kwargs(visuals, "credible_interval", False)
+        marginal_point_estimate_kwargs = get_visual_kwargs(visuals, "point_estimate", False)
+        marginal_point_estimate_text_kwargs = get_visual_kwargs(
+            visuals, "point_estimate_text", False
+        )
 
         dist_plot_visuals["dist"] = marginal_dist_kwargs
         dist_plot_visuals["credible_interval"] = marginal_ci_kwargs
@@ -376,7 +378,8 @@ def plot_pair(
 
     # diagonal labels of rows and cols
     else:
-        label_kwargs = copy(visuals.get("label", {}))
+        label_kwargs = get_visual_kwargs(visuals, "label")
+
         if label_kwargs is not False:
             lim_low = distribution.min(dim=sample_dims)
             lim_high = distribution.max(dim=sample_dims)
@@ -396,9 +399,7 @@ def plot_pair(
             )
 
     # divergence
-    div_kwargs = copy(visuals.get("divergence", False))
-    if div_kwargs is True:
-        div_kwargs = {}
+    div_kwargs = get_visual_kwargs(visuals, "divergence", False)
     sample_stats = get_group(dt, "sample_stats", allow_missing=True)
     if (
         div_kwargs is not False
@@ -425,7 +426,7 @@ def plot_pair(
 
     # bottom plots xlabel and left plots ylabel
     if marginal and triangle in {"both", "lower"}:
-        xlabel_kwargs = copy(visuals.get("xlabel", {}))
+        xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
         if xlabel_kwargs is not False:
             _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)
             plot_matrix.map_row(
@@ -439,7 +440,7 @@ def plot_pair(
                 **xlabel_kwargs,
             )
 
-        ylabel_kwargs = copy(visuals.get("ylabel", {}))
+        ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
         if ylabel_kwargs is not False:
             _, _, ylabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "ylabel", sample_dims)
             plot_matrix.map_col(
@@ -453,7 +454,7 @@ def plot_pair(
                 **ylabel_kwargs,
             )
     elif marginal and triangle == "upper":
-        xlabel_kwargs = copy(visuals.get("xlabel", {}))
+        xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
 
         if xlabel_kwargs is not False:
             _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)

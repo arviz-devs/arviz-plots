@@ -1,6 +1,5 @@
 """Pair focus plot code."""
 from collections.abc import Mapping, Sequence
-from copy import copy
 from importlib import import_module
 from typing import Any, Literal
 
@@ -10,7 +9,12 @@ from arviz_base import dataset_to_dataarray, rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_group, process_group_variables_coords
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_group,
+    get_visual_kwargs,
+    process_group_variables_coords,
+)
 from arviz_plots.visuals import multiple_lines, set_xticks
 
 
@@ -38,7 +42,7 @@ def plot_parallel(
             "line",
             "xticks",
         ],
-        Mapping[str, Any] | Literal[False],
+        Mapping[str, Any] | bool,
     ] = None,
     **pc_kwargs,
 ):
@@ -76,7 +80,7 @@ def plot_parallel(
         when plotted. Valid keys are the same as for `visuals`.
         By default, there is a mapping from the value of `diverging` variable to
         color and alpha which is only active for the "line" visual.
-    visuals : mapping of {str : mapping or False}, optional
+    visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * line -> passed to :func:`~.visuals.multiple_lines`
@@ -234,7 +238,7 @@ def plot_parallel(
     aes_by_visuals.setdefault("line", plot_collection.aes_set)
 
     # plot lines
-    line_kwargs = copy(visuals.get("line", {}))
+    line_kwargs = get_visual_kwargs(visuals, "line")
     if line_kwargs is not False:
         _, _, line_ignore = filter_aes(plot_collection, aes_by_visuals, "line", new_sample_dims)
         plot_collection.map(
@@ -248,7 +252,7 @@ def plot_parallel(
         )
 
     # x-axis label
-    xticks_kwargs = copy(visuals.get("xticks", {}))
+    xticks_kwargs = get_visual_kwargs(visuals, "xticks")
     if xticks_kwargs is not False:
         _, _, xticks_ignore = filter_aes(plot_collection, aes_by_visuals, "xticks", new_sample_dims)
         xticks_kwargs.setdefault("rotation", 90)
