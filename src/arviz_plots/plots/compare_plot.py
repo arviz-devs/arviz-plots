@@ -35,6 +35,9 @@ def plot_compare(
     r"""Summary plot for model comparison.
 
     Models are compared based on their expected log pointwise predictive density (ELPD).
+    Or some transformation of it, such as the mean log predictive density (MLPD)
+    or the geometric mean predictive density (GMPD).
+
     Higher ELPD values indicate better predictive performance.
 
     The ELPD is estimated by Pareto smoothed importance sampling leave-one-out
@@ -46,15 +49,12 @@ def plot_compare(
     Parameters
     ----------
     comp_df : pandas.DataFrame
-        Usually this will be the result of the :func:`arviz_stats.compare` function or
-        some other DataFrame with the following columns:
-        * elpd : float
-            Expected log pointwise predictive density.
-        * se : float
-            Standard error of the ELPD.
-        It is assumed that the first row of the DataFrame is the best model.
+        Usually this will be the result of the :func:`arviz_stats.compare` function.
+        It is assumed that the DataFrame has two columns one named `elpd`, `mlpd`, or `gmpd`,
+        the other named `se`, and the index is the model names. Additionally,
+        it is assumed that the first row of the DataFrame is the top model.
     relative_scale : bool, optional.
-        If True scale the ELPD values relative to the best model.
+        If True, the `stats` values are scaled relative to the best model.
         Defaults to True.
     rotated : bool, optional
         If True, the plot is rotated, with models on the y-axis and ELPD on the x-axis.
@@ -65,25 +65,25 @@ def plot_compare(
         and/or `ref_band`. Defaults to False.
     backend : {"bokeh", "matplotlib", "plotly"}
         Select plotting backend. Defaults to rcParams["plot.backend"].
-    figsize : tuple of (float, float), optional
-        If `None`, size is (10, num of models) inches.
     visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * point_estimate -> passed to :func:`~arviz_plots.backend.none.scatter`
         * error_bar -> passed to :func:`~arviz_plots.backend.none.line`
         * ref_line -> passed to :func:`~arviz_plots.backend.none.hline` or
-          :func:`~arviz_plots.backend.none.vline` depending on the `rotated` parameter.
+        :func:`~arviz_plots.backend.none.vline` depending on the
+        ``rotated`` parameter.
         * ref_band -> passed to :func:`~arviz_plots.backend.none.hspan` or
-          :func:`~arviz_plots.backend.none.vspan` depending on the `rotated` parameter.
-          Defaults to False
+        :func:`~arviz_plots.backend.none.vspan` depending on the
+        ``rotated`` parameter. Defaults to ``False``.
         * similar_line -> passed to :func:`~arviz_plots.backend.none.hline` or
-          :func:`~arviz_plots.backend.none.vline` depending on the `rotated` parameter.
-          Defaults to False
-        * labels -> passed to :func:`~arviz_plots.backend.none.xticks`
-          and :func:`~arviz_plots.backend.none.yticks`
+        :func:`~arviz_plots.backend.none.vline` depending on the
+        ``rotated`` parameter. Defaults to ``False``.
+        * labels -> passed to :func:`~arviz_plots.backend.none.xticks` and
+        :func:`~arviz_plots.backend.none.yticks`
         * title -> passed to :func:`~arviz_plots.backend.none.title`
         * ticklabels -> passed to :func:`~arviz_plots.backend.none.yticks`
+
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection`
@@ -117,6 +117,16 @@ def plot_compare(
 
     if visuals is None:
         visuals = {}
+
+    # Check we have the required columns
+    valid_stats = [col for col in ("elpd", "mlpd", "gmpd") if col in cmp_df.columns]
+    if not valid_stats:
+        raise ValueError(
+            "The DataFrame must contain one of the following columns: 'elpd', 'mlpd', or 'gmpd'."
+        )
+    stats = valid_stats[0]
+    if "se" not in cmp_df.columns:
+        raise ValueError("The DataFrame must contain a 'se' column for standard errors.")
 
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
@@ -153,15 +163,15 @@ def plot_compare(
     if isinstance(target, np.ndarray):
         target = target.tolist()
 
-    elpds = cmp_df["elpd"].values
+    perf_stats = cmp_df[stats].values
     ses = cmp_df["se"].values
 
     # Set scale relative to the best model
     if relative_scale:
-        elpds = elpds - elpds[0]
-        label_score = "ELDP (relative)"
+        perf_stats = perf_stats - perf_stats[0]
+        label_score = f"{stats.upper()} (relative)"
     else:
-        label_score = "ELPD"
+        label_score = stats.upper()
 
     # Create labels for the models
     label_models = cmp_df.index[hide_top_model:]
@@ -170,23 +180,23 @@ def plot_compare(
     yticks_pos = list(range(len(cmp_df) - hide_top_model, 0, -1))
 
     # Compute positions of the reference line and band
-    pos_ref_line = elpds[0]
-    pos_ref_band = (elpds[0] - ses[0], elpds[0] + ses[0])
+    pos_ref_line = perf_stats[0]
+    pos_ref_band = (perf_stats[0] - ses[0], perf_stats[0] + ses[0])
 
     # Compute values for standard error bars
     se_list = list(
         zip(
-            (elpds[hide_top_model:] - ses[hide_top_model:]),
-            (elpds[hide_top_model:] + ses[hide_top_model:]),
+            (perf_stats[hide_top_model:] - ses[hide_top_model:]),
+            (perf_stats[hide_top_model:] + ses[hide_top_model:]),
         )
     )
 
     # Compute positions for mean elpd estimates
     if rotated:
         scatter_x = yticks_pos
-        scatter_y = elpds[hide_top_model:]
+        scatter_y = perf_stats[hide_top_model:]
     else:
-        scatter_x = elpds[hide_top_model:]
+        scatter_x = perf_stats[hide_top_model:]
         scatter_y = yticks_pos
 
     # Plot ELPD standard error bars
@@ -235,9 +245,9 @@ def plot_compare(
         similar_l_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 3, {})[-1])
 
         if rotated:
-            p_be.hline(elpds[0] - 4, target, **similar_l_kwargs)
+            p_be.hline(perf_stats[0] - 4, target, **similar_l_kwargs)
         else:
-            p_be.vline(elpds[0] - 4, target, **similar_l_kwargs)
+            p_be.vline(perf_stats[0] - 4, target, **similar_l_kwargs)
 
     # Add title and labels
     title_kwargs = get_visual_kwargs(visuals, "title")
