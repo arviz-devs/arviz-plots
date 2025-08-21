@@ -8,17 +8,25 @@ from arviz_base import rcParams
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import get_contrast_colors
+from arviz_plots.plots.utils import get_contrast_colors, get_visual_kwargs
 
 
 def plot_compare(
     cmp_df,
-    similar_shade=True,
     relative_scale=False,
+    rotated=False,
+    hide_top_model=False,
     backend=None,
     visuals: Mapping[
         Literal[
-            "point_estimate", "error_bar", "ref_line", "shade", "labels", "title", "ticklabels"
+            "point_estimate",
+            "error_bar",
+            "ref_line",
+            "ref_band",
+            "similar_line",
+            "labels",
+            "title",
+            "ticklabels",
         ],
         Mapping[str, Any] | bool,
     ] = None,
@@ -27,22 +35,34 @@ def plot_compare(
     r"""Summary plot for model comparison.
 
     Models are compared based on their expected log pointwise predictive density (ELPD).
+    Higher ELPD values indicate better predictive performance.
 
-    The ELPD is estimated either by Pareto smoothed importance sampling leave-one-out
+    The ELPD is estimated by Pareto smoothed importance sampling leave-one-out
     cross-validation (LOO). Details are presented in [1]_ and [2]_.
+
+    The ELPD can only be interpreted in relative terms. But differences in ELPD less than 4
+    are considered negligible [3]_.
 
     Parameters
     ----------
     comp_df : pandas.DataFrame
-        Result of the :func:`arviz_stats.compare` method.
-    similar_shade : bool, optional
-        If True, a shade is drawn to indicate models with similar
-        predictive performance to the best model. Following [3]_,
-        models are considered similar if the difference in ELPD is
-        less than 4. Defaults to True.
+        Usually this will be the result of the :func:`arviz_stats.compare` function or
+        some other DataFrame with the following columns:
+        * elpd : float
+            Expected log pointwise predictive density.
+        * se : float
+            Standard error of the ELPD.
+        It is assumed that the first row of the DataFrame is the best model.
     relative_scale : bool, optional.
         If True scale the ELPD values relative to the best model.
+        Defaults to True.
+    rotated : bool, optional
+        If True, the plot is rotated, with models on the y-axis and ELPD on the x-axis.
         Defaults to False.
+    hide_top_model : bool, optional
+        If True, the top model (first row of `comp_df`) will not appear as a point with error bars
+        or in the axis labels. Its performance can still be accessed by the visuals `ref_line`
+        and/or `ref_band`. Defaults to False.
     backend : {"bokeh", "matplotlib", "plotly"}
         Select plotting backend. Defaults to rcParams["plot.backend"].
     figsize : tuple of (float, float), optional
@@ -52,8 +72,14 @@ def plot_compare(
 
         * point_estimate -> passed to :func:`~arviz_plots.backend.none.scatter`
         * error_bar -> passed to :func:`~arviz_plots.backend.none.line`
-        * ref_line -> passed to :func:`~arviz_plots.backend.none.line`
-        * shade -> passed to :func:`~arviz_plots.backend.none.fill_between_y`
+        * ref_line -> passed to :func:`~arviz_plots.backend.none.hline` or
+          :func:`~arviz_plots.backend.none.vline` depending on the `rotated` parameter.
+        * ref_band -> passed to :func:`~arviz_plots.backend.none.hspan` or
+          :func:`~arviz_plots.backend.none.vspan` depending on the `rotated` parameter.
+          Defaults to False
+        * similar_line -> passed to :func:`~arviz_plots.backend.none.hline` or
+          :func:`~arviz_plots.backend.none.vline` depending on the `rotated` parameter.
+          Defaults to False
         * labels -> passed to :func:`~arviz_plots.backend.none.xticks`
           and :func:`~arviz_plots.backend.none.yticks`
         * title -> passed to :func:`~arviz_plots.backend.none.title`
@@ -64,7 +90,7 @@ def plot_compare(
 
     Returns
     -------
-    axes :bokeh figure, matplotlib axes or plotly figure
+    PlotCollection
 
     See Also
     --------
@@ -85,15 +111,6 @@ def plot_compare(
     .. [3] Sivula et al. *Uncertainty in Bayesian Leave-One-Out Cross-Validation Based Model
         Comparison*. (2025). https://doi.org/10.48550/arXiv.2008.10296
     """
-    # Check if cmp_df contains the required information
-
-    column_index = [c.lower() for c in cmp_df.columns]
-
-    if "elpd" not in column_index:
-        raise ValueError(
-            "cmp_df must have been created using the `compare` function from ArviZ-Stats."
-        )
-
     # Set default backend
     if backend is None:
         backend = rcParams["plot.backend"]
@@ -136,69 +153,113 @@ def plot_compare(
     if isinstance(target, np.ndarray):
         target = target.tolist()
 
+    elpds = cmp_df["elpd"].values
+    ses = cmp_df["se"].values
+
     # Set scale relative to the best model
     if relative_scale:
-        cmp_df = cmp_df.copy()
-        cmp_df["elpd"] = cmp_df["elpd"] - cmp_df["elpd"].iloc[0]
+        elpds = elpds - elpds[0]
+        label_score = "ELDP (relative)"
+    else:
+        label_score = "ELPD"
+
+    # Create labels for the models
+    label_models = cmp_df.index[hide_top_model:]
 
     # Compute positions of yticks
-    yticks_pos = list(range(len(cmp_df), 0, -1))
+    yticks_pos = list(range(len(cmp_df) - hide_top_model, 0, -1))
+
+    # Compute positions of the reference line and band
+    pos_ref_line = elpds[0]
+    pos_ref_band = (elpds[0] - ses[0], elpds[0] + ses[0])
+
+    # Compute values for standard error bars
+    se_list = list(
+        zip(
+            (elpds[hide_top_model:] - ses[hide_top_model:]),
+            (elpds[hide_top_model:] + ses[hide_top_model:]),
+        )
+    )
+
+    # Compute positions for mean elpd estimates
+    if rotated:
+        scatter_x = yticks_pos
+        scatter_y = elpds[hide_top_model:]
+    else:
+        scatter_x = elpds[hide_top_model:]
+        scatter_y = yticks_pos
 
     # Plot ELPD standard error bars
-    if (error_kwargs := visuals.get("error_bar", {})) is not False:
+    error_kwargs = get_visual_kwargs(visuals, "error_bar")
+    if error_kwargs is not False:
         error_kwargs.setdefault("color", contrast_color)
 
-        # Compute values for standard error bars
-        se_list = list(zip((cmp_df["elpd"] - cmp_df["se"]), (cmp_df["elpd"] + cmp_df["se"])))
-
         for se_vals, ytick in zip(se_list, yticks_pos):
-            p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
+            if rotated:
+                p_be.line((ytick, ytick), se_vals, target, **error_kwargs)
+            else:
+                p_be.line(se_vals, (ytick, ytick), target, **error_kwargs)
 
     # Add reference line for the best model
-    if (ref_kwargs := visuals.get("ref_line", {})) is not False:
-        ref_kwargs.setdefault("color", contrast_gray_color)
-        ref_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
-        p_be.line(
-            (cmp_df["elpd"].iloc[0], cmp_df["elpd"].iloc[0]),
-            (yticks_pos[0], yticks_pos[-1]),
-            target,
-            **ref_kwargs,
-        )
+    ref_l_kwargs = get_visual_kwargs(visuals, "ref_line")
+    if ref_l_kwargs is not False:
+        ref_l_kwargs.setdefault("color", contrast_gray_color)
+        ref_l_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
+
+        if rotated:
+            p_be.hline(pos_ref_line, target, **ref_l_kwargs)
+        else:
+            p_be.vline(pos_ref_line, target, **ref_l_kwargs)
+
+    # Add reference band for the best model
+    ref_b_kwargs = get_visual_kwargs(visuals, "ref_band", False)
+    if ref_b_kwargs is not False:
+        ref_b_kwargs.setdefault("color", contrast_gray_color)
+        ref_b_kwargs.setdefault("alpha", 0.1)
+
+        if rotated:
+            p_be.hspan(*pos_ref_band, target=target, **ref_b_kwargs)
+        else:
+            p_be.vspan(*pos_ref_band, target=target, **ref_b_kwargs)
 
     # Plot ELPD point estimates
-    if (pe_kwargs := visuals.get("point_estimate", {})) is not False:
+    pe_kwargs = get_visual_kwargs(visuals, "point_estimate")
+    if pe_kwargs is not False:
         pe_kwargs.setdefault("color", contrast_color)
-        p_be.scatter(cmp_df["elpd"], yticks_pos, target, **pe_kwargs)
+        p_be.scatter(scatter_x, scatter_y, target, **pe_kwargs)
 
-    # Add shade for statistically undistinguishable models
-    if similar_shade and (shade_kwargs := visuals.get("shade", {})) is not False:
-        shade_kwargs.setdefault("color", contrast_color)
-        shade_kwargs.setdefault("alpha", 0.1)
+    # Add line for statistically undistinguishable models
+    similar_l_kwargs = get_visual_kwargs(visuals, "similar_line", False)
+    if similar_l_kwargs is not False:
+        similar_l_kwargs.setdefault("color", contrast_gray_color)
+        similar_l_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 3, {})[-1])
 
-        x_0, x_1 = cmp_df["elpd"].iloc[0] - 4, cmp_df["elpd"].iloc[0]
-
-        padding = (yticks_pos[0] - yticks_pos[-1]) * 0.05
-        p_be.fill_between_y(
-            x=[x_0, x_1],
-            y_bottom=np.repeat(yticks_pos[-1], 2) - padding,
-            y_top=np.repeat(yticks_pos[0], 2) + padding,
-            target=target,
-            **shade_kwargs,
-        )
+        if rotated:
+            p_be.hline(elpds[0] - 4, target, **similar_l_kwargs)
+        else:
+            p_be.vline(elpds[0] - 4, target, **similar_l_kwargs)
 
     # Add title and labels
-    if (title_kwargs := visuals.get("title", {})) is not False:
+    title_kwargs = get_visual_kwargs(visuals, "title")
+    if title_kwargs is not False:
         p_be.title(
             "Model comparison\nhigher is better",
             target,
             **title_kwargs,
         )
 
-    if (labels_kwargs := visuals.get("labels", {})) is not False:
-        p_be.ylabel("ranked models", target, **labels_kwargs)
-        p_be.xlabel("ELPD", target, **labels_kwargs)
+    labels_kwargs = get_visual_kwargs(visuals, "labels")
+    if labels_kwargs is not False:
+        if rotated:
+            p_be.ylabel(label_score, target, **labels_kwargs)
+        else:
+            p_be.xlabel(label_score, target, **labels_kwargs)
 
-    if (ticklabels_kwargs := visuals.get("ticklabels", {})) is not False:
-        p_be.yticks(yticks_pos, cmp_df.index, target, **ticklabels_kwargs)
+    ticklabels_kwargs = get_visual_kwargs(visuals, "ticklabels")
+    if ticklabels_kwargs is not False:
+        if rotated:
+            p_be.xticks(yticks_pos, label_models, target, **ticklabels_kwargs)
+        else:
+            p_be.yticks(yticks_pos, label_models, target, **ticklabels_kwargs)
 
     return plot_collection
