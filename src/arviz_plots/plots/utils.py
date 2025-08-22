@@ -85,12 +85,15 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
     if isinstance(dt, dict):
         distribution = {}
         for key, value in dt.items():
-            var_names = _var_names(var_names, get_group(value, group), filter_vars)
-            distribution[key] = (
-                get_group(value, group).sel(coords)
-                if var_names is None
-                else get_group(value, group)[var_names].sel(coords)
+            new_var_names = _var_names(
+                var_names, get_group(value, group), filter_vars, check_if_present=False
             )
+            group_ds = get_group(value, group)
+            if new_var_names is not None:
+                available_vars = [v for v in group_ds.data_vars if v in new_var_names]
+                distribution[key] = group_ds[available_vars].sel(coords)
+            else:
+                distribution[key] = group_ds.sel(coords)
         distribution = concat_model_dict(distribution)
     else:
         distribution = get_group(dt, group)
