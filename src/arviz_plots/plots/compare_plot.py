@@ -71,16 +71,16 @@ def plot_compare(
         * point_estimate -> passed to :func:`~arviz_plots.backend.none.scatter`
         * error_bar -> passed to :func:`~arviz_plots.backend.none.line`
         * ref_line -> passed to :func:`~arviz_plots.backend.none.hline` or
-        :func:`~arviz_plots.backend.none.vline` depending on the
-        ``rotated`` parameter.
+          :func:`~arviz_plots.backend.none.vline` depending on the
+          ``rotated`` parameter.
         * ref_band -> passed to :func:`~arviz_plots.backend.none.hspan` or
-        :func:`~arviz_plots.backend.none.vspan` depending on the
-        ``rotated`` parameter. Defaults to ``False``.
+          :func:`~arviz_plots.backend.none.vspan` depending on the
+          ``rotated`` parameter. Defaults to ``False``.
         * similar_line -> passed to :func:`~arviz_plots.backend.none.hline` or
-        :func:`~arviz_plots.backend.none.vline` depending on the
-        ``rotated`` parameter. Defaults to ``False``.
+          :func:`~arviz_plots.backend.none.vline` depending on the
+          ``rotated`` parameter. Defaults to ``False``.
         * labels -> passed to :func:`~arviz_plots.backend.none.xticks` and
-        :func:`~arviz_plots.backend.none.yticks`
+          :func:`~arviz_plots.backend.none.yticks`
         * title -> passed to :func:`~arviz_plots.backend.none.title`
         * ticklabels -> passed to :func:`~arviz_plots.backend.none.yticks`
 
