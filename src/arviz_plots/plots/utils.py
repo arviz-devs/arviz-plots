@@ -84,13 +84,28 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
         raise ValueError("Input data as dictionary not supported")
     if isinstance(dt, dict):
         distribution = {}
+        all_vars = []
+        all_data_vars = []
         for key, value in dt.items():
-            var_names = _var_names(var_names, get_group(value, group), filter_vars)
-            distribution[key] = (
-                get_group(value, group).sel(coords)
-                if var_names is None
-                else get_group(value, group)[var_names].sel(coords)
+            new_var_names = _var_names(
+                var_names, get_group(value, group), filter_vars, check_if_present=False
             )
+            group_ds = get_group(value, group)
+            if new_var_names is not None:
+                data_vars = group_ds.data_vars
+                available_vars = [v for v in data_vars if v in new_var_names]
+                distribution[key] = group_ds[available_vars].sel(coords)
+                all_vars.extend(new_var_names)
+                all_data_vars.extend(data_vars)
+            else:
+                distribution[key] = group_ds.sel(coords)
+
+        if var_names is not None:
+            missing_vars = set(all_vars).difference(set(all_data_vars))
+            if missing_vars:
+                plural = "" if len(missing_vars) == 1 else "s"
+                raise KeyError(f"variable{plural} {missing_vars} not found in any dataset")
+
         distribution = concat_model_dict(distribution)
     else:
         distribution = get_group(dt, group)
