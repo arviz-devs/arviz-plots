@@ -67,9 +67,10 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_compare(
             cmp,
             visuals={
-                "shade": {"color": "black", "alpha": 0.2},
                 "error_bar": {"color": "gray"},
                 "point_estimate": {"color": "red", "marker": "|"},
+                "ref_band": {"color": "blue", "alpha": 0.2},
+                "similar_line": {"color": "black"},
             },
             figure_kwargs={"figsize": (1000, 200), "figsize_units": "dots"},
             backend=backend,

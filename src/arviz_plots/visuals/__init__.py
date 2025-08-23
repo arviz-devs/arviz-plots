@@ -214,7 +214,7 @@ def vspan(da, target, **kwargs):
 
 
 def hspan(da, target, **kwargs):
-    """Plot a vertical shaded region that spans the whole figure."""
+    """Plot a horizontal shaded region that spans the whole figure."""
     plot_backend = backend_from_object(target)
     return plot_backend.hspan(da.values[0], da.values[1], target, **kwargs)
 
