@@ -3,6 +3,7 @@
 import pytest
 
 from arviz_plots import (
+    PlotCollection,
     add_bands,
     add_lines,
     plot_autocorr,
@@ -21,6 +22,7 @@ from arviz_plots import (
     plot_pair_focus,
     plot_parallel,
     plot_ppc_dist,
+    plot_ppc_intervals,
     plot_ppc_pava,
     plot_ppc_pit,
     plot_ppc_rootogram,
@@ -504,6 +506,18 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "/overlay_ppc" in pc.aes.groups
         assert "y" in pc.viz["predictive_dist"]
         assert "y" in pc.viz["observed_dist"]
+
+    def test_plot_ppc_intervals(self, datatree, backend):
+        pc = plot_ppc_intervals(datatree, backend=backend)
+        assert isinstance(pc, PlotCollection)
+
+        children_keys = list(pc.viz.children.keys())
+        assert any("_point_estimate" in key for key in children_keys)
+        assert any("_observed" in key for key in children_keys)
+        assert any("_inner_interval" in key for key in children_keys)
+        assert any("_outer_interval" in key for key in children_keys)
+        assert "/x" in pc.aes.groups
+        assert "/y" in pc.aes.groups
 
     def test_plot_ppc_pava(self, datatree_binary, backend):
         pc = plot_ppc_pava(datatree_binary, backend=backend)
