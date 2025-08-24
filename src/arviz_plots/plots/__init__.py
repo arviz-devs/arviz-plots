@@ -11,6 +11,7 @@ from .energy_plot import plot_energy
 from .ess_plot import plot_ess
 from .evolution_plot import plot_ess_evolution
 from .forest_plot import plot_forest
+from .lm_plot import plot_lm
 from .loo_pit_plot import plot_loo_pit
 from .mcse_plot import plot_mcse
 from .pair_focus_plot import plot_pair_focus
@@ -63,4 +64,5 @@ __all__ = [
     "plot_psense_quantities",
     "add_lines",
     "add_bands",
+    "plot_lm",
 ]
