@@ -32,6 +32,7 @@ def plot_lm(
     sample_dims=None,
     ci_prob=None,
     ci_kind=None,
+    line_kind="mean",
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -215,8 +216,10 @@ def plot_lm(
             )
         else:
             ci_data = y_pred.azstats.hdi(prob=ci_prob, **stats.get("credible_interval", {}))
-
-    mean_data = y_pred.mean(dim=["chain", "draw"])
+    if line_kind == "mean":
+        line_data = y_pred.mean(dim=["chain", "draw"])
+    elif line_kind == "median":
+        line_data = y_pred.median(dim=["chain", "draw"])
     colors = plot_bknd.get_default_aes("color", 2, {})
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
@@ -224,7 +227,7 @@ def plot_lm(
     ci_upper = ci_data.sel(ci_bound="upper")
 
     # upper and lower lines of credible interval
-    ci_line_kwargs = copy(visuals.get("ci_line", {}))
+    ci_line_kwargs = copy(visuals.get("ci_line", False))
     if ci_line_kwargs is not False:
         _, ci_line_aes, ci_line_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ci_line", sample_dims
@@ -278,7 +281,7 @@ def plot_lm(
             line_xy,
             "mean_line",
             x=x_pred,
-            y=mean_data[target_var],
+            y=line_data[target_var],
             ignore_aes=mean_line_ignore,
             **mean_line_kwargs,
         )
