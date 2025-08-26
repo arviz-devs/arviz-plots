@@ -30,11 +30,11 @@ def plot_lm(
     y_pred=None,
     x_pred=None,
     filter_vars=None,
-    group="predictions",
+    group="posterior_predictive",
     coords=None,
     sample_dims=None,
-    ci_prob=None,
     ci_kind=None,
+    ci_prob=None,
     line_kind=None,
     plot_collection=None,
     backend=None,
@@ -73,6 +73,65 @@ def plot_lm(
     ----------
     dt : DataTree
         Input data
+    y : str or DataArray, optional
+        Target variable. If None (default), the first variable in "observed_data" is used.
+    x : str or list of str or DataArray or Dataset, optional
+        Independent variable(s). If None (default), all variables in "constant_data" are used.
+    y_pred : str or DataArray, optional
+        Predicted values.
+        If None (default), the variable in the specified group with the same name as y is used.
+    x_pred : str or list of str or DataArray or Dataset, optional
+        Independent variable(s) for predictions.
+
+        If None (default), and if group is "predictions", all variables corresponding to x data
+        in "predictions_constant_data" group are used. If group is not "predictions", x is used.
+    filter_vars: {None, “like”, “regex”}, default None
+        If None (default), interpret var_names as the real variables names.
+        If “like”, interpret var_names as substrings of the real variables names.
+        If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str, default "posterior_predictive"
+        Group to use for plotting. Defaults to "posterior_predictive".
+    coords : mapping, optional
+        Coordinates to use for plotting.
+    sample_dims : iterable, optional
+        Dimensions to reduce unless mapped to an aesthetic.
+        Defaults to ``rcParams["data.sample_dims"]``
+    ci_kind : {"hdi", "eti"}, optional
+        Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
+    ci_prob : float or list of float, optional
+        Indicates the probabilities that should be contained within the plotted credible intervals.
+        Defaults to ``rcParams["stats.ci_prob"]``
+    line_kind : {"mean", "median"}, optional
+        Which point estimate to use for the line. Defaults to ``rcParams["stats.point_estimate"]``
+    plot_collection : PlotCollection, optional
+    backend : {"matplotlib", "bokeh"}, optional
+    labeller : labeller, optional
+    aes_by_visuals : mapping, optional
+        Mapping of visuals to aesthetics that should use their mapping in `plot_matrix`
+        when plotted. Valid keys are the same as for `visuals`.
+        By default, there are no aesthetic mappings at all
+    visuals : mapping of {str : mapping or bool}, optional
+        Valid keys are:
+
+        * ci_line -> passed to :func:`~.visuals.line_xy`. Defaults to False
+        * line -> passed to :func:`~.visuals.line_xy`.
+        * ci_fill -> passed to :func:`~.visuals.fill_between_y`.
+        * scatter -> passed to :func:`~.visuals.scatter_xy`.
+        * xlabel -> passed to :func:`~.visuals.labelled_x`.
+        * ylabel -> passed to :func:`~.visuals.labelled_y`.
+
+    stats : mapping, optional
+        Valid keys are:
+
+        * credible_interval -> passed to eti or hdi
+
+    **pc_kwargs
+        Passed to :class:`arviz_plots.PlotCollection.wrap`
+
+
+    Returns
+    -------
+    PlotMatrix
 
     """
     if sample_dims is None:
@@ -118,6 +177,11 @@ def plot_lm(
     if not isinstance(y, xr.DataArray | xr.Dataset):
         y = process_group_variables_coords(
             dt, group="observed_data", var_names=y, filter_vars=filter_vars, coords=coords
+        )
+
+    if isinstance(y, xr.Dataset):
+        raise ValueError(
+            "y can't be a dataset because multiple target variables are not supported yet."
         )
 
     const_data = get_group(dt, "constant_data")
