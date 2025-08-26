@@ -84,7 +84,8 @@ def plot_lm(
         Independent variable(s) for predictions.
 
         If None (default), and if group is "predictions", all variables corresponding to x data
-        in "predictions_constant_data" group are used. If group is not "predictions", x is used.
+        in "predictions_constant_data" group are used. If group is "posterior_predictive",
+        x is used.
     filter_vars: {None, “like”, “regex”}, default None
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
