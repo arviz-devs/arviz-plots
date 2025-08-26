@@ -174,14 +174,14 @@ def plot_lm(
     if y is None:
         y = list(obs_data.data_vars)[0]
 
-    if not isinstance(y, xr.DataArray | xr.Dataset):
-        y = process_group_variables_coords(
-            dt, group="observed_data", var_names=y, filter_vars=filter_vars, coords=coords
+    if isinstance(y, xr.Dataset):
+        raise TypeError(
+            "y can't be a dataset because multiple target variables are not supported yet."
         )
 
-    if isinstance(y, xr.Dataset):
-        raise ValueError(
-            "y can't be a dataset because multiple target variables are not supported yet."
+    if not isinstance(y, xr.DataArray):
+        y = process_group_variables_coords(
+            dt, group="observed_data", var_names=y, filter_vars=filter_vars, coords=coords
         )
 
     const_data = get_group(dt, "constant_data")
@@ -199,7 +199,12 @@ def plot_lm(
     if y_pred is None:
         y_pred = target_var
 
-    if not isinstance(y_pred, xr.DataArray | xr.Dataset):
+    if isinstance(y_pred, xr.Dataset):
+        raise TypeError(
+            "y_pred can't be a dataset because multiple target variables are not supported yet."
+        )
+
+    if not isinstance(y_pred, xr.DataArray):
         y_pred = process_group_variables_coords(
             dt,
             group=group,
