@@ -1,10 +1,13 @@
 """lm plot code."""
+
+import warnings
 from collections.abc import Mapping, Sequence
 from copy import copy
 from importlib import import_module
-from typing import Any, List, Literal
+from typing import Any, Literal
 
 import arviz_stats as azs
+import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
@@ -32,15 +35,15 @@ def plot_lm(
     sample_dims=None,
     ci_prob=None,
     ci_kind=None,
-    line_kind="mean",
+    line_kind=None,
     plot_collection=None,
     backend=None,
     labeller=None,
     aes_by_visuals: Mapping[
         Literal[
             "ci_line",
-            "mean_line",
-            "fill",
+            "line",
+            "ci_fill",
             "scatter",
             "xlabel",
             "ylabel",
@@ -50,8 +53,8 @@ def plot_lm(
     visuals: Mapping[
         Literal[
             "ci_line",
-            "mean_line",
-            "fill",
+            "line",
+            "ci_fill",
             "scatter",
             "xlabel",
             "ylabel",
@@ -86,7 +89,7 @@ def plot_lm(
     if ci_prob is None:
         ci_prob = rcParams["stats.ci_prob"]
     if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
+        ci_kind = rcParams["stats.ci_kind"]
 
     if aes_by_visuals is None:
         aes_by_visuals = {}
@@ -100,7 +103,8 @@ def plot_lm(
 
     if labeller is None:
         labeller = BaseLabeller()
-
+    if line_kind is None:
+        line_kind = rcParams["stats.point_estimate"]
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
@@ -155,7 +159,7 @@ def plot_lm(
         else:
             x_pred = x
 
-    if isinstance(ci_prob, List):
+    if isinstance(ci_prob, Sequence):
         x_with_prob = x.expand_dims(dim={"prob": ci_prob})
     else:
         x_with_prob = x
@@ -167,11 +171,17 @@ def plot_lm(
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        if isinstance(ci_prob, List):
-            alpha_dims = pc_kwargs["aes"].get("alpha", [])
-            if "prob" not in alpha_dims:
-                alpha_dims.append("prob")
-            pc_kwargs["aes"]["alpha"] = alpha_dims
+        if isinstance(ci_prob, Sequence):
+            alpha_dims = pc_kwargs["aes"].get("alpha", None)
+            if alpha_dims is None:
+                pc_kwargs["aes"].setdefault("alpha", ["prob"])
+                pc_kwargs["alpha"] = np.linspace(0.1, 0.5, len(ci_prob))
+            else:
+                warnings.warn(
+                    "When multiple credible intervals are plotted, "
+                    "it is recommended to map 'alpha' aesthetic to 'prob' "
+                    "dimension to differentiate between intervals.",
+                )
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, x)
         plot_collection = PlotCollection.wrap(
@@ -184,38 +194,27 @@ def plot_lm(
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
-    aes_by_visuals.setdefault("line", plot_collection.aes_set)
-    if isinstance(ci_prob, List):
+    aes_by_visuals.setdefault("line", plot_collection.aes_set.difference("alpha"))
+    if isinstance(ci_prob, Sequence):
         aes_by_visuals.setdefault("ci_line", {"alpha"})
-        aes_by_visuals.setdefault("fill", {"alpha"})
+        aes_by_visuals.setdefault("ci_fill", {"alpha"})
 
     # calculations for credible interval
-    if ci_kind == "eti":
-        if isinstance(ci_prob, List):
-            ci_data = xr.concat(
-                [
-                    azs.eti(
-                        y_pred, dim=sample_dims, prob=p, **stats.get("credible_interval", {})
-                    ).expand_dims(prob=[p])
-                    for p in ci_prob
-                ],
-                dim="prob",
-            )
-        else:
-            ci_data = y_pred.azstats.eti(prob=ci_prob, **stats.get("credible_interval", {}))
-    elif ci_kind == "hdi":
-        if isinstance(ci_prob, List):
-            ci_data = xr.concat(
-                [
-                    azs.hdi(
-                        y_pred, dim=sample_dims, prob=p, **stats.get("credible_interval", {})
-                    ).expand_dims(prob=[p])
-                    for p in ci_prob
-                ],
-                dim="prob",
-            )
-        else:
-            ci_data = y_pred.azstats.hdi(prob=ci_prob, **stats.get("credible_interval", {}))
+    ci_fun = azs.hdi if ci_kind == "hdi" else azs.eti
+    ci_dims, _, _ = filter_aes(plot_collection, aes_by_visuals, "ci_fill", sample_dims)
+    if isinstance(ci_prob, Sequence):
+        ci_data = xr.concat(
+            [
+                ci_fun(
+                    y_pred, dim=ci_dims, prob=p, **stats.get("credible_interval", {})
+                ).expand_dims(prob=[p])
+                for p in ci_prob
+            ],
+            dim="prob",
+        )
+    else:
+        ci_data = ci_fun(y_pred, dim=ci_dims, prob=ci_prob, **stats.get("credible_interval", {}))
+
     if line_kind == "mean":
         line_data = y_pred.mean(dim=["chain", "draw"])
     elif line_kind == "median":
@@ -257,29 +256,36 @@ def plot_lm(
         )
 
     # fill between lines of credible interval
-    fill_kwargs = copy(visuals.get("fill", {}))
+    fill_kwargs = copy(visuals.get("ci_fill", {}))
     if fill_kwargs is not False:
-        _, _, fill_ignore = filter_aes(plot_collection, aes_by_visuals, "fill", sample_dims)
+        _, fill_aes, fill_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ci_fill", sample_dims
+        )
+
+        if "color" not in fill_aes:
+            fill_kwargs.setdefault("color", colors[0])
+
         plot_collection.map(
             fill_between_y,
-            "fill",
+            "ci_fill",
             x=x_pred,
             y_bottom=ci_lower[target_var],
             y_top=ci_upper[target_var],
             ignore_aes=fill_ignore,
-            color=colors[1],
             **fill_kwargs,
         )
 
     # mean line
-    mean_line_kwargs = copy(visuals.get("mean_line", {}))
+    mean_line_kwargs = copy(visuals.get("line", {}))
     if mean_line_kwargs is not False:
-        _, _, mean_line_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "mean_line", sample_dims
+        _, mean_line_aes, mean_line_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "line", sample_dims
         )
+        if "color" not in mean_line_aes:
+            mean_line_kwargs.setdefault("color", colors[1])
         plot_collection.map(
             line_xy,
-            "mean_line",
+            "line",
             x=x_pred,
             y=line_data[target_var],
             ignore_aes=mean_line_ignore,
