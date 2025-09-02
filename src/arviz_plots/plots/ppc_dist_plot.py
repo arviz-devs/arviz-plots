@@ -319,7 +319,7 @@ def plot_ppc_dist(
             )
 
         if kind == "ecdf":
-            dt_observed = observed_dist.azstats.ecdf(**observed_stats_kwargs)
+            dt_observed = observed_dist.azstats.ecdf(dim=pp_dims, **observed_stats_kwargs)
             plot_collection.map(
                 ecdf_line,
                 "observed_dist",

@@ -288,7 +288,7 @@ def plot_dist(
             density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
         elif kind == "hist":
             hist_kwargs = stats.pop("dist", {}).copy()
-            hist_kwargs.setdefault("density", True)
+            # hist_kwargs.setdefault("density", True)
             density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
 
     # density
@@ -387,7 +387,7 @@ def plot_dist(
         and ("model" in distribution)
         and (plot_collection.coords is None)
     ):
-        reduce_dim_map = {"kde": "kde_dim", "ecdf": "quantile"}
+        reduce_dim_map = {"kde": "kde_dim", "ecdf": "ecdf_dim"}
         y_ds = plot_collection.get_aes_as_dataset("y")["mapping"]
         y_ds = (
             0.15 * y_ds * density.sel(plot_axis="y", drop=True).max([reduce_dim_map[kind], "model"])
