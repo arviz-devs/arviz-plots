@@ -288,7 +288,7 @@ def plot_dist(
             density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
         elif kind == "hist":
             hist_kwargs = stats.pop("dist", {}).copy()
-            # hist_kwargs.setdefault("density", True)
+            hist_kwargs.setdefault("density", True)
             density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
 
     # density
