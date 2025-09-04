@@ -114,7 +114,7 @@ def plot_ecdf_pit(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.ci_line_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
