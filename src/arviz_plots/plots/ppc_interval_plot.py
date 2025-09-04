@@ -1,12 +1,13 @@
-"""Posterior predictive intervals plot."""
+"""Predictive intervals plot."""
 
+from importlib import import_module
 import numpy as np
-import xarray as xr
-from arviz_base import rcParams
 
+from arviz_base import rcParams
+from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, process_group_variables_coords
-from arviz_plots.visuals import ci_line_y, scatter_xy
+from arviz_plots.plots.utils import get_contrast_colors, get_visual_kwargs, filter_aes, process_group_variables_coords, set_wrap_layout
+from arviz_plots.visuals import ci_bound_y,  point_y
 
 
 def plot_ppc_intervals(
@@ -29,10 +30,8 @@ def plot_ppc_intervals(
 ):
     """Plot posterior predictive intervals with observed data overlaid.
 
-    This plot is a posterior predictive check that helps to visualize how well the
-    model's predictions capture the observed data. For each data point, it plots the
-    credible interval of the posterior predictive distribution along with a point
-    estimate (like the median) and the true observed value.
+    Displays each observed value together with two credible intervals of the predictive distribution
+    and a point estimate.
 
     Parameters
     ----------
@@ -53,14 +52,15 @@ def plot_ppc_intervals(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    point_estimate : {"mean", "median"}, optional
+    point_estimate : {"mean", "median", "mode"}, optional
         Which point estimate to plot for the posterior predictive distribution.
         Defaults to rcParam ``stats.point_estimate``.
     ci_kind : {"hdi", "eti"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``.
     ci_probs : (float, float), optional
         Indicates the probabilities for the inner and outer credible intervals.
-        Defaults to ``(0.5, rcParams["stats.ci_prob"])``.
+        Defaults to ``(0.5, rcParams["stats.ci_prob"])``. It's assumed that
+        ``ci_probs[0] < ci_probs[1]``, otherwise they are sorted.
     x : str, optional
         Coordinate variable to use for the x-axis. If None, the observation dimension
         coordinate is used.
@@ -73,10 +73,12 @@ def plot_ppc_intervals(
     visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
-        * ``outer_interval`` -> passed to :func:`~arviz_plots.visuals.ci_line_y`
-        * ``inner_interval`` -> passed to :func:`~arviz_plots.visuals.ci_line_y`
-        * ``point_estimate`` -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-        * ``observed`` -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * trunk, twig -> passed to :func:`~.visuals.line_x`
+        * predictive_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`.
+        * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
+        * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
+        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -85,17 +87,11 @@ def plot_ppc_intervals(
     -------
     PlotCollection
 
-    Notes
-    -----
-    This plot shows several elements for each data point:
-    * A thin outer credible interval (e.g., 94%)
-    * A thicker inner credible interval (e.g., 50%)
-    * A point estimate for the prediction (e.g., the median)
-    * The true observed data point
-
     See Also
     --------
     plot_ppc_dist : Plot 1D marginals for the posterior/prior predictive and observed data.
+    plot_ppc_rootograms : Plot ppc rootogram for discrete (count) data
+    plot_forest : Plot forest plot for posterior/prior groups.
 
     Examples
     --------
@@ -106,21 +102,11 @@ def plot_ppc_intervals(
 
         >>> from arviz_base import load_arviz_data
         >>> import arviz_plots as azp
-        >>>
         >>> azp.style.use("arviz-variat")
         >>> data = load_arviz_data("radon")
         >>> data_subset = data.isel(obs_id=range(50))
-        >>> styling = {
-        >>>     "outer_interval": {"width": 1.0, "color": "C0", "alpha": 0.5},
-        >>>     "inner_interval": {"width": 2.5, "color": "C0"},
-        >>>     "point_estimate": {"s": 20, "color": "C0"},
-        >>>     "observed": {"s": 25, "marker": "o", "edgecolor": "black", "facecolor": "none"}
-        >>> }
         >>> pc = azp.plot_ppc_intervals(
         >>>     data_subset,
-        >>>     var_names=["y"],
-        >>>     x="obs_id",
-        >>>     visuals=styling,
         >>> )
     """
     if sample_dims is None:
@@ -135,130 +121,139 @@ def plot_ppc_intervals(
         rc_ci_prob = rcParams["stats.ci_prob"]
         ci_probs = (0.5, rc_ci_prob)
 
+
     ci_probs = np.array(ci_probs)
     if ci_probs.size != 2:
-        raise ValueError("ci_probs must have two elements for inner and outer intervals.")
+        raise ValueError("ci_probs must have two elements for twig and trunk intervals.")
     if np.any(ci_probs < 0) or np.any(ci_probs > 1):
         raise ValueError("ci_probs must be between 0 and 1.")
     ci_probs.sort()
 
-    predictive_dist = process_group_variables_coords(
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+
+    labeller = BaseLabeller()
+
+
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrast_colors(bg_color=bg_color)
+
+
+
+    ds_predictive = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
-    observed_dist = process_group_variables_coords(
-        dt, group="observed_data", var_names=var_names, filter_vars=filter_vars, coords=coords
-    )
-
-    obs_dims = [dim for dim in observed_dist.dims if dim not in sample_dims]
-    if len(obs_dims) != 1:
-        raise ValueError(f"Could not determine observation dimension from {obs_dims}.")
-    obs_dim_name = obs_dims[0]
-
-    if x is not None:
-        x_data = observed_dist[x]
-    else:
-        x_data = observed_dist[obs_dim_name]
-
-    if plot_collection is None:
-        pc_kwargs = {"aes": {"x": x_data.dims, "y": observed_dist.dims}}
-        plot_collection = PlotCollection.grid(
-            observed_dist,
-            backend=backend,
-            **pc_kwargs,
-        )
 
     if ci_kind == "eti":
-        ci_fun = predictive_dist.azstats.eti
+        ci_fun = ds_predictive.azstats.eti
     elif ci_kind == "hdi":
-        ci_fun = predictive_dist.azstats.hdi
+        ci_fun = ds_predictive.azstats.hdi
 
-    outer_interval = ci_fun(prob=ci_probs[1], dim=sample_dims)
-    inner_interval = ci_fun(prob=ci_probs[0], dim=sample_dims)
+    ci_trunk = ci_fun(prob=ci_probs[1], dim=sample_dims)
+    ci_twig = ci_fun(prob=ci_probs[0], dim=sample_dims)
 
     if point_estimate == "median":
-        point = predictive_dist.median(dim=sample_dims)
+        point = ds_predictive.median(dim=sample_dims)
     elif point_estimate == "mean":
-        point = predictive_dist.mean(dim=sample_dims)
+        point = ds_predictive.mean(dim=sample_dims)
+    elif point_estimate == "mode":
+        point = ds_predictive.azstats.mode(dim=sample_dims)
     else:
         raise ValueError(
             f"point_estimate must be 'mean' or 'median', but {point_estimate} was passed."
         )
 
+
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    bg_color = plot_bknd.get_background_color()
+    contrast_color = get_contrast_colors(bg_color=bg_color)
+
+    colors = plot_bknd.get_default_aes("color", 1, {})
+    markers = plot_bknd.get_default_aes("marker", 7, {})
+
+    if plot_collection is None:
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs.setdefault("cols", "__variable__")
+
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_predictive)
+
+        plot_collection = PlotCollection.wrap(
+            ds_predictive,
+            backend=backend,
+            **pc_kwargs,
+        )
+
+
     visuals = {} if visuals is None else visuals
     aes_by_visuals = {} if aes_by_visuals is None else aes_by_visuals
 
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
 
-    for var_name in predictive_dist.data_vars:
-        print(f"\n[DEBUG] Preparing to plot variable: '{var_name}'")
+    ## trunk intervals
+    ci_trunk_kwargs = get_visual_kwargs(visuals, "trunk")
+    _, ci_trunk_aes, ci_trunk_ignore = filter_aes(plot_collection, aes_by_visuals, "trunk", sample_dims)
 
-        var_point = point[var_name]
-        var_obs = observed_dist[var_name]
-        var_outer = outer_interval[var_name]
-        var_inner = inner_interval[var_name]
+    if ci_trunk_kwargs is not False:
+        if "color" not in ci_trunk_aes:
+            ci_trunk_kwargs.setdefault("color", colors[0])
 
-        outer_interval_for_ci_line = xr.concat(
-            [
-                var_outer.sel(ci_bound="lower").reset_coords("ci_bound", drop=True),
-                var_outer.sel(ci_bound="upper").reset_coords("ci_bound", drop=True),
-                x_data,
-            ],
-            dim="plot_axis",
-        ).assign_coords(plot_axis=["y_bottom", "y_top", "x"])
+        ci_trunk_kwargs.setdefault("alpha", 0.3)
+        ci_trunk_kwargs.setdefault("width", 3)
 
-        inner_interval_for_ci_line = xr.concat(
-            [
-                var_inner.sel(ci_bound="lower").reset_coords("ci_bound", drop=True),
-                var_inner.sel(ci_bound="upper").reset_coords("ci_bound", drop=True),
-                x_data,
-            ],
-            dim="plot_axis",
-        ).assign_coords(plot_axis=["y_bottom", "y_top", "x"])
-
-        point_for_scatter = xr.concat([var_point, x_data], dim="plot_axis").assign_coords(
-            plot_axis=["y", "x"]
-        )
-        observed_for_scatter = xr.concat([var_obs, x_data], dim="plot_axis").assign_coords(
-            plot_axis=["y", "x"]
-        )
-
-        outer_kwargs = visuals.get("outer_interval", {}).copy()
         plot_collection.map(
-            ci_line_y,
-            f"{var_name}_outer_interval",
-            data=outer_interval_for_ci_line.rename(var_name),
-            ignore_aes=ci_ignore,
-            **outer_kwargs,
+            ci_bound_y,
+            "ci_trunk",
+            data=ci_trunk,
+            ignore_aes=ci_trunk_ignore,
+            **ci_trunk_kwargs,
         )
 
-        inner_kwargs = visuals.get("inner_interval", {}).copy()
-        inner_kwargs.setdefault("width", 3)
+    ## twig intervals
+    ci_twig_kwargs = get_visual_kwargs(visuals, "twig")
+    _, ci_twig_aes, ci_twig_ignore = filter_aes(plot_collection, aes_by_visuals, "twig", sample_dims)
+
+    if ci_twig_kwargs is not False:
+        if "color" not in ci_twig_aes:
+            ci_twig_kwargs.setdefault("color", colors[0])
+
+        ci_twig_kwargs.setdefault("alpha", 0.3)
+        ci_twig_kwargs.setdefault("width", 3)
+
         plot_collection.map(
-            ci_line_y,
-            f"{var_name}_inner_interval",
-            data=inner_interval_for_ci_line.rename(var_name),
-            ignore_aes=ci_ignore,
-            **inner_kwargs,
+            ci_bound_y,
+            "ci_twig",
+            data=ci_twig,
+            ignore_aes=ci_twig_ignore,
+            **ci_twig_kwargs,
         )
 
-        point_kwargs = visuals.get("point_estimate", {}).copy()
+
+    ## observed_markers
+    observed_ms_kwargs = get_visual_kwargs(
+        visuals, "observed_markers", False if group == "prior_predictive" else None
+    )
+
+    if observed_ms_kwargs is not False:
+        _, _, observed_ms_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "observed_markers", sample_dims
+        )
+        observed_ms_kwargs.setdefault("color", contrast_color)
+        observed_ms_kwargs.setdefault("marker", markers[6])
+
         plot_collection.map(
-            scatter_xy,
-            f"{var_name}_point_estimate",
-            data=point_for_scatter.rename(var_name),
-            ignore_aes={"x", "y"},
-            **point_kwargs,
+            point_y,
+            "observed_markers",
+            data=point,
+            ignore_aes=observed_ms_ignore,
+            **observed_ms_kwargs,
         )
 
-        observed_kwargs = visuals.get("observed", {}).copy()
-        observed_kwargs.setdefault("color", "black")
-        plot_collection.map(
-            scatter_xy,
-            f"{var_name}_observed",
-            data=observed_for_scatter.rename(var_name),
-            ignore_aes={"x", "y"},
-            **observed_kwargs,
-        )
+
 
     return plot_collection
