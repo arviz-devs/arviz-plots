@@ -74,12 +74,14 @@ def ci_line_y(values, target, **kwargs):
 
 def line_x(da, target, y=None, **kwargs):
     """Plot a line along the x axis (y constant)."""
+    print(y)
     if y is None:
         y = np.zeros_like(da)
     if np.asarray(y).size == 1:
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = backend_from_object(target)
     return plot_backend.line(da, y, target, **kwargs)
+
 
 
 def line(da, target, xname=None, **kwargs):
@@ -162,6 +164,26 @@ def scatter_x(da, target, y=None, **kwargs):
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = backend_from_object(target)
     return plot_backend.scatter(da, y, target, **kwargs)
+
+
+def point_y(da, target, x=None, **kwargs):
+    """Plot a dot/rug/scatter along the x axis (y constant)."""
+    if x is None:
+        x = np.arange(len(da))
+    plot_backend = backend_from_object(target)
+    return plot_backend.scatter(x, da, target, **kwargs)
+
+
+def ci_bound_y(da, target, **kwargs):
+    """Plot a line from y_bottom to y_top at given value of x."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.ciliney(
+        np.arange(len(da)),
+        da.sel(ci_bound="lower"),
+        da.sel(ci_bound="upper"),
+        target,
+        **kwargs,
+    )
 
 
 def scatter_xy(da, target, x=None, y=None, mask=None, **kwargs):
