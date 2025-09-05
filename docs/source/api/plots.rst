@@ -29,6 +29,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_ess_evolution
    plot_forest
    plot_loo_pit
+   plot_lm
    plot_mcse
    plot_pair
    plot_pair_focus
