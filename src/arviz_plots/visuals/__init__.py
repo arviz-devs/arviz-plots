@@ -83,7 +83,6 @@ def line_x(da, target, y=None, **kwargs):
     return plot_backend.line(da, y, target, **kwargs)
 
 
-
 def line(da, target, xname=None, **kwargs):
     """Plot a line along the y axis with x being the range of len(y)."""
     if len(da.shape) != 1:

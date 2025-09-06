@@ -512,12 +512,9 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert isinstance(pc, PlotCollection)
 
         children_keys = list(pc.viz.children.keys())
-        assert any("_point_estimate" in key for key in children_keys)
-        assert any("_observed" in key for key in children_keys)
-        assert any("_inner_interval" in key for key in children_keys)
-        assert any("_outer_interval" in key for key in children_keys)
-        assert "/x" in pc.aes.groups
-        assert "/y" in pc.aes.groups
+        assert any("observed_markers" in key for key in children_keys)
+        assert any("ci_twig" in key for key in children_keys)
+        assert any("ci_trunk" in key for key in children_keys)
 
     def test_plot_ppc_pava(self, datatree_binary, backend):
         pc = plot_ppc_pava(datatree_binary, backend=backend)

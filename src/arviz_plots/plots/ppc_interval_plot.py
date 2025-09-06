@@ -1,13 +1,20 @@
 """Predictive intervals plot."""
 
 from importlib import import_module
-import numpy as np
 
+import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import get_contrast_colors, get_visual_kwargs, filter_aes, process_group_variables_coords, set_wrap_layout
-from arviz_plots.visuals import ci_bound_y,  point_y
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_contrast_colors,
+    get_visual_kwargs,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
+from arviz_plots.visuals import ci_bound_y, point_y
 
 
 def plot_ppc_intervals(
@@ -20,7 +27,7 @@ def plot_ppc_intervals(
     point_estimate=None,
     ci_kind=None,
     ci_probs=None,
-    x=None,
+    x=None,  # pylint: disable=unused-argument
     plot_collection=None,
     backend=None,
     labeller=None,  # pylint: disable=unused-argument
@@ -65,7 +72,7 @@ def plot_ppc_intervals(
         Coordinate variable to use for the x-axis. If None, the observation dimension
         coordinate is used.
     plot_collection : PlotCollection, optional
-    backend : {"matplotlib", "bokeh"}, optional
+    backend : {"matplotlib", "bokeh", "plotly", "none"}, optional
     labeller : labeller, optional
     aes_by_visuals : mapping of {str : sequence of str or False}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
@@ -73,9 +80,8 @@ def plot_ppc_intervals(
     visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
-        * trunk, twig -> passed to :func:`~.visuals.line_x`
-        * predictive_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`
-        * observed_markers -> passed to :func:`~arviz_plots.visuals.scatter_xy`.
+        * trunk, twig -> passed to :func:`~arviz_plots.visuals.ci_bound_y`
+        * observed_markers -> passed to :func:`~arviz_plots.visuals.point_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -107,6 +113,7 @@ def plot_ppc_intervals(
         >>> data_subset = data.isel(obs_id=range(50))
         >>> pc = azp.plot_ppc_intervals(
         >>>     data_subset,
+        >>>     var_names=["y"],
         >>> )
     """
     if sample_dims is None:
@@ -120,7 +127,6 @@ def plot_ppc_intervals(
     if ci_probs is None:
         rc_ci_prob = rcParams["stats.ci_prob"]
         ci_probs = (0.5, rc_ci_prob)
-
 
     ci_probs = np.array(ci_probs)
     if ci_probs.size != 2:
@@ -137,17 +143,13 @@ def plot_ppc_intervals(
 
     labeller = BaseLabeller()
 
-
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     bg_color = plot_bknd.get_background_color()
     contrast_color = get_contrast_colors(bg_color=bg_color)
 
-
-
     ds_predictive = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
-
 
     if ci_kind == "eti":
         ci_fun = ds_predictive.azstats.eti
@@ -167,7 +169,6 @@ def plot_ppc_intervals(
         raise ValueError(
             f"point_estimate must be 'mean' or 'median', but {point_estimate} was passed."
         )
-
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     bg_color = plot_bknd.get_background_color()
@@ -190,14 +191,14 @@ def plot_ppc_intervals(
             **pc_kwargs,
         )
 
-
     visuals = {} if visuals is None else visuals
     aes_by_visuals = {} if aes_by_visuals is None else aes_by_visuals
 
-
     ## trunk intervals
     ci_trunk_kwargs = get_visual_kwargs(visuals, "trunk")
-    _, ci_trunk_aes, ci_trunk_ignore = filter_aes(plot_collection, aes_by_visuals, "trunk", sample_dims)
+    _, ci_trunk_aes, ci_trunk_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "trunk", sample_dims
+    )
 
     if ci_trunk_kwargs is not False:
         if "color" not in ci_trunk_aes:
@@ -216,7 +217,9 @@ def plot_ppc_intervals(
 
     ## twig intervals
     ci_twig_kwargs = get_visual_kwargs(visuals, "twig")
-    _, ci_twig_aes, ci_twig_ignore = filter_aes(plot_collection, aes_by_visuals, "twig", sample_dims)
+    _, ci_twig_aes, ci_twig_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "twig", sample_dims
+    )
 
     if ci_twig_kwargs is not False:
         if "color" not in ci_twig_aes:
@@ -232,7 +235,6 @@ def plot_ppc_intervals(
             ignore_aes=ci_twig_ignore,
             **ci_twig_kwargs,
         )
-
 
     ## observed_markers
     observed_ms_kwargs = get_visual_kwargs(
@@ -253,7 +255,5 @@ def plot_ppc_intervals(
             ignore_aes=observed_ms_ignore,
             **observed_ms_kwargs,
         )
-
-
 
     return plot_collection

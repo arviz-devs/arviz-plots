@@ -19,18 +19,10 @@ data = load_arviz_data("radon")
 
 data_subset = data.isel(obs_id=range(50))
 
-styling = {
-    "outer_interval": {"width": 1.0, "color": "C0", "alpha": 0.5},
-    "inner_interval": {"width": 2.5, "color": "C0"},
-    "point_estimate": {"s": 20, "color": "C0"},
-    "observed": {"s": 25, "marker": "o", "edgecolor": "k", "facecolor": "none"}
-}
-
 pc = azp.plot_ppc_intervals(
     data_subset,
     var_names=["y"],
-    visuals=styling,
-    backend="none"
+    backend="none",
 )
 
 pc.show()
