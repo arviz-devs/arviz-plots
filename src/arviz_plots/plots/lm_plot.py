@@ -42,7 +42,7 @@ def plot_lm(
     aes_by_visuals: Mapping[
         Literal[
             "ci_line",
-            "line",
+            "central_line",
             "ci_fill",
             "scatter",
             "xlabel",
@@ -53,7 +53,7 @@ def plot_lm(
     visuals: Mapping[
         Literal[
             "ci_line",
-            "line",
+            "central_line",
             "ci_fill",
             "scatter",
             "xlabel",
@@ -62,7 +62,7 @@ def plot_lm(
         Mapping[str, Any] | Literal[False],
     ] = None,
     stats: Mapping[
-        Literal["credible_interval",],
+        Literal["credible_interval", "point_estimate"],
         Mapping[str, Any] | xr.Dataset,
     ] = None,
     **pc_kwargs,
@@ -90,8 +90,9 @@ def plot_lm(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
+        It is used for any of y, x, y_pred, and x_pred if they are strings or lists of strings.
     group : str, default "posterior_predictive"
-        Group to use for plotting. Defaults to "posterior_predictive".
+        Group to use for plotting.
     coords : mapping, optional
         Coordinates to use for plotting.
     sample_dims : iterable, optional
@@ -102,20 +103,20 @@ def plot_lm(
     ci_prob : float or list of float, optional
         Indicates the probabilities that should be contained within the plotted credible intervals.
         Defaults to ``rcParams["stats.ci_prob"]``
-    line_kind : {"mean", "median"}, optional
+    line_kind : {"mean", "median","mode"}, optional
         Which point estimate to use for the line. Defaults to ``rcParams["stats.point_estimate"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
     aes_by_visuals : mapping, optional
-        Mapping of visuals to aesthetics that should use their mapping in `plot_matrix`
+        Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
         By default, there are no aesthetic mappings at all
     visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * ci_line -> passed to :func:`~.visuals.line_xy`. Defaults to False
-        * line -> passed to :func:`~.visuals.line_xy`.
+        * central_line -> passed to :func:`~.visuals.line_xy`.
         * ci_fill -> passed to :func:`~.visuals.fill_between_y`.
         * scatter -> passed to :func:`~.visuals.scatter_xy`.
         * xlabel -> passed to :func:`~.visuals.labelled_x`.
@@ -125,6 +126,7 @@ def plot_lm(
         Valid keys are:
 
         * credible_interval -> passed to eti or hdi
+        * point_estimate -> passed to mean, median or mode
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -236,14 +238,13 @@ def plot_lm(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     bg_color = plot_bknd.get_background_color()
-    _, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
+    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
     if plot_collection is None:
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if isinstance(ci_prob, Sequence):
-            alpha_dims = pc_kwargs["aes"].get("alpha", None)
-            if alpha_dims is None:
+            if "alpha" not in pc_kwargs["aes"]:
                 pc_kwargs["aes"].setdefault("alpha", ["prob"])
                 pc_kwargs["alpha"] = np.linspace(0.1, 0.5, len(ci_prob))
             else:
@@ -253,6 +254,7 @@ def plot_lm(
                     "dimension to differentiate between intervals.",
                 )
 
+        pc_kwargs["aes"].setdefault("color", ["__variable__"])
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, x)
         plot_collection = PlotCollection.wrap(
             x_with_prob,
@@ -264,14 +266,22 @@ def plot_lm(
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
-    aes_by_visuals.setdefault("line", plot_collection.aes_set.difference("alpha"))
+    aes_by_visuals.setdefault(
+        "central_line", plot_collection.aes_set.difference({"alpha", "color"})
+    )
     if isinstance(ci_prob, Sequence):
         aes_by_visuals.setdefault("ci_line", {"alpha"})
-        aes_by_visuals.setdefault("ci_fill", {"alpha"})
+        aes_by_visuals.setdefault(
+            "ci_fill", set(aes_by_visuals.get("ci_fill", {})).union({"color", "alpha"})
+        )
+    else:
+        aes_by_visuals.setdefault(
+            "ci_fill", set(aes_by_visuals.get("ci_fill", {})).union({"color"})
+        )
 
     # calculations for credible interval
     ci_fun = azs.hdi if ci_kind == "hdi" else azs.eti
-    ci_dims, _, _ = filter_aes(plot_collection, aes_by_visuals, "ci_fill", sample_dims)
+    ci_dims, _, fill_ignore = filter_aes(plot_collection, aes_by_visuals, "ci_fill", sample_dims)
     if isinstance(ci_prob, Sequence):
         ci_data = xr.concat(
             [
@@ -285,11 +295,16 @@ def plot_lm(
     else:
         ci_data = ci_fun(y_pred, dim=ci_dims, prob=ci_prob, **stats.get("credible_interval", {}))
 
+    central_line_dims, _, _ = filter_aes(
+        plot_collection, aes_by_visuals, "central_line", sample_dims
+    )
     if line_kind == "mean":
-        line_data = y_pred.mean(dim=["chain", "draw"])
+        line_data = y_pred.mean(dim=central_line_dims, **stats.get("point_estimate", {}))
     elif line_kind == "median":
-        line_data = y_pred.median(dim=["chain", "draw"])
-    colors = plot_bknd.get_default_aes("color", 2, {})
+        line_data = y_pred.median(dim=central_line_dims, **stats.get("point_estimate", {}))
+    elif line_kind == "mode":
+        line_data = azs.mode(y_pred, dim=central_line_dims, **stats.get("point_estimate", {}))
+
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     ci_lower = ci_data.sel(ci_bound="lower")
@@ -328,13 +343,6 @@ def plot_lm(
     # fill between lines of credible interval
     fill_kwargs = copy(visuals.get("ci_fill", {}))
     if fill_kwargs is not False:
-        _, fill_aes, fill_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "ci_fill", sample_dims
-        )
-
-        if "color" not in fill_aes:
-            fill_kwargs.setdefault("color", colors[0])
-
         plot_collection.map(
             fill_between_y,
             "ci_fill",
@@ -345,21 +353,23 @@ def plot_lm(
             **fill_kwargs,
         )
 
-    # mean line
-    mean_line_kwargs = copy(visuals.get("line", {}))
-    if mean_line_kwargs is not False:
-        _, mean_line_aes, mean_line_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "line", sample_dims
+    # mean/median/mode line
+    central_line_kwargs = copy(visuals.get("central_line", {}))
+    if central_line_kwargs is not False:
+        _, central_line_aes, central_line_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "central_line", sample_dims
         )
-        if "color" not in mean_line_aes:
-            mean_line_kwargs.setdefault("color", colors[1])
+        if "color" not in central_line_aes:
+            central_line_kwargs.setdefault("color", contrast_color)
+        if "alpha" not in central_line_aes:
+            central_line_kwargs.setdefault("alpha", 0.6)
         plot_collection.map(
             line_xy,
-            "line",
+            "central_line",
             x=x_pred,
             y=line_data[target_var],
-            ignore_aes=mean_line_ignore,
-            **mean_line_kwargs,
+            ignore_aes=central_line_ignore,
+            **central_line_kwargs,
         )
 
     # scatter plot
