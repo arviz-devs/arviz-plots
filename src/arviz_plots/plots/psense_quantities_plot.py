@@ -180,7 +180,8 @@ def plot_psense_quantities(
     if isinstance(quantities, str):
         quantities = [quantities]
 
-    labeller = BaseLabeller()
+    if labeller is None:
+        labeller = BaseLabeller()
 
     ds_posterior = extract(
         dt,

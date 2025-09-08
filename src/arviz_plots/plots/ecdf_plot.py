@@ -182,7 +182,8 @@ def plot_ecdf_pit(
         else:
             backend = plot_collection.backend
 
-    labeller = BaseLabeller()
+    if labeller is None:
+        labeller = BaseLabeller()
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords

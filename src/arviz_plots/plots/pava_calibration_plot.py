@@ -172,7 +172,8 @@ def plot_ppc_pava(
         else:
             backend = plot_collection.backend
 
-    labeller = BaseLabeller()
+    if labeller is None:
+        labeller = BaseLabeller()
 
     visuals.setdefault("markers", False)
 

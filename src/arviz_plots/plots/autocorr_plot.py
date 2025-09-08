@@ -122,7 +122,8 @@ def plot_autocorr(
         else:
             backend = plot_collection.backend
 
-    labeller = BaseLabeller()
+    if labeller is None:
+        labeller = BaseLabeller()
 
     # Default max lag to 100
     if max_lag is None:

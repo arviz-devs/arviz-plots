@@ -196,7 +196,8 @@ def plot_ppc_pit(
         else:
             backend = plot_collection.backend
 
-    labeller = BaseLabeller()
+    if labeller is None:
+        labeller = BaseLabeller()
 
     if data_pairs is None:
         data_pairs = {var_names: var_names}
