@@ -14,7 +14,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.visuals import ci_bound_y, point_y
+from arviz_plots.visuals import ci_bound_y, labelled_title, point_y
 
 
 def plot_ppc_intervals(
@@ -27,7 +27,6 @@ def plot_ppc_intervals(
     point_estimate=None,
     ci_kind=None,
     ci_probs=None,
-    x=None,  # pylint: disable=unused-argument
     plot_collection=None,
     backend=None,
     labeller=None,  # pylint: disable=unused-argument
@@ -37,8 +36,8 @@ def plot_ppc_intervals(
 ):
     """Plot posterior predictive intervals with observed data overlaid.
 
-    Displays each observed value together with two credible intervals of the predictive distribution
-    and a point estimate.
+    Displays observed data as a point and predicted data as a point estimate plus two
+    credible intervals.
 
     Parameters
     ----------
@@ -96,7 +95,7 @@ def plot_ppc_intervals(
     See Also
     --------
     plot_ppc_dist : Plot 1D marginals for the posterior/prior predictive and observed data.
-    plot_ppc_rootograms : Plot ppc rootogram for discrete (count) data
+    plot_ppc_rootogram : Plot ppc rootogram for discrete (count) data
     plot_forest : Plot forest plot for posterior/prior groups.
 
     Examples
@@ -113,7 +112,6 @@ def plot_ppc_intervals(
         >>> data_subset = data.isel(obs_id=range(50))
         >>> pc = azp.plot_ppc_intervals(
         >>>     data_subset,
-        >>>     var_names=["y"],
         >>> )
     """
     if sample_dims is None:
@@ -141,7 +139,8 @@ def plot_ppc_intervals(
         else:
             backend = plot_collection.backend
 
-    labeller = BaseLabeller()
+    if labeller is None:
+        labeller = BaseLabeller()
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     bg_color = plot_bknd.get_background_color()
@@ -167,7 +166,7 @@ def plot_ppc_intervals(
         point = ds_predictive.azstats.mode(dim=sample_dims)
     else:
         raise ValueError(
-            f"point_estimate must be 'mean' or 'median', but {point_estimate} was passed."
+            f"point_estimate must be 'mean', 'median' or 'mode', but {point_estimate} was passed."
         )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
@@ -254,6 +253,20 @@ def plot_ppc_intervals(
             data=point,
             ignore_aes=observed_ms_ignore,
             **observed_ms_kwargs,
+        )
+
+    ## title
+    title_kwargs = get_visual_kwargs(visuals, "title")
+    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
+
+    if title_kwargs is not False:
+        plot_collection.map(
+            labelled_title,
+            "title",
+            ignore_aes=title_ignore,
+            subset_info=True,
+            labeller=labeller,
+            **title_kwargs,
         )
 
     return plot_collection

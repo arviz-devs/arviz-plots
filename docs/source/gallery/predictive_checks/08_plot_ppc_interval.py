@@ -1,12 +1,10 @@
 """
-Posterior Predictive Intervals Plot
-===================================
-
-Plot posterior predictive intervals for each observation against the observed data.
-This plot helps to check if the model's predictions are well-calibrated and
-if they manage to capture the true observed values.
-
+# Posterior predictive interval plot
+Plot posterior predictive point estimate and intervals at each observation.
 ---
+:::{seealso}
+API Documentation: {func}`~arviz_plots.plot_ppc_intervals`
+:::
 """
 
 from arviz_base import load_arviz_data

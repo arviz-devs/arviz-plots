@@ -74,7 +74,6 @@ def ci_line_y(values, target, **kwargs):
 
 def line_x(da, target, y=None, **kwargs):
     """Plot a line along the x axis (y constant)."""
-    print(y)
     if y is None:
         y = np.zeros_like(da)
     if np.asarray(y).size == 1:
@@ -166,7 +165,7 @@ def scatter_x(da, target, y=None, **kwargs):
 
 
 def point_y(da, target, x=None, **kwargs):
-    """Plot a dot/rug/scatter along the x axis (y constant)."""
+    """Plot points at y-values, using their index positions as x."""
     if x is None:
         x = np.arange(len(da))
     plot_backend = backend_from_object(target)
