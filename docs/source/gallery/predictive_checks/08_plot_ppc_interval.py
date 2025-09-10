@@ -1,9 +1,9 @@
 """
-# Posterior predictive interval plot
+# Interval plot
 Plot posterior predictive point estimate and intervals at each observation.
 ---
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_ppc_intervals`
+API Documentation: {func}`~arviz_plots.plot_ppc_interval`
 :::
 """
 
@@ -17,7 +17,7 @@ data = load_arviz_data("radon")
 
 data_subset = data.isel(obs_id=range(50))
 
-pc = azp.plot_ppc_intervals(
+pc = azp.plot_ppc_interval(
     data_subset,
     backend="none",
 )

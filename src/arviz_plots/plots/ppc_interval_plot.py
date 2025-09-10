@@ -14,10 +14,10 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.visuals import ci_bound_y, labelled_title, point_y
+from arviz_plots.visuals import ci_bound_y, labelled_title, labelled_x, labelled_y, point_y
 
 
-def plot_ppc_intervals(
+def plot_ppc_interval(
     dt,
     var_names=None,
     filter_vars=None,
@@ -51,25 +51,23 @@ def plot_ppc_intervals(
         If None, interpret var_names as the real variables names.
         If "like", interpret var_names as substrings of the real variables names.
         If "regex", interpret var_names as regular expressions on the real variables names.
-    group : str, default "posterior_predictive"
-        Group to be plotted.
+    group : str
+        Group to be plotted. Defaults to "posterior_predictive".
+        It could also be "prior_predictive".
     coords : dict, optional
         Coordinates of `var_names` to be plotted.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
     point_estimate : {"mean", "median", "mode"}, optional
-        Which point estimate to plot for the posterior predictive distribution.
+        Which point estimate to plot for the predictive distribution.
         Defaults to rcParam ``stats.point_estimate``.
     ci_kind : {"hdi", "eti"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``.
     ci_probs : (float, float), optional
-        Indicates the probabilities for the inner and outer credible intervals.
+        Indicates the probabilities for the inner (twig) and outer (trunk) credible intervals.
         Defaults to ``(0.5, rcParams["stats.ci_prob"])``. It's assumed that
         ``ci_probs[0] < ci_probs[1]``, otherwise they are sorted.
-    x : str, optional
-        Coordinate variable to use for the x-axis. If None, the observation dimension
-        coordinate is used.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly", "none"}, optional
     labeller : labeller, optional
@@ -84,7 +82,7 @@ def plot_ppc_intervals(
         * prediction_markers -> passed to :func:`~arviz_plots.visuals.point_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
-        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * title -> passed to :func:`~arviz_plots.visuals.labelled_title` defaults to False
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -109,14 +107,20 @@ def plot_ppc_intervals(
         >>> from arviz_base import load_arviz_data
         >>> import arviz_plots as azp
         >>> azp.style.use("arviz-variat")
-        >>> data = load_arviz_data("radon")
-        >>> data_subset = data.isel(obs_id=range(50))
-        >>> pc = azp.plot_ppc_intervals(
-        >>>     data_subset,
+        >>> data = load_arviz_data("rugby")
+        >>> pc = azp.plot_ppc_interval(
+        >>>     data,
         >>> )
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if isinstance(sample_dims, str):
+        sample_dims = [sample_dims]
+    sample_dims = list(sample_dims)
+    if visuals is None:
+        visuals = {}
+    else:
+        visuals = visuals.copy()
     if ci_kind is None:
         ci_kind = rcParams["stats.ci_kind"]
     if ci_kind not in ("hdi", "eti"):
@@ -142,6 +146,8 @@ def plot_ppc_intervals(
 
     if labeller is None:
         labeller = BaseLabeller()
+
+    visuals.setdefault("title", False)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     bg_color = plot_bknd.get_background_color()
@@ -216,12 +222,12 @@ def plot_ppc_intervals(
         if "color" not in ci_trunk_aes:
             ci_trunk_kwargs.setdefault("color", colors[0])
 
-        ci_trunk_kwargs.setdefault("alpha", 0.3)
+        ci_trunk_kwargs.setdefault("alpha", 0.5)
         ci_trunk_kwargs.setdefault("width", 3)
 
         plot_collection.map(
             ci_bound_y,
-            "ci_trunk",
+            "trunk",
             data=ci_trunk,
             ignore_aes=ci_trunk_ignore,
             **ci_trunk_kwargs,
@@ -237,15 +243,32 @@ def plot_ppc_intervals(
         if "color" not in ci_twig_aes:
             ci_twig_kwargs.setdefault("color", colors[0])
 
-        ci_twig_kwargs.setdefault("alpha", 0.3)
         ci_twig_kwargs.setdefault("width", 3)
 
         plot_collection.map(
             ci_bound_y,
-            "ci_twig",
+            "twig",
             data=ci_twig,
             ignore_aes=ci_twig_ignore,
             **ci_twig_kwargs,
+        )
+
+    ## prediction_markers
+    prediction_ms_kwargs = get_visual_kwargs(visuals, "prediction_markers")
+
+    if prediction_ms_kwargs is not False:
+        _, _, prediction_ms_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "prediction_markers", sample_dims
+        )
+        prediction_ms_kwargs.setdefault("color", colors[0])
+        prediction_ms_kwargs.setdefault("marker", markers[0])
+
+        plot_collection.map(
+            point_y,
+            "prediction_markers",
+            data=point,
+            ignore_aes=prediction_ms_ignore,
+            **prediction_ms_kwargs,
         )
 
     ## observed_markers
@@ -270,29 +293,50 @@ def plot_ppc_intervals(
             **observed_ms_kwargs,
         )
 
-    ## prediction_markers
-    prediction_ms_kwargs = get_visual_kwargs(visuals, "prediction_markers")
+    # set xlabel
+    _, xlabels_aes, xlabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "xlabel", sample_dims
+    )
+    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
+    if xlabel_kwargs is not False:
+        if "color" not in xlabels_aes:
+            xlabel_kwargs.setdefault("color", contrast_color)
 
-    if prediction_ms_kwargs is not False:
-        _, _, prediction_ms_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "prediction_markers", sample_dims
-        )
-        prediction_ms_kwargs.setdefault("color", colors[0])
-        prediction_ms_kwargs.setdefault("marker", markers[0])
+        xlabel_kwargs.setdefault("text", "data point (index)")
 
         plot_collection.map(
-            point_y,
-            "prediction_markers",
-            data=point,
-            ignore_aes=prediction_ms_ignore,
-            **prediction_ms_kwargs,
+            labelled_x,
+            "xlabel",
+            ignore_aes=xlabels_ignore,
+            subset_info=True,
+            **xlabel_kwargs,
         )
 
-    ## title
-    title_kwargs = get_visual_kwargs(visuals, "title")
-    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
+    # set ylabel
+    _, ylabels_aes, ylabels_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "ylabel", sample_dims
+    )
+    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
+    if ylabel_kwargs is not False:
+        if "color" not in ylabels_aes:
+            ylabel_kwargs.setdefault("color", contrast_color)
 
+        plot_collection.map(
+            labelled_y,
+            "ylabel",
+            ignore_aes=ylabels_ignore,
+            subset_info=True,
+            labeller=labeller,
+            **ylabel_kwargs,
+        )
+
+    # set title
+    _, title_aes, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
+    title_kwargs = get_visual_kwargs(visuals, "title")
     if title_kwargs is not False:
+        if "color" not in title_aes:
+            title_kwargs.setdefault("color", contrast_color)
+
         plot_collection.map(
             labelled_title,
             "title",

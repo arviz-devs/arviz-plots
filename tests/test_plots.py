@@ -22,7 +22,7 @@ from arviz_plots import (
     plot_pair_focus,
     plot_parallel,
     plot_ppc_dist,
-    plot_ppc_intervals,
+    plot_ppc_interval,
     plot_ppc_pava,
     plot_ppc_pit,
     plot_ppc_rootogram,
@@ -507,14 +507,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "y" in pc.viz["predictive_dist"]
         assert "y" in pc.viz["observed_dist"]
 
-    def test_plot_ppc_intervals(self, datatree, backend):
-        pc = plot_ppc_intervals(datatree, backend=backend)
+    def test_plot_ppc_interval(self, datatree, backend):
+        pc = plot_ppc_interval(datatree, backend=backend)
         assert isinstance(pc, PlotCollection)
 
         children_keys = list(pc.viz.children.keys())
         assert any("observed_markers" in key for key in children_keys)
-        assert any("ci_twig" in key for key in children_keys)
-        assert any("ci_trunk" in key for key in children_keys)
+        assert any("twig" in key for key in children_keys)
+        assert any("trunk" in key for key in children_keys)
 
     def test_plot_ppc_pava(self, datatree_binary, backend):
         pc = plot_ppc_pava(datatree_binary, backend=backend)
