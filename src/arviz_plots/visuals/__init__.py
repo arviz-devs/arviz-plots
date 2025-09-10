@@ -164,6 +164,26 @@ def scatter_x(da, target, y=None, **kwargs):
     return plot_backend.scatter(da, y, target, **kwargs)
 
 
+def point_y(da, target, x=None, **kwargs):
+    """Plot points at y-values, using their index positions as x."""
+    if x is None:
+        x = np.arange(len(da))
+    plot_backend = backend_from_object(target)
+    return plot_backend.scatter(x, da, target, **kwargs)
+
+
+def ci_bound_y(da, target, **kwargs):
+    """Plot a line from y_bottom to y_top at given value of x."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.ciliney(
+        np.arange(len(da)),
+        da.sel(ci_bound="lower"),
+        da.sel(ci_bound="upper"),
+        target,
+        **kwargs,
+    )
+
+
 def scatter_xy(da, target, x=None, y=None, mask=None, **kwargs):
     """Plot a scatter plot x vs y.
 

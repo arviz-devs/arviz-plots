@@ -20,6 +20,7 @@ from arviz_plots import (
     plot_pair_focus,
     plot_parallel,
     plot_ppc_dist,
+    plot_ppc_interval,
     plot_ppc_pava,
     plot_ppc_pit,
     plot_ppc_rootogram,
@@ -1019,4 +1020,41 @@ def test_plot_trace_dist(datatree, compact, combined, visuals):
             assert visual in pc.viz.children
             assert all(
                 var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "trunk": visuals_value,
+            "twig": visuals_value,
+            "observed_markers": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+    group=st.sampled_from(("prior_predictive", "posterior_predictive")),
+    ci_probs=st.tuples(
+        st.floats(min_value=0.1, max_value=0.9), st.floats(min_value=0.1, max_value=0.9)
+    ),
+)
+def test_plot_ppc_interval(datatree, group, ci_probs, visuals):
+    pc = plot_ppc_interval(
+        datatree,
+        backend="none",
+        group=group,
+        ci_probs=ci_probs,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree["posterior_predictive"].data_vars
             )
