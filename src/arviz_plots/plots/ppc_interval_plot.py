@@ -108,9 +108,7 @@ def plot_ppc_interval(
         >>> import arviz_plots as azp
         >>> azp.style.use("arviz-variat")
         >>> data = load_arviz_data("rugby")
-        >>> pc = azp.plot_ppc_interval(
-        >>>     data,
-        >>> )
+        >>> pc = azp.plot_ppc_interval(data)
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
