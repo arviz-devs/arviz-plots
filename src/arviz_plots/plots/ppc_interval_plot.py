@@ -29,7 +29,7 @@ def plot_ppc_intervals(
     ci_probs=None,
     plot_collection=None,
     backend=None,
-    labeller=None,  # pylint: disable=unused-argument
+    labeller=None,
     aes_by_visuals=None,
     visuals=None,
     **pc_kwargs,
@@ -81,6 +81,7 @@ def plot_ppc_intervals(
 
         * trunk, twig -> passed to :func:`~arviz_plots.visuals.ci_bound_y`
         * observed_markers -> passed to :func:`~arviz_plots.visuals.point_y`
+        * prediction_markers -> passed to :func:`~arviz_plots.visuals.point_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -149,6 +150,18 @@ def plot_ppc_intervals(
     ds_predictive = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+
+    # Extract observed data
+    if "observed_data" in dt:
+        observed_data = process_group_variables_coords(
+            dt,
+            group="observed_data",
+            var_names=var_names,
+            filter_vars=filter_vars,
+            coords=coords,
+        )
+    else:
+        observed_data = None
 
     if ci_kind == "eti":
         ci_fun = ds_predictive.azstats.eti
@@ -237,7 +250,9 @@ def plot_ppc_intervals(
 
     ## observed_markers
     observed_ms_kwargs = get_visual_kwargs(
-        visuals, "observed_markers", False if group == "prior_predictive" else None
+        visuals,
+        "observed_markers",
+        False if group == "prior_predictive" or observed_data is None else None,
     )
 
     if observed_ms_kwargs is not False:
@@ -250,9 +265,27 @@ def plot_ppc_intervals(
         plot_collection.map(
             point_y,
             "observed_markers",
-            data=point,
+            data=observed_data,
             ignore_aes=observed_ms_ignore,
             **observed_ms_kwargs,
+        )
+
+    ## prediction_markers
+    prediction_ms_kwargs = get_visual_kwargs(visuals, "prediction_markers")
+
+    if prediction_ms_kwargs is not False:
+        _, _, prediction_ms_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "prediction_markers", sample_dims
+        )
+        prediction_ms_kwargs.setdefault("color", colors[0])
+        prediction_ms_kwargs.setdefault("marker", markers[0])
+
+        plot_collection.map(
+            point_y,
+            "prediction_markers",
+            data=point,
+            ignore_aes=prediction_ms_ignore,
+            **prediction_ms_kwargs,
         )
 
     ## title

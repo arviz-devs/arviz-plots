@@ -19,7 +19,6 @@ data_subset = data.isel(obs_id=range(50))
 
 pc = azp.plot_ppc_intervals(
     data_subset,
-    var_names=["y"],
     backend="none",
 )
 
