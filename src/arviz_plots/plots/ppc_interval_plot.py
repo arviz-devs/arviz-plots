@@ -1,8 +1,10 @@
 """Predictive intervals plot."""
-
+from collections.abc import Mapping, Sequence
 from importlib import import_module
+from typing import Any, Literal
 
 import numpy as np
+import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
@@ -30,8 +32,33 @@ def plot_ppc_interval(
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals=None,
-    visuals=None,
+    aes_by_visuals: Mapping[
+        Literal[
+            "trunk",
+            "twig",
+            "observed_markers",
+            "prediction_markers",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Sequence[str] | bool,
+    ] = None,
+    visuals: Mapping[
+        Literal[
+            "trunk",
+            "twig",
+            "observed_markers",
+            "prediction_markers",
+            "xlabel",
+            "ylabel",
+            "title",
+        ],
+        Mapping[str, Any] | bool,
+    ] = None,
+    stats: Mapping[
+        Literal["trunk", "twig", "point_estimate"], Mapping[str, Any] | xr.Dataset
+    ] = None,
     **pc_kwargs,
 ):
     """Plot posterior predictive intervals with observed data overlaid.
@@ -84,6 +111,12 @@ def plot_ppc_interval(
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title` defaults to False
 
+    stats : mapping, optional
+        Valid keys are:
+
+        * trunk, twig -> passed to eti or hdi
+        * point_estimate -> passed to mean, median or mode
+
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
 
@@ -115,6 +148,10 @@ def plot_ppc_interval(
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
+    if stats is None:
+        stats = {}
+    else:
+        stats = stats.copy()
     if visuals is None:
         visuals = {}
     else:
@@ -172,15 +209,15 @@ def plot_ppc_interval(
     elif ci_kind == "hdi":
         ci_fun = ds_predictive.azstats.hdi
 
-    ci_trunk = ci_fun(prob=ci_probs[1], dim=sample_dims)
-    ci_twig = ci_fun(prob=ci_probs[0], dim=sample_dims)
+    ci_trunk = ci_fun(prob=ci_probs[1], dim=sample_dims, **stats.get("trunk", {}))
+    ci_twig = ci_fun(prob=ci_probs[0], dim=sample_dims, **stats.get("twig", {}))
 
     if point_estimate == "median":
-        point = ds_predictive.median(dim=sample_dims)
+        point = ds_predictive.median(dim=sample_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "mean":
-        point = ds_predictive.mean(dim=sample_dims)
+        point = ds_predictive.mean(dim=sample_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "mode":
-        point = ds_predictive.azstats.mode(dim=sample_dims)
+        point = ds_predictive.azstats.mode(dim=sample_dims, **stats.get("point_estimate", {}))
     else:
         raise ValueError(
             f"point_estimate must be 'mean', 'median' or 'mode', but {point_estimate} was passed."
