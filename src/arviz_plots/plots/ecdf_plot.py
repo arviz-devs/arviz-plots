@@ -35,7 +35,7 @@ def plot_ecdf_pit(
     group="prior_sbc",
     coords=None,
     sample_dims=None,
-    ci_prob=None,
+    ci_prob=0.99,
     coverage=False,
     plot_collection=None,
     backend=None,
@@ -98,9 +98,9 @@ def plot_ecdf_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    ci_prob : float, optional
+    ci_prob : float
         Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to ``rcParams["stats.ci_prob"]``
+        Defaults to 0.99.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     plot_collection : PlotCollection, optional
@@ -155,8 +155,6 @@ def plot_ecdf_pit(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
-    if ci_prob is None:
-        ci_prob = rcParams["stats.ci_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):

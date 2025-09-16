@@ -11,7 +11,7 @@ from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 
 def plot_loo_pit(
     dt,
-    ci_prob=None,
+    ci_prob=0.99,
     coverage=False,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
@@ -70,9 +70,9 @@ def plot_loo_pit(
     ----------
     dt : DataTree
         Input data
-    ci_prob : float, optional
+    ci_prob : float
         Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to ``rcParams["stats.ci_prob"]``
+        Defaults to 0.99.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     var_names : str or list of str, optional

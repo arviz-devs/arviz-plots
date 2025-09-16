@@ -29,7 +29,7 @@ from arviz_plots.visuals import (
 
 def plot_ppc_pit(
     dt,
-    ci_prob=None,
+    ci_prob=0.99,
     coverage=False,
     var_names=None,
     data_pairs=None,
@@ -87,9 +87,9 @@ def plot_ppc_pit(
     ----------
     dt : DataTree
         Input data
-    ci_prob : float, optional
+    ci_prob : float
         Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to ``rcParams["stats.ci_prob"]``
+        Defaults to 0.99.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     data_pairs : dict, optional
@@ -170,8 +170,6 @@ def plot_ppc_pit(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
-    if ci_prob is None:
-        ci_prob = rcParams["stats.ci_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
