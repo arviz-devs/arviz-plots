@@ -47,10 +47,11 @@ def plot_lm(
     labeller=None,
     aes_by_visuals: Mapping[
         Literal[
-            "ci_line",
-            "central_line",
+            "pe_line",
             "ci_band",
-            "scatter",
+            "ci_bounds",
+            "ci_line_y",
+            "observed_scatter",
             "xlabel",
             "ylabel",
         ],
@@ -58,10 +59,11 @@ def plot_lm(
     ] = None,
     visuals: Mapping[
         Literal[
-            "ci_line",
-            "central_line",
+            "pe_line",
             "ci_band",
-            "scatter",
+            "ci_bounds",
+            "ci_line_y",
+            "observed_scatter",
             "xlabel",
             "ylabel",
         ],
@@ -73,7 +75,7 @@ def plot_lm(
     ] = None,
     **pc_kwargs,
 ):
-    """Posterior predictive and mean plots for regression-like data..
+    """Posterior predictive and mean plots for regression-like data.
 
     Parameters
     ----------
@@ -229,7 +231,8 @@ def plot_lm(
         if isinstance(ci_prob, (list | tuple | np.ndarray)):
             if "alpha" not in pc_kwargs["aes"]:
                 pc_kwargs["aes"].setdefault("alpha", ["prob"])
-                pc_kwargs["alpha"] = np.logspace(1, 0.1, len(ci_prob)) / 10
+                len_probs = len(ci_prob)
+                pc_kwargs["alpha"] = np.logspace(1, (1 / len_probs), len_probs) / 10
             else:
                 warnings.warn(
                     "When multiple credible intervals are plotted, "
@@ -288,10 +291,11 @@ def plot_lm(
     else:
         pe_value = azs.mode(y_pred, dim=central_line_dims, **stats.get("point_estimate", {}))
 
-    ds_combined = combine(x_pred, pe_value, ci_data, x, y, smooth, **stats.get("smooth", {}))
+    ds_combined = combine(x_pred, pe_value, ci_data, x, y, smooth, stats.get("smooth", {}))
 
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
-    # upper and lower lines of credible interval
+
+    # Plot credible interval bounds
     ci_bounds_kwargs = get_visual_kwargs(visuals, "ci_bounds", False)
     if ci_bounds_kwargs is not False:
         _, ci_bounds_aes, ci_bounds_ignore = filter_aes(
@@ -299,13 +303,13 @@ def plot_lm(
         )
         if "color" not in ci_bounds_aes:
             ci_bounds_kwargs.setdefault("color", contrast_gray_color)
-
         if "linestyle" not in ci_bounds_aes:
             ci_bounds_kwargs.setdefault("linestyle", lines[1])
 
+        # Plot upper and lower bounds
         plot_collection.map(
             line_xy,
-            "ci_bounds",
+            "ci_bounds_upper",
             x=ds_combined.sel(plot_axis="x"),
             y=ds_combined.sel(plot_axis="y_top"),
             ignore_aes=ci_bounds_ignore,
@@ -314,7 +318,7 @@ def plot_lm(
 
         plot_collection.map(
             line_xy,
-            "ci_bounds",
+            "ci_bounds_lower",
             x=ds_combined.sel(plot_axis="x"),
             y=ds_combined.sel(plot_axis="y_bottom"),
             ignore_aes=ci_bounds_ignore,
@@ -415,9 +419,9 @@ def plot_lm(
     return plot_collection
 
 
-def combine(x_pred, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs=None):
+def combine(x_pred, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
     """
-    Combine  and sort x_pred, pe_value, ci_data into a dataset.
+    Combine and sort x_pred, pe_value, ci_data into a dataset.
 
     The resulting dataset will have a dimension plot_axis=['x','y','y_bottom','y_top'],
     and will sort each variable by its x values, and optionally smooth along dim_0.
@@ -428,46 +432,63 @@ def combine(x_pred, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs=Non
     plot_axis = ["x", "y", "y_bottom", "y_top"]
     combined_data = {}
 
-    if smooth_kwargs is None:
-        smooth_kwargs = {}
-
     smooth_kwargs.setdefault("window_length", 55)
     smooth_kwargs.setdefault("polyorder", 2)
-    smooth_kwargs.setdefault("n_points", 200)
+    n_points = smooth_kwargs.pop("n_points", 200)
+
+    has_prob_dim = "prob" in ci_data.dims
+    if has_prob_dim:
+        x_pred = x_pred.isel(prob=0)
 
     for xv, yv in zip(x_vars, y_vars):
         old_dim = pe_value[yv].dims[0]
         y_aligned = pe_value[yv].rename({old_dim: "dim_0"}).reindex(dim_0=x_pred.dim_0)
 
-        ci_aligned = ci_data[yv].rename({ci_data[yv].dims[0]: "dim_0"}).reindex(dim_0=x_pred.dim_0)
-        lower = ci_aligned.sel(ci_bound="lower").values
-        upper = ci_aligned.sel(ci_bound="upper").values
+        if has_prob_dim:
+            prob_coords = ci_data.coords["prob"]
+            ci_list = [ci_data.sel(prob=p) for p in prob_coords]
+        else:
+            ci_list = [ci_data]
 
-        values = np.stack([x_pred[xv].values, y_aligned.values, lower, upper], axis=0)
+        all_prob_data = []
+        for ci_single in ci_list:
+            ci_aligned = (
+                ci_single[yv].rename({ci_single[yv].dims[0]: "dim_0"}).reindex(dim_0=x_pred.dim_0)
+            )
+            lower = ci_aligned.sel(ci_bound="lower").values
+            upper = ci_aligned.sel(ci_bound="upper").values
 
-        order = np.argsort(values[0])
-        values_sorted = values[:, order]
-        x_sorted = values_sorted[0]
+            values = np.stack([x_pred[xv].values, y_aligned.values, lower, upper], axis=0)
+            order = np.argsort(values[0])
+            values_sorted = values[:, order]
+            x_sorted = values_sorted[0]
+
+            if smooth:
+                x_grid = np.linspace(x_sorted.min(), x_sorted.max(), n_points)
+                x_grid[0] = (x_grid[0] + x_grid[1]) / 2
+                values_smoothed = np.zeros((4, n_points))
+                values_smoothed[0] = x_grid
+                for i in range(1, 4):
+                    y_interp = griddata(x_sorted, values_sorted[i], x_grid)
+                    values_smoothed[i] = savgol_filter(y_interp, axis=0, **smooth_kwargs)
+                values_sorted = values_smoothed
+
+            all_prob_data.append(values_sorted)
 
         if smooth:
-            n_points = smooth_kwargs.pop("n_points", 200)
-            x_grid = np.linspace(x_sorted.min(), x_sorted.max(), n_points)
-            x_grid[0] = (x_grid[0] + x_grid[1]) / 2
-
-            values_smoothed = np.zeros((4, n_points))
-            for i in range(1, 4):
-                y_interp = griddata(x_sorted, values_sorted[i], x_grid)
-                values_smoothed[i] = savgol_filter(y_interp, axis=0, **smooth_kwargs)
-            values_smoothed[0] = x_grid
-            values_sorted = values_smoothed
             new_dim = xr.IndexVariable("dim_0", np.arange(n_points))
         else:
             new_dim = x_pred.dim_0
 
-        combined_data[xv] = (("plot_axis", "dim_0"), values_sorted)
+        if has_prob_dim:
+            combined_values = np.stack(all_prob_data, axis=-1)
+            combined_data[xv] = (("plot_axis", "dim_0", "prob"), combined_values)
+        else:
+            combined_data[xv] = (("plot_axis", "dim_0"), all_prob_data[0])
 
-    combined_ds = xr.Dataset(
-        data_vars=combined_data, coords={"plot_axis": plot_axis, "dim_0": new_dim}
-    )
+    coords = {"plot_axis": plot_axis, "dim_0": new_dim}
+    if has_prob_dim:
+        coords["prob"] = ci_data.coords["prob"]
 
+    combined_ds = xr.Dataset(data_vars=combined_data, coords=coords)
     return combined_ds
