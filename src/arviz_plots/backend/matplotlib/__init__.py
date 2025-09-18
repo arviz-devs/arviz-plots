@@ -339,6 +339,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
+
 @expand_aesthetic_aliases
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
@@ -355,6 +356,7 @@ def multiple_lines(
     target.autoscale_view()
 
     return line_collection
+
 
 @expand_aesthetic_aliases
 def scatter(
@@ -392,6 +394,7 @@ def scatter(
         "linewidths": width,
     }
     return target.scatter(x, y, **_filter_kwargs(kwargs, None, artist_kws))
+
 
 @expand_aesthetic_aliases
 def step(

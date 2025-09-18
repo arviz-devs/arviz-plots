@@ -454,6 +454,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     target.add_trace(line_object)
     return line_object
 
+
 @expand_aesthetic_aliases
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
@@ -517,7 +518,6 @@ def multiple_lines(
     return line_object
 
 
-
 @expand_aesthetic_aliases
 def scatter(
     x,
@@ -564,6 +564,7 @@ def scatter(
     )
     target.add_trace(scatter_object)
     return scatter_object
+
 
 @expand_aesthetic_aliases
 def step(
