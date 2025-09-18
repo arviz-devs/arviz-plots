@@ -23,6 +23,7 @@ from matplotlib.pyplot import show as _show
 from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
+from ..aesthetic_aliases import create_aesthetic_handlers
 from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
@@ -112,7 +113,7 @@ def get_default_aes(aes_key, n, kwargs=None):
         kwargs = {}
     if aes_key not in kwargs:
         default_prop_cycle = rcParams["axes.prop_cycle"].by_key()
-        if ("color" in aes_key) or aes_key == "c":
+        if "color" in aes_key:
             # fmt: off
             vals = [
                 '#3f90da', '#ffa90e', '#bd1f01', '#94a4a2', '#832db6',
@@ -134,36 +135,9 @@ def get_default_aes(aes_key, n, kwargs=None):
     return get_agnostic_default_aes(aes_key, n, kwargs)
 
 
-def dealiase_aes_value(aes, value):
-    try:
-        if value.startswith(f"{aes}_"):
-            index = int(value.rsplit("_")[-1])
-        else:
-            index = int(value[1:])
-        dealiased_value = get_default_aes(aes, index+1)[index]
-    except ValueError:
-        return value
-    return dealiased_value
+# Create aesthetic alias handling functions using the factory
+expand_aesthetic_aliases = create_aesthetic_handlers(get_default_aes)
 
-
-def expand_aesthetic_aliases(plot_fn):
-    def _dealiased_plot_fn(*args, **kwargs):
-        for aes in ("color", "facecolor", "edgecolor"):
-            if (
-                aes in kwargs 
-                and isinstance(value := kwargs[aes], str)
-                and (value[0].lower() in ("c", aes[0]) or value.startswith(f"{aes}_"))
-            ):
-                kwargs[aes] = dealiase_aes_value(aes, value)
-        for aes in ("linestyle", "marker"):
-            if (
-                aes in kwargs 
-                and isinstance(value := kwargs[aes], str)
-                and (value[0].lower() == aes[0] or value.startswith(f"{aes}_"))
-            ):
-                kwargs[aes] = dealiase_aes_value(aes, value)
-        return plot_fn(*args, **kwargs)
-    return _dealiased_plot_fn
 
 def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
     """Scale figure properties according to figsize, rows and cols.
@@ -365,7 +339,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.plot(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
-
+@expand_aesthetic_aliases
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
 ):
@@ -382,7 +356,7 @@ def multiple_lines(
 
     return line_collection
 
-
+@expand_aesthetic_aliases
 def scatter(
     x,
     y,
@@ -419,7 +393,7 @@ def scatter(
     }
     return target.scatter(x, y, **_filter_kwargs(kwargs, None, artist_kws))
 
-
+@expand_aesthetic_aliases
 def step(
     x,
     y,
@@ -475,6 +449,7 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     return target.fill_between(x, y_bottom, y_top, **artist_kws)
 
 
+@expand_aesthetic_aliases
 def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to matplotlib for a vertical line spanning the whole axes."""
     artist_kws.setdefault("zorder", 0)
@@ -482,6 +457,7 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return target.axvline(x, **_filter_kwargs(kwargs, Line2D, artist_kws))
 
 
+@expand_aesthetic_aliases
 def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to matplotlib for a horizontal line spanning the whole axes."""
     artist_kws.setdefault("zorder", 0)
@@ -503,6 +479,7 @@ def hspan(ymin, y_max, target, *, color=unset, alpha=unset, **artist_kws):
     return target.axhspan(ymin, y_max, **_filter_kwargs(kwargs, None, artist_kws))
 
 
+@expand_aesthetic_aliases
 def ciliney(
     x,
     y_bottom,
