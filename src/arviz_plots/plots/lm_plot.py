@@ -119,10 +119,29 @@ def plot_lm(
         Valid keys are:
 
         * pe_line-> passed to :func:`~.visuals.line_xy`.
+
+          Represents the mean, median, or mode of the predictions, E(y|x), or of the
+          linear predictor, E(η|x).
+
         * ci_band -> passed to :func:`~.visuals.fill_between_y`.
+
+          Represents a credible interval for E(y|x) or E(η|x).
+
         * ci_bounds -> passed to :func:`~.visuals.line_xy`. Defaults to False
+
+          Represents the upper and lower bounds of a credible interval for E(y|x) or E(η|x).
+          This is similar to ci_band, but uses lines for the boundaries instead of a
+          filled area.
+
         * ci_line_y -> passed to :func:`~.visuals.ci_line_y`. Defaults to False
+
+          This is intended for categorical x values or discrete variables with
+          few unique values of x for which ci_band or ci_bounds do not work well.
+
         * observed_scatter -> passed to :func:`~.visuals.scatter_xy`.
+
+          Represents the observed data points.
+
         * xlabel -> passed to :func:`~.visuals.labelled_x`.
         * ylabel -> passed to :func:`~.visuals.labelled_y`.
 
@@ -192,13 +211,25 @@ def plot_lm(
     elif isinstance(x, str):
         x = [x]
 
-    x_pred = process_group_variables_coords(
-        dt,
-        group="constant_data",
-        var_names=x,
-        filter_vars=filter_vars,
-        coords=coords,
-    )
+    if len(x) != len(y):
+        raise ValueError("x and y must have the same length")
+
+    if group in ["posterior", "prior", "posterior_predictive", "prior_predictive"]:
+        x_pred = process_group_variables_coords(
+            dt,
+            group="constant_data",
+            var_names=x,
+            filter_vars=filter_vars,
+            coords=coords,
+        )
+    elif group == "predictions":
+        x_pred = process_group_variables_coords(
+            dt,
+            group="predictions_constant_data",
+            var_names=x,
+            filter_vars=filter_vars,
+            coords=coords,
+        )
 
     y_pred = process_group_variables_coords(
         dt,
@@ -339,8 +370,6 @@ def plot_lm(
         )
 
     # credible lines
-    # This is intended for categorical x values or few unique values of x
-    # where fill_between_y is not appropriate
     ci_line_y_kwargs = get_visual_kwargs(visuals, "ci_line_y", False)
     if ci_line_y_kwargs is not False:
         plot_collection.map(
@@ -442,7 +471,7 @@ def combine(x_pred, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
 
     for xv, yv in zip(x_vars, y_vars):
         old_dim = pe_value[yv].dims[0]
-        y_aligned = pe_value[yv].rename({old_dim: "dim_0"}).reindex(dim_0=x_pred.dim_0)
+        y_aligned = pe_value[yv].rename({old_dim: "cov_dim"}).reindex(cov_dim=x_pred.cov_dim)
 
         if has_prob_dim:
             prob_coords = ci_data.coords["prob"]
@@ -453,7 +482,9 @@ def combine(x_pred, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
         all_prob_data = []
         for ci_single in ci_list:
             ci_aligned = (
-                ci_single[yv].rename({ci_single[yv].dims[0]: "dim_0"}).reindex(dim_0=x_pred.dim_0)
+                ci_single[yv]
+                .rename({ci_single[yv].dims[0]: "cov_dim"})
+                .reindex(cov_dim=x_pred.cov_dim)
             )
             lower = ci_aligned.sel(ci_bound="lower").values
             upper = ci_aligned.sel(ci_bound="upper").values
@@ -476,19 +507,20 @@ def combine(x_pred, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
             all_prob_data.append(values_sorted)
 
         if smooth:
-            new_dim = xr.IndexVariable("dim_0", np.arange(n_points))
+            new_dim = xr.IndexVariable("cov_dim", np.arange(n_points))
         else:
-            new_dim = x_pred.dim_0
+            new_dim = x_pred.cov_dim
 
         if has_prob_dim:
             combined_values = np.stack(all_prob_data, axis=-1)
-            combined_data[xv] = (("plot_axis", "dim_0", "prob"), combined_values)
+            combined_data[xv] = (("plot_axis", "cov_dim", "prob"), combined_values)
         else:
-            combined_data[xv] = (("plot_axis", "dim_0"), all_prob_data[0])
+            combined_data[xv] = (("plot_axis", "cov_dim"), all_prob_data[0])
 
-    coords = {"plot_axis": plot_axis, "dim_0": new_dim}
+    coords = {"plot_axis": plot_axis, "cov_dim": new_dim}
     if has_prob_dim:
         coords["prob"] = ci_data.coords["prob"]
 
     combined_ds = xr.Dataset(data_vars=combined_data, coords=coords)
+
     return combined_ds
