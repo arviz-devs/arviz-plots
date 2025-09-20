@@ -18,6 +18,7 @@ from .pair_focus_plot import plot_pair_focus
 from .pair_plot import plot_pair
 from .parallel_plot import plot_parallel
 from .pava_calibration_plot import plot_ppc_pava
+from .ppc_censored_plot import plot_ppc_censored
 from .ppc_dist_plot import plot_ppc_dist
 from .ppc_interval_plot import plot_ppc_interval
 from .ppc_pit_plot import plot_ppc_pit
@@ -52,6 +53,7 @@ __all__ = [
     "plot_pair",
     "plot_pair_focus",
     "plot_parallel",
+    "plot_ppc_censored",
     "plot_ppc_dist",
     "plot_ppc_interval",
     "plot_ppc_rootogram",

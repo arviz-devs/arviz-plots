@@ -21,6 +21,7 @@ from arviz_plots import (
     plot_pair,
     plot_pair_focus,
     plot_parallel,
+    plot_ppc_censored,
     plot_ppc_dist,
     plot_ppc_interval,
     plot_ppc_pava,
@@ -498,6 +499,21 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "xticks" in pc.viz.children
         assert "diverging" not in pc.viz["xticks"].dims
         assert "labels" in pc.viz["xticks"].dims
+
+    @pytest.mark.parametrize("truncation_factor", [1.5, None])
+    def test_plot_ppc_censored(self, datatree_censored, backend, truncation_factor):
+        pc = plot_ppc_censored(
+            datatree_censored,
+            var_names="time",
+            backend=backend,
+            truncation_factor=truncation_factor,
+        )
+
+        assert "figure" in pc.viz.data_vars
+        assert "predictive" in pc.viz.children
+        assert "observed_km" in pc.viz.children
+        assert "time" in pc.viz["predictive"]
+        assert "time" in pc.viz["observed_km"]
 
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
