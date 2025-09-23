@@ -106,7 +106,7 @@ def plot_ppc_censored(
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title
 
-    **pc_kwargs|
+    **pc_kwargs
         Additional arguments passed to PlotCollection.
 
     Returns
