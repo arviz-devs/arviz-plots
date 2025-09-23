@@ -16,8 +16,6 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("censored_cats")
 
 
-pc = azp.plot_ppc_censored(
-    backend="none",
-)
+pc = azp.plot_ppc_censored(data, backend="none")
 
 pc.show()
