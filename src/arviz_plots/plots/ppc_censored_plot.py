@@ -126,7 +126,7 @@ def plot_ppc_censored(
         >>> from arviz_plots import plot_ppc_censored, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> dt = load_arviz_data('censored_cats'
+        >>> dt = load_arviz_data('censored_cats')
         >>> plot_ppc_censored(dt)
     """
     if sample_dims is None:
