@@ -25,7 +25,7 @@ def plot_ppc_censored(
     group="posterior_predictive",
     coords=None,
     sample_dims=None,
-    num_samples=50,
+    num_samples=100,
     truncation_factor=1.2,
     plot_collection=None,
     backend=None,
@@ -81,9 +81,8 @@ def plot_ppc_censored(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    num_samples : int, default 50
-        Number of posterior predictive samples to plot. If greater than the number
-        of available samples, all samples will be plotted.
+    num_samples : int, optional
+        Number of samples to plot. Defaults to 100.
     truncation_factor : float, default 1.2
         Factor by which to truncate the survival curves beyond the maximum observed time.
         Set to `None` to show all posterior predictive draws.
@@ -104,7 +103,7 @@ def plot_ppc_censored(
         * predictive -> passed to :func:`~arviz_plots.visuals.ecdf_line`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
-        * title -> passed to :func:`~arviz_plots.visuals.labelled_title
+        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
 
     **pc_kwargs
         Additional arguments passed to PlotCollection.
