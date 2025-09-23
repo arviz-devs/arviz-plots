@@ -125,6 +125,8 @@ def plot_ppc_censored(
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('censored_cats')
         >>> plot_ppc_censored(dt)
+
+    .. minigallery:: plot_ppc_censored
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
