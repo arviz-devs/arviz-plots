@@ -66,6 +66,8 @@ def plot_ppc_censored(
         Input data containing the predictive samples and observed data.
         Should contain groups specified by `group` and "observed_data",
         optionally including a censoring status variable in "constant_data".
+        This censoring variable should be binary where 1 indicates an event
+        occurred and 0 indicates censoring.
     var_names : str or list of str, optional
         One or more variables to be plotted.
     filter_vars : {None, "like", "regex"}, optional, default=None
@@ -79,10 +81,6 @@ def plot_ppc_censored(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    status_var : str, optional
-        Name of the censoring status variable. Should be a binary variable where
-        1 indicates an event occurred and 0 indicates censoring. If None, assumes
-        all observations are events (no censoring).
     num_samples : int, default 50
         Number of posterior predictive samples to plot. If greater than the number
         of available samples, all samples will be plotted.
@@ -231,7 +229,7 @@ def plot_ppc_censored(
             plot_collection, aes_by_visuals, "observed_km", sample_dims
         )
         if "color" not in observed_aes:
-            observed_km_kwargs.setdefault("color", "black")
+            observed_km_kwargs.setdefault("color", contrast_color)
         observed_km_kwargs.setdefault("linestyle", line_styles[1])
 
         plot_collection.map(
