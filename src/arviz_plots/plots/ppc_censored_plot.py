@@ -52,7 +52,7 @@ def plot_ppc_censored(
     ] = None,
     **pc_kwargs,
 ):
-    """Plot Kaplan-Meier survival curves for posterior predictive checking of censored data.
+    """Plot Kaplan-Meier survival curve [1]_ vs predictive draws.
 
     Instead of plotting the raw data observation and predictions, as is common in posterior
     predictive checks, this function computes the Kaplan-Meier survival curves for observed
@@ -127,6 +127,11 @@ def plot_ppc_censored(
         >>> plot_ppc_censored(dt)
 
     .. minigallery:: plot_ppc_censored
+
+    References
+    ----------
+    .. [1] Kaplan, E. L., & Meier, P. Nonparametric estimation from incomplete observations.
+           JASA, 53(282). (1958) https://doi:10.1080/01621459.1958.10501452
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]

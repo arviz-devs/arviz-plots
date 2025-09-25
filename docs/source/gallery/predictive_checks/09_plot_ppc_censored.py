@@ -1,6 +1,6 @@
 """
-# Censored posterior predictive checks
-Plot Kaplan-Meier survival curves for posterior predictive checking of censored data.
+# Survival analysis (censored data)
+Plot Kaplan-Meier survival curve vs posterior predictive draws.
 ---
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_ppc_censored`
