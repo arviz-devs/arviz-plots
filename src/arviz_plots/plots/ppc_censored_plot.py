@@ -131,7 +131,7 @@ def plot_ppc_censored(
     References
     ----------
     .. [1] Kaplan, E. L., & Meier, P. Nonparametric estimation from incomplete observations.
-           JASA, 53(282). (1958) https://doi:10.1080/01621459.1958.10501452
+           JASA, 53(282). (1958) https://doi.org/10.1080/01621459.1958.10501452
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
