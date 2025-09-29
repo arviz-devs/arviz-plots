@@ -10,6 +10,7 @@ from arviz_base.testing import datatree2 as _datatree2
 from arviz_base.testing import datatree3 as _datatree3
 from arviz_base.testing import datatree_4d as _datatree_4d
 from arviz_base.testing import datatree_binary as _datatree_binary
+from arviz_base.testing import datatree_censored as _datatree_censored
 from arviz_base.testing import datatree_sample as _datatree_sample
 from hypothesis import settings
 
@@ -121,6 +122,12 @@ def datatree_4d():
 def datatree_binary():
     """Fixture for a DataTree with binary data."""
     return _datatree_binary()
+
+
+@pytest.fixture(scope="session")
+def datatree_censored():
+    """Fixture for a DataTree with censored data."""
+    return _datatree_censored()
 
 
 @pytest.fixture(scope="session")

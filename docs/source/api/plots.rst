@@ -34,6 +34,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_pair
    plot_pair_focus
    plot_parallel
+   plot_ppc_censored
    plot_ppc_dist
    plot_ppc_pava
    plot_ppc_pit

@@ -19,6 +19,7 @@ from arviz_plots import (
     plot_pair,
     plot_pair_focus,
     plot_parallel,
+    plot_ppc_censored,
     plot_ppc_dist,
     plot_ppc_interval,
     plot_ppc_pava,
@@ -610,6 +611,47 @@ def test_plot_ppc_dist(datatree, kind, visuals):
                 var_name in pc.viz[visual].data_vars
                 for var_name in datatree["posterior_predictive"].data_vars
             )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "observed_km": visuals_value_no_false,
+            "predictive": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+)
+def test_plot_ppc_censored(datatree_censored, visuals):
+    pc = plot_ppc_censored(
+        datatree_censored,
+        var_names="time",
+        backend="none",
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree_censored["posterior_predictive"].data_vars
+            )
+            assert "plot" in pc.viz.children
+            for visual, value in visuals.items():
+                if value is False:
+                    assert visual not in pc.viz.children
+                else:
+                    assert visual in pc.viz.children
+                    assert all(
+                        var_name in pc.viz[visual].data_vars
+                        for var_name in datatree_censored["posterior_predictive"].data_vars
+                    )
 
 
 @given(
