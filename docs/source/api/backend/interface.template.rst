@@ -18,7 +18,7 @@ Geoms
    scatter
    text
 
-Plot appeareance
+Plot appearance
 ................
 
 .. autosummary::
