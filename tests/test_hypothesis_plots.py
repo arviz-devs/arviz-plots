@@ -944,6 +944,7 @@ def test_plot_rank(datatree, ci_prob, visuals):
 def test_plot_rank_dist(datatree, kind, compact, combined, visuals):
     pc = plot_rank_dist(
         datatree,
+        var_names=["mu"],
         backend="none",
         kind=kind,
         compact=compact,
