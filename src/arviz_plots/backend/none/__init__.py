@@ -517,7 +517,7 @@ def ciliney(
     return artist_element
 
 
-# general plot appeareance
+# general plot appearance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to adding a title to a plot."""
     kwargs = {"color": color, "size": size}
