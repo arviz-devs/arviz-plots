@@ -1000,7 +1000,7 @@ class PlotCollection:
         artist_dims=None,
         ignore_aes=frozenset(),
     ):
-        """Allocate an visual in the ``viz`` DataTree."""
+        """Allocate a visual in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
         if dim_to_idx is None:
