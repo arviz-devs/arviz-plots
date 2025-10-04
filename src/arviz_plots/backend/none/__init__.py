@@ -4,7 +4,7 @@
 Interface to no plotting backend, returned processed data without interfacing to any plotting
 backend for actual drawing.
 
-:term:`plots` are lists which are extended with kwarg dictionaries every time an visual
+:term:`plots` are lists which are extended with kwarg dictionaries every time a visual
 would be added to them.
 """
 import warnings
