@@ -25,7 +25,7 @@ jobs:
           echo "DATE=$(date +'%Y-%m-%d %H:%M %z')" >> ${GITHUB_ENV}
       - name: Comment on issue if failed
         if: failure()
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: 43
           body: |
