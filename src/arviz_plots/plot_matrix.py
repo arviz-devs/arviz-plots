@@ -196,7 +196,7 @@ class PlotMatrix(PlotCollection):
     def allocate_artist(
         self, fun_label, data, all_loop_dims, dim_to_idx=None, artist_dims=None, ignore_aes=None
     ):
-        """Allocate an visual in the ``viz`` DataTree."""
+        """Allocate a visual in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
         if dim_to_idx:
@@ -224,7 +224,7 @@ class PlotMatrix(PlotCollection):
         Parameters
         ----------
         aux_artist
-            The plotting backend class representing an visual to be stored or
+            The plotting backend class representing a visual to be stored or
             an array-like of such objects.
         fun_label : hashable
             The identifier of the visual within the ``PlotMatrix``.

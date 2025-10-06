@@ -713,7 +713,7 @@ class PlotCollection:
         figure_kwargs=None,
         **kwargs,
     ):
-        """Instatiate a PlotCollection and generate a plot grid iterating over subsets and wrapping.
+        """Instantiate a PlotCollection and generate a grid iterating over subsets and wrapping.
 
         Parameters
         ----------
@@ -854,7 +854,7 @@ class PlotCollection:
         figure_kwargs=None,
         **kwargs,
     ):
-        """Instatiate a PlotCollection and generate a plot grid iterating over rows and columns.
+        """Instantiate a PlotCollection and generate a plot grid iterating over rows and columns.
 
         Parameters
         ----------
@@ -1000,7 +1000,7 @@ class PlotCollection:
         artist_dims=None,
         ignore_aes=frozenset(),
     ):
-        """Allocate an visual in the ``viz`` DataTree."""
+        """Allocate a visual in the ``viz`` DataTree."""
         if artist_dims is None:
             artist_dims = {}
         if dim_to_idx is None:
