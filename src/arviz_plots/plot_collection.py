@@ -713,7 +713,7 @@ class PlotCollection:
         figure_kwargs=None,
         **kwargs,
     ):
-        """Instantiate a PlotCollection and generate a plot grid iterating over subsets and wrapping.
+        """Instantiate a PlotCollection and generate a grid iterating over subsets and wrapping.
 
         Parameters
         ----------
