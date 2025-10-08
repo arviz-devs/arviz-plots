@@ -1,4 +1,5 @@
 """Plot ppc using PAV-adjusted calibration plot."""
+import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
@@ -176,6 +177,14 @@ def plot_ppc_pava(
         labeller = BaseLabeller()
 
     visuals.setdefault("markers", False)
+
+    if group == "prior_predictive":
+        warnings.warn(
+            "\n`plot_ppc_pava` always use the `observed_data` group."
+            "\nBe cautious when using it for prior predictive checks.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     ds_calibration = isotonic_fit(dt, var_names, group, n_bootstaps, ci_prob, data_type)
 
