@@ -16,6 +16,7 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 from webcolors import hex_to_rgb, name_to_hex, name_to_rgb
 
+from ..aesthetic_aliases import create_aesthetic_handlers
 from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
@@ -161,6 +162,10 @@ def get_default_aes(aes_key, n, kwargs=None):
             return get_agnostic_default_aes(aes_key, n, {})
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
     return get_agnostic_default_aes(aes_key, n, kwargs)
+
+
+# Create aesthetic alias handling functions using the factory
+expand_aesthetic_aliases = create_aesthetic_handlers(get_default_aes)
 
 
 def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
@@ -432,6 +437,7 @@ def hist(
     return hist_object
 
 
+@expand_aesthetic_aliases
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to plotly for a line plot."""
     artist_kws.setdefault("showlegend", False)
@@ -449,6 +455,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     return line_object
 
 
+@expand_aesthetic_aliases
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
 ):
@@ -511,6 +518,7 @@ def multiple_lines(
     return line_object
 
 
+@expand_aesthetic_aliases
 def scatter(
     x,
     y,
@@ -558,6 +566,7 @@ def scatter(
     return scatter_object
 
 
+@expand_aesthetic_aliases
 def step(
     x,
     y,
@@ -593,6 +602,7 @@ def step(
     return line_object
 
 
+@expand_aesthetic_aliases
 def text(
     x,
     y,
@@ -628,6 +638,7 @@ def text(
     return text_object
 
 
+@expand_aesthetic_aliases
 def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to plotly for plotting a filled area between two curves."""
     artist_kws.setdefault("showlegend", False)
@@ -652,6 +663,7 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
     return second_line_with_fill
 
 
+@expand_aesthetic_aliases
 def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to plotly for a vertical line spanning the whole axes."""
     artist_kws.setdefault("showlegend", False)
@@ -663,6 +675,7 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     )
 
 
+@expand_aesthetic_aliases
 def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to plotly for a horizontal line spanning the whole axes."""
     artist_kws.setdefault("showlegend", False)
@@ -674,6 +687,7 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     )
 
 
+@expand_aesthetic_aliases
 def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to plotly for a vertical shaded region spanning the whole axes."""
     kwargs = {"fillcolor": color, "opacity": alpha}
@@ -692,6 +706,7 @@ def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
     return vbox
 
 
+@expand_aesthetic_aliases
 def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to plotly for a horizontal shaded region spanning the whole axes."""
     kwargs = {"fillcolor": color, "opacity": alpha}
@@ -710,6 +725,7 @@ def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
     return hbox
 
 
+@expand_aesthetic_aliases
 def ciliney(
     x,
     y_bottom,
@@ -743,6 +759,7 @@ def ciliney(
 
 
 # general plot appeareance
+@expand_aesthetic_aliases
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a title to a plot."""
     kwargs = {"size": size, "color": color}
@@ -763,6 +780,7 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     return title_object
 
 
+@expand_aesthetic_aliases
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a label to the y axis."""
     kwargs = {"size": size, "color": color}
@@ -771,6 +789,7 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     )
 
 
+@expand_aesthetic_aliases
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to plotly for adding a label to the y axis."""
     kwargs = {"size": size, "color": color}
