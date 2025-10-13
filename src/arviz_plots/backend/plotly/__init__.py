@@ -16,7 +16,7 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 from webcolors import hex_to_rgb, name_to_hex, name_to_rgb
 
-from ..aesthetic_aliases import create_aesthetic_handlers
+from ..alias_utils import create_aesthetic_handlers
 from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
@@ -165,7 +165,7 @@ def get_default_aes(aes_key, n, kwargs=None):
 
 
 # Create aesthetic alias handling functions using the factory
-expand_aesthetic_aliases = create_aesthetic_handlers(get_default_aes)
+expand_aesthetic_aliases = create_aesthetic_handlers(get_default_aes, get_background_color)
 
 
 def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
@@ -393,6 +393,7 @@ def _filter_kwargs(kwargs, artist_kws):
 
 
 # "geoms"
+@expand_aesthetic_aliases
 def hist(
     y,
     l_e,

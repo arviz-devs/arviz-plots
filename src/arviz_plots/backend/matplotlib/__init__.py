@@ -23,7 +23,7 @@ from matplotlib.pyplot import show as _show
 from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
-from ..aesthetic_aliases import create_aesthetic_handlers
+from ..alias_utils import create_aesthetic_handlers
 from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
@@ -136,7 +136,7 @@ def get_default_aes(aes_key, n, kwargs=None):
 
 
 # Create aesthetic alias handling functions using the factory
-expand_aesthetic_aliases = create_aesthetic_handlers(get_default_aes)
+expand_aesthetic_aliases = create_aesthetic_handlers(get_default_aes, get_background_color)
 
 
 def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
@@ -298,6 +298,7 @@ def _filter_kwargs(kwargs, visual, artist_kws):
 
 
 # "geoms"
+@expand_aesthetic_aliases
 def hist(
     y,
     l_e,
@@ -422,6 +423,7 @@ def step(
     return target.step(x, y, **_filter_kwargs(kwargs, Line2D, artist_kws))[0]
 
 
+@expand_aesthetic_aliases
 def text(
     x,
     y,
@@ -446,6 +448,7 @@ def text(
     return target.text(x, y, string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
+@expand_aesthetic_aliases
 def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     """Fill the area between y_bottom and y_top."""
     artist_kws.setdefault("linewidth", 0)
@@ -468,6 +471,7 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return target.axhline(y, **_filter_kwargs(kwargs, Line2D, artist_kws))
 
 
+@expand_aesthetic_aliases
 def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to matplotlib for a vertical shaded region spanning the whole axes."""
     artist_kws.setdefault("zorder", 0)
@@ -475,6 +479,7 @@ def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
     return target.axvspan(xmin, xmax, **_filter_kwargs(kwargs, None, artist_kws))
 
 
+@expand_aesthetic_aliases
 def hspan(ymin, y_max, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to matplotlib for a horizontal shaded region spanning the whole axes."""
     artist_kws.setdefault("zorder", 0)
@@ -502,18 +507,21 @@ def ciliney(
 
 
 # general plot appeareance
+@expand_aesthetic_aliases
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a title to a plot."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_title(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
+@expand_aesthetic_aliases
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a label to the y axis."""
     kwargs = {"fontsize": size, "color": color}
     return target.set_ylabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
+@expand_aesthetic_aliases
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for adding a label to the x axis."""
     kwargs = {"fontsize": size, "color": color}
@@ -556,6 +564,7 @@ def ylim(lims, target, **artist_kws):
     target.set_ylim(lims, **artist_kws)
 
 
+@expand_aesthetic_aliases
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to matplotlib for setting ticks size."""
     kwargs = {"labelsize": size, "labelcolor": color}
@@ -603,6 +612,7 @@ def set_y_scale(target, scale):
     target.set_yscale(scale)
 
 
+@expand_aesthetic_aliases
 def grid(target, axis, color):
     """Interface to matplotlib for setting a grid in any axis."""
     target.grid(axis=axis, color=color)

@@ -23,6 +23,7 @@ from bokeh.plotting import figure as _figure
 from bokeh.plotting import output_file, save
 from bokeh.plotting import show as _show
 
+from ..alias_utils import create_aesthetic_handlers
 from ..none import get_default_aes as get_agnostic_default_aes
 from .legend import legend
 
@@ -151,6 +152,10 @@ def get_default_aes(aes_key, n, kwargs=None):
             return get_agnostic_default_aes(aes_key, n)
         return get_agnostic_default_aes(aes_key, n, {aes_key: vals})
     return get_agnostic_default_aes(aes_key, n, kwargs)
+
+
+# Create aesthetic alias handling functions using the factory
+expand_aesthetic_aliases = create_aesthetic_handlers(get_default_aes, get_background_color)
 
 
 def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
@@ -405,6 +410,7 @@ def _float_or_str_size(size):
 
 
 # "geoms"
+@expand_aesthetic_aliases
 def hist(
     y,
     l_e,
@@ -430,12 +436,14 @@ def hist(
     return target.quad(top=y, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws))
 
 
+@expand_aesthetic_aliases
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to bokeh for a line plot."""
     kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 
+@expand_aesthetic_aliases
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
 ):
@@ -450,6 +458,7 @@ def multiple_lines(
     return target.multi_line(xs="x", ys="y", source=source, **_filter_kwargs(kwargs, artist_kws))
 
 
+@expand_aesthetic_aliases
 def scatter(
     x,
     y,
@@ -491,6 +500,7 @@ def scatter(
     return target.scatter(x="x", y="y", source=source, **kwargs)
 
 
+@expand_aesthetic_aliases
 def step(
     x,
     y,
@@ -514,6 +524,7 @@ def step(
     return target.step(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 
+@expand_aesthetic_aliases
 def text(
     x,
     y,
@@ -543,6 +554,7 @@ def text(
     )
 
 
+@expand_aesthetic_aliases
 def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     """Fill the area between y_bottom and y_top."""
     x = np.atleast_1d(x)
@@ -555,6 +567,7 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
     return target.varea(x=x, y1=y_bottom, y2=y_top, **artist_kws)
 
 
+@expand_aesthetic_aliases
 def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to bokeh for a vertical line spanning the whole axes."""
     kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
@@ -563,6 +576,7 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return span_element
 
 
+@expand_aesthetic_aliases
 def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to bokeh for a horizontal line spanning the whole axes."""
     kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
@@ -571,6 +585,7 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
     return span_element
 
 
+@expand_aesthetic_aliases
 def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to bokeh for a vertical shaded region spanning the whole axes."""
     kwargs = {"fill_color": color, "fill_alpha": alpha}
@@ -579,6 +594,7 @@ def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
     return vbox
 
 
+@expand_aesthetic_aliases
 def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to bokeh for a horizontal shaded region spanning the whole axes."""
     kwargs = {"fill_color": color, "fill_alpha": alpha}
@@ -587,6 +603,7 @@ def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
     return hbox
 
 
+@expand_aesthetic_aliases
 def ciliney(
     x,
     y_bottom,
@@ -622,6 +639,7 @@ def ciliney(
 
 
 # general plot appeareance
+@expand_aesthetic_aliases
 def title(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a title to a plot."""
     kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
@@ -629,6 +647,7 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
     return target.title
 
 
+@expand_aesthetic_aliases
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a label to the y axis."""
     kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
@@ -637,6 +656,7 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
         setattr(target.yaxis, f"axis_label_{key}", value)
 
 
+@expand_aesthetic_aliases
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     """Interface to bokeh for adding a label to the x axis."""
     kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
@@ -681,6 +701,7 @@ def ylim(lims, target, **artist_kws):
     target.y_range = Range1d(*lims, **artist_kws)
 
 
+@expand_aesthetic_aliases
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
     """Interface to bokeh for setting ticks size."""
     kwargs = {"text_font_size": _float_or_str_size(size), "text_color": color}
@@ -740,6 +761,7 @@ def set_y_scale(target, scale):
         pass
 
 
+@expand_aesthetic_aliases
 def grid(target, axis, color):
     """Interface to bokeh for setting a grid in any axis."""
     if axis in ["y", "both"]:

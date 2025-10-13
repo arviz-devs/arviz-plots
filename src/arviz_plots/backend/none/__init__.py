@@ -56,7 +56,7 @@ def get_default_aes(aes_key, n, kwargs=None):
             return np.arange(n)
         if aes_key == "alpha":
             return np.linspace(0.2, 0.7, n)
-        return np.array([f"{aes_key}_{i}" for i in range(n)])
+        return np.array([f"C{i}" for i in range(n)])
     aes_vals = kwargs[aes_key]
     n_aes_vals = len(aes_vals)
     if n_aes_vals >= n:

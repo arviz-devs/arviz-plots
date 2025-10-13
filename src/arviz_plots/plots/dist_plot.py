@@ -13,7 +13,6 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -231,8 +230,6 @@ def plot_dist(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -276,7 +273,6 @@ def plot_dist(
         labeller = BaseLabeller()
 
     density = distribution
-    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
     if density_kwargs is not False or face_kwargs is not False:
         density_dims, _, _ = filter_aes(plot_collection, aes_by_visuals, "dist", sample_dims)
         if kind == "kde":
@@ -298,7 +294,7 @@ def plot_dist(
         )
 
         if "color" not in density_aes:
-            density_kwargs.setdefault("color", default_color)
+            density_kwargs.setdefault("color", "C0")
 
         if kind == "kde":
             plot_collection.map(
@@ -330,7 +326,7 @@ def plot_dist(
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
 
         if "color" not in face_aes:
-            face_kwargs.setdefault("color", default_color)
+            face_kwargs.setdefault("color", "C0")
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
 
@@ -368,7 +364,7 @@ def plot_dist(
         _, rug_aes, rug_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)
 
         if "color" not in rug_aes:
-            rug_kwargs.setdefault("color", contrast_color)
+            rug_kwargs.setdefault("color", "B1")
         if "marker" not in rug_aes:
             rug_kwargs.setdefault("marker", "|")
         if "size" not in rug_aes:
@@ -410,7 +406,7 @@ def plot_dist(
             )
 
         if "color" not in ci_aes:
-            ci_kwargs.setdefault("color", contrast_gray_color)
+            ci_kwargs.setdefault("color", "B2")
         plot_collection.map(line_x, "credible_interval", data=ci, ignore_aes=ci_ignore, **ci_kwargs)
 
     # point estimate
@@ -429,7 +425,7 @@ def plot_dist(
 
     if pe_kwargs is not False:
         if "color" not in pe_aes:
-            pe_kwargs.setdefault("color", contrast_gray_color)
+            pe_kwargs.setdefault("color", "B2")
         plot_collection.map(
             scatter_x,
             "point_estimate",
@@ -467,7 +463,7 @@ def plot_dist(
             plot_collection, aes_by_visuals, "point_estimate_text", sample_dims
         )
         if "color" not in pet_aes:
-            pet_kwargs.setdefault("color", contrast_gray_color)
+            pet_kwargs.setdefault("color", "B2")
         pet_kwargs.setdefault("horizontal_align", "center")
         pet_kwargs.setdefault("point_label", "x")
         plot_collection.map(
@@ -486,7 +482,7 @@ def plot_dist(
             plot_collection, aes_by_visuals, "title", sample_dims
         )
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", contrast_color)
+            title_kwargs.setdefault("color", "B1")
         plot_collection.map(
             labelled_title,
             "title",
