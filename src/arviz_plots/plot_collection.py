@@ -29,8 +29,8 @@ def backend_from_object(obj, return_module=True):
     if isinstance(obj, list | dict):
         backend = "none"
     else:
-        lib, *_, leaf = obj.__module__.split(".")
-        # for plotly, the target will actually be an arviz_plots.backend.plotly.PlotlyPlot
+        lib, *_, leaf, _ = obj.__module__.split(".")
+        # for plotly, the target will actually be an arviz_plots.backend.plotly.core.PlotlyPlot
         if lib == "arviz_plots":
             backend = leaf
         else:

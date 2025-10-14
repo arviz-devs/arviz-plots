@@ -1,8 +1,11 @@
 """Matplotlib manual legend generation."""
 from matplotlib.lines import Line2D
 
+from .core import expand_aesthetic_aliases
 
-def dealiase_line_kwargs(kwargs):
+
+@expand_aesthetic_aliases
+def dealiase_line_kwargs(**kwargs):
     """Convert arviz common interface properties to matplotlib ones."""
     prop_map = {"width": "linewidth"}
     return {prop_map.get(key, key): value for key, value in kwargs.items()}
@@ -17,7 +20,7 @@ def legend(
     kwargs.setdefault("loc", "outside right upper")
     if artist_type == "line":
         artist_fun = Line2D
-        kwarg_list = [dealiase_line_kwargs(kws) for kws in kwarg_list]
+        kwarg_list = [dealiase_line_kwargs(**kws) for kws in kwarg_list]
     else:
         raise NotImplementedError("Only line type legends supported for now")
     handles = [artist_fun([], [], **{**artist_kwargs, **kws}) for kws in kwarg_list]

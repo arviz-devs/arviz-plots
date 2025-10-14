@@ -4,8 +4,11 @@ import warnings
 import numpy as np
 from bokeh.models import Legend
 
+from .core import expand_aesthetic_aliases
 
-def dealiase_line_kwargs(kwargs):
+
+@expand_aesthetic_aliases
+def dealiase_line_kwargs(**kwargs):
     """Convert arviz common interface properties to bokeh ones."""
     prop_map = {"width": "line_width", "linestyle": "line_dash"}
     return {prop_map.get(key, key): value for key, value in kwargs.items()}
@@ -57,7 +60,7 @@ def legend(
     glyph_list = []
     if artist_type == "line":
         artist_fun = target_plot.line
-        kwarg_list = [dealiase_line_kwargs(kws) for kws in kwarg_list]
+        kwarg_list = [dealiase_line_kwargs(**kws) for kws in kwarg_list]
     else:
         raise NotImplementedError("Only line type legends supported for now")
 
