@@ -56,6 +56,8 @@ def create_aesthetic_handlers(get_default_aes, get_background_color):
                         dealiased_value = get_contrast_colors(bg_color=bg_color)[0]
                     case 2:
                         dealiased_value = get_contrast_colors(bg_color=bg_color)[1]
+                    case 3:
+                        dealiased_value = get_contrast_colors(bg_color=bg_color)[2]
                     case _:
                         raise ValueError("Unrecognized background dependent color alias")
         except ValueError:
