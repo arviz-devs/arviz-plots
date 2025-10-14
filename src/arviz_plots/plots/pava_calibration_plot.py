@@ -9,12 +9,7 @@ from arviz_base.labels import BaseLabeller
 from arviz_stats.helper_stats import isotonic_fit
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_contrast_colors,
-    get_visual_kwargs,
-    set_wrap_layout,
-)
+from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, set_wrap_layout
 from arviz_plots.visuals import (
     dline,
     fill_between_y,
@@ -189,12 +184,6 @@ def plot_ppc_pava(
     ds_calibration = isotonic_fit(dt, var_names, group, n_bootstaps, ci_prob, data_type)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
-
-    colors = plot_bknd.get_default_aes("color", 1, {})
-    markers = plot_bknd.get_default_aes("marker", 7, {})
-    lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -221,8 +210,8 @@ def plot_ppc_pava(
         _, _, reference_ls_ignore = filter_aes(
             plot_collection, aes_by_visuals, "reference_line", sample_dims
         )
-        reference_ls_kwargs.setdefault("color", "grey")
-        reference_ls_kwargs.setdefault("linestyle", lines[1])
+        reference_ls_kwargs.setdefault("color", "B2")
+        reference_ls_kwargs.setdefault("linestyle", "C1")
 
         plot_collection.map(
             dline,
@@ -240,8 +229,8 @@ def plot_ppc_pava(
         _, _, calibration_ms_ignore = filter_aes(
             plot_collection, aes_by_visuals, "markers", sample_dims
         )
-        calibration_ms_kwargs.setdefault("color", colors[0])
-        calibration_ms_kwargs.setdefault("marker", markers[6])
+        calibration_ms_kwargs.setdefault("color", "C0")
+        calibration_ms_kwargs.setdefault("marker", "C6")
 
         plot_collection.map(
             scatter_xy,
@@ -258,7 +247,7 @@ def plot_ppc_pava(
         _, _, calibration_ls_ignore = filter_aes(
             plot_collection, aes_by_visuals, "lines", sample_dims
         )
-        calibration_ls_kwargs.setdefault("color", colors[0])
+        calibration_ls_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             line_xy,
@@ -271,7 +260,7 @@ def plot_ppc_pava(
     ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", colors[0])
+        ci_kwargs.setdefault("color", "C0")
         ci_kwargs.setdefault("alpha", 0.25)
 
         plot_collection.map(
@@ -292,7 +281,7 @@ def plot_ppc_pava(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", contrast_color)
+            xlabel_kwargs.setdefault("color", "B1")
 
         xlabel_kwargs.setdefault("text", "predicted value")
 
@@ -311,7 +300,7 @@ def plot_ppc_pava(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", contrast_color)
+            ylabel_kwargs.setdefault("color", "B1")
 
         ylabel_kwargs.setdefault("text", "CEP")
 

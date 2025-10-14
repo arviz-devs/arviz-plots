@@ -8,7 +8,7 @@ from arviz_base import rcParams
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import get_contrast_colors, get_visual_kwargs
+from arviz_plots.plots.utils import get_visual_kwargs
 
 
 def plot_compare(
@@ -130,8 +130,6 @@ def plot_compare(
 
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
-    bg_color = p_be.get_background_color()
-    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     # Get figure params and create figure and axis
     figure_kwargs = pc_kwargs.pop("figure_kwargs", {}).copy()
@@ -202,7 +200,7 @@ def plot_compare(
     # Plot ELPD standard error bars
     error_kwargs = get_visual_kwargs(visuals, "error_bar")
     if error_kwargs is not False:
-        error_kwargs.setdefault("color", contrast_color)
+        error_kwargs.setdefault("color", "B1")
 
         for se_vals, ytick in zip(se_list, yticks_pos):
             if rotated:
@@ -213,7 +211,7 @@ def plot_compare(
     # Add reference line for the best model
     ref_l_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_l_kwargs is not False:
-        ref_l_kwargs.setdefault("color", contrast_gray_color)
+        ref_l_kwargs.setdefault("color", "B2")
         ref_l_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 2, {})[-1])
 
         if rotated:
@@ -224,7 +222,7 @@ def plot_compare(
     # Add reference band for the best model
     ref_b_kwargs = get_visual_kwargs(visuals, "ref_band", False)
     if ref_b_kwargs is not False:
-        ref_b_kwargs.setdefault("color", contrast_gray_color)
+        ref_b_kwargs.setdefault("color", "B2")
         ref_b_kwargs.setdefault("alpha", 0.1)
 
         if rotated:
@@ -235,13 +233,13 @@ def plot_compare(
     # Plot ELPD point estimates
     pe_kwargs = get_visual_kwargs(visuals, "point_estimate")
     if pe_kwargs is not False:
-        pe_kwargs.setdefault("color", contrast_color)
+        pe_kwargs.setdefault("color", "B1")
         p_be.scatter(scatter_x, scatter_y, target, **pe_kwargs)
 
     # Add line for statistically undistinguishable models
     similar_l_kwargs = get_visual_kwargs(visuals, "similar_line", False)
     if similar_l_kwargs is not False:
-        similar_l_kwargs.setdefault("color", contrast_gray_color)
+        similar_l_kwargs.setdefault("color", "B2")
         similar_l_kwargs.setdefault("linestyle", p_be.get_default_aes("linestyle", 3, {})[-1])
 
         if rotated:

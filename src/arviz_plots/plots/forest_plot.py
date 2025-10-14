@@ -10,12 +10,7 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_contrast_colors,
-    get_visual_kwargs,
-    process_group_variables_coords,
-)
+from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, process_group_variables_coords
 from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x
 
 
@@ -239,8 +234,6 @@ def plot_forest(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     given_plotcollection = True
     if plot_collection is None:
@@ -435,7 +428,7 @@ def plot_forest(
                 plot_collection, aes_by_visuals, "shade", sample_dims
             )
             if "color" not in shade_aes:
-                shade_kwargs.setdefault("color", contrast_gray_color)
+                shade_kwargs.setdefault("color", "B2")
             shade_data = xr.concat((y_min, y_max), "kwarg").assign_coords(
                 kwarg=["y_bottom", "y_top"]
             )
@@ -475,7 +468,7 @@ def plot_forest(
         lab_ignore = set(lab_ignore).union(extra_ignore_aes)
         lab_kwargs = labels_kwargs.copy()
         if "color" not in lab_aes:
-            lab_kwargs.setdefault("color", contrast_color)
+            lab_kwargs.setdefault("color", "B1")
         if x == 0:
             lab_kwargs.setdefault("horizontal_align", "left")
         if x == len(labels) - 1:
@@ -502,11 +495,10 @@ def plot_forest(
         )
 
     # plot credible interval
-    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
     if twig_kwargs is not False:
         twig_kwargs.setdefault("width", 0.7)
         if "color" not in ci_aes:
-            twig_kwargs.setdefault("color", default_color)
+            twig_kwargs.setdefault("color", "C0")
         plot_collection.map(
             line_x,
             "twig",
@@ -518,7 +510,7 @@ def plot_forest(
     if trunk_kwargs is not False:
         trunk_kwargs.setdefault("width", 2)
         if "color" not in ci_aes:
-            trunk_kwargs.setdefault("color", default_color)
+            trunk_kwargs.setdefault("color", "C0")
         plot_collection.map(
             line_x,
             "trunk",
@@ -531,9 +523,9 @@ def plot_forest(
     # point estimate
     if pe_kwargs is not False:
         if "color" not in pe_aes:
-            pe_kwargs.setdefault("color", default_color)
+            pe_kwargs.setdefault("color", "C0")
         if "facecolor" not in pe_aes:
-            pe_kwargs.setdefault("facecolor", "white")
+            pe_kwargs.setdefault("facecolor", "B0")
         if "width" not in pe_aes:
             pe_kwargs.setdefault("width", 1)
         plot_collection.map(

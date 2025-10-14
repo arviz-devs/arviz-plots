@@ -1,7 +1,7 @@
 """Backend agnostic utilities for handling arguments and aliases."""
 
 
-def get_contrast_colors(bg_color="#ffffff"):
+def get_contrast_colors(bg_color="#FFFFFF"):
     """Get contrast colors based on the background color."""
     color = bg_color.lstrip("#")
     r = int(color[0:2], 16)
@@ -9,7 +9,7 @@ def get_contrast_colors(bg_color="#ffffff"):
     b = int(color[4:6], 16)
     # calculating the YIQ brightness value
     yiq = (r * 299 + g * 587 + b * 114) / 1000
-    return ("#ffffff", "#b3b3b3") if yiq < 128 else ("#000000", "#4c4c4c")
+    return ("#FFFFFF", "#B3B3B3", "#5B5B5B") if yiq < 128 else ("#000000", "#4C4C4C", "#949494")
 
 
 def create_aesthetic_handlers(get_default_aes, get_background_color):
@@ -23,8 +23,13 @@ def create_aesthetic_handlers(get_default_aes, get_background_color):
     aliases for colors that depend on the background color:
 
     * B0 -> the background color of the currently active theme
-    * B1 -> a color with high contrast with B0
-    * B2 -> a color with muted contrast with B0
+    * B1 -> a color with high contrast with B0 (21:1 for black or white backgrounds)
+    * B2 -> a color with muted contrast with B0 (8:1 contrast for black or white backgrounds).
+      This color is more muted than B1 but still high contrast enough for accessible text
+      within image or thin visual elements.
+    * B3 -> a color with muted contrast with B0 (3:1 contrast for black or white background).
+      This color is more muted than B2 and might not be easily readable for everyone.
+      It is still adequate for complementary graphical elements like grid lines or borders.
 
     Parameters
     ----------

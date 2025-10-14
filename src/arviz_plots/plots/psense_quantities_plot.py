@@ -11,7 +11,6 @@ from xarray import concat
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_visual_kwargs,
     process_group_variables_coords,
     set_grid_layout,
@@ -266,12 +265,6 @@ def plot_psense_quantities(
         max_ = baseline_quantities + mcse_quantities * 2
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
-
-    colors = plot_bknd.get_default_aes("color", 2, {})
-    markers = plot_bknd.get_default_aes("marker", 6, {})
-    lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -313,8 +306,8 @@ def plot_psense_quantities(
         _, _, prior_ms_ignore = filter_aes(
             plot_collection, aes_by_visuals, "prior_markers", sample_dims
         )
-        prior_ms_kwargs.setdefault("marker", markers[0])
-        prior_ms_kwargs.setdefault("color", colors[0])
+        prior_ms_kwargs.setdefault("marker", "C0")
+        prior_ms_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             scatter_xy,
@@ -331,7 +324,7 @@ def plot_psense_quantities(
         _, _, prior_ls_ignore = filter_aes(
             plot_collection, aes_by_visuals, "prior_lines", sample_dims
         )
-        prior_ls_kwargs.setdefault("color", colors[0])
+        prior_ls_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             line_xy,
@@ -351,8 +344,8 @@ def plot_psense_quantities(
             plot_collection, aes_by_visuals, "likelihood_markers", sample_dims
         )
 
-        likelihood_ms_kwargs.setdefault("marker", markers[5])
-        likelihood_ms_kwargs.setdefault("color", colors[1])
+        likelihood_ms_kwargs.setdefault("marker", "C5")
+        likelihood_ms_kwargs.setdefault("color", "C1")
 
         plot_collection.map(
             scatter_xy,
@@ -370,7 +363,7 @@ def plot_psense_quantities(
             plot_collection, aes_by_visuals, "likelihood_lines", sample_dims
         )
 
-        likelihood_ls_kwargs.setdefault("color", colors[1])
+        likelihood_ls_kwargs.setdefault("color", "C1")
 
         plot_collection.map(
             line_xy,
@@ -386,8 +379,8 @@ def plot_psense_quantities(
         mcse_kwargs = get_visual_kwargs(visuals, "mcse")
         _, _, mcse_ignore = filter_aes(plot_collection, aes_by_visuals, "mcse", sample_dims)
         if mcse_kwargs is not False:
-            mcse_kwargs.setdefault("color", "grey")
-            mcse_kwargs.setdefault("linestyle", lines[1])
+            mcse_kwargs.setdefault("color", "B2")
+            mcse_kwargs.setdefault("linestyle", "C1")
 
             plot_collection.map(hline, "mcse", data=min_, ignore_aes=mcse_ignore, **mcse_kwargs)
             plot_collection.map(hline, "mcse", data=max_, ignore_aes=mcse_ignore, **mcse_kwargs)
@@ -414,7 +407,7 @@ def plot_psense_quantities(
     xlabel_kwargs = visuals.get("xlabel", {}).copy()
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", contrast_color)
+            xlabel_kwargs.setdefault("color", "B1")
 
         xlabel_kwargs.setdefault("text", "Power-scaling α")
 

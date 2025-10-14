@@ -13,7 +13,6 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_group,
     get_visual_kwargs,
     process_group_variables_coords,
@@ -281,13 +280,6 @@ def plot_ess(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
-
-    # getting backend specific linestyles
-    linestyles = plot_bknd.get_default_aes("linestyle", 4, {})
-    # and default color
-    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
 
     # set plot collection initialization defaults
     if plot_collection is None:
@@ -381,7 +373,7 @@ def plot_ess(
         )
 
         if "color" not in ess_aes:
-            ess_kwargs.setdefault("color", default_color)
+            ess_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             scatter_xy, "ess", data=ess_dataset, ignore_aes=ess_ignore, **ess_kwargs
@@ -398,7 +390,7 @@ def plot_ess(
         rug_mask = dt.sample_stats[rug_kind]
         _, div_aes, div_ignore = filter_aes(plot_collection, aes_by_visuals, "rug", sample_dims)
         if "color" not in div_aes:
-            rug_kwargs.setdefault("color", contrast_color)
+            rug_kwargs.setdefault("color", "B1")
         if "marker" not in div_aes:
             rug_kwargs.setdefault("marker", "|")
         if "size" not in div_aes:
@@ -449,10 +441,10 @@ def plot_ess(
         if mean_kwargs is not False:
             # getting 2nd default linestyle for chosen backend and assigning it by default
             if "linestyle" not in mean_aes:
-                mean_kwargs.setdefault("linestyle", linestyles[1])
+                mean_kwargs.setdefault("linestyle", "C1")
 
             if "color" not in mean_aes:
-                mean_kwargs.setdefault("color", default_color)
+                mean_kwargs.setdefault("color", "C0")
 
             plot_collection.map(
                 line_xy,
@@ -465,10 +457,10 @@ def plot_ess(
 
         if sd_kwargs is not False:
             if "linestyle" not in sd_aes:
-                sd_kwargs.setdefault("linestyle", linestyles[2])
+                sd_kwargs.setdefault("linestyle", "C2")
 
             if "color" not in sd_aes:
-                sd_kwargs.setdefault("color", default_color)
+                sd_kwargs.setdefault("color", "C0")
 
             plot_collection.map(
                 line_xy, "sd", data=sd_ess, ignore_aes=sd_ignore, x=x_range, **sd_kwargs
@@ -486,7 +478,7 @@ def plot_ess(
             )
 
             if "color" not in mean_text_aes:
-                mean_text_kwargs.setdefault("color", contrast_color)
+                mean_text_kwargs.setdefault("color", "B1")
 
             mean_text_kwargs.setdefault("x", 1)
             mean_text_kwargs.setdefault("horizontal_align", "right")
@@ -513,7 +505,7 @@ def plot_ess(
             )
 
             if "color" not in sd_text_aes:
-                sd_text_kwargs.setdefault("color", contrast_color)
+                sd_text_kwargs.setdefault("color", "B1")
 
             sd_text_kwargs.setdefault("x", 1)
             sd_text_kwargs.setdefault("horizontal_align", "right")
@@ -546,10 +538,10 @@ def plot_ess(
             min_ess = min_ess / n_points
 
         if "linestyle" not in min_ess_aes:
-            min_ess_kwargs.setdefault("linestyle", linestyles[3])
+            min_ess_kwargs.setdefault("linestyle", "C3")
 
         if "color" not in min_ess_aes:
-            min_ess_kwargs.setdefault("color", contrast_gray_color)
+            min_ess_kwargs.setdefault("color", "B2")
 
         plot_collection.map(
             line_xy,
@@ -569,7 +561,7 @@ def plot_ess(
             plot_collection, aes_by_visuals, "title", sample_dims
         )
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", contrast_color)
+            title_kwargs.setdefault("color", "B1")
         plot_collection.map(
             labelled_title,
             "title",
@@ -587,7 +579,7 @@ def plot_ess(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in labels_aes:
-            xlabel_kwargs.setdefault("color", contrast_color)
+            xlabel_kwargs.setdefault("color", "B1")
 
         # formatting ylabel and setting xlabel
         xlabel_kwargs.setdefault("text", "Quantile")
@@ -606,7 +598,7 @@ def plot_ess(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in labels_aes:
-            ylabel_kwargs.setdefault("color", contrast_color)
+            ylabel_kwargs.setdefault("color", "B1")
 
         if relative is not False:
             ylabel_text = ylabel.format("Relative ESS")

@@ -13,7 +13,6 @@ from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.trace_plot import plot_trace
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_group,
     get_visual_kwargs,
     process_group_variables_coords,
@@ -210,8 +209,6 @@ def plot_trace_dist(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
 
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
     if len(color_cycle) <= 2:
@@ -379,7 +376,7 @@ def plot_trace_dist(
             plot_collection, aes_by_visuals, "divergence", sample_dims
         )
         if "color" not in div_aes:
-            div_kwargs.setdefault("color", contrast_color)
+            div_kwargs.setdefault("color", "B1")
         if "marker" not in div_aes:
             div_kwargs.setdefault("marker", "|")
         if "size" not in div_aes:
@@ -403,7 +400,7 @@ def plot_trace_dist(
     label_kwargs = get_visual_kwargs(visuals, "label")
     if label_kwargs is not False:
         if "color" not in labels_aes:
-            label_kwargs.setdefault("color", contrast_color)
+            label_kwargs.setdefault("color", "B1")
 
         plot_collection.map(
             labelled_x,

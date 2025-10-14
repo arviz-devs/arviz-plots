@@ -1,7 +1,6 @@
 """Contain functions for Bayes Factor plotting."""
 
 from collections.abc import Mapping, Sequence
-from importlib import import_module
 from typing import Any, Literal
 
 import xarray as xr
@@ -9,7 +8,7 @@ from arviz_base import rcParams
 from arviz_stats.bayes_factor import bayes_factor
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
-from arviz_plots.plots.utils import add_lines, filter_aes, get_contrast_colors, get_visual_kwargs
+from arviz_plots.plots.utils import add_lines, filter_aes, get_visual_kwargs
 
 
 def plot_bf(
@@ -125,9 +124,6 @@ def plot_bf(
         else:
             backend = plot_collection.backend
 
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
     bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)
 
     if isinstance(var_names, str):
@@ -168,7 +164,7 @@ def plot_bf(
     if ref_val is not False:
         _, ref_aes, _ = filter_aes(plot_collection, aes_by_visuals, "ref_line", "sample")
         if "color" not in ref_aes:
-            ref_line_kwargs.setdefault("color", contrast_color)
+            ref_line_kwargs.setdefault("color", "B1")
         if "alpha" not in ref_aes:
             ref_line_kwargs.setdefault("alpha", 0.5)
         add_lines(
