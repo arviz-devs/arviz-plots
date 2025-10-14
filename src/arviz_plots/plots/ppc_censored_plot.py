@@ -10,7 +10,6 @@ from arviz_stats.survival import generate_survival_curves, kaplan_meier
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -198,11 +197,6 @@ def plot_ppc_censored(
             **pc_kwargs,
         )
 
-    colors = plot_bknd.get_default_aes("color", 2, {})
-    line_styles = plot_bknd.get_default_aes("linestyle", 2, {})
-    bg_color = plot_bknd.get_background_color()
-    contrast_color, _ = get_contrast_colors(bg_color=bg_color, gray_flag=True)
-
     aes_by_visuals.setdefault("predictive", ["overlay_ppc"])
     aes_by_visuals.setdefault("observed_km", plot_collection.aes_set)
 
@@ -213,7 +207,7 @@ def plot_ppc_censored(
             plot_collection, aes_by_visuals, "predictive", sample_dims
         )
         if "color" not in predictive_aes:
-            predictive_kwargs.setdefault("color", colors[0])
+            predictive_kwargs.setdefault("color", "C0")
         predictive_kwargs.setdefault("alpha", 0.7)
 
         plot_collection.map(
@@ -235,8 +229,8 @@ def plot_ppc_censored(
             plot_collection, aes_by_visuals, "observed_km", sample_dims
         )
         if "color" not in observed_aes:
-            observed_km_kwargs.setdefault("color", contrast_color)
-        observed_km_kwargs.setdefault("linestyle", line_styles[1])
+            observed_km_kwargs.setdefault("color", "B1")
+        observed_km_kwargs.setdefault("linestyle", "C1")
 
         plot_collection.map(
             ecdf_line,
@@ -249,7 +243,7 @@ def plot_ppc_censored(
     # Add labels
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
-        xlabel_kwargs.setdefault("color", contrast_color)
+        xlabel_kwargs.setdefault("color", "B1")
         plot_collection.map(
             labelled_x,
             "xlabel",
@@ -263,7 +257,7 @@ def plot_ppc_censored(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         ylabel_kwargs.setdefault("text", "Survival Probability")
-        ylabel_kwargs.setdefault("color", contrast_color)
+        ylabel_kwargs.setdefault("color", "B1")
         plot_collection.map(
             labelled_y,
             "ylabel",
@@ -274,7 +268,7 @@ def plot_ppc_censored(
     # Add title
     title_kwargs = get_visual_kwargs(visuals, "title", False)
     if title_kwargs is not False:
-        title_kwargs.setdefault("color", contrast_color)
+        title_kwargs.setdefault("color", "B1")
         plot_collection.map(
             labelled_title,
             "title",
