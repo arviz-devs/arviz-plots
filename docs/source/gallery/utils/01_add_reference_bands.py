@@ -26,7 +26,7 @@ pc.coords = {"column": "forest"}
 pc = azp.add_bands(
     pc,
     values=rope,
-    visuals={"ref_band":{"color": "#f66d7f"}},
+    visuals={"ref_band":{"color": "C1"}},
 )
 
 pc.show()
