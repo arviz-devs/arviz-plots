@@ -9,7 +9,7 @@ def get_contrast_colors(bg_color="#FFFFFF"):
     b = int(color[4:6], 16)
     # calculating the YIQ brightness value
     yiq = (r * 299 + g * 587 + b * 114) / 1000
-    return ("#FFFFFF", "#B3B3B3", "#5B5B5B") if yiq < 128 else ("#000000", "#4C4C4C", "#949494")
+    return ("#FFFFFF", "#959595", "#5B5B5B") if yiq < 128 else ("#000000", "#595959", "#949494")
 
 
 def create_aesthetic_handlers(get_default_aes, get_background_color):
@@ -24,7 +24,7 @@ def create_aesthetic_handlers(get_default_aes, get_background_color):
 
     * B0 -> the background color of the currently active theme
     * B1 -> a color with high contrast with B0 (21:1 for black or white backgrounds)
-    * B2 -> a color with muted contrast with B0 (8:1 contrast for black or white backgrounds).
+    * B2 -> a color with muted contrast with B0 (7:1 contrast for black or white backgrounds).
       This color is more muted than B1 but still high contrast enough for accessible text
       within image or thin visual elements.
     * B3 -> a color with muted contrast with B0 (3:1 contrast for black or white background).
