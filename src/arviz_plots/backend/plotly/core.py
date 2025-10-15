@@ -207,7 +207,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
     elif figsize_units != "dots":
         raise ValueError(f"figsize_units must be 'dots' or 'inches', but got {figsize_units}")
 
-    return (width, height)
+    return (float(width), float(height))
 
 
 def get_figsize(plot_collection):

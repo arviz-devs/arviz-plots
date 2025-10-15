@@ -15,8 +15,10 @@ An introductory guide to the ``plot_...`` functions is also available at :ref:`p
    add_bands
    add_lines
 
+.. _api_style:
+
 Style
-...............
+.....
 
 .. autosummary::
    :toctree: generated/
