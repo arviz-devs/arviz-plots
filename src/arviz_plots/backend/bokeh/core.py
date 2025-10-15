@@ -292,7 +292,7 @@ def create_plotting_grid(
         Ratios between widths/heights of columns/rows in the generated :term:`plot` grid.
     subplot_kws : dict, optional
         Passed to :func:`~bokeh.plotting.figure`
-    **kwargs: dict, optional
+    **kwargs :
         Passed to :func:`~bokeh.layouts.gridplot`
 
     Returns
@@ -300,7 +300,7 @@ def create_plotting_grid(
     figure : `~bokeh.layouts.gridplot` or None
         Bokeh object representing the generated :term:`figure`
     plots : `~bokeh.plotting.figure` or ndarray of `~bokeh.plotting.figure`
-        Object representing the generated :term:`plot`(s).
+        Object representing the generated :term:`plots`
     """
     if subplot_kws is None:
         subplot_kws = {}
