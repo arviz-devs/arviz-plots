@@ -162,14 +162,15 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
     Parameters
     ----------
-    figsize : (float, float) or None
+    figsize : tuple of (float, float) or None
         Size of figure in `figsize_units`
-    rows : int
+    rows : int, default 1
         Number of rows
-    cols : int
+    cols : int, default 1
         Number of columns
-    figsize_units : {"inches", "dots"}
-        Ignored if `figsize` is ``None``
+    figsize_units : {"inches", "dots"}, optional
+        Ignored if `figsize` is ``None``.
+        Defaults to "dots" if not provided
 
     Returns
     -------
@@ -214,9 +215,9 @@ def savefig(figure, path, **kwargs):
     ----------
     figure : bokeh.plotting.Figure
         The figure to save.
-    filename : pathlib.Path
+    path : pathlib.Path
         The path to the file where the figure will be saved.
-    **kwargs : dict, optional
+    **kwargs
         Additional keyword arguments passed to the export or
         save function depending on the file extension.
     """
@@ -277,23 +278,29 @@ def create_plotting_grid(
         Number of axes required
     rows, cols : int, default 1
         Number of rows and columns.
-    figsize : (float, float), optional
+    figsize : tuple of (float, float), optional
         Size of the figure in `figsize_units`. It overwrites the values for "width" and "height"
         in `subplot_kws` if any.
     figsize_units : {"inches", "dots"}, default "inches"
         Units in which `figsize` is given.
     squeeze : bool, default True
+        Remove dimensions of length 1 of the `plots` output.
     sharex, sharey : bool, default False
-    polar : bool
-    subplot_kws : bool
+    polar : bool, default False
+        Whether to create plots with polar coordinate axes.
+    width_ratios, height_ratios : array-like, optional
+        Ratios between widths/heights of columns/rows in the generated :term:`plot` grid.
+    subplot_kws : dict, optional
         Passed to :func:`~bokeh.plotting.figure`
     **kwargs: dict, optional
         Passed to :func:`~bokeh.layouts.gridplot`
 
     Returns
     -------
-    `~bokeh.layouts.gridplot` or None
-    `~bokeh.plotting.figure` or ndarray of `~bokeh.plotting.figure`
+    figure : `~bokeh.layouts.gridplot` or None
+        Bokeh object representing the generated :term:`figure`
+    plots : `~bokeh.plotting.figure` or ndarray of `~bokeh.plotting.figure`
+        Object representing the generated :term:`plot`(s).
     """
     if subplot_kws is None:
         subplot_kws = {}
