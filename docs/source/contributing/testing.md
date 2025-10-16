@@ -37,7 +37,7 @@ lists and describes all available options.
 
 ### Custom pytest arguments
 In addition to built-in pytest arguments, we have also defined a couple extra flags
-in `tests/conftest.py` to handle arviz-plots specific situations.
+in [`tests/conftest.py`](https://github.com/arviz-devs/arviz-plots/blob/main/tests/conftest.py) to handle arviz-plots specific situations.
 
 #### Skip flags
 One of the drivers of arviz-plots design is ensuring parity between the different
