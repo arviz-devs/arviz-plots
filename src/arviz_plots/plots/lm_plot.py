@@ -15,7 +15,6 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_group,
     process_group_variables_coords,
     set_wrap_layout,
@@ -237,8 +236,6 @@ def plot_lm(
         x_with_prob = x
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
     if plot_collection is None:
         pc_kwargs.setdefault("cols", "__variable__")
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -317,7 +314,7 @@ def plot_lm(
             plot_collection, aes_by_visuals, "ci_line", sample_dims
         )
         if "color" not in ci_line_aes:
-            ci_line_kwargs.setdefault("color", contrast_gray_color)
+            ci_line_kwargs.setdefault("color", "B2")
 
         if "linestyle" not in ci_line_aes:
             ci_line_kwargs.setdefault("linestyle", lines[1])
@@ -360,7 +357,7 @@ def plot_lm(
             plot_collection, aes_by_visuals, "central_line", sample_dims
         )
         if "color" not in central_line_aes:
-            central_line_kwargs.setdefault("color", contrast_color)
+            central_line_kwargs.setdefault("color", "B1")
         if "alpha" not in central_line_aes:
             central_line_kwargs.setdefault("alpha", 0.6)
         plot_collection.map(
@@ -381,7 +378,7 @@ def plot_lm(
         if "alpha" not in scatter_aes:
             original_scatter_kwargs.setdefault("alpha", 0.3)
         if "color" not in scatter_aes:
-            original_scatter_kwargs.setdefault("color", contrast_gray_color)
+            original_scatter_kwargs.setdefault("color", "B2")
         if "width" not in scatter_aes:
             original_scatter_kwargs.setdefault("width", 0)
         plot_collection.map(

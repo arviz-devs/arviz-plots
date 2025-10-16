@@ -11,12 +11,7 @@ from arviz_stats.ecdf_utils import difference_ecdf_pit
 from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_contrast_colors,
-    get_visual_kwargs,
-    set_wrap_layout,
-)
+from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, set_wrap_layout
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
@@ -223,10 +218,6 @@ def plot_ppc_pit(
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
-
-    colors = plot_bknd.get_default_aes("color", 1, {})
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -254,7 +245,7 @@ def plot_ppc_pit(
         _, _, ecdf_ls_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ecdf_lines", sample_dims
         )
-        ecdf_ls_kwargs.setdefault("color", colors[0])
+        ecdf_ls_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             ecdf_line,
@@ -276,7 +267,7 @@ def plot_ppc_pit(
     ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
     _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
     if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", contrast_color)
+        ci_kwargs.setdefault("color", "B1")
         ci_kwargs.setdefault("alpha", 0.1)
 
         plot_collection.map(
@@ -297,7 +288,7 @@ def plot_ppc_pit(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", contrast_color)
+            xlabel_kwargs.setdefault("color", "B1")
 
         if coverage:
             xlabel_kwargs.setdefault("text", "ETI %")
@@ -319,7 +310,7 @@ def plot_ppc_pit(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", contrast_color)
+            ylabel_kwargs.setdefault("color", "B1")
 
         ylabel_kwargs.setdefault("text", "Δ ECDF")
 

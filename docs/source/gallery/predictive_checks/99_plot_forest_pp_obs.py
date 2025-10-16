@@ -29,7 +29,7 @@ pc.map(
     "observations",
     data=idata.observed_data.ds,
     coords={"column": "forest"},
-    color="gray",
+    color="C0",
 )
 
 pc.map(

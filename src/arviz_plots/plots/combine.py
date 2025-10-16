@@ -1,5 +1,4 @@
 """Elements to combine multiple batteries-included plots into a single figure."""
-import re
 from importlib import import_module
 
 from arviz_base import rcParams
@@ -9,52 +8,12 @@ from arviz_plots.plot_collection import backend_from_object
 from arviz_plots.plots.utils import process_group_variables_coords, set_grid_layout
 
 
-def get_valid_arg(key, value, backend):
-    """Convert none backend aesthetic argument indicator to a valid value for the given backend.
-
-    Parameters
-    ----------
-    key : str
-        The keyword part of the :ref:`backend-interface-arguments` for which `value` should
-        be valid.
-    value : any
-        The current value for `key`. It might be an indicator from the none backend such as
-        "color_0" or "linestyle_3" which gets processed or something else in which case
-        it is assumed to be a valid argument already and returned as is.
-    backend : str
-        The backend for which `value` should be valid.
-
-    Returns
-    -------
-    valid_value : any
-    """
-    plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    key_matcher = "color" if key in {"facecolor", "edgecolor"} else key
-    if isinstance(value, str):
-        match = re.match(key_matcher + "_([0-9]+)", value)
-        if match:
-            index = int(match.groups()[0])
-            return plot_backend.get_default_aes(key, index + 1)[index]
-    return value
-
-
-def backendize_kwargs(kwargs, backend):
-    """Process the visual description dictionary from the none backend to valid kwargs."""
-    return {
-        key: get_valid_arg(key, value, backend)
-        for key, value in kwargs.items()
-        if key != "function"
-    }
-
-
 def render(da, target, **kwargs):
     """Render visual descriptions from the none backend with a plotting backend."""
     backend = backend_from_object(target, return_module=False)
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
-    visuals = da.item()
-    plot_fun_name = visuals["function"]
-    visuals = backendize_kwargs(visuals, backend)
-    kwargs = backendize_kwargs(kwargs, backend)
+    visuals = da.item().copy()
+    plot_fun_name = visuals.pop("function")
     return getattr(plot_backend, plot_fun_name)(target=target, **{**visuals, **kwargs})
 
 

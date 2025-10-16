@@ -296,8 +296,6 @@ def add_lines(
         sample_dims = [sample_dims]
 
     plot_bknd = import_module(f".backend.{plot_collection.backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    _, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     plot_func = vline if orientation == "vertical" else hline
 
@@ -327,9 +325,9 @@ def add_lines(
     ref_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_kwargs is not False:
         if "color" not in ref_aes:
-            ref_kwargs.setdefault("color", contrast_gray_color)
+            ref_kwargs.setdefault("color", "B2")
         if "linestyle" not in ref_aes:
-            ref_kwargs.setdefault("linestyle", plot_bknd.get_default_aes("linestyle", 2)[1])
+            ref_kwargs.setdefault("linestyle", "C1")
 
         plot_collection.map(
             plot_func,
@@ -432,10 +430,6 @@ def add_bands(
         values, plot_collection.data, sample_dims=sample_dims, ref_dim=ref_dim
     )
 
-    plot_bknd = import_module(f".backend.{plot_collection.backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    _, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
-
     requested_aes = set(aes_by_visuals["ref_band"]).difference(plot_collection.aes_set)
     *ref_dim, band_dim = ref_dim
     if ref_ds.sizes[band_dim] != 2:
@@ -453,22 +447,9 @@ def add_bands(
     ref_kwargs = get_visual_kwargs(visuals, "ref_band")
     if ref_kwargs is not False:
         if "color" not in ref_aes:
-            ref_kwargs.setdefault("color", contrast_gray_color)
+            ref_kwargs.setdefault("color", "B2")
         if "alpha" not in ref_aes:
             ref_kwargs.setdefault("alpha", 0.25)
         plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)
 
     return plot_collection
-
-
-def get_contrast_colors(bg_color="#ffffff", gray_flag=False):
-    """Get contrast colors based on the background color."""
-    color = bg_color.lstrip("#")
-    r = int(color[0:2], 16)
-    g = int(color[2:4], 16)
-    b = int(color[4:6], 16)
-    # calculating the YIQ brightness value
-    yiq = (r * 299 + g * 587 + b * 114) / 1000
-    if gray_flag:
-        return ("#ffffff", "#b3b3b3") if yiq < 128 else ("#000000", "#4c4c4c")
-    return "#000000" if yiq >= 128 else "#ffffff"

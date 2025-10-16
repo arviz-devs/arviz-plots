@@ -11,7 +11,6 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -185,8 +184,6 @@ def plot_ppc_interval(
     visuals.setdefault("title", False)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
 
     ds_predictive = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -223,13 +220,6 @@ def plot_ppc_interval(
             f"point_estimate must be 'mean', 'median' or 'mode', but {point_estimate} was passed."
         )
 
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
-
-    colors = plot_bknd.get_default_aes("color", 1, {})
-    markers = plot_bknd.get_default_aes("marker", 7, {})
-
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
@@ -255,7 +245,7 @@ def plot_ppc_interval(
 
     if ci_trunk_kwargs is not False:
         if "color" not in ci_trunk_aes:
-            ci_trunk_kwargs.setdefault("color", colors[0])
+            ci_trunk_kwargs.setdefault("color", "C0")
 
         ci_trunk_kwargs.setdefault("alpha", 0.5)
         ci_trunk_kwargs.setdefault("width", 3)
@@ -276,7 +266,7 @@ def plot_ppc_interval(
 
     if ci_twig_kwargs is not False:
         if "color" not in ci_twig_aes:
-            ci_twig_kwargs.setdefault("color", colors[0])
+            ci_twig_kwargs.setdefault("color", "C0")
 
         ci_twig_kwargs.setdefault("width", 3)
 
@@ -295,8 +285,8 @@ def plot_ppc_interval(
         _, _, prediction_ms_ignore = filter_aes(
             plot_collection, aes_by_visuals, "prediction_markers", sample_dims
         )
-        prediction_ms_kwargs.setdefault("color", colors[0])
-        prediction_ms_kwargs.setdefault("marker", markers[0])
+        prediction_ms_kwargs.setdefault("color", "C0")
+        prediction_ms_kwargs.setdefault("marker", "C0")
 
         plot_collection.map(
             point_y,
@@ -317,8 +307,8 @@ def plot_ppc_interval(
         _, _, observed_ms_ignore = filter_aes(
             plot_collection, aes_by_visuals, "observed_markers", sample_dims
         )
-        observed_ms_kwargs.setdefault("color", contrast_color)
-        observed_ms_kwargs.setdefault("marker", markers[6])
+        observed_ms_kwargs.setdefault("color", "B1")
+        observed_ms_kwargs.setdefault("marker", "C6")
 
         plot_collection.map(
             point_y,
@@ -335,7 +325,7 @@ def plot_ppc_interval(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", contrast_color)
+            xlabel_kwargs.setdefault("color", "B1")
 
         xlabel_kwargs.setdefault("text", "data point (index)")
 
@@ -354,7 +344,7 @@ def plot_ppc_interval(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", contrast_color)
+            ylabel_kwargs.setdefault("color", "B1")
 
         plot_collection.map(
             labelled_y,
@@ -370,7 +360,7 @@ def plot_ppc_interval(
     title_kwargs = get_visual_kwargs(visuals, "title")
     if title_kwargs is not False:
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", contrast_color)
+            title_kwargs.setdefault("color", "B1")
 
         plot_collection.map(
             labelled_title,

@@ -1,3 +1,5 @@
+.. _api_backends:
+
 ==============================
 Interface to plotting backends
 ==============================

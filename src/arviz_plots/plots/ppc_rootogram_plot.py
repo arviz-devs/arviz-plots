@@ -10,7 +10,6 @@ from arviz_stats.helper_stats import point_interval_unique, point_unique
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -218,11 +217,6 @@ def plot_ppc_rootogram(
     ds_predictive = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
-
-    colors = plot_bknd.get_default_aes("color", 1, {})
-    markers = plot_bknd.get_default_aes("marker", 7, {})
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -253,9 +247,9 @@ def plot_ppc_rootogram(
             plot_collection, aes_by_visuals, "predictive_markers", sample_dims
         )
         if "color" not in predictive_ms_aes:
-            predictive_ms_kwargs.setdefault("color", colors[0])
+            predictive_ms_kwargs.setdefault("color", "C0")
 
-        predictive_ms_kwargs.setdefault("marker", markers[4])
+        predictive_ms_kwargs.setdefault("marker", "C4")
 
         plot_collection.map(
             scatter_xy,
@@ -273,7 +267,7 @@ def plot_ppc_rootogram(
 
     if ci_kwargs is not False:
         if "color" not in ci_aes:
-            ci_kwargs.setdefault("color", colors[0])
+            ci_kwargs.setdefault("color", "C0")
 
         ci_kwargs.setdefault("alpha", 0.3)
         ci_kwargs.setdefault("width", 3)
@@ -295,8 +289,8 @@ def plot_ppc_rootogram(
         _, _, observed_ms_ignore = filter_aes(
             plot_collection, aes_by_visuals, "observed_markers", sample_dims
         )
-        observed_ms_kwargs.setdefault("color", contrast_color)
-        observed_ms_kwargs.setdefault("marker", markers[6])
+        observed_ms_kwargs.setdefault("color", "B1")
+        observed_ms_kwargs.setdefault("marker", "C6")
 
         plot_collection.map(
             scatter_xy,
@@ -311,7 +305,7 @@ def plot_ppc_rootogram(
 
     if grid_kwargs is not False:
         _, _, grid_ignore = filter_aes(plot_collection, aes_by_visuals, "grid", sample_dims)
-        grid_kwargs.setdefault("color", "#cccccc")
+        grid_kwargs.setdefault("color", "B3")
         grid_kwargs.setdefault("axis", "y")
 
         plot_collection.map(
@@ -328,7 +322,7 @@ def plot_ppc_rootogram(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", contrast_color)
+            xlabel_kwargs.setdefault("color", "B1")
 
         xlabel_kwargs.setdefault("text", "counts")
 
@@ -347,7 +341,7 @@ def plot_ppc_rootogram(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", contrast_color)
+            ylabel_kwargs.setdefault("color", "B1")
 
         ylabel_kwargs.setdefault("text", "frequency")
 

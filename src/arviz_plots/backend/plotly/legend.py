@@ -1,7 +1,9 @@
 """Plotly legend generation."""
+from .core import expand_aesthetic_aliases
 
 
-def dealiase_line_kwargs(kwargs):
+@expand_aesthetic_aliases
+def dealiase_line_kwargs(**kwargs):
     """Convert arviz common interface properties to plotly ones."""
     prop_map = {"linewidth": "width", "linestyle": "dash"}
     return {prop_map.get(key, key): value for key, value in kwargs.items()}
@@ -39,7 +41,7 @@ def legend(
 
     if artist_type == "line":
         artist_fun = target.add_scatter
-        kwarg_list = [dealiase_line_kwargs(kws) for kws in kwarg_list]
+        kwarg_list = [dealiase_line_kwargs(**kws) for kws in kwarg_list]
         mode = "lines"
     else:
         raise NotImplementedError("Only line type legends supported for now")

@@ -13,7 +13,6 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
-    get_contrast_colors,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -272,8 +271,6 @@ def plot_ess_evolution(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color, contrast_gray_color = get_contrast_colors(bg_color=bg_color, gray_flag=True)
 
     # set plot collection initialization defaults if it doesnt exist
     if plot_collection is None:
@@ -323,8 +320,6 @@ def plot_ess_evolution(
     # setting xdata and draw_divisions for later ess computing and plotting
     xdata = np.linspace(n_samples / n_points, n_samples, n_points)
     draw_divisions = np.linspace(n_draws // n_points, n_draws, n_points, dtype=int)
-
-    default_bulk_color, default_tail_color = plot_bknd.get_default_aes("color", 2, {})
 
     ess_bulk_dataset = None
 
@@ -383,7 +378,7 @@ def plot_ess_evolution(
         )
 
         if "color" not in bulk_aes:
-            bulk_kwargs.setdefault("color", default_bulk_color)
+            bulk_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             scatter_xy, "ess_bulk", data=ess_bulk_dataset, ignore_aes=bulk_ignore, **bulk_kwargs
@@ -407,7 +402,7 @@ def plot_ess_evolution(
             )
 
         if "color" not in bulk_line_aes:
-            bulk_line_kwargs.setdefault("color", default_bulk_color)
+            bulk_line_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             line_xy,
@@ -437,7 +432,7 @@ def plot_ess_evolution(
         )
 
         if "color" not in tail_aes:
-            tail_kwargs.setdefault("color", default_tail_color)
+            tail_kwargs.setdefault("color", "C1")
 
         plot_collection.map(
             scatter_xy, "ess_tail", data=ess_tail_dataset, ignore_aes=tail_ignore, **tail_kwargs
@@ -462,7 +457,7 @@ def plot_ess_evolution(
             )
 
         if "color" not in tail_line_aes:
-            tail_line_kwargs.setdefault("color", default_tail_color)
+            tail_line_kwargs.setdefault("color", "C1")
 
         plot_collection.map(
             line_xy,
@@ -471,11 +466,6 @@ def plot_ess_evolution(
             ignore_aes=tail_line_ignore,
             **tail_line_kwargs,
         )
-
-    # getting backend specific linestyles
-    linestyles = plot_bknd.get_default_aes("linestyle", 4, {})
-    # and default color
-    default_color = plot_bknd.get_default_aes("color", 1, {})[0]
 
     # plot mean and sd and annotate them
     if extra_methods is not False:
@@ -496,10 +486,10 @@ def plot_ess_evolution(
         mean_kwargs = get_visual_kwargs(visuals, "mean")
         if mean_kwargs is not False:
             # getting 2nd default linestyle for chosen backend and assigning it by default
-            mean_kwargs.setdefault("linestyle", linestyles[1])
+            mean_kwargs.setdefault("linestyle", "C1")
 
             if "color" not in mean_aes:
-                mean_kwargs.setdefault("color", default_color)
+                mean_kwargs.setdefault("color", "B2")
 
             plot_collection.map(
                 line_xy,
@@ -512,10 +502,10 @@ def plot_ess_evolution(
 
         sd_kwargs = get_visual_kwargs(visuals, "sd")
         if sd_kwargs is not False:
-            sd_kwargs.setdefault("linestyle", linestyles[2])
+            sd_kwargs.setdefault("linestyle", "C2")
 
             if "color" not in sd_aes:
-                sd_kwargs.setdefault("color", default_color)
+                sd_kwargs.setdefault("color", "B2")
 
             plot_collection.map(
                 line_xy, "sd", data=sd_ess, ignore_aes=sd_ignore, x=xdata, **sd_kwargs
@@ -536,7 +526,7 @@ def plot_ess_evolution(
             )
 
             if "color" not in mean_text_aes:
-                mean_text_kwargs.setdefault("color", contrast_color)
+                mean_text_kwargs.setdefault("color", "B1")
 
             mean_text_kwargs.setdefault("x", max(xdata))
             mean_text_kwargs.setdefault("horizontal_align", "right")
@@ -566,7 +556,7 @@ def plot_ess_evolution(
             )
 
             if "color" not in sd_text_aes:
-                sd_text_kwargs.setdefault("color", contrast_color)
+                sd_text_kwargs.setdefault("color", "B1")
 
             sd_text_kwargs.setdefault("x", max(xdata))
             sd_text_kwargs.setdefault("horizontal_align", "right")
@@ -598,10 +588,10 @@ def plot_ess_evolution(
         if relative:
             min_ess = min_ess / n_points
 
-        min_ess_kwargs.setdefault("linestyle", linestyles[3])
+        min_ess_kwargs.setdefault("linestyle", "C3")
 
         if "color" not in min_ess_aes:
-            min_ess_kwargs.setdefault("color", contrast_gray_color)
+            min_ess_kwargs.setdefault("color", "B2")
 
         plot_collection.map(
             line_xy,
@@ -621,7 +611,7 @@ def plot_ess_evolution(
             plot_collection, aes_by_visuals, "title", sample_dims
         )
         if "color" not in title_aes:
-            title_kwargs.setdefault("color", contrast_color)
+            title_kwargs.setdefault("color", "B1")
         plot_collection.map(
             labelled_title,
             "title",
@@ -639,7 +629,7 @@ def plot_ess_evolution(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", contrast_color)
+            xlabel_kwargs.setdefault("color", "B1")
 
         xlabel_kwargs.setdefault(
             "text", sample_dims[0] if len(sample_dims) == 1 else "Total Number of Draws"
@@ -659,7 +649,7 @@ def plot_ess_evolution(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", contrast_color)
+            ylabel_kwargs.setdefault("color", "B1")
 
         ylabel = "{}"
         ylabel_kwargs.setdefault(

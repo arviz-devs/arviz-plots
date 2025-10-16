@@ -11,7 +11,6 @@ from xarray import Dataset, concat
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
-    get_contrast_colors,
     get_visual_kwargs,
     process_group_variables_coords,
     set_grid_layout,
@@ -221,15 +220,6 @@ def plot_psense_dist(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-    bg_color = plot_bknd.get_background_color()
-    contrast_color = get_contrast_colors(bg_color=bg_color)
-
-    color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 2, {}))
-    if len(color_cycle) < 2:
-        raise ValueError(
-            f"Not enough values provided for color cycle, got {color_cycle} "
-            "but at least 2 are needed"
-        )
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -237,7 +227,12 @@ def plot_psense_dist(
         pc_kwargs["figure_kwargs"].setdefault("sharey", "row")
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("color", [color_cycle[0], contrast_color, color_cycle[1]])
+        pc_kwargs.setdefault("color", ["C0", "B1", "C1"])
+        if len(pc_kwargs["color"]) < 3:
+            raise ValueError(
+                f"Not enough values provided for color cycle, got {pc_kwargs['color']} "
+                "but at least 3 are needed"
+            )
         pc_kwargs.setdefault("y", [-0.05, -0.225, -0.4])
         pc_kwargs["aes"].setdefault("color", ["alpha"])
         pc_kwargs["aes"].setdefault("y", ["alpha"])
