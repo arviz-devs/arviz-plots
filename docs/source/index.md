@@ -12,13 +12,13 @@ Note: All plotting functions - whether accessed through the full ArviZ package o
 
 ## Exploratory Analysis of Bayesian Models
 
-In Modern Bayesian statistics models are usually build and solve using probabilistic programming languages (PPLs) such as PyMC, Stan, NumPyro, etc. These languages allow users to specify models in a high-level language and perform inference using state-of-the-art algorithms like Markov Chain Monte Carlo (MCMC) or Variational Inference (VI). As a result we usually get a posterior distribution, in the form of samples. The posterior distribution has a central role in Bayesian statistics, but other distributions like the posterior and prior predictive distribution are also of interest. And other quantities may be relevant too.
+In Modern Bayesian statistics, models are usually built and solved using probabilistic programming languages (PPLs) such as PyMC, Stan, NumPyro, etc. These languages allow users to specify models in a high-level language and perform inference using state-of-the-art algorithms like Markov Chain Monte Carlo (MCMC) or Variational Inference (VI). As a result we usually get a posterior distribution, in the form of samples. The posterior distribution has a central role in Bayesian statistics, but other distributions like the posterior and prior predictive distribution are also of interest. And other quantities may be relevant too.
 
 The correct visualization, analysis, and interpretation of these computed data is key to properly answer the questions that motivate our analysis.
 
 When working with Bayesian models there are a series of related tasks that need to be addressed besides inference itself:
 
-* Diagnoses of the quality of the inference
+* Diagnosis of the quality of the inference
 
 * Model criticism, including evaluations of both model assumptions and model predictions
 
@@ -26,7 +26,7 @@ When working with Bayesian models there are a series of related tasks that need 
 
 * Preparation of the results for a particular audience.
 
-We call these tasks exploratory analysis of Bayesian models (EABM). Successfully performing such tasks are central to the iterative and interactive modelling process (See Bayesian Workflow). In the words of Persi Diaconis.
+We call these tasks exploratory analysis of Bayesian models (EABM). Successfully performing such tasks is central to the iterative and interactive modelling process (See Bayesian Workflow). In the words of Persi Diaconis.
 
 > Exploratory data analysis seeks to reveal structure, or simple descriptions in data. We look at numbers or graphs and try to find patterns. We pursue leads suggested by background information, imagination, patterns perceived, and experience with other data analyses.
 
