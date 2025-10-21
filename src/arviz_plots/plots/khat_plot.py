@@ -98,6 +98,12 @@ def plot_khat(
 ):
     r"""Plot Pareto tail indices for diagnosing convergence in PSIS-LOO-CV.
 
+    The Generalized Pareto distribution (GPD) is fitted to the largest importance ratios to
+    diagnose convergence rates. The shape parameter :math:`\hat{k}` estimates the pre-asymptotic
+    convergence rate based on the fractional number of finite moments. Values :math:`\hat{k} > 0.7`
+    indicate impractically low convergence rates and unreliable estimates. Details are presented
+    in [1]_ and [2]_.
+
     Parameters
     ----------
     elpd_data : ELPDData
@@ -201,6 +207,18 @@ def plot_khat(
         >>>     visuals={"hlines": {"color":"C1"}},
         >>>     figure_kwargs={"figsize": (10, 5)}
         >>> )
+
+    .. minigallery:: plot_khat
+
+    References
+    ----------
+    .. [1] Vehtari et al. *Practical Bayesian model evaluation using leave-one-out cross-validation
+        and WAIC*. Statistics and Computing. 27(5) (2017).
+        https://doi.org/10.1007/s11222-016-9696-4. arXiv preprint https://arxiv.org/abs/1507.04544.
+
+    .. [2] Vehtari et al. *Pareto Smoothed Importance Sampling*.
+        Journal of Machine Learning Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
+        arXiv preprint https://arxiv.org/abs/1507.02646
     """
     if hline_values is None:
         hline_values = [0.0, 0.7, 1.0]
