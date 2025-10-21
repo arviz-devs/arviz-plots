@@ -248,7 +248,7 @@ def plot_khat(
     khat_data = elpd_data.pareto_k
     distribution = khat_data.to_dataset(name="pareto_k")
 
-    n_data_points = int(khat_data.size)
+    n_data_points = khat_data.size
     khat_dims = list(khat_data.dims)
     coord_map = {dim: khat_data.coords[dim] for dim in khat_dims if dim in khat_data.coords}
 
@@ -271,10 +271,10 @@ def plot_khat(
     khat_values = np.asarray(khat_data.values).reshape(-1)
     x_flat = np.asarray(x_positions).reshape(-1)
     y_flat = np.asarray(khat_data.values).reshape(-1)
-    x_min = float(x_flat.min()) if x_flat.size else 0.0
-    x_max = float(x_flat.max()) if x_flat.size else 0.0
+    x_min = x_flat.min() if x_flat.size else 0.0
+    x_max = x_flat.max() if x_flat.size else 0.0
 
-    good_k_threshold = float(hline_values[1]) if len(hline_values) > 1 else 0.7
+    good_k_threshold = hline_values[1] if len(hline_values) > 1 else 0.7
 
     if backend is None:
         if plot_collection is None:
@@ -376,7 +376,7 @@ def plot_khat(
                 if "alpha" not in hlines_aes:
                     h_kwargs.setdefault("alpha", 0.7)
 
-                h_ds = xr.Dataset({"pareto_k": xr.DataArray(float(value))})
+                h_ds = xr.Dataset({"pareto_k": xr.DataArray(value)})
                 plot_collection.map(
                     hline,
                     f"hline_{idx}",
@@ -411,14 +411,14 @@ def plot_khat(
                     if np.isnan(lower) or np.isnan(upper):
                         continue
                     pct = (count / n_data_points * 100) if n_data_points else 0.0
-                    label = bin_format.format(count=int(count), pct=pct)
-                    y_pos = float(0.5 * (lower + upper))
+                    label = bin_format.format(count=count, pct=pct)
+                    y_pos = 0.5 * (lower + upper)
 
                     plot_collection.map(
                         annotate_xy,
                         f"bin_{bin_idx}",
                         data=scalar_ds,
-                        x=float(x_text),
+                        x=x_text,
                         y=y_pos,
                         text=label,
                         ignore_aes="all",
@@ -445,8 +445,8 @@ def plot_khat(
                     annotate_xy,
                     f"threshold_{flat_idx}",
                     data=scalar_ds,
-                    x=float(x_flat[flat_idx]),
-                    y=float(y_flat[flat_idx]),
+                    x=x_flat[flat_idx],
+                    y=y_flat[flat_idx],
                     text=label_text,
                     ignore_aes=threshold_text_ignore,
                     **threshold_text_kwargs,
