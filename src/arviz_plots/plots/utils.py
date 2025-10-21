@@ -3,6 +3,7 @@ import warnings
 from copy import copy
 from importlib import import_module
 
+import matplotlib as mpl
 import matplotlib.colors as mpl_colors
 import numpy as np
 import xarray as xr
@@ -597,8 +598,6 @@ def enable_hover_labels(backend, plot_collection, hover_format, labels, colors, 
     """
     if backend != "matplotlib":
         return
-
-    import matplotlib as mpl
 
     try:
         fig = plot_collection.viz["figure"].item()
