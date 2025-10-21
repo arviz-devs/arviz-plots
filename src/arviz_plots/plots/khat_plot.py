@@ -96,7 +96,7 @@ def plot_khat(
     ] = None,
     **pc_kwargs,
 ):
-    r"""Plot Pareto tail indices for diagnosing convergence in PSIS-LOO.
+    r"""Plot Pareto tail indices for diagnosing convergence in PSIS-LOO-CV.
 
     Parameters
     ----------
@@ -110,7 +110,7 @@ def plot_khat(
     show_bins : bool, default False
         Show the percentage of khat values falling in each bin delimited by reference lines.
     hover_label : bool, default False
-        Enable interactive hover annotations when using an interactive matplotlib backend.
+        Enable interactive hover annotations when using an interactive backend.
     hover_format : str, default ``"{index}: {label}"``
         Format string for hover annotations. Supports ``{index}``, ``{label}``, and ``{value}``.
     xlabels : bool, default False

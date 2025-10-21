@@ -732,7 +732,7 @@ def hover_labels(fig, ax, scatter, labels, hover_format, colors, values):
         Array of numeric values to display. If None, y-coordinates are used.
     """
     offsets = scatter.get_offsets()
-    if offsets is None or not offsets:
+    if offsets is None or not offsets.size:
         return
 
     annot = ax.annotate(
