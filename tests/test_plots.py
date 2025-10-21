@@ -16,6 +16,7 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_khat,
     plot_loo_pit,
     plot_mcse,
     plot_pair,
@@ -296,6 +297,47 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             assert pc.aes["alpha"]["neutral_element"].item() == 0
             assert 0 in pc.aes["alpha"]["mapping"].values
             assert pseudo_dim in pc.viz["shade"].dims
+
+    def test_plot_khat(self, datatree_with_loo, backend):
+        pc = plot_khat(datatree_with_loo, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "plot" not in pc.viz.data_vars
+        assert "khat" in pc.viz.children
+        assert "pareto_k" in pc.viz["khat"]
+        assert "hline_0" not in pc.viz.children
+        assert "hline_1" not in pc.viz.children
+        assert "hline_2" not in pc.viz.children
+
+    def test_plot_khat_with_hlines(self, datatree_with_loo, backend):
+        pc = plot_khat(datatree_with_loo, backend=backend, show_hlines=True)
+        assert "figure" in pc.viz.data_vars
+        assert "khat" in pc.viz.children
+        assert "hline_0" in pc.viz.children
+        assert "hline_1" in pc.viz.children
+        assert "hline_2" in pc.viz.children
+
+    def test_plot_khat_with_bins(self, datatree_with_loo, backend):
+        pc = plot_khat(datatree_with_loo, backend=backend, show_bins=True)
+        assert "figure" in pc.viz.data_vars
+        assert "khat" in pc.viz.children
+        assert "bin_0" in pc.viz.children
+
+    def test_plot_khat_missing_pareto_k(self, backend):
+        from arviz_stats.utils import ELPDData
+
+        mock_elpd = ELPDData(
+            kind="loo",
+            elpd=100.0,
+            se=10.0,
+            p=5.0,
+            n_samples=1000,
+            n_data_points=100,
+            scale="log",
+            warning=False,
+            good_k=0.7,
+        )
+        with pytest.raises(ValueError, match="Could not find 'pareto_k'"):
+            plot_khat(mock_elpd, backend=backend)
 
     @pytest.mark.parametrize("coverage", (True, False))
     def test_plot_loo_pit(self, datatree, coverage, backend):

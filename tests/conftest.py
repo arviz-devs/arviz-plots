@@ -140,3 +140,15 @@ def datatree_sample():
 def cmp():
     """Fixture for the cmp function."""
     return _cmp()
+
+
+@pytest.fixture(scope="session")
+def datatree_with_loo():
+    """Fixture for an ELPDData object with Pareto k diagnostics."""
+    from arviz_base import load_arviz_data
+    from arviz_stats.loo import loo
+
+    dt = load_arviz_data("centered_eight")
+    loo_result = loo(dt)
+
+    return loo_result

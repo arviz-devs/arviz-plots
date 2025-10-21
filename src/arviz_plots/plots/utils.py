@@ -1,7 +1,9 @@
 """Utilities for batteries included plots."""
+import warnings
 from copy import copy
 from importlib import import_module
 
+import matplotlib.colors as mpl_colors
 import numpy as np
 import xarray as xr
 from arviz_base import references_to_dataset
@@ -453,3 +455,281 @@ def add_bands(
         plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)
 
     return plot_collection
+
+
+def build_coord_labels(khat_data):
+    """Generate string labels for all coordinate combinations in the input data.
+
+    Parameters
+    ----------
+    khat_data : DataArray
+        Input data array whose coordinate combinations will be labeled.
+
+    Returns
+    -------
+    ndarray of str
+        Array of string labels with the same shape as `khat_data`.
+    """
+    dims = khat_data.dims
+    if not dims:
+        return np.array(["0"], dtype=object)
+
+    labels = np.empty(khat_data.shape, dtype=object)
+    coords = {
+        dim: khat_data.coords[dim].values if dim in khat_data.coords else None for dim in dims
+    }
+
+    for index in np.ndindex(khat_data.shape):
+        if len(dims) == 1:
+            dim = dims[0]
+            coord_values = coords[dim]
+            if coord_values is not None and coord_values.size:
+                value = coord_values[index[0]]
+            else:
+                value = index[0]
+            if hasattr(value, "item"):
+                value = value.item()
+            labels[index] = str(value)
+        else:
+            parts = []
+            for dim, idx in zip(dims, index):
+                coord_values = coords[dim]
+                value = coord_values[idx] if coord_values is not None else idx
+                if hasattr(value, "item"):
+                    value = value.item()
+                parts.append(f"{dim}={value}")
+            labels[index] = ", ".join(str(part) for part in parts)
+
+    return labels
+
+
+def alpha_scaled_colors(base_color, khat_values, good_k_threshold):
+    """Create RGBA color array with alpha values scaled by Pareto k diagnostic thresholds.
+
+    Parameters
+    ----------
+    base_color : str or color-like, optional
+        Base color to use for all points. Defaults to "C0" if None.
+    khat_values : array_like
+        Array of Pareto k diagnostic values used to determine alpha scaling.
+    good_k_threshold : float
+        Threshold value below which k diagnostics are considered good.
+
+    Returns
+    -------
+    ndarray
+        RGBA array with shape (*khat_values.shape, 4) where alpha channel
+        is scaled based on k value thresholds.
+    """
+    values = np.asarray(khat_values)
+    base = base_color or "C0"
+    rgba = np.array(mpl_colors.to_rgba(base))
+    rgba = np.broadcast_to(rgba, values.shape + (4,)).copy()
+
+    if values.size:
+        alphas = 0.5 + 0.2 * (values > good_k_threshold) + 0.3 * (values > 1.0)
+        rgba[..., 3] = np.clip(alphas, 0.0, 1.0)
+    return rgba
+
+
+def enable_hover_labels(backend, plot_collection, hover_format, labels, colors, values):
+    """Set up interactive hover annotations for scatter plots on matplotlib backends.
+
+    Parameters
+    ----------
+    backend : str
+        The plotting backend being used. Only "matplotlib" is supported.
+    plot_collection : PlotCollection
+        Plot collection containing the visualization elements.
+    hover_format : str
+        Format string template for hover annotation text.
+    labels : array_like
+        Array of labels corresponding to each data point.
+    colors : array_like or None
+        Array of colors for each data point. If None, extracted from scatter plot.
+    values : array_like or None
+        Array of values to display in hover text. If None, y-coordinates are used.
+    """
+    if backend != "matplotlib":
+        return
+
+    import matplotlib as mpl
+
+    try:
+        fig = plot_collection.viz["figure"].item()
+    except KeyError:
+        return
+    if fig is None:
+        return
+
+    if hasattr(mpl, "backends") and hasattr(mpl.backends, "backend_registry"):
+        interactive_backends = mpl.backends.backend_registry.list_builtin(
+            mpl.backends.BackendFilter.INTERACTIVE
+        )
+    else:
+        interactive_backends = mpl.rcsetup.interactive_bk
+
+    if mpl.get_backend() not in interactive_backends:
+        warnings.warn(
+            "hover labels are only available with interactive backends. "
+            "To switch to an interactive backend from IPython or Jupyter, use `%matplotlib`.",
+            UserWarning,
+        )
+        return
+
+    try:
+        axis = plot_collection.viz["plot"]["pareto_k"].item()
+        scatter = plot_collection.viz["khat"]["pareto_k"].item()
+    except KeyError:
+        return
+
+    if axis is None or scatter is None:
+        return
+
+    color_arr = np.asarray(colors) if colors is not None else None
+    if color_arr is None:
+        facecolors = scatter.get_facecolors()
+        if facecolors.size:
+            color_arr = facecolors
+
+    values_arr = np.asarray(values) if values is not None else None
+
+    hover_labels(
+        fig,
+        axis,
+        scatter,
+        labels,
+        hover_format,
+        color_arr,
+        values_arr,
+    )
+
+
+def hover(
+    event, annot, ax, scatter, fig, offsets, labels, values, hover_format, colors, offset_distance
+):
+    """Handle mouse hover events to show or hide data point annotations.
+
+    Parameters
+    ----------
+    event : MouseEvent
+        Matplotlib mouse event containing cursor position.
+    annot : Annotation
+        Matplotlib annotation object to show/hide and update.
+    ax : Axes
+        Matplotlib axes containing the scatter plot.
+    scatter : PathCollection
+        Scatter plot artist whose points are being tracked.
+    fig : Figure
+        Matplotlib figure containing the plot.
+    offsets : ndarray
+        Array of (x, y) coordinates for all scatter plot points.
+    labels : array_like
+        Array of string labels for each data point.
+    values : array_like or None
+        Array of numeric values to display. If None, y-coordinates are used.
+    hover_format : str
+        Format string template for the annotation text.
+    colors : ndarray or None
+        Array of RGBA colors for annotation backgrounds.
+    offset_distance : float
+        Distance in points to offset the annotation from the cursor position.
+    """
+    vis = annot.get_visible()
+    if event.inaxes == ax:
+        cont, ind = scatter.contains(event)
+        if cont:
+            idx = ind["ind"][0]
+            pos = offsets[idx]
+            label = labels[idx] if idx < len(labels) else str(idx)
+            value = values[idx] if values is not None and idx < len(values) else pos[1]
+            annot.xy = pos
+            xmid = np.mean(ax.get_xlim())
+            ymid = np.mean(ax.get_ylim())
+            annot.set_position(
+                (
+                    -offset_distance if pos[0] > xmid else offset_distance,
+                    -offset_distance if pos[1] > ymid else offset_distance,
+                )
+            )
+            annot.set_text(_format_hover_text(hover_format, idx, label, value))
+
+            if colors is not None and idx < len(colors):
+                annot.get_bbox_patch().set_facecolor(colors[idx])
+
+            annot.set_ha("right" if pos[0] > xmid else "left")
+            annot.set_va("top" if pos[1] > ymid else "bottom")
+            annot.set_visible(True)
+            fig.canvas.draw_idle()
+        elif vis:
+            annot.set_visible(False)
+            fig.canvas.draw_idle()
+
+
+def hover_labels(fig, ax, scatter, labels, hover_format, colors, values):
+    """Configure hover annotation display for scatter plot data points.
+
+    Parameters
+    ----------
+    fig : Figure
+        Matplotlib figure to attach the hover event handler.
+    ax : Axes
+        Matplotlib axes containing the scatter plot.
+    scatter : PathCollection
+        Scatter plot artist whose data points trigger hover annotations.
+    labels : array_like
+        Array of string labels for each data point.
+    hover_format : str
+        Format string template for annotation text.
+    colors : ndarray or None
+        Array of RGBA colors for annotation box backgrounds.
+    values : array_like or None
+        Array of numeric values to display. If None, y-coordinates are used.
+    """
+    offsets = scatter.get_offsets()
+    if offsets is None or not offsets:
+        return
+
+    annot = ax.annotate(
+        "",
+        xy=(0, 0),
+        xytext=(0, 0),
+        textcoords="offset points",
+        bbox={"boxstyle": "round", "fc": "w", "alpha": 0.4},
+        arrowprops={"arrowstyle": "->"},
+    )
+    annot.set_visible(False)
+    offset_distance = 10
+
+    fig.canvas.mpl_connect(
+        "motion_notify_event",
+        lambda event: hover(
+            event,
+            annot,
+            ax,
+            scatter,
+            fig,
+            offsets,
+            labels,
+            values,
+            hover_format,
+            colors,
+            offset_distance,
+        ),
+    )
+
+
+def _format_hover_text(template, index, label, value):
+    """Format hover annotation text with fallback."""
+    if hasattr(value, "item"):
+        value = value.item()
+    try:
+        return template.format(index=index, label=label, value=value)
+    except (KeyError, IndexError):
+        try:
+            return template.format(index, label, value)
+        except Exception:  # pylint: disable=broad-except
+            try:
+                return template.format(index, label)
+            except Exception:  # pylint: disable=broad-except
+                return f"{index}: {label}"
