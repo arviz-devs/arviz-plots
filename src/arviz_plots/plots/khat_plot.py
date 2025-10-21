@@ -13,6 +13,7 @@ from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     alpha_scaled_colors,
     build_coord_labels,
+    calculate_khat_bin_edges,
     enable_hover_labels,
     filter_aes,
     get_visual_kwargs,
@@ -25,6 +26,7 @@ from arviz_plots.visuals import (
     labelled_x,
     labelled_y,
     scatter_xy,
+    set_xlim,
     set_xticks,
 )
 
@@ -61,7 +63,7 @@ def plot_khat(
     color=None,
     markersize=None,
     hline_values=None,
-    bin_format="{1:.1f}%",
+    bin_format="{pct:.1f}%",
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -123,8 +125,8 @@ def plot_khat(
         Marker size passed to the scatter visual. Interpretations follow backend conventions.
     hline_values : sequence of float, optional
         Custom horizontal line positions. Defaults to [0.0, 0.7, 1.0].
-    bin_format : str, default ``"{1:.1f}%"``
-        Format string for bin percentages. Called as ``bin_format.format(count, pct)``.
+    bin_format : str, default ``"{pct:.1f}%"``
+        Format string for bin percentages. Supports ``{count}`` and ``{pct}`` placeholders.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
         Plotting backend to use. Defaults to ``rcParams["plot.backend"]``.
@@ -373,34 +375,9 @@ def plot_khat(
                 bin_text_kwargs.setdefault("color", "B1")
             bin_text_kwargs.setdefault("horizontal_align", "center")
 
-            if khat_values.size:
-                ymin = float(np.nanmin(khat_values))
-                ymax = float(np.nanmax(khat_values))
-            else:
-                ymin = 0.0
-                ymax = 1.0
+            bin_edges = calculate_khat_bin_edges(khat_values, [good_k_threshold, 1.0])
 
-            if not np.isfinite(ymin) or not np.isfinite(ymax):
-                return plot_collection
-
-            bin_edges = [ymin]
-            tolerance = 1e-9
-
-            for edge in (good_k_threshold, 1.0):
-                if edge is None or not np.isfinite(edge):
-                    continue
-                if edge <= bin_edges[-1] + tolerance:
-                    continue
-                if edge >= ymax - tolerance:
-                    continue
-                bin_edges.append(float(edge))
-
-            if ymax > bin_edges[-1] + tolerance:
-                bin_edges.append(ymax)
-            else:
-                bin_edges[-1] = ymax
-
-            if len(bin_edges) > 1 and n_data_points:
+            if bin_edges is not None and n_data_points:
                 counts, edges = np.histogram(khat_values, bins=bin_edges)
                 span = max(1.0, x_max - x_min)
                 x_margin = max(0.5, 0.05 * span)
@@ -416,7 +393,7 @@ def plot_khat(
                     if np.isnan(lower) or np.isnan(upper):
                         continue
                     pct = (count / n_data_points * 100) if n_data_points else 0.0
-                    label = bin_format.format(int(count), pct)
+                    label = bin_format.format(count=int(count), pct=pct)
                     y_pos = float(0.5 * (lower + upper))
 
                     plot_collection.map(
@@ -536,13 +513,8 @@ def plot_khat(
             plot_collection.add_legend(**legend_kwargs)
 
     if new_xlim is not None:
-
-        def _apply_xlim(da, target, *, limits):  # pylint: disable=unused-argument
-            plot_bknd.xlim(limits, target)
-            return target
-
         plot_collection.map(
-            _apply_xlim,
+            set_xlim,
             "xlim",
             data=scalar_ds,
             ignore_aes="all",
@@ -550,14 +522,12 @@ def plot_khat(
             limits=new_xlim,
         )
 
-    colors_for_hover = (
-        point_rgba.reshape(-1, point_rgba.shape[-1])
-        if point_rgba is not None and np.size(point_rgba)
-        else None
-    )
+    colors_for_hover = None
+    if point_rgba is not None and point_rgba.size:
+        colors_for_hover = point_rgba.reshape(-1, point_rgba.shape[-1])
 
-    labels_for_hover = [str(label) for label in flat_coord_labels]
     if hover_label and n_data_points:
+        labels_for_hover = [str(label) for label in flat_coord_labels]
         enable_hover_labels(
             backend,
             plot_collection,

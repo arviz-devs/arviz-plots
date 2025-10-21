@@ -532,6 +532,51 @@ def alpha_scaled_colors(base_color, khat_values, good_k_threshold):
     return rgba
 
 
+def calculate_khat_bin_edges(values, thresholds, tolerance=1e-9):
+    """Calculate bin edges for Pareto k diagnostic bins.
+
+    Parameters
+    ----------
+    values : array_like
+        Pareto k values to bin
+    thresholds : sequence of float
+        Diagnostic threshold values to use as potential bin edges (e.g., [0.7, 1.0])
+    tolerance : float, default 1e-9
+        Numerical tolerance for edge comparisons to avoid duplicate edges
+
+    Returns
+    -------
+    bin_edges : list of float or None
+        Calculated bin edges suitable for np.histogram, or None if edges cannot
+        be computed.
+    """
+    if not values.size:
+        return None
+
+    ymin = float(np.nanmin(values))
+    ymax = float(np.nanmax(values))
+
+    if not (np.isfinite(ymin) and np.isfinite(ymax)):
+        return None
+
+    bin_edges = [ymin]
+
+    for edge in thresholds:
+        if edge is None or not np.isfinite(edge):
+            continue
+        if edge <= bin_edges[-1] + tolerance:
+            continue
+        if edge >= ymax - tolerance:
+            continue
+        bin_edges.append(float(edge))
+
+    if ymax > bin_edges[-1] + tolerance:
+        bin_edges.append(ymax)
+    else:
+        bin_edges[-1] = ymax
+    return bin_edges if len(bin_edges) > 1 else None
+
+
 def enable_hover_labels(backend, plot_collection, hover_format, labels, colors, values):
     """Set up interactive hover annotations for scatter plots on matplotlib backends.
 
@@ -720,16 +765,7 @@ def hover_labels(fig, ax, scatter, labels, hover_format, colors, values):
 
 
 def _format_hover_text(template, index, label, value):
-    """Format hover annotation text with fallback."""
+    """Format hover annotation text using named placeholders."""
     if hasattr(value, "item"):
         value = value.item()
-    try:
-        return template.format(index=index, label=label, value=value)
-    except (KeyError, IndexError):
-        try:
-            return template.format(index, label, value)
-        except Exception:  # pylint: disable=broad-except
-            try:
-                return template.format(index, label)
-            except Exception:  # pylint: disable=broad-except
-                return f"{index}: {label}"
+    return template.format(index=index, label=label, value=value)
