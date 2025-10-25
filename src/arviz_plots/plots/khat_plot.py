@@ -12,10 +12,10 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     alpha_scaled_colors,
-    build_coord_labels,
     calculate_khat_bin_edges,
     enable_hover_labels,
     filter_aes,
+    format_coords_as_labels,
     get_visual_kwargs,
     set_wrap_layout,
 )
@@ -30,26 +30,6 @@ from arviz_plots.visuals import (
     set_xticks,
 )
 
-_FILLABLE_MARKERS = {
-    "o",
-    "s",
-    "D",
-    "^",
-    "v",
-    "<",
-    ">",
-    "p",
-    "P",
-    "*",
-    "h",
-    "H",
-    "8",
-    "X",
-}
-
-_DEFAULT_HLINE_COLOR = "C1"
-_DEFAULT_POINT_COLOR = "C0"
-
 
 def plot_khat(
     elpd_data,
@@ -61,7 +41,6 @@ def plot_khat(
     xlabels=False,
     legend=None,
     color=None,
-    markersize=None,
     hline_values=None,
     bin_format="{pct:.1f}%",
     plot_collection=None,
@@ -127,8 +106,6 @@ def plot_khat(
     color : color spec or str, optional
         Color for scatter points when no aesthetic mapping supplies one. If the value matches a
         dimension name, that dimension is mapped to the color aesthetic.
-    markersize : float, optional
-        Marker size passed to the scatter visual. Interpretations follow backend conventions.
     hline_values : sequence of float, optional
         Custom horizontal line positions. Defaults to [0.0, 0.7, 1.0].
     bin_format : str, default ``"{pct:.1f}%"``
@@ -172,6 +149,12 @@ def plot_khat(
     -------
     PlotCollection
 
+    Warnings
+    --------
+    When using custom markers via the ``visuals`` dict, ensure the marker type is compatible
+    with your chosen backend. Not all marker types support separate facecolor and edgecolor
+    across different backends.
+
     Examples
     --------
     The most basic usage plots the Pareto k values from a LOO-CV computation. Each point
@@ -204,7 +187,7 @@ def plot_khat(
         >>>     show_hlines=True,
         >>>     show_bins=True,
         >>>     hline_values=[0.0, 0.4, 1.0],
-        >>>     visuals={"hlines": {"color":"C1"}},
+        >>>     visuals={"hlines": {"color":"B1"}},
         >>>     figure_kwargs={"figsize": (10, 5)}
         >>> )
 
@@ -221,7 +204,8 @@ def plot_khat(
         arXiv preprint https://arxiv.org/abs/1507.02646
     """
     if hline_values is None:
-        hline_values = [0.0, 0.7, 1.0]
+        good_k = getattr(elpd_data, "good_k", 0.7)
+        hline_values = [0.0, good_k, 1.0]
     else:
         hline_values = list(hline_values)
 
@@ -231,6 +215,15 @@ def plot_khat(
         visuals = visuals.copy()
 
     visuals.setdefault("title", False)
+
+    if backend is None:
+        if plot_collection is None:
+            backend = rcParams["plot.backend"]
+        else:
+            backend = plot_collection.backend
+
+    if labeller is None:
+        labeller = BaseLabeller()
 
     if aes_by_visuals is None:
         aes_by_visuals = {}
@@ -250,6 +243,8 @@ def plot_khat(
 
     n_data_points = khat_data.size
     khat_dims = list(khat_data.dims)
+
+    flat_coord_labels = format_coords_as_labels(khat_data)
     coord_map = {dim: khat_data.coords[dim] for dim in khat_dims if dim in khat_data.coords}
 
     if n_data_points:
@@ -263,11 +258,6 @@ def plot_khat(
         plot_axis=["x", "y"]
     )
 
-    coord_labels = build_coord_labels(khat_data)
-    flat_coord_labels = (
-        coord_labels.reshape(-1) if coord_labels.size else np.array([], dtype=object)
-    )
-
     khat_values = np.asarray(khat_data.values).reshape(-1)
     x_flat = np.asarray(x_positions).reshape(-1)
     y_flat = np.asarray(khat_data.values).reshape(-1)
@@ -275,13 +265,6 @@ def plot_khat(
     x_max = x_flat.max() if x_flat.size else 0.0
 
     good_k_threshold = hline_values[1] if len(hline_values) > 1 else 0.7
-
-    if backend is None:
-        if plot_collection is None:
-            backend = rcParams["plot.backend"]
-        else:
-            backend = plot_collection.backend
-
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     scalar_ds = xr.Dataset({"pareto_k": xr.DataArray(0)})
 
@@ -293,10 +276,10 @@ def plot_khat(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
 
         if isinstance(color, str) and color in distribution.dims:
-            pc_kwargs["aes"].setdefault("color", [color])
+            pc_kwargs["aes"]["color"] = [color]
             color = None
-        elif "model" in distribution.dims:
-            pc_kwargs["aes"].setdefault("color", ["model"])
+        elif "model" in distribution.dims and "color" not in pc_kwargs["aes"]:
+            pc_kwargs["aes"]["color"] = ["model"]
 
         pc_kwargs.setdefault("cols", ["__variable__"])
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
@@ -316,9 +299,6 @@ def plot_khat(
     aes_by_visuals.setdefault("ylabel", [])
     aes_by_visuals.setdefault("ticks", [])
 
-    if labeller is None:
-        labeller = BaseLabeller()
-
     point_rgba = None
     new_xlim = None
 
@@ -326,31 +306,20 @@ def plot_khat(
     if khat_kwargs is not False:
         _, khat_aes, khat_ignore = filter_aes(plot_collection, aes_by_visuals, "khat", [])
 
-        if markersize is not None and "size" not in khat_aes:
-            khat_kwargs.setdefault("size", markersize)
-
-        marker_value = khat_kwargs.get("marker")
-
-        if backend == "matplotlib" and "marker" not in khat_aes:
-            marker_value = khat_kwargs.setdefault("marker", "+")
-
-        fillable_marker = marker_value is None or marker_value in _FILLABLE_MARKERS
         default_color = khat_kwargs.get("color", color)
 
         if default_color is None and "color" not in khat_aes:
-            default_color = _DEFAULT_POINT_COLOR
+            default_color = "C0"
 
         if backend == "matplotlib" and "color" not in khat_aes:
             base_color = khat_kwargs.pop("color", default_color)
             point_rgba = alpha_scaled_colors(base_color, khat_data.values, good_k_threshold)
-
-            if fillable_marker:
-                khat_kwargs.setdefault("facecolor", point_rgba)
-                khat_kwargs.setdefault("edgecolor", point_rgba)
-            else:
-                khat_kwargs.setdefault("color", point_rgba)
+            khat_kwargs.setdefault("color", point_rgba)
+            khat_kwargs.setdefault("zorder", 2)
         elif "color" not in khat_aes and default_color is not None:
             khat_kwargs.setdefault("color", default_color)
+            if backend == "matplotlib":
+                khat_kwargs.setdefault("zorder", 2)
 
         plot_collection.map(
             scatter_xy,
@@ -372,9 +341,11 @@ def plot_khat(
                 if backend == "matplotlib" and "linestyle" not in hlines_aes:
                     h_kwargs.setdefault("linestyle", linestyle_cycle[idx % len(linestyle_cycle)])
                 if "color" not in hlines_aes:
-                    h_kwargs.setdefault("color", _DEFAULT_HLINE_COLOR)
+                    h_kwargs.setdefault("color", f"C{idx + 1}")
                 if "alpha" not in hlines_aes:
                     h_kwargs.setdefault("alpha", 0.7)
+                if backend == "matplotlib":
+                    h_kwargs.setdefault("zorder", 3)
 
                 h_ds = xr.Dataset({"pareto_k": xr.DataArray(value)})
                 plot_collection.map(

@@ -458,50 +458,34 @@ def add_bands(
     return plot_collection
 
 
-def build_coord_labels(khat_data):
-    """Generate string labels for all coordinate combinations in the input data.
+def format_coords_as_labels(data, skip_dims=None):
+    """Format 1D or multi-D dataarray coords as string labels.
 
     Parameters
     ----------
-    khat_data : DataArray
-        Input data array whose coordinate combinations will be labeled.
+    dataarray : xr.DataArray
+        DataArray whose coordinates will be converted to labels.
+    skip_dims : str or list_like, optional
+        Dimensions whose values should not be included in the labels.
 
     Returns
     -------
     ndarray of str
-        Array of string labels with the same shape as `khat_data`.
+        Array of coordinate labels with the same flattened shape as the input.
     """
-    dims = khat_data.dims
-    if not dims:
-        return np.array(["0"], dtype=object)
+    if skip_dims is None:
+        coord_labels = data.coords.to_index()
+    else:
+        coord_labels = data.coords.to_index().droplevel(skip_dims).drop_duplicates()
+    coord_labels = coord_labels.values
 
-    labels = np.empty(khat_data.shape, dtype=object)
-    coords = {
-        dim: khat_data.coords[dim].values if dim in khat_data.coords else None for dim in dims
-    }
+    if len(coord_labels) == 0:
+        return np.array([], dtype=object)
 
-    for index in np.ndindex(khat_data.shape):
-        if len(dims) == 1:
-            dim = dims[0]
-            coord_values = coords[dim]
-            if coord_values is not None and coord_values.size:
-                value = coord_values[index[0]]
-            else:
-                value = index[0]
-            if hasattr(value, "item"):
-                value = value.item()
-            labels[index] = str(value)
-        else:
-            parts = []
-            for dim, idx in zip(dims, index):
-                coord_values = coords[dim]
-                value = coord_values[idx] if coord_values is not None else idx
-                if hasattr(value, "item"):
-                    value = value.item()
-                parts.append(f"{dim}={value}")
-            labels[index] = ", ".join(str(part) for part in parts)
-
-    return labels
+    if isinstance(coord_labels[0], tuple):
+        fmt = ", ".join(["{}" for _ in coord_labels[0]])
+        return np.array([fmt.format(*x) for x in coord_labels], dtype=object)
+    return np.array([f"{s}" for s in coord_labels], dtype=object)
 
 
 def alpha_scaled_colors(base_color, khat_values, good_k_threshold):
