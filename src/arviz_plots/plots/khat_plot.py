@@ -11,7 +11,6 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
-    alpha_scaled_colors,
     calculate_khat_bin_edges,
     enable_hover_labels,
     filter_aes,
@@ -281,7 +280,7 @@ def plot_khat(
         elif "model" in distribution.dims and "color" not in pc_kwargs["aes"]:
             pc_kwargs["aes"]["color"] = ["model"]
 
-        pc_kwargs.setdefault("cols", ["__variable__"])
+        pc_kwargs.setdefault("cols", [])
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)
 
         plot_collection = PlotCollection.wrap(
@@ -299,7 +298,6 @@ def plot_khat(
     aes_by_visuals.setdefault("ylabel", [])
     aes_by_visuals.setdefault("ticks", [])
 
-    point_rgba = None
     new_xlim = None
 
     khat_kwargs = get_visual_kwargs(visuals, "khat")
@@ -311,15 +309,8 @@ def plot_khat(
         if default_color is None and "color" not in khat_aes:
             default_color = "C0"
 
-        if backend == "matplotlib" and "color" not in khat_aes:
-            base_color = khat_kwargs.pop("color", default_color)
-            point_rgba = alpha_scaled_colors(base_color, khat_data.values, good_k_threshold)
-            khat_kwargs.setdefault("color", point_rgba)
-            khat_kwargs.setdefault("zorder", 2)
-        elif "color" not in khat_aes and default_color is not None:
+        if "color" not in khat_aes and default_color is not None:
             khat_kwargs.setdefault("color", default_color)
-            if backend == "matplotlib":
-                khat_kwargs.setdefault("zorder", 2)
 
         plot_collection.map(
             scatter_xy,
@@ -334,18 +325,15 @@ def plot_khat(
 
         if hlines_kwargs is not False:
             _, hlines_aes, _ = filter_aes(plot_collection, aes_by_visuals, "hlines", [])
-            linestyle_cycle = [":", "-.", "--", "-"]
 
             for idx, value in enumerate(hline_values):
                 h_kwargs = hlines_kwargs.copy()
-                if backend == "matplotlib" and "linestyle" not in hlines_aes:
-                    h_kwargs.setdefault("linestyle", linestyle_cycle[idx % len(linestyle_cycle)])
+                if "linestyle" not in hlines_aes:
+                    h_kwargs.setdefault("linestyle", f"C{idx}")
                 if "color" not in hlines_aes:
                     h_kwargs.setdefault("color", f"C{idx + 1}")
                 if "alpha" not in hlines_aes:
                     h_kwargs.setdefault("alpha", 0.7)
-                if backend == "matplotlib":
-                    h_kwargs.setdefault("zorder", 3)
 
                 h_ds = xr.Dataset({"pareto_k": xr.DataArray(value)})
                 plot_collection.map(
@@ -427,7 +415,7 @@ def plot_khat(
         ticks_kwargs = get_visual_kwargs(visuals, "ticks")
 
         if ticks_kwargs is not False:
-            if backend == "matplotlib" and "rotation" not in ticks_kwargs:
+            if "rotation" not in ticks_kwargs:
                 ticks_kwargs.setdefault("rotation", 45)
 
             plot_collection.map(
@@ -511,10 +499,6 @@ def plot_khat(
             limits=new_xlim,
         )
 
-    colors_for_hover = None
-    if point_rgba is not None and point_rgba.size:
-        colors_for_hover = point_rgba.reshape(-1, point_rgba.shape[-1])
-
     if hover_label and n_data_points:
         labels_for_hover = [str(label) for label in flat_coord_labels]
         enable_hover_labels(
@@ -522,7 +506,7 @@ def plot_khat(
             plot_collection,
             hover_format,
             labels_for_hover,
-            colors_for_hover,
+            None,
             y_flat,
         )
     return plot_collection

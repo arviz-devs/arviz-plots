@@ -301,7 +301,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_khat(self, datatree_with_loo, backend):
         pc = plot_khat(datatree_with_loo, backend=backend)
         assert "figure" in pc.viz.data_vars
-        assert "plot" not in pc.viz.data_vars
+        assert "plot" in pc.viz.data_vars
         assert "khat" in pc.viz.children
         assert "pareto_k" in pc.viz["khat"]
         assert "hline_0" not in pc.viz.children
@@ -311,6 +311,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_khat_with_hlines(self, datatree_with_loo, backend):
         pc = plot_khat(datatree_with_loo, backend=backend, show_hlines=True)
         assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.data_vars
         assert "khat" in pc.viz.children
         assert "hline_0" in pc.viz.children
         assert "hline_1" in pc.viz.children
@@ -319,6 +320,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     def test_plot_khat_with_bins(self, datatree_with_loo, backend):
         pc = plot_khat(datatree_with_loo, backend=backend, show_bins=True)
         assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.data_vars
         assert "khat" in pc.viz.children
         assert "bin_0" in pc.viz.children
 
