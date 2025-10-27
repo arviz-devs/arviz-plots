@@ -270,8 +270,8 @@ def plot_forest(
                 pc_kwargs.setdefault("alpha", [0, 0, 0.3])
         if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
-        figsize = pc_kwargs.get("figure_kwargs", {}).get("figsize", None)
-        figsize_units = pc_kwargs.get("figure_kwargs", {}).get("figsize_units", "inches")
+        figsize = pc_kwargs["figure_kwargs"].get("figsize", None)
+        figsize_units = pc_kwargs["figure_kwargs"].get("figsize_units", "inches")
         if figsize is None:
             coeff = 0.2
             n_blocks = process_facet_dims(
