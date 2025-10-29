@@ -1,7 +1,9 @@
 """Utilities for batteries included plots."""
+import warnings
 from copy import copy
 from importlib import import_module
 
+import matplotlib as mpl
 import numpy as np
 import xarray as xr
 from arviz_base import references_to_dataset
@@ -453,3 +455,270 @@ def add_bands(
         plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)
 
     return plot_collection
+
+
+def format_coords_as_labels(data, skip_dims=None):
+    """Format 1D or multi-D dataarray coords as string labels.
+
+    Parameters
+    ----------
+    dataarray : xr.DataArray
+        DataArray whose coordinates will be converted to labels.
+    skip_dims : str or list_like, optional
+        Dimensions whose values should not be included in the labels.
+
+    Returns
+    -------
+    ndarray of str
+        Array of coordinate labels with the same flattened shape as the input.
+    """
+    if skip_dims is None:
+        coord_labels = data.coords.to_index()
+    else:
+        coord_labels = data.coords.to_index().droplevel(skip_dims).drop_duplicates()
+    coord_labels = coord_labels.values
+
+    if len(coord_labels) == 0:
+        return np.array([], dtype=object)
+
+    if isinstance(coord_labels[0], tuple):
+        fmt = ", ".join(["{}" for _ in coord_labels[0]])
+        return np.array([fmt.format(*x) for x in coord_labels], dtype=object)
+    return np.array([f"{s}" for s in coord_labels], dtype=object)
+
+
+def calculate_khat_bin_edges(values, thresholds, tolerance=1e-9):
+    """Calculate bin edges for Pareto k diagnostic bins.
+
+    Parameters
+    ----------
+    values : array_like
+        Pareto k values to bin
+    thresholds : sequence of float
+        Diagnostic threshold values to use as potential bin edges (e.g., [0.7, 1.0])
+    tolerance : float, default 1e-9
+        Numerical tolerance for edge comparisons to avoid duplicate edges
+
+    Returns
+    -------
+    bin_edges : list of float or None
+        Calculated bin edges suitable for np.histogram, or None if edges cannot
+        be computed.
+    """
+    if not values.size:
+        return None
+
+    ymin = float(np.nanmin(values))
+    ymax = float(np.nanmax(values))
+
+    if not (np.isfinite(ymin) and np.isfinite(ymax)):
+        return None
+
+    bin_edges = [ymin]
+
+    for edge in thresholds:
+        if edge is None or not np.isfinite(edge):
+            continue
+        if edge <= bin_edges[-1] + tolerance:
+            continue
+        if edge >= ymax - tolerance:
+            continue
+        bin_edges.append(float(edge))
+
+    if ymax > bin_edges[-1] + tolerance:
+        bin_edges.append(ymax)
+    else:
+        bin_edges[-1] = ymax
+    return bin_edges if len(bin_edges) > 1 else None
+
+
+def enable_hover_labels(backend, plot_collection, hover_format, labels, colors, values):
+    """Set up interactive hover annotations for scatter plots on matplotlib backends.
+
+    Parameters
+    ----------
+    backend : str
+        The plotting backend being used. Only "matplotlib" is supported.
+    plot_collection : PlotCollection
+        Plot collection containing the visualization elements.
+    hover_format : str
+        Format string template for hover annotation text.
+    labels : array_like
+        Array of labels corresponding to each data point.
+    colors : array_like or None
+        Array of colors for each data point. If None, extracted from scatter plot.
+    values : array_like or None
+        Array of values to display in hover text. If None, y-coordinates are used.
+    """
+    if backend != "matplotlib":
+        return
+
+    try:
+        fig = plot_collection.viz["figure"].item()
+    except KeyError:
+        return
+    if fig is None:
+        return
+
+    if hasattr(mpl, "backends") and hasattr(mpl.backends, "backend_registry"):
+        interactive_backends = mpl.backends.backend_registry.list_builtin(
+            mpl.backends.BackendFilter.INTERACTIVE
+        )
+    else:
+        interactive_backends = mpl.rcsetup.interactive_bk
+
+    if mpl.get_backend() not in interactive_backends:
+        warnings.warn(
+            "hover labels are only available with interactive backends. "
+            "To switch to an interactive backend from IPython or Jupyter, use `%matplotlib`.",
+            UserWarning,
+        )
+        return
+
+    try:
+        axis = plot_collection.viz["plot"]["pareto_k"].item()
+        scatter = plot_collection.viz["khat"]["pareto_k"].item()
+    except KeyError:
+        return
+
+    if axis is None or scatter is None:
+        return
+
+    color_arr = np.asarray(colors) if colors is not None else None
+    if color_arr is None:
+        facecolors = scatter.get_facecolors()
+        if facecolors.size:
+            color_arr = facecolors
+
+    values_arr = np.asarray(values) if values is not None else None
+
+    hover_labels(
+        fig,
+        axis,
+        scatter,
+        labels,
+        hover_format,
+        color_arr,
+        values_arr,
+    )
+
+
+def hover(
+    event, annot, ax, scatter, fig, offsets, labels, values, hover_format, colors, offset_distance
+):
+    """Handle mouse hover events to show or hide data point annotations.
+
+    Parameters
+    ----------
+    event : MouseEvent
+        Matplotlib mouse event containing cursor position.
+    annot : Annotation
+        Matplotlib annotation object to show/hide and update.
+    ax : Axes
+        Matplotlib axes containing the scatter plot.
+    scatter : PathCollection
+        Scatter plot artist whose points are being tracked.
+    fig : Figure
+        Matplotlib figure containing the plot.
+    offsets : ndarray
+        Array of (x, y) coordinates for all scatter plot points.
+    labels : array_like
+        Array of string labels for each data point.
+    values : array_like or None
+        Array of numeric values to display. If None, y-coordinates are used.
+    hover_format : str
+        Format string template for the annotation text.
+    colors : ndarray or None
+        Array of RGBA colors for annotation backgrounds.
+    offset_distance : float
+        Distance in points to offset the annotation from the cursor position.
+    """
+    vis = annot.get_visible()
+    if event.inaxes == ax:
+        cont, ind = scatter.contains(event)
+        if cont:
+            idx = ind["ind"][0]
+            pos = offsets[idx]
+            label = labels[idx] if idx < len(labels) else str(idx)
+            value = values[idx] if values is not None and idx < len(values) else pos[1]
+            annot.xy = pos
+            xmid = np.mean(ax.get_xlim())
+            ymid = np.mean(ax.get_ylim())
+            annot.set_position(
+                (
+                    -offset_distance if pos[0] > xmid else offset_distance,
+                    -offset_distance if pos[1] > ymid else offset_distance,
+                )
+            )
+            annot.set_text(_format_hover_text(hover_format, idx, label, value))
+
+            if colors is not None and idx < len(colors):
+                annot.get_bbox_patch().set_facecolor(colors[idx])
+
+            annot.set_ha("right" if pos[0] > xmid else "left")
+            annot.set_va("top" if pos[1] > ymid else "bottom")
+            annot.set_visible(True)
+            fig.canvas.draw_idle()
+        elif vis:
+            annot.set_visible(False)
+            fig.canvas.draw_idle()
+
+
+def hover_labels(fig, ax, scatter, labels, hover_format, colors, values):
+    """Configure hover annotation display for scatter plot data points.
+
+    Parameters
+    ----------
+    fig : Figure
+        Matplotlib figure to attach the hover event handler.
+    ax : Axes
+        Matplotlib axes containing the scatter plot.
+    scatter : PathCollection
+        Scatter plot artist whose data points trigger hover annotations.
+    labels : array_like
+        Array of string labels for each data point.
+    hover_format : str
+        Format string template for annotation text.
+    colors : ndarray or None
+        Array of RGBA colors for annotation box backgrounds.
+    values : array_like or None
+        Array of numeric values to display. If None, y-coordinates are used.
+    """
+    offsets = scatter.get_offsets()
+    if offsets is None or not offsets.size:
+        return
+
+    annot = ax.annotate(
+        "",
+        xy=(0, 0),
+        xytext=(0, 0),
+        textcoords="offset points",
+        bbox={"boxstyle": "round", "fc": "w", "alpha": 0.4},
+        arrowprops={"arrowstyle": "->"},
+    )
+    annot.set_visible(False)
+    offset_distance = 10
+
+    fig.canvas.mpl_connect(
+        "motion_notify_event",
+        lambda event: hover(
+            event,
+            annot,
+            ax,
+            scatter,
+            fig,
+            offsets,
+            labels,
+            values,
+            hover_format,
+            colors,
+            offset_distance,
+        ),
+    )
+
+
+def _format_hover_text(template, index, label, value):
+    """Format hover annotation text using named placeholders."""
+    if hasattr(value, "item"):
+        value = value.item()
+    return template.format(index=index, label=label, value=value)
