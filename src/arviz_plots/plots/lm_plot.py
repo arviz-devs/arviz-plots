@@ -330,7 +330,9 @@ def plot_lm(
     else:
         pe_value = azs.mode(y_pred, dim=central_line_dims, **stats.get("point_estimate", {}))
 
-    ds_combined = combine(x_pred, plot_dim, pe_value, ci_data, x, y, smooth, stats.get("smooth", {}))
+    ds_combined = combine(
+        x_pred, plot_dim, pe_value, ci_data, x, y, smooth, stats.get("smooth", {})
+    )
 
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
@@ -455,6 +457,7 @@ def plot_lm(
 
     return plot_collection
 
+
 # This ended up being overly complicated, we can write functions
 # that work on 2d arrays with shape (obs_id, plot_axis) and use `make_ufunc` in arviz-stats
 def sort_values_by_x(values):
@@ -462,6 +465,7 @@ def sort_values_by_x(values):
         order = np.argsort(values[j][:, 0], axis=-1)
         values[j] = values[j][order, :]
     return values
+
 
 def smooth_values(values, n_points=200, **smooth_kwargs):
     x_sorted = values[..., 0]
@@ -478,7 +482,6 @@ def smooth_values(values, n_points=200, **smooth_kwargs):
     return values_smoothed
 
 
-
 def combine(x_pred, plot_dim, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
     """
     Combine and sort x_pred, pe_value, ci_data into a dataset.
@@ -490,9 +493,12 @@ def combine(x_pred, plot_dim, pe_value, ci_data, x_vars, y_vars, smooth, smooth_
         (
             x_pred.expand_dims(plot_axis=["x"]),
             pe_value.expand_dims(plot_axis=["y"]).rename(dict(zip(y_vars, x_vars))),
-            ci_data.rename(**dict(zip(y_vars, x_vars)), ci_bound="plot_axis").assign_coords(plot_axis=["y_bottom", "y_top"]),
+            ci_data.rename(**dict(zip(y_vars, x_vars)), ci_bound="plot_axis").assign_coords(
+                plot_axis=["y_bottom", "y_top"]
+            ),
         ),
-        dim="plot_axis"
+        dim="plot_axis",
+        coords="minimal",
     )
 
     combined_data = xr.apply_ufunc(
