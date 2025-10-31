@@ -10,6 +10,8 @@ import numpy as np
 import xarray as xr
 from arviz_base import extract, rcParams
 from arviz_base.labels import BaseLabeller
+from scipy.interpolate import griddata
+from scipy.signal import savgol_filter
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -34,6 +36,7 @@ def plot_lm(
     x=None,
     y=None,
     y_obs=None,
+    plot_dim=None,
     smooth=True,
     filter_vars=None,
     group="posterior_predictive",
@@ -82,11 +85,16 @@ def plot_lm(
     dt : DataTree
         Input data
     x : str  optional
-        Independent variable. If None, use the first variable in constant_data group.
+        Independent variable. If None, use the first variable in group.
+        Data will be taken from the constant_data group unless the `group` argument is
+        "predictions" in which case it is taken from the predictions_constant_data group.
     y : str optional
         Response variable or linear term. If None, use the first variable in observed_data group.
     y_obs : str or DataArray, optional
         Observed response variable. If None, use `y`.
+    plot_dim : str, optional
+        Dimension to be represented as the x axis. Defaults to the first dimension
+        in the data for `x`. It should be present in the data for `y` too.
     smooth : bool, default True
         If True, apply a Savitzky-Golay filter to smooth the lines.
     filter_vars: {None, “like”, “regex”}, default None
@@ -322,7 +330,7 @@ def plot_lm(
     else:
         pe_value = azs.mode(y_pred, dim=central_line_dims, **stats.get("point_estimate", {}))
 
-    ds_combined = combine(x_pred, pe_value, ci_data, x, y, smooth, stats.get("smooth", {}))
+    ds_combined = combine(x_pred, plot_dim, pe_value, ci_data, x, y, smooth, stats.get("smooth", {}))
 
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
 
@@ -447,80 +455,64 @@ def plot_lm(
 
     return plot_collection
 
+# This ended up being overly complicated, we can write functions
+# that work on 2d arrays with shape (obs_id, plot_axis) and use `make_ufunc` in arviz-stats
+def sort_values_by_x(values):
+    for j in np.ndindex(values.shape[:-2]):
+        order = np.argsort(values[j][:, 0], axis=-1)
+        values[j] = values[j][order, :]
+    return values
 
-def combine(x_pred, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
+def smooth_values(values, n_points=200, **smooth_kwargs):
+    x_sorted = values[..., 0]
+    x_grid = np.linspace(x_sorted.min(axis=-1), x_sorted.max(axis=-1), n_points)
+    x_grid[..., 0] = (x_grid[..., 0] + x_grid[..., 1]) / 2
+    out_shape = list(values.shape)
+    out_shape[-2] = n_points
+    values_smoothed = np.zeros(out_shape, dtype=float)
+    values_smoothed[..., 0] = x_grid
+    for j in np.ndindex(values_smoothed.shape[:-2]):
+        for i in range(1, 4):
+            y_interp = griddata(x_sorted[j], values[j][:, i], x_grid[j])
+            values_smoothed[j][:, i] = savgol_filter(y_interp, axis=0, **smooth_kwargs)
+    return values_smoothed
+
+
+
+def combine(x_pred, plot_dim, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
     """
     Combine and sort x_pred, pe_value, ci_data into a dataset.
 
     The resulting dataset will have a dimension plot_axis=['x','y','y_bottom','y_top'],
     and will sort each variable by its x values, and optionally smooth along dim_0.
     """
-    from scipy.interpolate import griddata
-    from scipy.signal import savgol_filter
+    combined_data = xr.concat(
+        (
+            x_pred.expand_dims(plot_axis=["x"]),
+            pe_value.expand_dims(plot_axis=["y"]).rename(dict(zip(y_vars, x_vars))),
+            ci_data.rename(**dict(zip(y_vars, x_vars)), ci_bound="plot_axis").assign_coords(plot_axis=["y_bottom", "y_top"]),
+        ),
+        dim="plot_axis"
+    )
 
-    plot_axis = ["x", "y", "y_bottom", "y_top"]
-    combined_data = {}
+    combined_data = xr.apply_ufunc(
+        sort_values_by_x,
+        combined_data,
+        input_core_dims=[[plot_dim, "plot_axis"]],
+        output_core_dims=[[plot_dim, "plot_axis"]],
+    )
 
-    smooth_kwargs.setdefault("window_length", 55)
-    smooth_kwargs.setdefault("polyorder", 2)
-    n_points = smooth_kwargs.pop("n_points", 200)
+    if smooth:
+        smooth_kwargs.setdefault("window_length", 55)
+        smooth_kwargs.setdefault("polyorder", 2)
+        smooth_kwargs.setdefault("n_points", 200)
 
-    has_prob_dim = "prob" in ci_data.dims
-    if has_prob_dim:
-        x_pred = x_pred.isel(prob=0)
+        combined_data = xr.apply_ufunc(
+            smooth_values,
+            combined_data,
+            input_core_dims=[[plot_dim, "plot_axis"]],
+            output_core_dims=[[f"smoothed_{plot_dim}", "plot_axis"]],
+            kwargs=smooth_kwargs,
+        )
 
-    for xv, yv in zip(x_vars, y_vars):
-        old_dim = pe_value[yv].dims[0]
-        y_aligned = pe_value[yv].rename({old_dim: "cov_dim"}).reindex(cov_dim=x_pred.cov_dim)
-
-        if has_prob_dim:
-            prob_coords = ci_data.coords["prob"]
-            ci_list = [ci_data.sel(prob=p) for p in prob_coords]
-        else:
-            ci_list = [ci_data]
-
-        all_prob_data = []
-        for ci_single in ci_list:
-            ci_aligned = (
-                ci_single[yv]
-                .rename({ci_single[yv].dims[0]: "cov_dim"})
-                .reindex(cov_dim=x_pred.cov_dim)
-            )
-            lower = ci_aligned.sel(ci_bound="lower").values
-            upper = ci_aligned.sel(ci_bound="upper").values
-
-            values = np.stack([x_pred[xv].values, y_aligned.values, lower, upper], axis=0)
-            order = np.argsort(values[0])
-            values_sorted = values[:, order]
-            x_sorted = values_sorted[0]
-
-            if smooth:
-                x_grid = np.linspace(x_sorted.min(), x_sorted.max(), n_points)
-                x_grid[0] = (x_grid[0] + x_grid[1]) / 2
-                values_smoothed = np.zeros((4, n_points))
-                values_smoothed[0] = x_grid
-                for i in range(1, 4):
-                    y_interp = griddata(x_sorted, values_sorted[i], x_grid)
-                    values_smoothed[i] = savgol_filter(y_interp, axis=0, **smooth_kwargs)
-                values_sorted = values_smoothed
-
-            all_prob_data.append(values_sorted)
-
-        if smooth:
-            new_dim = xr.IndexVariable("cov_dim", np.arange(n_points))
-        else:
-            new_dim = x_pred.cov_dim
-
-        if has_prob_dim:
-            combined_values = np.stack(all_prob_data, axis=-1)
-            combined_data[xv] = (("plot_axis", "cov_dim", "prob"), combined_values)
-        else:
-            combined_data[xv] = (("plot_axis", "cov_dim"), all_prob_data[0])
-
-    coords = {"plot_axis": plot_axis, "cov_dim": new_dim}
-    if has_prob_dim:
-        coords["prob"] = ci_data.coords["prob"]
-
-    combined_ds = xr.Dataset(data_vars=combined_data, coords=coords)
-
-    return combined_ds
+    return combined_data
