@@ -198,7 +198,6 @@ def plot_ppc_pit(
     if None in data_pairs.keys():
         data_pairs = dict(zip(dt[group].data_vars, dt.observed_data.data_vars))
 
-
     if censored:
         dt = censored_aware_dt(dt, group, list(data_pairs.keys()))
 
