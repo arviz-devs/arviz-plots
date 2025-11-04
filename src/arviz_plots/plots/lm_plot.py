@@ -88,7 +88,7 @@ def plot_lm(
         Independent variable. If None, use the first variable in group.
         Data will be taken from the constant_data group unless the `group` argument is
         "predictions" in which case it is taken from the predictions_constant_data group.
-    y : str optional
+    y : str, optional
         Response variable or linear term. If None, use the first variable in observed_data group.
     y_obs : str or DataArray, optional
         Observed response variable. If None, use `y`.
