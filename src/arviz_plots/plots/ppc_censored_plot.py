@@ -25,7 +25,7 @@ def plot_ppc_censored(
     coords=None,
     sample_dims=None,
     num_samples=100,
-    truncation_factor=1.2,
+    extrapolation_factor=1.2,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -55,9 +55,8 @@ def plot_ppc_censored(
 
     Instead of plotting the raw data observation and predictions, as is common in posterior
     predictive checks, this function computes the Kaplan-Meier survival curves for observed
-    and for predictive data computes the truncated survival probabilities. The truncation is
-    done as a factor of the maximum observed data to avoid extending the survival curves too
-    far beyond the range of observed data.
+    and for predictive data computes survival probabilities limited to a factor of the maximum
+    observed data to avoid extending the survival curves too far beyond the range of observed data.
 
     Parameters
     ----------
@@ -82,9 +81,9 @@ def plot_ppc_censored(
         Defaults to ``rcParams["data.sample_dims"]``
     num_samples : int, optional
         Number of samples to plot. Defaults to 100.
-    truncation_factor : float, default 1.2
-        Factor by which to truncate the survival curves beyond the maximum observed time.
-        Set to `None` to show all posterior predictive draws.
+    extrapolation_factor : float, default 1.2
+        Factor by which to limit the survival curves beyond the maximum observed time.
+        Set to None to show the unaffected posterior predictive draws.
     plot_collection : PlotCollection, optional
         Existing plot collection to add to.
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -180,7 +179,7 @@ def plot_ppc_censored(
         var_names=predictive_dist.data_vars,
         group=group,
         num_samples=num_samples,
-        truncation_factor=truncation_factor,
+        extrapolation_factor=extrapolation_factor,
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
