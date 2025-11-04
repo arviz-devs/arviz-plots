@@ -84,7 +84,7 @@ def plot_lm(
     ----------
     dt : DataTree
         Input data
-    x : str  optional
+    x : str, optional
         Independent variable. If None, use the first variable in group.
         Data will be taken from the constant_data group unless the `group` argument is
         "predictions" in which case it is taken from the predictions_constant_data group.
