@@ -25,7 +25,7 @@ def plot_ppc_censored(
     coords=None,
     sample_dims=None,
     num_samples=100,
-    truncation_factor=1.2,
+    truncation_factor=1.2,  # Change to extrapolation_factor
     plot_collection=None,
     backend=None,
     labeller=None,

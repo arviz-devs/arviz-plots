@@ -8,6 +8,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import difference_ecdf_pit
+from arviz_stats.survival import censored_aware_dt
 from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
@@ -26,6 +27,7 @@ def plot_ppc_pit(
     dt,
     ci_prob=0.99,
     coverage=False,
+    censored=False,
     var_names=None,
     data_pairs=None,
     filter_vars=None,  # pylint: disable=unused-argument
@@ -87,10 +89,9 @@ def plot_ppc_pit(
         Defaults to 0.99.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
-    data_pairs : dict, optional
-        Dictionary of keys prior/posterior predictive data and values observed data variable names.
-        If None, it will assume that the observed data and the predictive data have
-        the same variable name.
+    censored : bool, optional
+        If True, the function will handle censored data appropriately for survival analysis.
+        Defaults to False.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -196,6 +197,10 @@ def plot_ppc_pit(
         data_pairs = {var_names: var_names}
     if None in data_pairs.keys():
         data_pairs = dict(zip(dt[group].data_vars, dt.observed_data.data_vars))
+
+
+    if censored:
+        dt = censored_aware_dt(dt, group, list(data_pairs.keys()))
 
     randomized = [
         (dt[group][pred_var].values.dtype.kind == "i")
