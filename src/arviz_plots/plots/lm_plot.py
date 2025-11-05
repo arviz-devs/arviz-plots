@@ -9,7 +9,7 @@ import arviz_stats as azs
 import numpy as np
 import xarray as xr
 from arviz_base import extract, rcParams
-from arviz_base.labels import BaseLabeller
+from arviz_base.labels import BaseLabeller, MapLabeller
 from scipy.interpolate import griddata
 from scipy.signal import savgol_filter
 
@@ -47,7 +47,8 @@ def plot_lm(
     point_estimate=None,
     plot_collection=None,
     backend=None,
-    labeller=None,
+    xlabeller=None,
+    ylabeller=None,
     aes_by_visuals: Mapping[
         Literal[
             "pe_line",
@@ -118,7 +119,7 @@ def plot_lm(
         Which point_estimate to use for the line. Defaults to ``rcParams["stats.point_estimate"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
-    labeller : labeller, optional
+    xlabeller, ylabeller : labeller, optional
     aes_by_visuals : mapping, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
@@ -194,8 +195,6 @@ def plot_lm(
     else:
         stats = stats.copy()
 
-    if labeller is None:
-        labeller = BaseLabeller()
     if point_estimate is None:
         point_estimate = rcParams["stats.point_estimate"]
     if backend is None:
@@ -222,6 +221,15 @@ def plot_lm(
     if len(x) != len(y):
         raise ValueError("x and y must have the same length")
 
+    y_to_x_map = dict(zip(y, x))
+
+    if xlabeller is None:
+        xlabeller = BaseLabeller()
+    if ylabeller is None:
+        ylabeller = MapLabeller(
+            var_name_map={x_name: y_name for y_name, x_name in y_to_x_map.items()}
+        )
+
     if group in ["posterior", "prior", "posterior_predictive", "prior_predictive"]:
         x_pred = process_group_variables_coords(
             dt,
@@ -245,7 +253,7 @@ def plot_lm(
         var_names=y,
         filter_vars=filter_vars,
         coords=coords,
-    )
+    ).rename_vars(y_to_x_map)
 
     observed_x = process_group_variables_coords(
         dt,
@@ -257,10 +265,11 @@ def plot_lm(
 
     if y_obs is None:
         y_obs = y
-    observed_y = extract(dt, group="observed_data", var_names=y_obs, combined=False)
-
-    if isinstance(ci_prob, (list | tuple | np.ndarray)):
-        x_pred = x_pred.expand_dims(dim={"prob": ci_prob})
+    observed_y = extract(
+        dt, group="observed_data", var_names=y_obs, combined=False, keep_dataset=True
+    )
+    if all(var_name in observed_y.data_vars for var_name in y_to_x_map):
+        observed_y = observed_y.rename_vars(y_to_x_map)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
@@ -280,9 +289,14 @@ def plot_lm(
                 )
 
         pc_kwargs["aes"].setdefault("color", ["__variable__"])
-        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, x_pred)
+        if isinstance(ci_prob, (list | tuple | np.ndarray)):
+            pc_data = x_pred.expand_dims(dim={"prob": ci_prob})
+        else:
+            pc_data = x_pred
+
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, pc_data)
         plot_collection = PlotCollection.wrap(
-            x_pred,
+            pc_data,
             backend=backend,
             **pc_kwargs,
         )
@@ -327,11 +341,16 @@ def plot_lm(
         pe_value = y_pred.mean(dim=central_line_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "median":
         pe_value = y_pred.median(dim=central_line_dims, **stats.get("point_estimate", {}))
-    else:
+    elif point_estimate == "mode":
         pe_value = azs.mode(y_pred, dim=central_line_dims, **stats.get("point_estimate", {}))
+    else:
+        raise ValueError(
+            f"'{point_estimate}' is not a valid value for `point_estimate`. "
+            "Valid options are mean, median and mode"
+        )
 
-    ds_combined = combine(
-        x_pred, plot_dim, pe_value, ci_data, x, y, smooth, stats.get("smooth", {})
+    combined_pe, combined_ci = combine(
+        x_pred, plot_dim, pe_value, ci_data, smooth, stats.get("smooth", {})
     )
 
     lines = plot_bknd.get_default_aes("linestyle", 2, {})
@@ -351,8 +370,8 @@ def plot_lm(
         plot_collection.map(
             line_xy,
             "ci_bounds_upper",
-            x=ds_combined.sel(plot_axis="x"),
-            y=ds_combined.sel(plot_axis="y_top"),
+            x=combined_ci.sel(plot_axis="x"),
+            y=combined_ci.sel(plot_axis="y_top"),
             ignore_aes=ci_bounds_ignore,
             **ci_bounds_kwargs,
         )
@@ -360,8 +379,8 @@ def plot_lm(
         plot_collection.map(
             line_xy,
             "ci_bounds_lower",
-            x=ds_combined.sel(plot_axis="x"),
-            y=ds_combined.sel(plot_axis="y_bottom"),
+            x=combined_ci.sel(plot_axis="x"),
+            y=combined_ci.sel(plot_axis="y_bottom"),
             ignore_aes=ci_bounds_ignore,
             **ci_bounds_kwargs,
         )
@@ -372,20 +391,20 @@ def plot_lm(
         plot_collection.map(
             fill_between_y,
             "ci_band",
-            x=ds_combined.sel(plot_axis="x"),
-            y_bottom=ds_combined.sel(plot_axis="y_bottom"),
-            y_top=ds_combined.sel(plot_axis="y_top"),
+            x=combined_ci.sel(plot_axis="x"),
+            y_bottom=combined_ci.sel(plot_axis="y_bottom"),
+            y_top=combined_ci.sel(plot_axis="y_top"),
             ignore_aes=fill_ignore,
             **fill_kwargs,
         )
 
-    # credible lines
+    # credible intervals as multiple vertical lines
     ci_line_y_kwargs = get_visual_kwargs(visuals, "ci_line_y", False)
     if ci_line_y_kwargs is not False:
         plot_collection.map(
             ci_line_y,
             "ci_line_y",
-            data=ds_combined,
+            data=combined_ci,
             ignore_aes=fill_ignore,
             **ci_line_y_kwargs,
         )
@@ -403,7 +422,7 @@ def plot_lm(
         plot_collection.map(
             line_xy,
             "pe_line",
-            data=ds_combined,
+            data=combined_pe,
             ignore_aes=pe_line_ignore,
             **pe_line_kwargs,
         )
@@ -436,8 +455,8 @@ def plot_lm(
         plot_collection.map(
             labelled_x,
             "xlabel",
-            data=x_pred,
-            labeller=labeller,
+            data=plot_collection.viz["plot"].dataset,
+            labeller=xlabeller,
             subset_info=True,
             ignore_aes=xlabel_ignore,
             **xlabel_kwargs,
@@ -450,7 +469,9 @@ def plot_lm(
         plot_collection.map(
             labelled_y,
             "ylabel",
-            text=y,
+            data=plot_collection.viz["plot"].dataset,
+            labeller=ylabeller,
+            subset_info=True,
             ignore_aes=ylabel_ignore,
             **ylabel_kwargs,
         )
@@ -468,42 +489,54 @@ def sort_values_by_x(values):
 
 
 def smooth_values(values, n_points=200, **smooth_kwargs):
-    x_sorted = values[..., 0]
-    x_grid = np.linspace(x_sorted.min(axis=-1), x_sorted.max(axis=-1), n_points)
-    x_grid[..., 0] = (x_grid[..., 0] + x_grid[..., 1]) / 2
     out_shape = list(values.shape)
     out_shape[-2] = n_points
-    values_smoothed = np.zeros(out_shape, dtype=float)
-    values_smoothed[..., 0] = x_grid
+    values_smoothed = np.empty(out_shape, dtype=float)
     for j in np.ndindex(values_smoothed.shape[:-2]):
-        for i in range(1, 4):
-            y_interp = griddata(x_sorted[j], values[j][:, i], x_grid[j])
+        x_sorted_j = values[j][:, 0]
+        x_grid = np.linspace(x_sorted_j.min(), x_sorted_j.max(), n_points)
+        x_grid[0] = (x_grid[0] + x_grid[1]) / 2
+        values_smoothed[j][:, 0] = x_grid
+        for i in range(1, values.shape[-1]):
+            y_interp = griddata(x_sorted_j, values[j][:, i], x_grid)
             values_smoothed[j][:, i] = savgol_filter(y_interp, axis=0, **smooth_kwargs)
     return values_smoothed
 
 
-def combine(x_pred, plot_dim, pe_value, ci_data, x_vars, y_vars, smooth, smooth_kwargs):
+def combine(x_pred, plot_dim, pe_value, ci_data, smooth, smooth_kwargs):
     """
     Combine and sort x_pred, pe_value, ci_data into a dataset.
 
     The resulting dataset will have a dimension plot_axis=['x','y','y_bottom','y_top'],
     and will sort each variable by its x values, and optionally smooth along dim_0.
     """
-    combined_data = xr.concat(
+    combined_pe = xr.concat(
         (
             x_pred.expand_dims(plot_axis=["x"]),
-            pe_value.expand_dims(plot_axis=["y"]).rename(dict(zip(y_vars, x_vars))),
-            ci_data.rename(**dict(zip(y_vars, x_vars)), ci_bound="plot_axis").assign_coords(
-                plot_axis=["y_bottom", "y_top"]
-            ),
+            pe_value.expand_dims(plot_axis=["y"]),
+        ),
+        dim="plot_axis",
+    )
+
+    combined_ci = xr.concat(
+        (
+            x_pred.expand_dims(plot_axis=["x"]),
+            ci_data.rename(ci_bound="plot_axis").assign_coords(plot_axis=["y_bottom", "y_top"]),
         ),
         dim="plot_axis",
         coords="minimal",
     )
 
-    combined_data = xr.apply_ufunc(
+    combined_pe = xr.apply_ufunc(
         sort_values_by_x,
-        combined_data,
+        combined_pe,
+        input_core_dims=[[plot_dim, "plot_axis"]],
+        output_core_dims=[[plot_dim, "plot_axis"]],
+    )
+
+    combined_ci = xr.apply_ufunc(
+        sort_values_by_x,
+        combined_ci,
         input_core_dims=[[plot_dim, "plot_axis"]],
         output_core_dims=[[plot_dim, "plot_axis"]],
     )
@@ -513,12 +546,20 @@ def combine(x_pred, plot_dim, pe_value, ci_data, x_vars, y_vars, smooth, smooth_
         smooth_kwargs.setdefault("polyorder", 2)
         smooth_kwargs.setdefault("n_points", 200)
 
-        combined_data = xr.apply_ufunc(
+        combined_pe = xr.apply_ufunc(
             smooth_values,
-            combined_data,
+            combined_pe,
             input_core_dims=[[plot_dim, "plot_axis"]],
             output_core_dims=[[f"smoothed_{plot_dim}", "plot_axis"]],
             kwargs=smooth_kwargs,
         )
 
-    return combined_data
+        combined_ci = xr.apply_ufunc(
+            smooth_values,
+            combined_ci,
+            input_core_dims=[[plot_dim, "plot_axis"]],
+            output_core_dims=[[f"smoothed_{plot_dim}", "plot_axis"]],
+            kwargs=smooth_kwargs,
+        )
+
+    return combined_pe, combined_ci
