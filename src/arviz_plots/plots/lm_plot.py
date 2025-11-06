@@ -54,7 +54,7 @@ def plot_lm(
             "pe_line",
             "ci_band",
             "ci_bounds",
-            "ci_line_y",
+            "ci_vlines",
             "observed_scatter",
             "xlabel",
             "ylabel",
@@ -66,7 +66,7 @@ def plot_lm(
             "pe_line",
             "ci_band",
             "ci_bounds",
-            "ci_line_y",
+            "ci_vlines",
             "observed_scatter",
             "xlabel",
             "ylabel",
@@ -74,7 +74,7 @@ def plot_lm(
         Mapping[str, Any] | Literal[False],
     ] = None,
     stats: Mapping[
-        Literal["credible_interval", "point_estimate", "smooth"],
+        Literal["credible_interval", "pe_line", "smooth"],
         Mapping[str, Any] | xr.Dataset,
     ] = None,
     **pc_kwargs,
@@ -85,11 +85,13 @@ def plot_lm(
     ----------
     dt : DataTree
         Input data
-    x : str, optional
+    x : str or sequence of str, optional
         Independent variable. If None, use the first variable in group.
         Data will be taken from the constant_data group unless the `group` argument is
         "predictions" in which case it is taken from the predictions_constant_data group.
-    y : str, optional
+
+        The plots and visuals in the generated ``PlotCollection`` object will use `x` for naming.
+    y : str or sequence of str, optional
         Response variable or linear term. If None, use the first variable in observed_data group.
     y_obs : str or DataArray, optional
         Observed response variable. If None, use `y`.
@@ -112,41 +114,50 @@ def plot_lm(
         Defaults to ``rcParams["data.sample_dims"]``
     ci_kind : {"hdi", "eti"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
-    ci_prob : float or array-like of floats, optional
+    ci_prob : float or array-like of float, optional
         Indicates the probabilities that should be contained within the plotted credible intervals.
         Defaults to ``rcParams["stats.ci_prob"]``
-    point_estimate : {"mean", "median","mode"}, optional
+    point_estimate : {"mean", "median", "mode"}, optional
         Which point_estimate to use for the line. Defaults to ``rcParams["stats.point_estimate"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     xlabeller, ylabeller : labeller, optional
         Labeller for the x and y axes. Will use the `make_label_vert` method of the labeller.
+        By default, `xlabeller` is a :class:`~arviz_base.labels.BaseLabeller` and
+        `ylabeller` is a :class:`~arviz_base.labels.MapLabeller` that maps values of
+        `x` to their respective `y` value given the first ones are used to name things
+        in the ``PlotCollection``.
     aes_by_visuals : mapping, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
-        By default, there are no aesthetic mappings at all
+
+        By default, the color is mapped to the variable which is active for the "ci_band" visual.
+        If `ci_prob` is not a scalar a mapping from prob->alpha is also added which is
+        active for "ci_band" and "ci_vlines" visuals.
     visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
         * pe_line-> passed to :func:`~.visuals.line_xy`.
 
-          Represents the mean, median, or mode of the predictions, E(y|x), or of the
+          Line that represent the mean, median, or mode of the predictions, E(y|x), or of the
           linear predictor, E(η|x).
 
         * ci_band -> passed to :func:`~.visuals.fill_between_y`.
 
-          Represents a credible interval for E(y|x) or E(η|x).
+          Filled area that represents a credible interval for E(y|x) or E(η|x).
 
         * ci_bounds -> passed to :func:`~.visuals.line_xy`. Defaults to False
 
-          Represents the upper and lower bounds of a credible interval for E(y|x) or E(η|x).
-          This is similar to ci_band, but uses lines for the boundaries instead of a
-          filled area.
+          Lines that represent the upper and lower bounds of a credible interval
+          for E(y|x) or E(η|x). This is similar to "ci_band", but uses lines
+          for the boundaries instead of a filled area.
 
-        * ci_line_y -> passed to :func:`~.visuals.ci_line_y`. Defaults to False
+        * ci_vlines -> passed to :func:`~.visuals.ci_line_y`. Defaults to False
 
           This is intended for categorical x values or discrete variables with
           few unique values of x for which ci_band or ci_bounds do not work well.
+          Represents the same information as these two visuals but as multiple vertical lines,
+          similar to :func:`~arviz_plots.plot_ppc_interval`
 
         * observed_scatter -> passed to :func:`~.visuals.scatter_xy`.
 
@@ -158,8 +169,13 @@ def plot_lm(
     stats : mapping, optional
         Valid keys are:
 
-        * credible_interval -> passed to eti or hdi
-        * point_estimate -> passed to mean, median or mode
+        * credible_interval -> passed to eti or hdi. Affects all 3 visual elements
+          related to the credible intervals
+        * pe_line -> passed to mean, median or mode
+        * smooth -> passed to :func:`scipy.signal.savgol_filter`.
+          It also takes an extra ``n_points`` key to control the number of points
+          in the interpolation grid that is passed to the smoothing filter.
+          Affects the 4 visual elements related to credible intervals or point estimates.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -328,11 +344,9 @@ def plot_lm(
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
-    aes_by_visuals.setdefault(
-        "central_line", plot_collection.aes_set.difference({"alpha", "color"})
-    )
+    aes_by_visuals.setdefault("pe_line", plot_collection.aes_set.difference({"alpha", "color"}))
     if isinstance(ci_prob, (list | tuple | np.ndarray)):
-        aes_by_visuals.setdefault("ci_line_y", {"alpha"})
+        aes_by_visuals.setdefault("ci_vlines", {"alpha"})
         aes_by_visuals.setdefault(
             "ci_band", set(aes_by_visuals.get("ci_band", {})).union({"color", "alpha"})
         )
@@ -343,7 +357,9 @@ def plot_lm(
 
     # calculations for credible interval
     ci_fun = azs.hdi if ci_kind == "hdi" else azs.eti
-    ci_dims, _, fill_ignore = filter_aes(plot_collection, aes_by_visuals, "ci_band", sample_dims)
+    ci_dims, ci_band_aes, ci_band_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "ci_band", sample_dims
+    )
     if isinstance(ci_prob, (list | tuple | np.ndarray)):
         ci_data = xr.concat(
             [
@@ -357,22 +373,22 @@ def plot_lm(
     else:
         ci_data = ci_fun(y_pred, dim=ci_dims, prob=ci_prob, **stats.get("credible_interval", {}))
 
-    central_line_dims, _, _ = filter_aes(
-        plot_collection, aes_by_visuals, "central_line", sample_dims
+    pe_line_dims, pe_line_aes, pe_line_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "pe_line", sample_dims
     )
     if point_estimate == "mean":
-        pe_value = y_pred.mean(dim=central_line_dims, **stats.get("point_estimate", {}))
+        pe_value = y_pred.mean(dim=pe_line_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "median":
-        pe_value = y_pred.median(dim=central_line_dims, **stats.get("point_estimate", {}))
+        pe_value = y_pred.median(dim=pe_line_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "mode":
-        pe_value = azs.mode(y_pred, dim=central_line_dims, **stats.get("point_estimate", {}))
+        pe_value = azs.mode(y_pred, dim=pe_line_dims, **stats.get("point_estimate", {}))
     else:
         raise ValueError(
             f"'{point_estimate}' is not a valid value for `point_estimate`. "
             "Valid options are mean, median and mode"
         )
 
-    combined_pe, combined_ci = combine(
+    combined_pe, combined_ci = combine_sort_smooth(
         x_pred, plot_dim, pe_value, ci_data, smooth, stats.get("smooth", {})
     )
 
@@ -407,35 +423,39 @@ def plot_lm(
         )
 
     # credible band
-    fill_kwargs = get_visual_kwargs(visuals, "ci_band")
-    if fill_kwargs is not False:
+    ci_band_kwargs = get_visual_kwargs(visuals, "ci_band")
+    if ci_band_kwargs is not False:
+        if "color" not in ci_band_aes:
+            ci_band_kwargs.setdefault("color", "C0")
         plot_collection.map(
             fill_between_y,
             "ci_band",
             x=combined_ci.sel(plot_axis="x"),
             y_bottom=combined_ci.sel(plot_axis="y_bottom"),
             y_top=combined_ci.sel(plot_axis="y_top"),
-            ignore_aes=fill_ignore,
-            **fill_kwargs,
+            ignore_aes=ci_band_ignore,
+            **ci_band_kwargs,
         )
 
     # credible intervals as multiple vertical lines
-    ci_line_y_kwargs = get_visual_kwargs(visuals, "ci_line_y", False)
-    if ci_line_y_kwargs is not False:
+    ci_vlines_kwargs = get_visual_kwargs(visuals, "ci_vlines", False)
+    if ci_vlines_kwargs is not False:
+        _, ci_vlines_aes, ci_vlines_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ci_vlines", sample_dims
+        )
+        if "color" not in ci_vlines_aes:
+            ci_vlines_kwargs.setdefault("color", "C0")
         plot_collection.map(
             ci_line_y,
-            "ci_line_y",
+            "ci_vlines",
             data=combined_ci,
-            ignore_aes=fill_ignore,
-            **ci_line_y_kwargs,
+            ignore_aes=ci_vlines_ignore,
+            **ci_vlines_kwargs,
         )
 
     # point estimate line
     pe_line_kwargs = get_visual_kwargs(visuals, "pe_line")
     if pe_line_kwargs is not False:
-        _, pe_line_aes, pe_line_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "pe_line", sample_dims
-        )
         if "color" not in pe_line_aes:
             pe_line_kwargs.setdefault("color", "B1")
         if "alpha" not in pe_line_aes:
@@ -503,6 +523,7 @@ def plot_lm(
 # This ended up being overly complicated, we can write functions
 # that work on 2d arrays with shape (obs_id, plot_axis) and use `make_ufunc` in arviz-stats
 def _sort_values_by_x(values):
+    """Sort values by x along requested dimension for plot_lm purposes."""
     for j in np.ndindex(values.shape[:-2]):
         order = np.argsort(values[j][:, 0], axis=-1)
         values[j] = values[j][order, :]
@@ -510,6 +531,7 @@ def _sort_values_by_x(values):
 
 
 def _smooth_values(values, n_points=200, **smooth_kwargs):
+    """Smooth values in 1d slices for plot_lm purposes."""
     out_shape = list(values.shape)
     out_shape[-2] = n_points
     values_smoothed = np.empty(out_shape, dtype=float)
@@ -524,12 +546,19 @@ def _smooth_values(values, n_points=200, **smooth_kwargs):
     return values_smoothed
 
 
-def combine(x_pred, plot_dim, pe_value, ci_data, smooth, smooth_kwargs):
+def combine_sort_smooth(x_pred, plot_dim, pe_value, ci_data, smooth, smooth_kwargs):
     """
-    Combine and sort x_pred, pe_value, ci_data into a dataset.
+    Combine and sort x_pred, pe_value, ci_data into two datasets.
 
-    The resulting dataset will have a dimension plot_axis=['x','y','y_bottom','y_top'],
-    and will sort each variable by its x values, and optionally smooth along dim_0.
+    The resulting datasets will have a dimension plot_axis=['x','y'] for the pe related data
+    and plot_axis=['x','y_bottom','y_top'] for the ci related data.
+
+    Each variable is sorted by its x values along `plot_dim`, and optionally smoothed along
+    this same dimension.
+
+    Separating pe and ci related data ensures pe_data doesn't end up with the `prob` dimension.
+    If it did, in the best case scenario we'd en up with multiple perfectly overlapping lines
+    in the same plot, or an avoidable and non-sensical error in the worst case scenario.
     """
     combined_pe = xr.concat(
         (
