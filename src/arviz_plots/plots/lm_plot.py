@@ -376,8 +376,6 @@ def plot_lm(
         x_pred, plot_dim, pe_value, ci_data, smooth, stats.get("smooth", {})
     )
 
-    lines = plot_bknd.get_default_aes("linestyle", 2, {})
-
     # Plot credible interval bounds
     ci_bounds_kwargs = get_visual_kwargs(visuals, "ci_bounds", False)
     if ci_bounds_kwargs is not False:
@@ -385,9 +383,9 @@ def plot_lm(
             plot_collection, aes_by_visuals, "ci_bounds", sample_dims
         )
         if "color" not in ci_bounds_aes:
-            ci_bounds_kwargs.setdefault("color", contrast_gray_color)
+            ci_bounds_kwargs.setdefault("color", "B2")
         if "linestyle" not in ci_bounds_aes:
-            ci_bounds_kwargs.setdefault("linestyle", lines[1])
+            ci_bounds_kwargs.setdefault("linestyle", "C1")
 
         # Plot upper and lower bounds
         plot_collection.map(
@@ -439,7 +437,7 @@ def plot_lm(
             plot_collection, aes_by_visuals, "pe_line", sample_dims
         )
         if "color" not in pe_line_aes:
-            pe_line_kwargs.setdefault("color", contrast_color)
+            pe_line_kwargs.setdefault("color", "B1")
         if "alpha" not in pe_line_aes:
             pe_line_kwargs.setdefault("alpha", 0.6)
         plot_collection.map(
@@ -459,7 +457,7 @@ def plot_lm(
         if "alpha" not in scatter_aes:
             observed_scatter_kwargs.setdefault("alpha", 0.3)
         if "color" not in scatter_aes:
-            observed_scatter_kwargs.setdefault("color", contrast_gray_color)
+            observed_scatter_kwargs.setdefault("color", "B2")
         if "width" not in scatter_aes:
             observed_scatter_kwargs.setdefault("width", 0)
         plot_collection.map(
