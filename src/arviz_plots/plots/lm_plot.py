@@ -120,6 +120,7 @@ def plot_lm(
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     xlabeller, ylabeller : labeller, optional
+        Labeller for the x and y axes. Will use the `make_label_vert` method of the labeller.
     aes_by_visuals : mapping, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
         when plotted. Valid keys are the same as for `visuals`.
@@ -246,6 +247,13 @@ def plot_lm(
             filter_vars=filter_vars,
             coords=coords,
         )
+    if plot_dim is None:
+        plot_dim = list(x_pred.dims)[0]
+    elif plot_dim not in x_pred.dims:
+        raise ValueError(
+            f"Dimension '{plot_dim}' given as `plot_dim` argument is not present in x data. "
+            f"Present dimensions are {tuple(x_pred.dims)}."
+        )
 
     y_pred = process_group_variables_coords(
         dt,
@@ -254,6 +262,21 @@ def plot_lm(
         filter_vars=filter_vars,
         coords=coords,
     ).rename_vars(y_to_x_map)
+    if plot_dim not in y_pred.dims:
+        error_msg = (
+            f"Dimension '{plot_dim}' set as `plot_dim` argument is not present in y data. "
+            f"Present dimensions are {tuple(y_pred.dims)}."
+        )
+        possible_matches = {}
+        for xdim, xsize in x_pred.sizes.items():
+            matches_i = [ydim for ydim, ysize in y_pred.sizes.items() if ysize == xsize]
+            if matches_i:
+                possible_matches[xdim] = matches_i
+        if possible_matches:
+            error_msg += (
+                f"\nPossible name mismatches between dimensions in x and y data: {possible_matches}"
+            )
+        raise ValueError(error_msg)
 
     observed_x = process_group_variables_coords(
         dt,
@@ -481,14 +504,14 @@ def plot_lm(
 
 # This ended up being overly complicated, we can write functions
 # that work on 2d arrays with shape (obs_id, plot_axis) and use `make_ufunc` in arviz-stats
-def sort_values_by_x(values):
+def _sort_values_by_x(values):
     for j in np.ndindex(values.shape[:-2]):
         order = np.argsort(values[j][:, 0], axis=-1)
         values[j] = values[j][order, :]
     return values
 
 
-def smooth_values(values, n_points=200, **smooth_kwargs):
+def _smooth_values(values, n_points=200, **smooth_kwargs):
     out_shape = list(values.shape)
     out_shape[-2] = n_points
     values_smoothed = np.empty(out_shape, dtype=float)
@@ -528,14 +551,14 @@ def combine(x_pred, plot_dim, pe_value, ci_data, smooth, smooth_kwargs):
     )
 
     combined_pe = xr.apply_ufunc(
-        sort_values_by_x,
+        _sort_values_by_x,
         combined_pe,
         input_core_dims=[[plot_dim, "plot_axis"]],
         output_core_dims=[[plot_dim, "plot_axis"]],
     )
 
     combined_ci = xr.apply_ufunc(
-        sort_values_by_x,
+        _sort_values_by_x,
         combined_ci,
         input_core_dims=[[plot_dim, "plot_axis"]],
         output_core_dims=[[plot_dim, "plot_axis"]],
@@ -547,7 +570,7 @@ def combine(x_pred, plot_dim, pe_value, ci_data, smooth, smooth_kwargs):
         smooth_kwargs.setdefault("n_points", 200)
 
         combined_pe = xr.apply_ufunc(
-            smooth_values,
+            _smooth_values,
             combined_pe,
             input_core_dims=[[plot_dim, "plot_axis"]],
             output_core_dims=[[f"smoothed_{plot_dim}", "plot_axis"]],
@@ -555,7 +578,7 @@ def combine(x_pred, plot_dim, pe_value, ci_data, smooth, smooth_kwargs):
         )
 
         combined_ci = xr.apply_ufunc(
-            smooth_values,
+            _smooth_values,
             combined_ci,
             input_core_dims=[[plot_dim, "plot_axis"]],
             output_core_dims=[[f"smoothed_{plot_dim}", "plot_axis"]],
