@@ -2,7 +2,7 @@
 # Predictive model comparison
 
 Compare multiple models using predictive accuracy estimated using PSIS-LOO-CV.
-Usually the DataFrame ``cmp_df`` is generated using ArviZ's ```compare` function.
+Usually the DataFrame ``cmp_df`` is generated using ArviZ's ``compare`` function.
 
 ---
 

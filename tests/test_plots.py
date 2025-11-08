@@ -544,13 +544,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "diverging" not in pc.viz["xticks"].dims
         assert "labels" in pc.viz["xticks"].dims
 
-    @pytest.mark.parametrize("truncation_factor", [1.5, None])
-    def test_plot_ppc_censored(self, datatree_censored, backend, truncation_factor):
+    @pytest.mark.parametrize("extrapolation_factor", [1.5, None])
+    def test_plot_ppc_censored(self, datatree_censored, backend, extrapolation_factor):
         pc = plot_ppc_censored(
             datatree_censored,
             var_names="time",
             backend=backend,
-            truncation_factor=truncation_factor,
+            extrapolation_factor=extrapolation_factor,
         )
 
         assert "figure" in pc.viz.data_vars

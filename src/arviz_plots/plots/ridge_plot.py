@@ -1,5 +1,4 @@
 """Ridge plot code."""
-
 import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
@@ -11,7 +10,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, process_group_variables_coords
 from arviz_plots.visuals import annotate_label, fill_between_y, line_xy, remove_axis
 
@@ -254,6 +253,26 @@ def plot_ridge(
                 pc_kwargs.setdefault("alpha", [0, 0, 0.3])
         if "model" in distribution.dims:
             pc_kwargs["aes"].setdefault("color", ["model"])
+        figsize = pc_kwargs["figure_kwargs"].get("figsize", None)
+        figsize_units = pc_kwargs["figure_kwargs"].get("figsize_units", "inches")
+        if figsize is None:
+            coeff = 0.2
+            n_blocks = process_facet_dims(
+                pc_data, [dim for dim in pc_kwargs["aes"]["y"] if dim not in ("chain", "model")]
+            )[0]
+            if not combined and "chain" in distribution.dims:
+                coeff += 0.1
+            if "model" in distribution.dims:
+                coeff += 0.1 * distribution.sizes["model"]
+            figsize = plot_bknd.scale_fig_size(
+                figsize,
+                rows=1 + coeff * n_blocks,
+                cols=process_facet_dims(pc_data, pc_kwargs["cols"])[0],
+                figsize_units=figsize_units,
+            )
+            figsize_units = "dots"
+        pc_kwargs["figure_kwargs"]["figsize"] = figsize
+        pc_kwargs["figure_kwargs"]["figsize_units"] = figsize_units
         plot_collection = PlotCollection.grid(
             pc_data,
             backend=backend,

@@ -2,7 +2,7 @@
 # Posterior KDEs
 
 KDE plot of the variable `mu` from the centered eight model. The `sample_dims` parameter is
-used to restrict the KDE computation along the `draw` dimension only."
+used to restrict the KDE computation along the `draw` dimension only.
 ---
 
 :::{seealso}
