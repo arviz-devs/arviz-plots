@@ -421,17 +421,11 @@ def test_plot_forest(
     threshold=st.one_of(
         st.none(), st.floats(min_value=0.3, max_value=1.5, allow_nan=False, allow_infinity=False)
     ),
-    show_hlines=st.booleans(),
-    show_bins=st.booleans(),
-    xlabels=st.booleans(),
 )
-def test_plot_khat(datatree_with_loo, threshold, show_hlines, show_bins, xlabels, visuals):
+def test_plot_khat(datatree_with_loo, threshold, visuals):
     pc = plot_khat(
         datatree_with_loo,
         threshold=threshold,
-        show_hlines=show_hlines,
-        show_bins=show_bins,
-        xlabels=xlabels,
         backend="none",
         visuals=visuals,
     )
@@ -440,11 +434,9 @@ def test_plot_khat(datatree_with_loo, threshold, show_hlines, show_bins, xlabels
     for visual, value in visuals.items():
         if value is False:
             if visual == "hlines":
-                if show_hlines:
-                    assert not any(k.startswith("hline_") for k in pc.viz.children)
+                assert not any(k.startswith("hline_") for k in pc.viz.children)
             elif visual == "bin_text":
-                if show_bins:
-                    assert not any(k.startswith("bin_") for k in pc.viz.children)
+                assert not any(k.startswith("bin_") for k in pc.viz.children)
             elif visual == "threshold_text":
                 if threshold is not None:
                     assert not any(k.startswith("threshold_") for k in pc.viz.children)
@@ -452,10 +444,7 @@ def test_plot_khat(datatree_with_loo, threshold, show_hlines, show_bins, xlabels
                 assert visual not in pc.viz.children
         else:
             if visual == "hlines":
-                if show_hlines:
-                    assert any(k.startswith("hline_") for k in pc.viz.children)
-                else:
-                    assert not any(k.startswith("hline_") for k in pc.viz.children)
+                assert any(k.startswith("hline_") for k in pc.viz.children)
             elif visual not in ["bin_text", "threshold_text", "ticks"]:
                 assert visual in pc.viz.children
 

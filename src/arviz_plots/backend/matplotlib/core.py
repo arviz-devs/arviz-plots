@@ -464,7 +464,7 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
 @expand_aesthetic_aliases
 def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to matplotlib for a horizontal line spanning the whole axes."""
-    artist_kws.setdefault("zorder", 3)
+    artist_kws.setdefault("zorder", 2)
     kwargs = {"color": color, "alpha": alpha, "linewidth": width, "linestyle": linestyle}
     return target.axhline(y, **_filter_kwargs(kwargs, Line2D, artist_kws))
 

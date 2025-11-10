@@ -152,3 +152,51 @@ def datatree_with_loo():
     loo_result = loo(dt)
 
     return loo_result
+
+
+@pytest.fixture(scope="session")
+def datatree_with_loo_facets():
+    """Fixture for an ELPDData object with facet dimensions."""
+    import numpy as np
+    import xarray as xr
+    from arviz_stats.utils import ELPDData
+
+    rng = np.random.default_rng(42)
+
+    n_obs = 100
+    groups = ["A", "B"]
+    years = ["2020", "2021"]
+
+    pareto_k_data = np.zeros((len(groups), len(years), n_obs))
+    pareto_k_data[0, 0, :] = np.concatenate([rng.uniform(0.0, 0.5, 90), rng.uniform(0.7, 1.2, 10)])
+    pareto_k_data[0, 1, :] = np.concatenate([rng.uniform(0.0, 0.5, 70), rng.uniform(0.7, 1.2, 30)])
+    pareto_k_data[1, 0, :] = np.concatenate([rng.uniform(0.0, 0.5, 80), rng.uniform(0.7, 1.2, 20)])
+    pareto_k_data[1, 1, :] = np.concatenate([rng.uniform(0.0, 0.5, 50), rng.uniform(0.7, 1.2, 50)])
+
+    pareto_k = xr.DataArray(
+        pareto_k_data,
+        dims=["group", "year", "observation"],
+        coords={"group": groups, "year": years, "observation": np.arange(n_obs)},
+    )
+
+    elpd_loo = xr.DataArray(
+        rng.normal(-50, 10, (len(groups), len(years), n_obs)),
+        dims=["group", "year", "observation"],
+        coords=pareto_k.coords,
+    )
+
+    loo_result = ELPDData(
+        kind="loo",
+        elpd=elpd_loo.sum().item(),
+        se=10.0,
+        p=5.0,
+        n_samples=1000,
+        n_data_points=n_obs * len(groups) * len(years),
+        scale="log",
+        warning=False,
+        good_k=0.7,
+        pareto_k=pareto_k,
+        elpd_i=elpd_loo,
+    )
+
+    return loo_result
