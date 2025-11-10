@@ -28,6 +28,7 @@ idata.log_likelihood["points"] = points_da.assign_coords(field=["home", "away"])
 idata.log_likelihood.coords["year"] = ("match", np.repeat([2014, 2015, 2016, 2017], 15))
 
 warnings.filterwarnings("ignore", "Estimated shape parameter.*greater than 0.70")
+warnings.filterwarnings("ignore", "Assuming dpi=100")
 loo_result = loo(idata, var_name="points", pointwise=True)
 
 pc = azp.plot_khat(
