@@ -9,6 +9,8 @@ Faceted Pareto k plot using grid layout to separate data by field and year dimen
 API Documentation: {func}`~arviz_plots.plot_khat`
 :::
 """
+import warnings
+
 import numpy as np
 from arviz_base import load_arviz_data
 from arviz_base.labels import MapLabeller
@@ -25,7 +27,9 @@ points_da = idata.log_likelihood.dataset[["home_points", "away_points"]].to_arra
 idata.log_likelihood["points"] = points_da.assign_coords(field=["home", "away"])
 idata.log_likelihood.coords["year"] = ("match", np.repeat([2014, 2015, 2016, 2017], 15))
 
-loo_result = loo(idata, var_name="points", pointwise=True)
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", "Estimated shape parameter.*greater than 0.70")
+    loo_result = loo(idata, var_name="points", pointwise=True)
 
 pc = azp.plot_khat(
     loo_result,
@@ -38,7 +42,7 @@ pc = azp.plot_khat(
         "title": True,
     },
     figure_kwargs={"figsize": (8, 6)},
-    backend="none",  # change to preferred backend
+    backend="none", # change to preferred backend
 )
 
 pc.show()
