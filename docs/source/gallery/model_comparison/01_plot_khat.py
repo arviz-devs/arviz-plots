@@ -19,9 +19,8 @@ import arviz_plots as azp
 azp.style.use("arviz-variat")
 
 dt = load_arviz_data("rugby")
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", "Estimated shape parameter.*greater than 0.70")
-    elpd_data = loo(dt, var_name="home_points", pointwise=True)
+warnings.filterwarnings("ignore", "Estimated shape parameter.*greater than 0.70")
+elpd_data = loo(dt, var_name="home_points", pointwise=True)
 
 pc = azp.plot_khat(
     elpd_data,
