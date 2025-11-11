@@ -35,6 +35,12 @@ def backend_from_object(obj, return_module=True):
             backend = leaf
         else:
             backend = lib
+    if backend == "xarray":
+        raise ValueError(
+            "Attempting to get plotting backend from a non-scalar object. "
+            "Review faceting and aesthetic mapping strategies. Conflicting xarray object:\n"
+            f"{obj}"
+        )
     if return_module:
         return import_module(f"arviz_plots.backend.{backend}")
     return backend
