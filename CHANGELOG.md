@@ -1,3 +1,73 @@
+<a id="v0.7.0"></a>
+# [v0.7.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v0.7.0) - 2025-11-11
+
+## What's Changed
+
+### New features
+* Adds Pair plot by [@The-Broken-Keyboard](https://github.com/The-Broken-Keyboard) in [#287](https://github.com/arviz-devs/arviz-plots/pull/287)  
+* Add parallel plot by [@The-Broken-Keyboard](https://github.com/The-Broken-Keyboard) in [#300](https://github.com/arviz-devs/arviz-plots/pull/300)  
+* Add face in dist_plot by [@The-Broken-Keyboard](https://github.com/The-Broken-Keyboard) in [#305](https://github.com/arviz-devs/arviz-plots/pull/305)  
+* Add dark theme by [@The-Broken-Keyboard](https://github.com/The-Broken-Keyboard) in [#309](https://github.com/arviz-devs/arviz-plots/pull/309)  
+* Add muted style/palette ("arviz-tenui") by [@aloctavodia](https://github.com/aloctavodia) in [#315](https://github.com/arviz-devs/arviz-plots/pull/315)  
+* Add legend to visuals by [@aloctavodia](https://github.com/aloctavodia) in [#321](https://github.com/arviz-devs/arviz-plots/pull/321)  
+* plot_ppc_pava: extend support for categorical and ordinal data by [@aloctavodia](https://github.com/aloctavodia) in [#316](https://github.com/arviz-devs/arviz-plots/pull/316)  
+* Add mode as a valid option for `point_estimate` in plot_forest by [@aloctavodia](https://github.com/aloctavodia) in [#337](https://github.com/arviz-devs/arviz-plots/pull/337)  
+* Add plot_lm by [@The-Broken-Keyboard](https://github.com/The-Broken-Keyboard) in [#328](https://github.com/arviz-devs/arviz-plots/pull/328)  
+* Add plot_ppc_intervals function by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#334](https://github.com/arviz-devs/arviz-plots/pull/334)  
+* Add plot_ppc_censored by [@aloctavodia](https://github.com/aloctavodia) in [#346](https://github.com/arviz-devs/arviz-plots/pull/346)  
+* Allow using "CX" notation for aliases to default aes cycle by [@OriolAbril](https://github.com/OriolAbril) in [#311](https://github.com/arviz-devs/arviz-plots/pull/311)  
+* Allow values in visuals to be True by [@aloctavodia](https://github.com/aloctavodia) in [#326](https://github.com/arviz-devs/arviz-plots/pull/326)  
+* Allow non-shared variables for multiple models by [@aloctavodia](https://github.com/aloctavodia) in [#331](https://github.com/arviz-devs/arviz-plots/pull/331)  
+* Add warning message when group is prior_predictive by [@aloctavodia](https://github.com/aloctavodia) in [#352](https://github.com/arviz-devs/arviz-plots/pull/352)  
+
+### Maintenance and bug fixes
+
+* Update API plot list by [@aloctavodia](https://github.com/aloctavodia) in [#293](https://github.com/arviz-devs/arviz-plots/pull/293)  
+* Update given upcoming changes in arviz-stats by [@aloctavodia](https://github.com/aloctavodia) in [#294](https://github.com/arviz-devs/arviz-plots/pull/294)  
+* PR for plot_ridge missing from example gallery by [@aminskey](https://github.com/aminskey) in [#303](https://github.com/arviz-devs/arviz-plots/pull/303)  
+* fix position point_estimate_text by [@aloctavodia](https://github.com/aloctavodia) in [#313](https://github.com/arviz-devs/arviz-plots/pull/313)  
+* Restrict palette to eight colors by [@aloctavodia](https://github.com/aloctavodia) in [#312](https://github.com/arviz-devs/arviz-plots/pull/312)  
+* Set custom tooltip for plotly and other fixes by [@aloctavodia](https://github.com/aloctavodia) in [#323](https://github.com/arviz-devs/arviz-plots/pull/323)  
+* Improve default legend for bokeh by [@aloctavodia](https://github.com/aloctavodia) in [#324](https://github.com/arviz-devs/arviz-plots/pull/324)  
+* plot_compare: improve docstring and fix plotly overlap by [@aloctavodia](https://github.com/aloctavodia) in [#325](https://github.com/arviz-devs/arviz-plots/pull/325)  
+* Generalize plot_compare by [@aloctavodia](https://github.com/aloctavodia) in [#329](https://github.com/arviz-devs/arviz-plots/pull/329)  
+* Adapt to changes in ecdf computation by [@aloctavodia](https://github.com/aloctavodia) in [#335](https://github.com/arviz-devs/arviz-plots/pull/335)  
+* Add missing check for non-labeller by [@aloctavodia](https://github.com/aloctavodia) in [#341](https://github.com/arviz-devs/arviz-plots/pull/341)  
+* Update default ci_prob for ecdf-pit plots by [@aloctavodia](https://github.com/aloctavodia) in [#345](https://github.com/arviz-devs/arviz-plots/pull/345)  
+* Add Python 3.13 to the tests by [@aloctavodia](https://github.com/aloctavodia) in [#348](https://github.com/arviz-devs/arviz-plots/pull/348)  
+* Small tweaks to tumma by [@aloctavodia](https://github.com/aloctavodia) in [#320](https://github.com/arviz-devs/arviz-plots/pull/320)  
+* improve default figsize for plot_ridge by [@OriolAbril](https://github.com/OriolAbril) in [#360](https://github.com/arviz-devs/arviz-plots/pull/360)  
+* Change truncation_factor name to avoid possible confusion by [@aloctavodia](https://github.com/aloctavodia) in [#363](https://github.com/arviz-devs/arviz-plots/pull/363)  
+* Refactor plot_lm by [@aloctavodia](https://github.com/aloctavodia) in [#343](https://github.com/arviz-devs/arviz-plots/pull/343)  
+* Remove deprecated GitHub action by [@OriolAbril](https://github.com/OriolAbril) in [#362](https://github.com/arviz-devs/arviz-plots/pull/362)  
+* Bump actions/download-artifact from 4 to 5 by [@dependabot](https://github.com/dependabot)[bot] in [#319](https://github.com/arviz-devs/arviz-plots/pull/319)  
+* Bump actions/checkout from 4 to 5 by [@dependabot](https://github.com/dependabot)[bot] in [#327](https://github.com/arviz-devs/arviz-plots/pull/327)  
+* Bump actions/setup-python from 5 to 6 by [@dependabot](https://github.com/dependabot)[bot] in [#339](https://github.com/arviz-devs/arviz-plots/pull/339)  
+* Bump peter-evans/create-or-update-comment from 4 to 5 by [@dependabot](https://github.com/dependabot)[bot] in [#351](https://github.com/arviz-devs/arviz-plots/pull/351)  
+* Bump actions/download-artifact from 5 to 6 by [@dependabot](https://github.com/dependabot)[bot] in [#359](https://github.com/arviz-devs/arviz-plots/pull/359)  
+* Bump release 0.7.0 by [@aloctavodia](https://github.com/aloctavodia) in [#366](https://github.com/arviz-devs/arviz-plots/pull/366)  
+
+### Documentation
+
+* Add ref target to installation section by [@OriolAbril](https://github.com/OriolAbril) in [#295](https://github.com/arviz-devs/arviz-plots/pull/295)  
+* Clean docstrings by [@aloctavodia](https://github.com/aloctavodia) in [#336](https://github.com/arviz-devs/arviz-plots/pull/336)  
+* Correct a typo: exising -> existing by [@star1327p](https://github.com/star1327p) in [#342](https://github.com/arviz-devs/arviz-plots/pull/342)  
+* Correct a typo: appeareance -> appearance by [@star1327p](https://github.com/star1327p) in [#349](https://github.com/arviz-devs/arviz-plots/pull/349)  
+* Correct more typos in arviz-plots documentation by [@star1327p](https://github.com/star1327p) in [#350](https://github.com/arviz-devs/arviz-plots/pull/350)  
+* Add link to `tests/conftest.py` file by [@star1327p](https://github.com/star1327p) in [#355](https://github.com/arviz-devs/arviz-plots/pull/355)  
+* Add plot_ppc_interval to API docs by [@satwiksps](https://github.com/satwiksps) in [#365](https://github.com/arviz-devs/arviz-plots/pull/365)  
+* Improve usage of quotation marks in documentation by [@star1327p](https://github.com/star1327p) in [#361](https://github.com/arviz-devs/arviz-plots/pull/361)  
+
+
+## New Contributors
+* [@aminskey](https://github.com/aminskey) made their first contribution in [#303](https://github.com/arviz-devs/arviz-plots/pull/303)
+* [@satwiksps](https://github.com/satwiksps) made their first contribution in [#365](https://github.com/arviz-devs/arviz-plots/pull/365)
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v0.6.0...v0.7.0
+
+[Changes][v0.7.0]
+
+
 <a id="v0.6.0"></a>
 # [v0.6.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v0.6.0) - 2025-06-18
 
@@ -170,8 +240,9 @@
 [Changes][v0.4.0]
 
 
+[v0.7.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.6.0...v0.7.0
 [v0.6.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.5.0...v0.6.0
 [v0.5.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/arviz-devs/arviz-plots/tree/v0.4.0
 
-<!-- Generated by https://github.com/rhysd/changelog-from-release v3.9.0 -->
+<!-- Generated by https://github.com/rhysd/changelog-from-release v3.9.1 -->
