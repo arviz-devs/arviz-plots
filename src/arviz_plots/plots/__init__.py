@@ -11,6 +11,7 @@ from .energy_plot import plot_energy
 from .ess_plot import plot_ess
 from .evolution_plot import plot_ess_evolution
 from .forest_plot import plot_forest
+from .khat_plot import plot_khat
 from .lm_plot import plot_lm
 from .loo_pit_plot import plot_loo_pit
 from .mcse_plot import plot_mcse
@@ -48,6 +49,7 @@ __all__ = [
     "plot_energy",
     "plot_ess",
     "plot_ess_evolution",
+    "plot_khat",
     "plot_loo_pit",
     "plot_mcse",
     "plot_pair",

@@ -16,6 +16,7 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_khat,
     plot_loo_pit,
     plot_mcse,
     plot_pair,
@@ -296,6 +297,81 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             assert pc.aes["alpha"]["neutral_element"].item() == 0
             assert 0 in pc.aes["alpha"]["mapping"].values
             assert pseudo_dim in pc.viz["shade"].dims
+
+    @pytest.mark.parametrize(
+        "visuals,expected_children,unexpected_children",
+        [
+            ({}, ["khat"], ["hline_0", "hline_1", "hline_2", "bin_0"]),
+            ({"hlines": True}, ["khat", "hline_0", "hline_1", "hline_2"], ["bin_0"]),
+            ({"bin_text": True}, ["khat", "bin_0"], ["hline_0", "hline_1", "hline_2"]),
+        ],
+    )
+    def test_plot_khat_visuals(
+        self, datatree_with_loo, backend, visuals, expected_children, unexpected_children
+    ):
+        pc = plot_khat(datatree_with_loo, backend=backend, visuals=visuals)
+        assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.data_vars
+        assert "pareto_k" in pc.viz["khat"]
+        for child in expected_children:
+            assert child in pc.viz.children
+        for child in unexpected_children:
+            assert child not in pc.viz.children
+
+    def test_plot_khat_missing_pareto_k(self, backend):
+        from arviz_stats.utils import ELPDData
+
+        mock_elpd = ELPDData(
+            kind="loo",
+            elpd=100.0,
+            se=10.0,
+            p=5.0,
+            n_samples=1000,
+            n_data_points=100,
+            scale="log",
+            warning=False,
+            good_k=0.7,
+        )
+        with pytest.raises(ValueError, match="Could not find 'pareto_k'"):
+            plot_khat(mock_elpd, backend=backend)
+
+    @pytest.mark.parametrize(
+        "rows,cols,expected_in_facet,unexpected_in_facet",
+        [
+            (["group"], None, ["group"], ["year"]),
+            (None, ["year"], ["year"], ["group"]),
+            (["group"], ["year"], ["group", "year"], []),
+        ],
+    )
+    def test_plot_khat_faceting(
+        self, datatree_with_loo_facets, backend, rows, cols, expected_in_facet, unexpected_in_facet
+    ):
+        kwargs = {"backend": backend}
+        if rows is not None:
+            kwargs["rows"] = rows
+        if cols is not None:
+            kwargs["cols"] = cols
+        pc = plot_khat(datatree_with_loo_facets, **kwargs)
+        assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.data_vars
+        assert "khat" in pc.viz.children
+        for dim in expected_in_facet:
+            assert dim in pc.facet_dims
+        for dim in unexpected_in_facet:
+            assert dim not in pc.facet_dims
+
+    def test_plot_khat_hover(self, datatree_with_loo_facets, backend):
+        if backend != "matplotlib":
+            pytest.skip("hover labels rely on matplotlib backends")
+        pc = plot_khat(
+            datatree_with_loo_facets,
+            backend=backend,
+            rows=["group"],
+            color="year",
+            legend=False,
+            visuals={"hover": True},
+        )
+        assert "figure" in pc.viz.data_vars
 
     @pytest.mark.parametrize("coverage", (True, False))
     def test_plot_loo_pit(self, datatree, coverage, backend):
