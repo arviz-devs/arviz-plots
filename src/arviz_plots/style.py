@@ -51,7 +51,7 @@ def use(name):
         if path.exists():
             curdoc().theme = Theme(filename=str(path))
             ok = True
-    except (ImportError, FileNotFoundError):
+    except ImportError:
         pass
 
     if not ok:
