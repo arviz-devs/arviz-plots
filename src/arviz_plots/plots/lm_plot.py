@@ -377,11 +377,11 @@ def plot_lm(
         plot_collection, aes_by_visuals, "pe_line", sample_dims
     )
     if point_estimate == "mean":
-        pe_value = y_pred.mean(dim=pe_line_dims, **stats.get("point_estimate", {}))
+        pe_value = y_pred.azstats.mean(dim=pe_line_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "median":
-        pe_value = y_pred.median(dim=pe_line_dims, **stats.get("point_estimate", {}))
+        pe_value = y_pred.azstats.median(dim=pe_line_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "mode":
-        pe_value = azs.mode(y_pred, dim=pe_line_dims, **stats.get("point_estimate", {}))
+        pe_value = y_pred.azstats.mode(dim=pe_line_dims, **stats.get("point_estimate", {}))
     else:
         raise ValueError(
             f"'{point_estimate}' is not a valid value for `point_estimate`. "
