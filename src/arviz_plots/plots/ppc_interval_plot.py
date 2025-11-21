@@ -210,9 +210,9 @@ def plot_ppc_interval(
     ci_twig = ci_fun(prob=ci_probs[0], dim=sample_dims, **stats.get("twig", {}))
 
     if point_estimate == "median":
-        point = ds_predictive.median(dim=sample_dims, **stats.get("point_estimate", {}))
+        point = ds_predictive.azstats.median(dim=sample_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "mean":
-        point = ds_predictive.mean(dim=sample_dims, **stats.get("point_estimate", {}))
+        point = ds_predictive.azstats.mean(dim=sample_dims, **stats.get("point_estimate", {}))
     elif point_estimate == "mode":
         point = ds_predictive.azstats.mode(dim=sample_dims, **stats.get("point_estimate", {}))
     else:

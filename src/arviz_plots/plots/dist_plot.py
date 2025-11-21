@@ -417,11 +417,13 @@ def plot_dist(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
         )
         if point_estimate == "median":
-            point = distribution.median(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.median(dim=pe_dims, **stats.get("point_estimate", {}))
         elif point_estimate == "mean":
-            point = distribution.mean(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.mean(dim=pe_dims, **stats.get("point_estimate", {}))
+        elif point_estimate == "mode":
+            point = distribution.azstats.mode(dim=pe_dims, **stats.get("point_estimate", {}))
         else:
-            raise NotImplementedError("coming soon")
+            raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
 
     if pe_kwargs is not False:
         if "color" not in pe_aes:

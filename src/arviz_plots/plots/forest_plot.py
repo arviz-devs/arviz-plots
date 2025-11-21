@@ -385,13 +385,13 @@ def plot_forest(
         if isinstance(pe_stats, xr.Dataset):
             point = pe_stats
         elif point_estimate == "median":
-            point = distribution.median(dim=pe_dims, **pe_stats)
+            point = distribution.azstats.median(dim=pe_dims, **pe_stats)
         elif point_estimate == "mean":
-            point = distribution.mean(dim=pe_dims, **pe_stats)
+            point = distribution.azstats.mean(dim=pe_dims, **pe_stats)
         elif point_estimate == "mode":
             point = distribution.azstats.mode(dim=pe_dims, **pe_stats)
         else:
-            raise NotImplementedError(f"Point estimate '{point_estimate}' not implemented")
+            raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
 
     if twig_kwargs is not False:
         x_range = ci_twig
