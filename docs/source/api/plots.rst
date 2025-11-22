@@ -28,6 +28,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_ess
    plot_ess_evolution
    plot_forest
+   plot_khat
    plot_loo_pit
    plot_lm
    plot_mcse

@@ -14,6 +14,7 @@ from arviz_plots import (
     plot_ess,
     plot_ess_evolution,
     plot_forest,
+    plot_khat,
     plot_loo_pit,
     plot_mcse,
     plot_pair,
@@ -401,6 +402,51 @@ def test_plot_forest(
             assert all(
                 var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
             )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "khat": visuals_value,
+            "hlines": visuals_value,
+            "bin_text": visuals_value,
+            "threshold_text": visuals_value,
+            "title": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "ticks": st.sampled_from(({}, False)),
+        },
+    ),
+    threshold=st.one_of(
+        st.none(), st.floats(min_value=0.3, max_value=1.5, allow_nan=False, allow_infinity=False)
+    ),
+)
+def test_plot_khat(datatree_with_loo, threshold, visuals):
+    pc = plot_khat(
+        datatree_with_loo,
+        threshold=threshold,
+        backend="none",
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children or "figure" in pc.viz.data_vars
+
+    for visual, value in visuals.items():
+        if value is False:
+            if visual == "hlines":
+                assert not any(k.startswith("hline_") for k in pc.viz.children)
+            elif visual == "bin_text":
+                assert not any(k.startswith("bin_") for k in pc.viz.children)
+            elif visual == "threshold_text":
+                if threshold is not None:
+                    assert not any(k.startswith("threshold_") for k in pc.viz.children)
+            elif visual != "ticks":
+                assert visual not in pc.viz.children
+        else:
+            if visual == "hlines":
+                assert any(k.startswith("hline_") for k in pc.viz.children)
+            elif visual not in ["bin_text", "threshold_text", "ticks"]:
+                assert visual in pc.viz.children
 
 
 @given(
