@@ -118,7 +118,7 @@ def plot_prior_posterior(
 
     Examples
     --------
-    Select two variables and plot them with a ecdf.
+    Select two variables and plot them with an ecdf.
 
     .. plot::
         :context: close-figs
