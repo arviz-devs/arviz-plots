@@ -284,7 +284,7 @@ class PlotMatrix(PlotCollection):
             Function with signature ``fun(da_x, da_y, target, **fun_kwargs)`` which
             should be called for all couples of data pairs (each couple encoded in a :term:`plot`)
             and corresponding :term:`aesthetic`.
-            The object returned by `fun` is assumed to be an scalar unless
+            The object returned by `fun` is assumed to be a scalar unless
             `artist_dims` are provided. There is also the option of adding extra
             keyword arguments with the `subset_info` flag.
         fun_label : str, optional
