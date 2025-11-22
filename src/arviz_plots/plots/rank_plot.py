@@ -173,8 +173,6 @@ def plot_rank(
     dt_ecdf = dt_ecdf_ranks.azstats.ecdf(dim=ecdf_dims, pit=True)
 
     # Compute envelope
-    # This asumes independence between the ranks
-    # But we should consider the jointly rank-transformed values
     dummy_vals_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     dummy_vals = np.linspace(0, 1, dummy_vals_size)
     x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
