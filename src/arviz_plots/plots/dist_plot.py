@@ -379,7 +379,7 @@ def plot_dist(
         )
 
     if (
-        (density_kwargs is not None)
+        (density_kwargs is not False or face_kwargs is not False)
         and ("model" in distribution)
         and (plot_collection.coords is None)
     ):
@@ -439,7 +439,7 @@ def plot_dist(
     # point estimate text
     if pet_kwargs is not False:
         if density_kwargs is False and face_kwargs is False:
-            point_y = xr.full_like(point, 0.02)
+            point_y = xr.full_like(point, 0.05)
         elif kind == "kde":
             point_density_diff = [
                 dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
