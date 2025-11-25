@@ -8,11 +8,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_stats.base.stats_utils import calculate_khat_bin_edges
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     annotate_bin_text,
-    calculate_khat_bin_edges,
     enable_hover_labels,
     filter_aes,
     format_coords_as_labels,
@@ -305,24 +305,6 @@ def plot_khat(
             )
 
     scalar_ds = xr.Dataset({"pareto_k": xr.DataArray(0)})
-    khat_kwargs = get_visual_kwargs(visuals, "khat")
-    if khat_kwargs is not False:
-        _, khat_aes, khat_ignore = filter_aes(plot_collection, aes_by_visuals, "khat", [])
-
-        if "color" not in khat_aes:
-            khat_kwargs.setdefault("color", color if color is not None else "C0")
-
-        if "marker" not in khat_aes and marker is not None:
-            khat_kwargs.setdefault("marker", marker)
-
-        plot_collection.map(
-            scatter_xy,
-            "khat",
-            data=khat_dataset,
-            ignore_aes=khat_ignore,
-            **khat_kwargs,
-        )
-
     hlines_kwargs = get_visual_kwargs(visuals, "hlines", default=False)
     if hlines_kwargs is not False and hline_values:
 
@@ -348,6 +330,24 @@ def plot_khat(
                 ignore_aes="all",
                 **hline_kwargs,
             )
+
+    khat_kwargs = get_visual_kwargs(visuals, "khat")
+    if khat_kwargs is not False:
+        _, khat_aes, khat_ignore = filter_aes(plot_collection, aes_by_visuals, "khat", [])
+
+        if "color" not in khat_aes:
+            khat_kwargs.setdefault("color", color if color is not None else "C0")
+
+        if "marker" not in khat_aes and marker is not None:
+            khat_kwargs.setdefault("marker", marker)
+
+        plot_collection.map(
+            scatter_xy,
+            "khat",
+            data=khat_dataset,
+            ignore_aes=khat_ignore,
+            **khat_kwargs,
+        )
 
     bin_text_kwargs = get_visual_kwargs(visuals, "bin_text", default=False)
     if bin_text_kwargs is not False:

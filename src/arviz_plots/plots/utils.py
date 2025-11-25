@@ -507,50 +507,6 @@ def format_coords_as_labels(data, skip_dims=None, labeller=None):
     return np.array(labels, dtype=object)
 
 
-def calculate_khat_bin_edges(values, thresholds, tolerance=1e-9):
-    """Calculate bin edges for Pareto k diagnostic bins.
-
-    Parameters
-    ----------
-    values : array_like
-        Pareto k values to bin
-    thresholds : sequence of float
-        Diagnostic threshold values to use as potential bin edges (e.g., [0.7, 1.0])
-    tolerance : float, default 1e-9
-        Numerical tolerance for edge comparisons to avoid duplicate edges
-
-    Returns
-    -------
-    bin_edges : list of float or None
-        Calculated bin edges suitable for np.histogram, or None if edges cannot
-        be computed.
-    """
-    if not values.size:
-        return None
-
-    ymin = np.nanmin(values)
-    ymax = np.nanmax(values)
-
-    if not (np.isfinite(ymin) and np.isfinite(ymax)):
-        return None
-
-    bin_edges = [ymin]
-
-    for edge in thresholds:
-        if (
-            edge is not None
-            and np.isfinite(edge)
-            and bin_edges[-1] + tolerance < edge < ymax - tolerance
-        ):
-            bin_edges.append(edge)
-
-    if ymax > bin_edges[-1] + tolerance:
-        bin_edges.append(ymax)
-    else:
-        bin_edges[-1] = ymax
-    return bin_edges if len(bin_edges) > 1 else None
-
-
 def annotate_bin_text(da, target, x, y, count_da, n_da, bin_format, **kwargs):
     """Format and annotate bin text with count and percentage.
 
