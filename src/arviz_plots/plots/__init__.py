@@ -11,6 +11,7 @@ from .energy_plot import plot_energy
 from .ess_plot import plot_ess
 from .evolution_plot import plot_ess_evolution
 from .forest_plot import plot_forest
+from .joint_plot import plot_joint
 from .lm_plot import plot_lm
 from .loo_pit_plot import plot_loo_pit
 from .mcse_plot import plot_mcse
@@ -42,6 +43,7 @@ __all__ = [
     "plot_convergence_dist",
     "plot_dist",
     "plot_forest",
+    "plot_joint",
     "plot_trace",
     "plot_trace_dist",
     "plot_ecdf_pit",
