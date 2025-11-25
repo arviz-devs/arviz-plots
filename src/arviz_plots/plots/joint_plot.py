@@ -112,7 +112,63 @@ def plot_joint(
     stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
-    """Plot a joint distribution of two variables with marginals."""
+    """
+    Plot a joint distribution of two variables with marginals.
+
+    This function creates a 2x2 grid (PlotMatrix) where the main panel (bottom-left)
+    displays the joint relationship (e.g., scatter plot) and the side panels
+    display the marginal distributions (e.g., KDE or Histogram).
+
+    Parameters
+    ----------
+    dt : DataTree or InferenceData
+        Input data containing the posterior or prior groups.
+    var_names : list of str, optional
+        Variables to be plotted. Must be exactly two variables.
+    filter_vars : str, optional
+        Regex expression to select variables.
+    group : str, optional
+        Group to be plotted. Defaults to "posterior".
+    coords : dict, optional
+        Coordinates to slice the data.
+    sample_dims : list of str, optional
+        Dimensions to be treated as samples (e.g., ["chain", "draw"]).
+    kind : {"scatter", "kde", "hist"}, default "scatter"
+        Type of plot for the joint distribution (main panel).
+    marginal_kind : {"dist", "kde", "hist"}, default "dist"
+        Type of plot for the marginal distributions (side panels).
+    plot_matrix : PlotMatrix, optional
+        Existing PlotMatrix object to plot onto.
+    backend : str, optional
+        Backend to use (e.g., "matplotlib", "bokeh").
+    labeller : Labeller, optional
+        Class to handle plot labeling.
+    aes_by_visuals : dict, optional
+        Mapping of visual elements to aesthetics.
+    visuals : dict, optional
+        Kwargs passed to the visual functions (e.g., color, alpha).
+    stats : dict, optional
+        Pre-computed statistics for the plots.
+    **pc_kwargs
+        Additional keyword arguments passed to the PlotMatrix constructor.
+
+    Returns
+    -------
+    PlotMatrix
+        The resulting grid of plots.
+
+    Examples
+    --------
+    Plot a basic joint plot of 'mu' and 'tau'
+    
+    >>> from arviz_plots import plot_joint, load_arviz_data
+    >>> dt = load_arviz_data("centered_eight")
+    >>> plot_joint(dt, var_names=["mu", "tau"])
+
+    Customize the marginals to be histograms
+
+    >>> plot_joint(dt, var_names=["mu", "tau"], marginal_kind="hist")
+    """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
