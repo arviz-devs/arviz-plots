@@ -1,14 +1,16 @@
 """Utilities for batteries included plots."""
+import warnings
 from copy import copy
 from importlib import import_module
 
 import numpy as np
 import xarray as xr
-from arviz_base import references_to_dataset
+from arviz_base import references_to_dataset, xarray_sel_iter
+from arviz_base.labels import BaseLabeller
 from arviz_base.utils import _var_names
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
-from arviz_plots.visuals import hline, hspan, vline, vspan
+from arviz_plots.visuals import annotate_xy, hline, hspan, vline, vspan
 
 
 def get_group(data, group, allow_missing=False):
@@ -453,3 +455,309 @@ def add_bands(
         plot_collection.map(plot_func, "ref_band", data=ref_ds, ignore_aes=ref_ignore, **ref_kwargs)
 
     return plot_collection
+
+
+def format_coords_as_labels(data, skip_dims=None, labeller=None):
+    """Format 1D or multi-D dataarray coords as string labels.
+
+    Parameters
+    ----------
+    data : xr.DataArray
+        DataArray whose coordinates will be converted to labels.
+    skip_dims : str or list_like, optional
+        Dimensions whose values should not be included in the labels.
+    labeller : BaseLabeller, optional
+        Labeller instance to use for formatting. If None, defaults to BaseLabeller().
+        Users can pass different labellers to control whether indices or coordinate
+        values are shown (e.g., IdxLabeller for indices).
+
+    Returns
+    -------
+    ndarray of str
+        Array of coordinate labels with the same flattened shape as the input.
+    """
+    if labeller is None:
+        labeller = BaseLabeller()
+
+    if skip_dims is None:
+        skip_dims = []
+    elif isinstance(skip_dims, str):
+        skip_dims = [skip_dims]
+
+    dims_to_include = [dim for dim in data.dims if dim not in skip_dims]
+
+    if not dims_to_include:
+        return np.array([], dtype=object)
+
+    shape = [data.sizes[dim] for dim in dims_to_include]
+    n_points = int(np.prod(shape))
+
+    index_arrays = [
+        arr.ravel() for arr in np.meshgrid(*[np.arange(s) for s in shape], indexing="ij")
+    ]
+    coord_arrays = [data.coords[dim].values for dim in dims_to_include]
+
+    labels = [
+        labeller.sel_to_str(
+            {dim: coord_arrays[j][index_arrays[j][i]] for j, dim in enumerate(dims_to_include)},
+            {dim: int(index_arrays[j][i]) for j, dim in enumerate(dims_to_include)},
+        )
+        for i in range(n_points)
+    ]
+    return np.array(labels, dtype=object)
+
+
+def annotate_bin_text(da, target, x, y, count_da, n_da, bin_format, **kwargs):
+    """Format and annotate bin text with count and percentage.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        Data array to annotate
+    target : Axes
+        Target axes for annotation
+    x : float
+        X-position for annotation
+    y : float
+        Y-position for annotation
+    count_da : int or xr.DataArray
+        Count value for the bin
+    n_da : int or xr.DataArray
+        Total count value
+    bin_format : str
+        Format string for bin text (supports {count} and {pct})
+    **kwargs
+        Additional keyword arguments passed to annotate_xy
+
+    Returns
+    -------
+    Artist
+        The annotation artist
+    """
+    if hasattr(count_da, "values"):
+        arr = count_da.values
+        count_val = int(arr[()] if arr.ndim == 0 else arr)
+    else:
+        count_val = int(count_da)
+
+    if hasattr(n_da, "values"):
+        arr = n_da.values
+        n_val = int(arr[()] if arr.ndim == 0 else arr)
+    else:
+        n_val = int(n_da)
+
+    pct = (count_val / n_val * 100) if n_val > 0 else 0.0
+    text_str = bin_format.format(count=count_val, pct=pct)
+    return annotate_xy(da, target, x=x, y=y, text=text_str, **kwargs)
+
+
+def enable_hover_labels(backend, plot_collection, hover_format, labels, colors, values):
+    """Set up interactive hover annotations for scatter plots on matplotlib backends.
+
+    Parameters
+    ----------
+    backend : str
+        The plotting backend being used. Only "matplotlib" is supported.
+    plot_collection : PlotCollection
+        Plot collection containing the visualization elements.
+    hover_format : str
+        Format string template for hover annotation text.
+    labels : xr.DataArray
+        Labels corresponding to each data point as a DataArray. It is subset per
+        facet/aesthetic combination automatically.
+    colors : xr.DataArray or None
+        Colors for each data point as a DataArray, or None to extract from scatter artist.
+    values : xr.DataArray or None
+        Values to display in hover text as a DataArray, or None to use y-coordinates.
+    """
+    if backend != "matplotlib":
+        return
+
+    try:
+        fig = plot_collection.viz["figure"].item()
+    except KeyError:
+        return
+    if fig is None:
+        return
+
+    if not hasattr(fig.canvas, "mpl_connect"):
+        warnings.warn(
+            "hover labels are only available with interactive backends. "
+            "To switch to an interactive backend from IPython or Jupyter, use `%matplotlib`.",
+            UserWarning,
+        )
+        return
+
+    try:
+        scatter_tree = plot_collection.viz["khat"]
+        scatter_da = scatter_tree["pareto_k"]
+    except KeyError:
+        return
+
+    if scatter_da.ndim == 0:
+        scatter = scatter_da.item()
+        axis = plot_collection.get_target("pareto_k", {})
+
+        if scatter is not None and axis is not None:
+            label_arr = labels.to_numpy().ravel()
+            label_list = [str(label) for label in label_arr]
+            value_arr = values.to_numpy().ravel() if values is not None else None
+            color_arr = colors.to_numpy().ravel() if colors is not None else None
+
+            hover_labels(fig, axis, scatter, label_list, hover_format, color_arr, value_arr)
+    else:
+        scatter_ds = scatter_da.to_dataset(name="artist")
+        for _, sel, _ in xarray_sel_iter(scatter_ds, skip_dims=set()):
+            scatter = scatter_ds["artist"].sel(sel).item()
+            if scatter is None:
+                continue
+            axis = plot_collection.get_target("pareto_k", sel)
+            if axis is None:
+                continue
+
+            sel_args = {dim: val for dim, val in sel.items() if dim in labels.dims}
+            label_subset = labels.sel(sel_args) if sel_args else labels
+            label_arr = label_subset.to_numpy().ravel()
+
+            offsets = scatter.get_offsets()
+            if offsets is None or not offsets.size:
+                continue
+            if len(label_arr) != len(offsets):
+                continue
+
+            label_list = [str(label) for label in label_arr]
+
+            value_arr = None
+            if values is not None:
+                sel_args = {dim: val for dim, val in sel.items() if dim in values.dims}
+                value_subset = values.sel(sel_args) if sel_args else values
+                value_arr = value_subset.to_numpy().ravel()
+
+            color_arr = None
+            if colors is not None:
+                sel_args = {dim: val for dim, val in sel.items() if dim in colors.dims}
+                color_subset = colors.sel(sel_args) if sel_args else colors
+                color_arr = color_subset.to_numpy().ravel()
+
+            hover_labels(fig, axis, scatter, label_list, hover_format, color_arr, value_arr)
+
+
+def hover(
+    event, annot, ax, scatter, fig, offsets, labels, values, hover_format, colors, offset_distance
+):
+    """Handle mouse hover events to show or hide data point annotations.
+
+    Parameters
+    ----------
+    event : MouseEvent
+        Matplotlib mouse event containing cursor position.
+    annot : Annotation
+        Matplotlib annotation object to show/hide and update.
+    ax : Axes
+        Matplotlib axes containing the scatter plot.
+    scatter : PathCollection
+        Scatter plot artist whose points are being tracked.
+    fig : Figure
+        Matplotlib figure containing the plot.
+    offsets : ndarray
+        Array of (x, y) coordinates for all scatter plot points.
+    labels : array_like
+        Array of string labels for each data point.
+    values : array_like or None
+        Array of numeric values to display. If None, y-coordinates are used.
+    hover_format : str
+        Format string template for the annotation text.
+    colors : ndarray or None
+        Array of RGBA colors for annotation backgrounds.
+    offset_distance : float
+        Distance in points to offset the annotation from the cursor position.
+    """
+    vis = annot.get_visible()
+    if event.inaxes == ax:
+        cont, ind = scatter.contains(event)
+        if cont:
+            idx = ind["ind"][0]
+            pos = offsets[idx]
+            label = labels[idx] if idx < len(labels) else str(idx)
+            value = values[idx] if values is not None and idx < len(values) else pos[1]
+            annot.xy = pos
+            xmid = np.mean(ax.get_xlim())
+            ymid = np.mean(ax.get_ylim())
+            annot.set_position(
+                (
+                    -offset_distance if pos[0] > xmid else offset_distance,
+                    -offset_distance if pos[1] > ymid else offset_distance,
+                )
+            )
+            annot.set_text(_format_hover_text(hover_format, idx, label, value))
+
+            if colors is not None and idx < len(colors):
+                annot.get_bbox_patch().set_facecolor(colors[idx])
+
+            annot.set_ha("right" if pos[0] > xmid else "left")
+            annot.set_va("top" if pos[1] > ymid else "bottom")
+            annot.set_visible(True)
+            fig.canvas.draw_idle()
+        elif vis:
+            annot.set_visible(False)
+            fig.canvas.draw_idle()
+
+
+def hover_labels(fig, ax, scatter, labels, hover_format, colors, values):
+    """Configure hover annotation display for scatter plot data points.
+
+    Parameters
+    ----------
+    fig : Figure
+        Matplotlib figure to attach the hover event handler.
+    ax : Axes
+        Matplotlib axes containing the scatter plot.
+    scatter : PathCollection
+        Scatter plot artist whose data points trigger hover annotations.
+    labels : array_like
+        Array of string labels for each data point.
+    hover_format : str
+        Format string template for annotation text.
+    colors : ndarray or None
+        Array of RGBA colors for annotation box backgrounds.
+    values : array_like or None
+        Array of numeric values to display. If None, y-coordinates are used.
+    """
+    offsets = scatter.get_offsets()
+    if offsets is None or not offsets.size:
+        return
+
+    annot = ax.annotate(
+        "",
+        xy=(0, 0),
+        xytext=(0, 0),
+        textcoords="offset points",
+        bbox={"boxstyle": "round", "fc": "w", "alpha": 0.4},
+        arrowprops={"arrowstyle": "->"},
+    )
+    annot.set_visible(False)
+    offset_distance = 10
+
+    fig.canvas.mpl_connect(
+        "motion_notify_event",
+        lambda event: hover(
+            event,
+            annot,
+            ax,
+            scatter,
+            fig,
+            offsets,
+            labels,
+            values,
+            hover_format,
+            colors,
+            offset_distance,
+        ),
+    )
+
+
+def _format_hover_text(template, index, label, value):
+    """Format hover annotation text using named placeholders."""
+    if hasattr(value, "item"):
+        value = value.item()
+    return template.format(index=index, label=label, value=value)

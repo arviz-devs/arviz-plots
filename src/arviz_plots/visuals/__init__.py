@@ -239,6 +239,20 @@ def hspan(da, target, **kwargs):
     return plot_backend.hspan(da.values[0], da.values[1], target, **kwargs)
 
 
+def set_xlim(da, target, limits, **kwargs):
+    """Set x-axis limits."""
+    plot_backend = backend_from_object(target)
+    plot_backend.xlim(limits, target, **kwargs)
+    return target
+
+
+def set_ylim(da, target, limits, **kwargs):
+    """Set y-axis limits."""
+    plot_backend = backend_from_object(target)
+    plot_backend.ylim(limits, target, **kwargs)
+    return target
+
+
 def dline(da, target, x=None, y=None, **kwargs):
     """Plot a diagonal line across the x-y range."""
     plot_backend = backend_from_object(target)
