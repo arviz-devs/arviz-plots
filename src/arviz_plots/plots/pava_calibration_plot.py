@@ -1,4 +1,4 @@
-"""Plot ppc using PAV-adjusted calibration plot."""
+"""Posterior predictive check using PAV-adjusted calibration plot."""
 import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
