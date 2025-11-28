@@ -24,7 +24,6 @@ from arviz_plots.visuals import (
 def plot_ppc_pava(
     dt,
     data_type="binary",
-    n_bootstaps=1000,
     ci_prob=None,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
@@ -75,9 +74,6 @@ def plot_ppc_pava(
         If "categorical", the plot will show the "one-vs-others" calibration and generate one plot
         per category. If "ordinal", the plot will display cumulative conditional event
         probabilities and generate (number of categories - 1) plots.
-    n_bootstaps : int, optional
-        Number of bootstrap samples to use for estimating the confidence intervals.
-        defaults to 1000.
     ci_prob : float, optional
         Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
     num_samples : int, optional
@@ -181,7 +177,7 @@ def plot_ppc_pava(
             stacklevel=2,
         )
 
-    ds_calibration = isotonic_fit(dt, var_names, group, n_bootstaps, ci_prob, data_type)
+    ds_calibration = isotonic_fit(dt, var_names, group, ci_prob, data_type)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
