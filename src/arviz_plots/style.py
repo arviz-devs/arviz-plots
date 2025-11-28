@@ -10,7 +10,7 @@ def use(name):
     The style will be set for all backends that support it and have it available.
     The supported backends are Matplotlib, Plotly and Bokeh.
     You can use ``arviz_plots.style.available()`` to check which styles are available.
-    The ones that works for all backends are listed under the 'common' key.
+    The ones that work for all backends are listed under the 'common' key.
 
     Parameters
     ----------
@@ -61,8 +61,8 @@ def use(name):
 def available():
     """List available styles.
 
-    If multiple backends are installed, also lists styles common
-    to all backends under the 'common' key.
+    If multiple backends are installed, it also lists styles common to
+    all backends under the 'common' key.
 
     Returns
     -------
