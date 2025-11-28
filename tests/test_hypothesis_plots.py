@@ -2,6 +2,7 @@
 """Test batteries-included plots using the none backend."""
 import arviz_stats  # pylint: disable=unused-import
 import hypothesis.strategies as st
+import numpy as np
 import pytest
 from hypothesis import given
 
@@ -24,6 +25,7 @@ from arviz_plots import (
     plot_ppc_dist,
     plot_ppc_interval,
     plot_ppc_pava,
+    plot_ppc_pava_residuals,
     plot_ppc_pit,
     plot_ppc_rootogram,
     plot_ppc_tstat,
@@ -718,6 +720,40 @@ def test_plot_ppc_censored(datatree_censored, visuals):
 def test_plot_ppc_pava(datatree_binary, ci_prob, visuals):
     pc = plot_ppc_pava(
         datatree_binary,
+        backend="none",
+        ci_prob=ci_prob,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree_binary["posterior_predictive"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "markers": visuals_value,
+            "reference_line": visuals_value,
+            "credible_interval": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+    ci_prob=ci_prob_value,
+)
+def test_plot_ppc_pava_residuals(datatree_binary, ci_prob, visuals):
+    pc = plot_ppc_pava_residuals(
+        datatree_binary,
+        x_var=np.linspace(0, 1, 100),
         backend="none",
         ci_prob=ci_prob,
         visuals=visuals,

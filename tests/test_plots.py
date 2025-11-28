@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test batteries-included plots."""
+import numpy as np
 import pytest
 
 from arviz_plots import (
@@ -26,6 +27,7 @@ from arviz_plots import (
     plot_ppc_dist,
     plot_ppc_interval,
     plot_ppc_pava,
+    plot_ppc_pava_residuals,
     plot_ppc_pit,
     plot_ppc_rootogram,
     plot_ppc_tstat,
@@ -612,6 +614,12 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_ppc_pava(datatree_binary, backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "lines" in pc.viz.children
+        assert "y" in pc.viz["plot"]
+
+    def test_plot_ppc_pava_residuals(self, datatree_binary, backend):
+        pc = plot_ppc_pava_residuals(datatree_binary, x_var=np.linspace(0, 1, 100), backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "markers" in pc.viz.children
         assert "y" in pc.viz["plot"]
 
     @pytest.mark.parametrize("coverage", [False, True])

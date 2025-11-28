@@ -19,6 +19,7 @@ from .pair_focus_plot import plot_pair_focus
 from .pair_plot import plot_pair
 from .parallel_plot import plot_parallel
 from .pava_calibration_plot import plot_ppc_pava
+from .pava_residual_plot import plot_ppc_pava_residuals
 from .ppc_censored_plot import plot_ppc_censored
 from .ppc_dist_plot import plot_ppc_dist
 from .ppc_interval_plot import plot_ppc_interval
@@ -64,6 +65,7 @@ __all__ = [
     "plot_rank_dist",
     "plot_ridge",
     "plot_ppc_pava",
+    "plot_ppc_pava_residuals",
     "plot_ppc_pit",
     "plot_ppc_tstat",
     "plot_psense_dist",
