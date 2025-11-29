@@ -17,9 +17,10 @@ import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-dt = load_arviz_data("anes")
-pc = azp.plot_ppc_pava(
+dt = load_arviz_data("roaches_zinb")
+pc = azp.plot_ppc_pava_residuals(
     dt,
+    x_var="roach count",
     backend="none",
 )
 pc.show()
