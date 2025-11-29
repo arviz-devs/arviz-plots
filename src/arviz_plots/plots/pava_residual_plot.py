@@ -136,8 +136,8 @@ def plot_ppc_pava_residuals(
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('roaches_nb')
         >>> plot_ppc_pava_residuals(dt,
-                       var_names="y_pos",
-                       x_var="roach count")
+        >>>     var_names="y_pos",
+        >>>     x_var="roach count")
 
     .. minigallery:: plot_ppc_pava_residuals
 
