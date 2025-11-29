@@ -1,12 +1,12 @@
 """
-# Residual plot for binary predictions
+# PAV-adjusted calibration
 
-PAV-adjusted residual plot for binary predictions.
+PAV-adjusted calibration plot for binary predictions.
 
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_ppc_pava_residuals`
+API Documentation: {func}`~arviz_plots.plot_ppc_pava`
 
 EABM chapter on [Posterior predictive checks for binary data](https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#posterior-predictive-checks-for-binary-data)
 :::
@@ -17,10 +17,9 @@ import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-dt = load_arviz_data("roaches_zinb")
-pc = azp.plot_ppc_pava_residuals(
+dt = load_arviz_data("anes")
+pc = azp.plot_ppc_pava(
     dt,
-    x_var="roach count",
     backend="none",
 )
 pc.show()
