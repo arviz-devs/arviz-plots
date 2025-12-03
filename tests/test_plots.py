@@ -137,7 +137,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
-    @pytest.mark.parametrize("kind", ["kde"])
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
         pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
         assert "/color" in pc.aes.groups
