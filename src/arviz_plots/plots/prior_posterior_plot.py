@@ -99,7 +99,8 @@ def plot_prior_posterior(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`

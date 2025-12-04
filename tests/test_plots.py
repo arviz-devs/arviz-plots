@@ -112,7 +112,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
-    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf", "dot"])
     def test_plot_dist_sample(self, datatree_sample, backend, kind):
         pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", kind=kind)
         assert not pc.aes
@@ -137,7 +137,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
-    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf", "dot"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
         pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
         assert "/color" in pc.aes.groups
@@ -593,7 +593,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "time" in pc.viz["predictive"]
         assert "time" in pc.viz["observed_km"]
 
-    @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
+    @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
         assert "figure" in pc.viz.data_vars
@@ -640,7 +640,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         with pytest.raises(ValueError, match="Detected at least one continuous variable"):
             plot_ppc_rootogram(datatree, backend=backend)
 
-    @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist"])
+    @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
     def test_plot_ppc_tstat(self, datatree, kind, backend):
         pc = plot_ppc_tstat(datatree, kind=kind, backend=backend)
         assert "figure" in pc.viz.data_vars

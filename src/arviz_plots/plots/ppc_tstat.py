@@ -120,7 +120,8 @@ def plot_ppc_tstat(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * observed_tstat -> passed to :func:`~arviz_plots.visuals.scatter_x`.
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`. Defaults to False.

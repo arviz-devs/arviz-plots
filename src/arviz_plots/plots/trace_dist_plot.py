@@ -101,7 +101,8 @@ def plot_trace_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * "trace" -> passed to :func:`~.visuals.line`
         * "divergence" -> passed to :func:`~.visuals.trace_rug`

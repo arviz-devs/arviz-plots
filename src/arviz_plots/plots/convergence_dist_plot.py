@@ -103,7 +103,8 @@ def plot_convergence_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * ref_line -> passed to :func:`~arviz_plots.visuals.vline`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -182,6 +183,10 @@ def plot_convergence_dist(
         visuals = {}
     else:
         visuals = visuals.copy()
+    if stats is None:
+        stats = {}
+    else:
+        stats = stats.copy()
 
     ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_line_kwargs is False:
