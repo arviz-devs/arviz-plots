@@ -261,8 +261,6 @@ def plot_dist(
 
     face_kwargs = get_visual_kwargs(visuals, "face", False)
     density_kwargs = get_visual_kwargs(visuals, "dist")
-    # if kind == "dot":
-    #     density_kwargs.setdefault("edgecolor", None)
 
     if aes_by_visuals is None:
         aes_by_visuals = {}
@@ -335,8 +333,6 @@ def plot_dist(
                 ignore_aes=density_ignore,
                 **density_kwargs,
             )
-        else:
-            raise NotImplementedError("coming soon")
 
     # filled face
     if face_kwargs is not False:
