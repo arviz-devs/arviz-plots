@@ -137,6 +137,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
+    @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf", "dot"])
     def test_plot_dist_models(self, datatree, datatree2, backend, kind):
         pc = plot_dist({"c": datatree, "n": datatree2}, backend=backend, kind=kind)
@@ -593,6 +594,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "time" in pc.viz["predictive"]
         assert "time" in pc.viz["observed_km"]
 
+    @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
