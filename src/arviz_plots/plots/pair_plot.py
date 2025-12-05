@@ -123,7 +123,8 @@ def plot_pair(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`

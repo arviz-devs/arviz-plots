@@ -106,7 +106,8 @@ def plot_rank_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * "rank" -> passed to :func:`~.visuals.ecdf_line`
         * "label" -> :func:`~.visuals.labelled_x` and :func:`~.visuals.labelled_y`
@@ -292,6 +293,7 @@ def plot_rank_dist(
         aes_by_visuals["dist"] = {"overlay"}.union(
             aes_by_visuals.get("dist", plot_collection.aes_set)
         )
+
     aes_by_visuals["rank"] = {"overlay"}.union(aes_by_visuals.get("rank", plot_collection.aes_set))
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
 
@@ -321,10 +323,13 @@ def plot_rank_dist(
             dist_kwargs.setdefault("color", neutral_color)
         if neutral_linestyle and "linestyle" not in dist_aes:
             dist_kwargs.setdefault("linestyle", neutral_linestyle)
+
     visuals_dist["dist"] = dist_kwargs
+
     if "remove_axis" in visuals:
         visuals_dist["remove_axis"] = visuals["remove_axis"]
     plot_collection.coords = {"column": "dist"}
+
     plot_dist(
         dt,
         var_names=var_names,
