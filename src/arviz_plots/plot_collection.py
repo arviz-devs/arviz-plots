@@ -1219,7 +1219,7 @@ class PlotCollection:
         self,
         dim,
         aes=None,
-        artist_kwargs=None,
+        visual_kwargs=None,
         title=None,
         text_only=False,
         # position=(0, -1),  # TODO: add argument
@@ -1246,7 +1246,7 @@ class PlotCollection:
             Specific aesthetics to take into account when generating the legend.
             They should all be mapped to `dim`. Defaults to all aesthetics matching
             that mapping with the exception "x" and "y" which are never included.
-        artist_kwargs : mapping, optional
+        visual_kwargs : mapping, optional
             Keyword arguments passed to the backend visual function used to
             generate the miniatures in the legend.
         title : str, optional
@@ -1268,6 +1268,15 @@ class PlotCollection:
             dim = (dim,)
         else:
             dim = tuple(dim)
+        update_visuals = False
+        if "legendgroup" not in self.aes.children and self.backend == "plotly":
+            # TODO: keep if to avoid duplicating legendgroup but don't make it plotly specific
+            # also, should we add an "interactive" argument to disable this behaviour
+            # even if it would be possible?
+            update_visuals = True
+            self.update_aes_from_dataset(
+                "legendgroup", self.generate_aes_dt({"legendgroup": dim})["legendgroup"].dataset
+            )
         dim_str = ", ".join(("variable" if d == "__variable__" else d for d in dim))
         if title is None:
             title = dim_str
@@ -1302,7 +1311,7 @@ class PlotCollection:
             ]
         if text_only:
             kwarg_list = [{} for _ in subset_iterator]
-            artist_kwargs = {"linestyle": "none", "linewidth": 0, "color": "none"}
+            visual_kwargs = {"linestyle": "none", "linewidth": 0, "color": "none"}
         else:
             kwarg_list = [
                 self.get_aes_kwargs(aes, var_name, sel) for var_name, sel, _ in subset_iterator
@@ -1315,10 +1324,12 @@ class PlotCollection:
         # TODO: store, maybe have a group in viz called legend as if it were a visual more
         # but then it has only scalar variables with name `dim_str`
         return plot_bknd.legend(
-            self.viz["figure"].item(),
+            self,
             kwarg_list,
             label_list,
             title=legend_title,
-            artist_kwargs=artist_kwargs,
+            visual_kwargs=visual_kwargs,
+            legend_dim=dim,
+            update_visuals=update_visuals,
             **kwargs,
         )
