@@ -12,7 +12,7 @@ from arviz_plots.plots.utils import get_visual_kwargs
 
 def plot_energy(
     dt,
-    bfmi=False,
+    bfmi=True,
     kind=None,
     plot_collection=None,
     backend=None,
@@ -50,7 +50,7 @@ def plot_energy(
         ``sample_stats`` group with an ``energy`` variable is mandatory.
     bfmi : bool
         Whether to add to the legend the estimated Bayesian fraction of missing information.
-        Defaults to False.
+        Defaults to True.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
