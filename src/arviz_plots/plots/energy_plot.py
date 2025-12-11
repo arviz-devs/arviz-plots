@@ -49,8 +49,8 @@ def plot_energy(
     dt : DataTree
         ``sample_stats`` group with an ``energy`` variable is mandatory.
     bfmi : bool
-        Whether to the plot the value of the estimated Bayesian fraction of missing
-        information. Defaults to False. Not implemented yet.
+        Whether to add to the legend the estimated Bayesian fraction of missing information.
+        Defaults to False.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
@@ -156,10 +156,18 @@ def plot_energy(
     legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["energy"])
-        plot_collection.add_legend(**legend_kwargs)
 
-    if bfmi:
-        raise NotImplementedError("BFMI is not implemented yet")
+        line_break = "<br>" if backend == "plotly" else "\n"
+
+        if bfmi:
+            bfmi_values = dt.sample_stats["energy"].azstats.bfmi()
+            bfmi_text = f"BFMI{line_break}" + line_break.join(
+                f"        chain {chain}  {_format_bfmi(bfmi_values[chain])}"
+                for chain in range(len(bfmi_values))
+            )
+            legend_kwargs.setdefault("title", bfmi_text + f"{line_break}{line_break}Energy")
+
+        plot_collection.add_legend(**legend_kwargs)
 
     return plot_collection
 
@@ -170,3 +178,10 @@ def _get_energy_ds(dt):
         {"energy_": np.dstack([energy - energy.mean(), np.diff(energy, append=np.nan)])},
         coords={"energy__dim_0": ["marginal", "transition"]},
     ).rename({"energy__dim_0": "energy"})
+
+
+def _format_bfmi(value):
+    formatted = f"{value:.2f}"
+    if value < 0.3:
+        return f"{formatted} ⚠"
+    return formatted
