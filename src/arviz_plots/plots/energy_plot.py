@@ -115,6 +115,9 @@ def plot_energy(
     else:
         visuals = visuals.copy()
 
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
+
     new_ds = _get_energy_ds(dt)
 
     sample_dims = ["chain", "draw"]

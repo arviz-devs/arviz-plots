@@ -175,6 +175,9 @@ def plot_ppc_dist(
         else:
             backend = plot_collection.backend
 
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
+
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     rng = np.random.default_rng(4214)

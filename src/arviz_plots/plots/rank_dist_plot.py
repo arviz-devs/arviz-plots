@@ -84,7 +84,7 @@ def plot_rank_dist(
     combined : bool, default False
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
-    kind : {"kde", "hist", "dot", "ecdf"}, optional
+    kind : {"kde", "hist", "ecdf", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     ci_prob : float
@@ -221,6 +221,9 @@ def plot_rank_dist(
         else:
             backend = plot_collection.backend
 
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
+
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
@@ -241,7 +244,7 @@ def plot_rank_dist(
     else:
         neutral_color = False
 
-    if compact and combined:
+    if compact and combined and kind != "dot":
         neutral_linestyle = linestyle_cycle[0]
         pc_kwargs["linestyle"] = linestyle_cycle[1:]
     else:
@@ -261,7 +264,8 @@ def plot_rank_dist(
             pc_kwargs["aes"].setdefault("color", ["__variable__"] + aux_dim_list)
             if "chain" in distribution.dims:
                 pc_kwargs["aes"].setdefault("overlay", ["__variable__", "chain"] + aux_dim_list)
-                pc_kwargs["aes"].setdefault("linestyle", ["chain"])
+                if kind != "dot":
+                    pc_kwargs["aes"].setdefault("linestyle", ["chain"])
             else:
                 pc_kwargs["aes"].setdefault("overlay", ["__variable__"] + aux_dim_list)
         elif "chain" in distribution.dims:

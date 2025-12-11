@@ -335,7 +335,7 @@ def plot_dist(
             )
 
     # filled face
-    if face_kwargs is not False:
+    if face_kwargs is not False and kind != "dot":
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
 
         if "color" not in face_aes:

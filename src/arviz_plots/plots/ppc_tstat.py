@@ -92,7 +92,7 @@ def plot_ppc_tstat(
         (interquartile range) and “mad” (median absolute deviation). Alternative a
         quantile can be passed as a float (or str) in the interval (0, 1). Finally,
         a user defined function is also accepted.
-    kind : {"kde", "hist", "dot", "ecdf"}, optional
+    kind : {"kde", "hist", "ecdf", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     point_estimate : {"mean", "median", "mode"}, optional
@@ -196,6 +196,8 @@ def plot_ppc_tstat(
         )
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if kind is None:
+        kind = rcParams["plot.density_kind"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
@@ -216,6 +218,9 @@ def plot_ppc_tstat(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 

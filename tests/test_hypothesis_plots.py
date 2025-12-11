@@ -41,7 +41,7 @@ from arviz_plots import (
 
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
-kind_value = st.sampled_from(("kde", "ecdf"))
+kind_value = st.sampled_from(("kde", "ecdf", "dot"))
 ess_kind_value = st.sampled_from(("local", "quantile"))
 t_stat_value = st.sampled_from(("mean", "median", "std", "var", "min", "max", "iqr", "0.5", 0.5))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
@@ -120,6 +120,7 @@ def test_plot_bf(datatree, kind, ref_val, visuals):
             assert visual in pc.viz.children
 
 
+@pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
 @given(
     visuals=st.fixed_dictionaries(
         {},
@@ -203,13 +204,17 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
     )
     assert "plot" in pc.viz.children
     for visual, value in visuals.items():
-        if value is False:
+        if visual == "face" and kind == "dot":
             assert visual not in pc.viz.children
         else:
-            assert visual in pc.viz.children
-            assert all(
-                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
-            )
+            if value is False:
+                assert visual not in pc.viz.children
+            else:
+                assert visual in pc.viz.children
+                assert all(
+                    var_name in pc.viz[visual].data_vars
+                    for var_name in datatree["posterior"].data_vars
+                )
 
 
 @given(
@@ -630,6 +635,7 @@ def test_plot_parallel(datatree, visuals, norm_method):
             assert visual in pc.viz.children
 
 
+@pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
 @given(
     visuals=st.fixed_dictionaries(
         {},
@@ -1012,6 +1018,7 @@ def test_plot_rank(datatree, ci_prob, visuals):
             )
 
 
+@pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
 @given(
     visuals=st.fixed_dictionaries(
         {},

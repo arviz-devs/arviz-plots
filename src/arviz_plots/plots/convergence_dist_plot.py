@@ -257,6 +257,9 @@ def plot_convergence_dist(
         **pc_kwargs,
     )
 
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
+
     if ref_line:
         _, ref_aes, ref_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ref_line", sample_dims

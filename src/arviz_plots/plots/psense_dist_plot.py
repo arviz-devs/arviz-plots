@@ -185,6 +185,9 @@ def plot_psense_dist(
     if alphas is None:
         alphas = (0.8, 1.25)
 
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
+
     # Here we are generating new datasets for the prior and likelihood
     # by resampling the original dataset with the power scale weights
     # Instead we could have weighted KDEs/ecdfs/etc
