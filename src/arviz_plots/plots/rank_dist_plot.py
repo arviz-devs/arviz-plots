@@ -84,7 +84,7 @@ def plot_rank_dist(
     combined : bool, default False
         Whether to plot intervals for each chain or not. Ignored when the "chain" dimension
         is not present.
-    kind : {"kde", "hist", "dot", "ecdf"}, optional
+    kind : {"kde", "hist", "ecdf", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     ci_prob : float
@@ -106,7 +106,8 @@ def plot_rank_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * "rank" -> passed to :func:`~.visuals.ecdf_line`
         * "label" -> :func:`~.visuals.labelled_x` and :func:`~.visuals.labelled_y`
@@ -220,6 +221,9 @@ def plot_rank_dist(
         else:
             backend = plot_collection.backend
 
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
+
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     color_cycle = pc_kwargs.get("color", plot_bknd.get_default_aes("color", 10, {}))
@@ -240,7 +244,7 @@ def plot_rank_dist(
     else:
         neutral_color = False
 
-    if compact and combined:
+    if compact and combined and kind != "dot":
         neutral_linestyle = linestyle_cycle[0]
         pc_kwargs["linestyle"] = linestyle_cycle[1:]
     else:
@@ -260,7 +264,8 @@ def plot_rank_dist(
             pc_kwargs["aes"].setdefault("color", ["__variable__"] + aux_dim_list)
             if "chain" in distribution.dims:
                 pc_kwargs["aes"].setdefault("overlay", ["__variable__", "chain"] + aux_dim_list)
-                pc_kwargs["aes"].setdefault("linestyle", ["chain"])
+                if kind != "dot":
+                    pc_kwargs["aes"].setdefault("linestyle", ["chain"])
             else:
                 pc_kwargs["aes"].setdefault("overlay", ["__variable__"] + aux_dim_list)
         elif "chain" in distribution.dims:
@@ -292,6 +297,7 @@ def plot_rank_dist(
         aes_by_visuals["dist"] = {"overlay"}.union(
             aes_by_visuals.get("dist", plot_collection.aes_set)
         )
+
     aes_by_visuals["rank"] = {"overlay"}.union(aes_by_visuals.get("rank", plot_collection.aes_set))
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
 
@@ -321,10 +327,13 @@ def plot_rank_dist(
             dist_kwargs.setdefault("color", neutral_color)
         if neutral_linestyle and "linestyle" not in dist_aes:
             dist_kwargs.setdefault("linestyle", neutral_linestyle)
+
     visuals_dist["dist"] = dist_kwargs
+
     if "remove_axis" in visuals:
         visuals_dist["remove_axis"] = visuals["remove_axis"]
     plot_collection.coords = {"column": "dist"}
+
     plot_dist(
         dt,
         var_names=var_names,

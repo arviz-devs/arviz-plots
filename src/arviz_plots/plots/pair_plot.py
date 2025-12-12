@@ -101,7 +101,7 @@ def plot_pair(
         Defaults to ``rcParams["data.sample_dims"]``
     marginal : bool, default True
         Whether to plot marginal distributions on the diagonal.
-    marginal_kind : {"kde", "hist", "ecdf"}, optional
+    marginal_kind : {"kde", "hist", "ecdf", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     triangle : {"both", "upper", "lower"}, Defaults to "both"
@@ -123,7 +123,8 @@ def plot_pair(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -236,6 +237,8 @@ def plot_pair(
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if marginal_kind is None:
+        marginal_kind = rcParams["plot.density_kind"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     if visuals is None:
@@ -252,6 +255,9 @@ def plot_pair(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_matrix.backend
+
+    if marginal_kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("marginal_kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords

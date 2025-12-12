@@ -546,7 +546,7 @@ def scatter(
     edgeline_artist_kws = marker_artist_kws.pop("line", {}).copy()
     line_kwargs = _filter_kwargs({"color": edgecolor, "width": width}, edgeline_artist_kws)
     scatter_kwargs = {
-        "size": size if size is unset else np.sqrt(size),
+        "size": size if size is unset else size**0.5,
         "symbol": marker,
         "opacity": alpha,
         "color": facecolor,

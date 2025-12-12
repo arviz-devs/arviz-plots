@@ -68,7 +68,8 @@ def plot_energy(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
@@ -113,6 +114,9 @@ def plot_energy(
         visuals = {}
     else:
         visuals = visuals.copy()
+
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     new_ds = _get_energy_ds(dt)
 

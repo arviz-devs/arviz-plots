@@ -27,6 +27,7 @@ from arviz_plots.visuals import (
     point_estimate_text,
     remove_axis,
     scatter_x,
+    scatter_xy,
     step_hist,
 )
 
@@ -132,6 +133,8 @@ def plot_dist(
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
           * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+
 
         * face -> :term:`visual` that fills the area under the marginal distribution representation.
 
@@ -139,6 +142,7 @@ def plot_dist(
 
           * "kde" or "ecdf" -> passed to :func:`~arviz_plots.visuals.fill_between_y`
           * "hist" -> passed to :func:`~arviz_plots.visuals.hist`
+          * dot -> ignored
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -195,7 +199,6 @@ def plot_dist(
     """
     if ci_kind not in ("hdi", "eti", None):
         raise ValueError("ci_kind must be either 'hdi' or 'eti'")
-
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -208,6 +211,8 @@ def plot_dist(
         point_estimate = rcParams["stats.point_estimate"]
     if kind is None:
         kind = rcParams["plot.density_kind"]
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
     if visuals is None:
         visuals = {}
     else:
@@ -286,6 +291,8 @@ def plot_dist(
             hist_kwargs = stats.pop("dist", {}).copy()
             hist_kwargs.setdefault("density", True)
             density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
+        elif kind == "dot":
+            density = distribution.azstats.qds(dim=density_dims, **stats.get("dist", {}))
 
     # density
     if density_kwargs is not False:
@@ -318,11 +325,17 @@ def plot_dist(
                 ignore_aes=density_ignore,
                 **density_kwargs,
             )
-        else:
-            raise NotImplementedError("coming soon")
+        elif kind == "dot":
+            plot_collection.map(
+                scatter_xy,
+                "dist",
+                data=density,
+                ignore_aes=density_ignore,
+                **density_kwargs,
+            )
 
     # filled face
-    if face_kwargs is not False:
+    if face_kwargs is not False and kind != "dot":
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
 
         if "color" not in face_aes:
@@ -352,9 +365,8 @@ def plot_dist(
                 ignore_aes=face_ignore,
                 **face_kwargs,
             )
-        else:
-            raise NotImplementedError("coming soon")
 
+    # rug
     rug_kwargs = get_visual_kwargs(visuals, "rug", False)
 
     if rug_kwargs is not False:
@@ -383,7 +395,7 @@ def plot_dist(
         and ("model" in distribution)
         and (plot_collection.coords is None)
     ):
-        var_y = {"kde": "y", "ecdf": "y", "hist": "histogram"}
+        var_y = {"kde": "y", "ecdf": "y", "dot": "y", "hist": "histogram"}
         y_ds = plot_collection.get_aes_as_dataset("y")["mapping"]
         y_ds = 0.15 * y_ds * density.sel(plot_axis=var_y[kind], drop=True).max(["model"]).max()
         plot_collection.update_aes_from_dataset("y", y_ds)
@@ -457,6 +469,12 @@ def plot_dist(
             point_y = 0.1 * density.sel(plot_axis="histogram", drop=True).max(
                 dim=point_density_diff
             )
+        elif kind == "dot":
+            point_density_diff = [
+                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
+            ]
+            point_density_diff = ["qd_dim"] + point_density_diff
+            point_y = 0.1 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(

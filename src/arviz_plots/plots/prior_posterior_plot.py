@@ -99,7 +99,8 @@ def plot_prior_posterior(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
@@ -160,6 +161,9 @@ def plot_prior_posterior(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 

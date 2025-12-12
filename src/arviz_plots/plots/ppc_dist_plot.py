@@ -18,7 +18,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.visuals import ecdf_line, hist, line_xy
+from arviz_plots.visuals import ecdf_line, hist, line_xy, scatter_xy
 
 
 def plot_ppc_dist(
@@ -102,9 +102,10 @@ def plot_ppc_dist(
         * predictive_dist, observed_dist -> passed to a function that depends on
           the `kind` argument.
 
-          - `kind="kde"` -> passed to :func:`~arviz_plots.visuals.line_xy`
-          - `kind="ecdf"` -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          - `kind="hist"` -> passed to :func: `~arviz_plots.visuals.hist`
+          * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
+          * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
@@ -173,6 +174,9 @@ def plot_ppc_dist(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
+
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -319,6 +323,16 @@ def plot_ppc_dist(
             dt_observed = observed_dist.azstats.ecdf(dim=pp_dims, **observed_stats_kwargs)
             plot_collection.map(
                 ecdf_line,
+                "observed_dist",
+                data=dt_observed,
+                ignore_aes=observed_ignore,
+                **observed_density_kwargs,
+            )
+        if kind == "dot":
+            dt_observed = observed_dist.azstats.qds(dim=pp_dims, **observed_stats_kwargs)
+
+            plot_collection.map(
+                scatter_xy,
                 "observed_dist",
                 data=dt_observed,
                 ignore_aes=observed_ignore,

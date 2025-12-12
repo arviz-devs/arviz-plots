@@ -120,7 +120,8 @@ def plot_psense_dist(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
+          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -154,7 +155,7 @@ def plot_psense_dist(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> rugby = load_arviz_data('rugby')
-        >>> plot_psense_dist(rugby, var_names=["sd_att"], visuals={"kde":False})
+        >>> plot_psense_dist(rugby, var_names=["sd_att"], visuals={"dist":False})
 
 
     .. minigallery:: plot_psense_dist
@@ -183,6 +184,9 @@ def plot_psense_dist(
 
     if alphas is None:
         alphas = (0.8, 1.25)
+
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     # Here we are generating new datasets for the prior and likelihood
     # by resampling the original dataset with the power scale weights
