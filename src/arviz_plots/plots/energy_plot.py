@@ -284,7 +284,7 @@ def _get_energy_ds(dt, sample_dims):
     Returns
     -------
     energy_ds : Dataset
-        Dataset with energy_ variable containing marginal and transition energy
+        Dataset with Energy variable containing marginal and transition energy
     bfmi_ds : Dataset
         Dataset with bfmi variable containing BFMI values and chain indices
     """
