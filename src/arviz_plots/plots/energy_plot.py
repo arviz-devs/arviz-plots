@@ -46,12 +46,10 @@ def plot_energy(
 ):
     r"""Plot energy distributions and bfmi from gradient-based algorithms.
 
-    Generate a figure with two plots:
-
-    * On the left the Bayesian Fraction of Missing Information (BFMI) per chain, values below
-    the threshold indicate poor exploration of the energy distribution.
-    * On the right, the marginal energy distribution and the energy transition distribution.
-    Ideally, these two distributions should overlap closely.
+    Generate a figure with two plots: On the left the Bayesian Fraction of Missing Information
+    (BFMI) per chain, values below the threshold indicate poor exploration of the energy
+    distribution. On the right, the marginal energy distribution and the energy transition
+    distribution. Ideally, these two distributions should overlap closely.
 
     For details on BFMI and energy diagnostics see [1]_ for a more practical overview check
     the EABM chapter on MCMC diagnostic `of gradient-based algorithms <https://arviz-devs.github.io/EABM/Chapters/MCMC_diagnostics.html#diagnosis-of-gradient-based-algorithms>`_.
