@@ -46,13 +46,15 @@ def plot_energy(
 ):
     r"""Plot energy distributions and bfmi from gradient-based algorithms.
 
-    Generate a figure with two plots: On the left the Bayesian Fraction of Missing
-    Information (BFMI) per chain, values below the threshold indicate poor exploration of the
-    energy distribution. On the right, the marginal energy distribution and the energy
-    transition distribution. Ideally, these two distributions should overlap closely.
+    Generate a figure with two plots:
+
+    * On the left the Bayesian Fraction of Missing Information (BFMI) per chain, values below
+    the threshold indicate poor exploration of the energy distribution.
+    * On the right, the marginal energy distribution and the energy transition distribution.
+    Ideally, these two distributions should overlap closely.
 
     For details on BFMI and energy diagnostics see [1]_ for a more practical overview check
-    the EABM chapter on MCMC diagnostic `of gradient-based algorithms <https://arviz-devs.github.io/EABM/Chapters/MCMC_diagnostics.html#diagnosis-of-gradient-based-algorithms>`_
+    the EABM chapter on MCMC diagnostic `of gradient-based algorithms <https://arviz-devs.github.io/EABM/Chapters/MCMC_diagnostics.html#diagnosis-of-gradient-based-algorithms>`_.
 
 
     Parameters
@@ -82,7 +84,7 @@ def plot_energy(
 
           * "kde" -> passed to :func:`~arviz_plots.visuals.line_xy`
           * "ecdf" -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-          * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
+          * "hist" -> passed to :func:`~arviz_plots.visuals.step_hist`
           * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -91,6 +93,13 @@ def plot_energy(
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * bfmi_points -> passed to :func:`~arviz_plots.visuals.scatter_xy` for BFMI scatter plot
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y` for BFMI column y-axis label
+        * face -> :term:`visual` that fills the area under the energy distributions.
+
+          Defaults to True. Depending on the value of `kind` it is passed to:
+
+          * "kde" or "ecdf" -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+          * "hist" -> passed to :func:`~arviz_plots.visuals.hist`
+          * dot -> ignored
 
     stats : mapping, optional
         Valid keys are:
@@ -169,7 +178,7 @@ def plot_energy(
     else:
         aes_by_visuals = aes_by_visuals.copy()
 
-    # Create plot collection with energy distributions
+    # Energy distributions plot
     plot_collection.coords = {"column": "energy"}
     plot_collection = plot_dist(
         energy_ds,
@@ -203,7 +212,7 @@ def plot_energy(
     if bfmi_ms_kwargs is not False:
         _, _, bfmi_ignore = filter_aes(plot_collection, aes_by_visuals, "bfmi_points", [])
 
-        bfmi_ms_kwargs.setdefault("color", "B2")
+        bfmi_ms_kwargs.setdefault("color", "B1")
 
         plot_collection.coords = {"column": "bfmi"}
         plot_collection.map(
