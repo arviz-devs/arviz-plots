@@ -12,6 +12,7 @@ from arviz_plots import (
     plot_convergence_dist,
     plot_dist,
     plot_ecdf_pit,
+    plot_energy,
     plot_ess,
     plot_ess_evolution,
     plot_forest,
@@ -215,6 +216,33 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
                     var_name in pc.viz[visual].data_vars
                     for var_name in datatree["posterior"].data_vars
                 )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "dist": visuals_value_no_false,
+            "ref_line": visuals_value_no_false,
+            "bfmi_points": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+    kind=kind_value,
+)
+def test_plot_energy(datatree, kind, visuals):
+    pc = plot_energy(
+        datatree,
+        backend="none",
+        kind=kind,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.data_vars
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
 
 
 @given(
