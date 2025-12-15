@@ -1,19 +1,23 @@
 """Energy plot code."""
 from collections.abc import Mapping, Sequence
+from importlib import import_module
 from typing import Any, Literal
 
 import numpy as np
 import xarray as xr
 from arviz_base import convert_to_dataset, rcParams
 
+from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import get_visual_kwargs
+from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, set_grid_layout
+from arviz_plots.visuals import labelled_title, labelled_y, scatter_xy, vline
 
 
 def plot_energy(
     dt,
-    bfmi=True,
     kind=None,
+    threshold=0.3,
+    sample_dims=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -21,6 +25,7 @@ def plot_energy(
         Literal[
             "dist",
             "title",
+            "bfmi_points",
         ],
         Sequence[str],
     ] = None,
@@ -30,30 +35,39 @@ def plot_energy(
             "title",
             "legend",
             "remove_axis",
+            "bfmi_points",
+            "title",
+            "ylabel",
         ],
         Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
-    r"""Plot transition distribution and marginal energy distribution in HMC algorithms.
+    r"""Plot energy distributions and bfmi from gradient-based algorithms.
 
-    This may help to diagnose poor exploration by gradient-based algorithms like HMC or NUTS.
-    The energy function in HMC can identify posteriors with heavy tailed distributions, that
-    in practice are challenging for sampling.
+    Generate a figure with two plots: On the left the Bayesian Fraction of Missing
+    Information (BFMI) per chain, values below the threshold indicate poor exploration of the
+    energy distribution. On the right, the marginal energy distribution and the energy
+    transition distribution. Ideally, these two distributions should overlap closely.
 
-    This plot is in the style of the one used in [1]_.
+    For details on BFMI and energy diagnostics see [1]_ for a more practical overview check
+    the EABM chapter on MCMC diagnostic `of gradient-based algorithms <https://arviz-devs.github.io/EABM/Chapters/MCMC_diagnostics.html#diagnosis-of-gradient-based-algorithms>`_
+
 
     Parameters
     ----------
     dt : DataTree
         ``sample_stats`` group with an ``energy`` variable is mandatory.
-    bfmi : bool
-        Whether to add to the legend the estimated Bayesian fraction of missing information.
-        Defaults to True.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
+    thereshold : float, default 0.3
+        Reference threshold for BFMI values, values below this indicate poor exploration of the
+        energy distribution.
+    sample_dims : sequence of str, optional
+        Dimensions to consider as sample dimensions when computing BFMI.
+        Defaults to ``rcParams["data.sample_dims"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -74,6 +88,9 @@ def plot_energy(
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
+        * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * bfmi_points -> passed to :func:`~arviz_plots.visuals.scatter_xy` for BFMI scatter plot
+        * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y` for BFMI column y-axis label
 
     stats : mapping, optional
         Valid keys are:
@@ -107,33 +124,55 @@ def plot_energy(
     ----------
     .. [1] Betancourt. Diagnosing Suboptimal Cotangent Disintegrations in
         Hamiltonian Monte Carlo. (2016) https://arxiv.org/abs/1604.00695
-    """
+    """  # pylint: disable=line-too-long
     if kind is None:
         kind = rcParams["plot.density_kind"]
     if visuals is None:
         visuals = {}
     else:
         visuals = visuals.copy()
+    if sample_dims is None:
+        sample_dims = rcParams["data.sample_dims"]
 
     if kind not in ("kde", "hist", "ecdf", "dot"):
         raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
-    new_ds = _get_energy_ds(dt)
+    energy_ds, bfmi_ds = _get_energy_ds(dt, sample_dims=sample_dims)
 
-    sample_dims = ["chain", "draw"]
-    if not all(dim in new_ds.dims for dim in sample_dims):
-        raise ValueError("Both 'chain' and 'draw' dimensions must be present in the dataset")
+    if backend is None:
+        backend = rcParams["plot.backend"]
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
-    pc_kwargs.setdefault("cols", None)
-    pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-    pc_kwargs["aes"].setdefault("color", ["energy"])
+    if plot_collection is None:
+        new_ds = energy_ds.expand_dims(column=2).assign_coords(column=["bfmi", "energy"])
+
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
+        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
+        pc_kwargs.setdefault("cols", ["column"])
+        pc_kwargs["aes"].setdefault("color", ["energy"])
+
+        pc_kwargs = set_grid_layout(pc_kwargs, plot_bknd, new_ds, num_cols=2, num_rows=1)
+
+        plot_collection = PlotCollection.grid(
+            new_ds,
+            backend=backend,
+            **pc_kwargs,
+        )
+
     visuals.setdefault("credible_interval", False)
     visuals.setdefault("point_estimate", False)
     visuals.setdefault("point_estimate_text", False)
-    visuals.setdefault("title", False)
+    visuals.setdefault("face", True)
 
+    if aes_by_visuals is None:
+        aes_by_visuals = {}
+    else:
+        aes_by_visuals = aes_by_visuals.copy()
+
+    # Create plot collection with energy distributions
+    plot_collection.coords = {"column": "energy"}
     plot_collection = plot_dist(
-        new_ds,
+        energy_ds,
         var_names=None,
         filter_vars=None,
         group=None,
@@ -149,39 +188,116 @@ def plot_energy(
         aes_by_visuals=aes_by_visuals,
         visuals=visuals,
         stats=stats,
-        **pc_kwargs,
     )
+    plot_collection.coords = None
 
-    # legend
+    # legend for energy distributions
     legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["energy"])
-
-        line_break = "<br>" if backend == "plotly" else "\n"
-
-        if bfmi:
-            bfmi_values = dt.sample_stats["energy"].azstats.bfmi()
-            bfmi_text = f"BFMI{line_break}" + line_break.join(
-                f"        chain {chain}  {_format_bfmi(bfmi_values[chain])}"
-                for chain in range(len(bfmi_values))
-            )
-            legend_kwargs.setdefault("title", bfmi_text + f"{line_break}{line_break}Energy")
-
+        legend_kwargs.setdefault("title", "")
         plot_collection.add_legend(**legend_kwargs)
+
+    # Scatter plot of BFMI values
+    bfmi_ms_kwargs = get_visual_kwargs(visuals, "bfmi_points")
+    if bfmi_ms_kwargs is not False:
+        _, _, bfmi_ignore = filter_aes(plot_collection, aes_by_visuals, "bfmi_points", [])
+
+        bfmi_ms_kwargs.setdefault("color", "B2")
+
+        plot_collection.coords = {"column": "bfmi"}
+        plot_collection.map(
+            scatter_xy,
+            "bfmi_points",
+            data=bfmi_ds,
+            ignore_aes=bfmi_ignore,
+            **bfmi_ms_kwargs,
+        )
+        plot_collection.coords = None
+
+    # Reference line for BFMI threshold
+    ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
+    if ref_line_kwargs is not False:
+        _, ref_aes, ref_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ref_line", sample_dims
+        )
+        if "color" not in ref_aes:
+            ref_line_kwargs.setdefault("color", "B2")
+        if "linestyle" not in ref_aes:
+            ref_line_kwargs.setdefault("linestyle", "C1")
+
+        # Wrap threshold into an xr.Dataset for PlotCollection.map
+        ref_ds = xr.Dataset({"ref_line": xr.DataArray(threshold)})
+        plot_collection.coords = {"column": "bfmi"}
+        plot_collection.map(
+            vline, "ref_line", data=ref_ds, ignore_aes=ref_ignore, **ref_line_kwargs
+        )
+        plot_collection.coords = None
+
+    # Add axis title and ylabel to BFMI column
+    title_kwargs = get_visual_kwargs(visuals, "title")
+    if title_kwargs is not False:
+        _, title_aes, title_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "title", sample_dims
+        )
+        if "color" not in title_aes:
+            title_kwargs.setdefault("color", "B1")
+        plot_collection.coords = {"column": "bfmi"}
+        plot_collection.map(
+            labelled_title,
+            "title",
+            text="BFMI",
+            ignore_aes=title_ignore,
+            subset_info=True,
+            labeller=labeller,
+            **title_kwargs,
+        )
+        plot_collection.coords = None
+
+    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
+    if ylabel_kwargs is not False:
+        ylabel_kwargs.setdefault("text", "Chain")
+        _, _, ylabel_ignore = filter_aes(plot_collection, {}, "ylabel", [])
+        plot_collection.coords = {"column": "bfmi"}
+        plot_collection.map(
+            labelled_y,
+            "ylabel",
+            ignore_aes=ylabel_ignore,
+            **ylabel_kwargs,
+        )
+        plot_collection.coords = None
 
     return plot_collection
 
 
-def _get_energy_ds(dt):
+def _get_energy_ds(dt, sample_dims):
+    """Extract energy and BFMI data from DataTree.
+
+    Returns
+    -------
+    energy_ds : Dataset
+        Dataset with energy_ variable containing marginal and transition energy
+    bfmi_ds : Dataset
+        Dataset with bfmi variable containing BFMI values and chain indices
+    """
     energy = dt["sample_stats"].energy.values
-    return convert_to_dataset(
-        {"energy_": np.dstack([energy - energy.mean(), np.diff(energy, append=np.nan)])},
-        coords={"energy__dim_0": ["marginal", "transition"]},
-    ).rename({"energy__dim_0": "energy"})
+    bfmi_vals = dt.sample_stats["energy"].azstats.bfmi(sample_dims=sample_dims)
+    n_chains = len(bfmi_vals)
+    chain_indices = np.arange(n_chains)
 
+    bfmi_ds = xr.Dataset(
+        {
+            "bfmi": xr.DataArray(
+                np.column_stack([bfmi_vals.values, chain_indices]),
+                dims=["chain", "plot_axis"],
+                coords={"chain": bfmi_vals.chain, "plot_axis": ["x", "y"]},
+            )
+        }
+    )
 
-def _format_bfmi(value):
-    formatted = f"{value:.2f}"
-    if value < 0.3:
-        return f"{formatted} ⚠"
-    return formatted
+    energy_ds = convert_to_dataset(
+        {"Energy": np.dstack([energy - energy.mean(), np.diff(energy, append=np.nan)])},
+        coords={"Energy_dim_0": ["marginal", "transition"]},
+    ).rename({"Energy_dim_0": "energy"})
+
+    return energy_ds, bfmi_ds

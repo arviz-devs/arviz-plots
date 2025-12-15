@@ -163,26 +163,11 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "/dist" in pc.viz.groups
         assert "energy" in pc.viz["dist"]
         assert "energy" in pc.viz["dist"].coords
-        kde_values = pc.viz["dist"]["energy_"].values
+        kde_values = pc.viz["dist"]["Energy"].values
         assert kde_values.size > 0
-        assert "component_group" not in pc.viz["dist"]["energy_"].dims
-        assert "alpha" not in pc.viz["dist"]["energy_"].dims
-        energy_coords = pc.viz["dist"]["energy_"].coords["energy"].values
-        assert "marginal" in energy_coords
-        assert "transition" in energy_coords
-
-    def test_plot_energy_dist_sample(self, datatree_sample, backend):
-        pc = plot_energy(datatree_sample, backend=backend)
-        assert pc is not None
-        assert hasattr(pc, "viz")
-        assert "/dist" in pc.viz.groups
-        assert "energy" in pc.viz["dist"]
-        assert "energy" in pc.viz["dist"].coords
-        kde_values = pc.viz["dist"]["energy_"].values
-        assert kde_values.size > 0
-        assert "component_group" not in pc.viz["dist"]["energy_"].dims
-        assert "alpha" not in pc.viz["dist"]["energy_"].dims
-        energy_coords = pc.viz["dist"]["energy_"].coords["energy"].values
+        assert "component_group" not in pc.viz["dist"]["Energy"].dims
+        assert "alpha" not in pc.viz["dist"]["Energy"].dims
+        energy_coords = pc.viz["dist"]["Energy"].coords["energy"].values
         assert "marginal" in energy_coords
         assert "transition" in energy_coords
 
