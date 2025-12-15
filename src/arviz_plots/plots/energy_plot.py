@@ -62,7 +62,7 @@ def plot_energy(
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
-    thereshold : float, default 0.3
+    threshold : float, default 0.3
         Reference threshold for BFMI values, values below this indicate poor exploration of the
         energy distribution.
     sample_dims : sequence of str, optional
@@ -106,7 +106,7 @@ def plot_energy(
 
     Examples
     --------
-    Plot a default energy plot
+    Plot an energy plot using ecdf for the energy distributions.
 
     .. plot::
         :context: close-figs
@@ -114,8 +114,8 @@ def plot_energy(
         >>> from arviz_plots import plot_energy, style
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
-        >>> schools = load_arviz_data('centered_eight')
-        >>> plot_energy(schools)
+        >>> data = load_arviz_data('non_centered_eight')
+        >>> plot_energy(data, kind="ecdf")
 
 
     .. minigallery:: plot_energy
@@ -234,7 +234,7 @@ def plot_energy(
         )
         plot_collection.coords = None
 
-    # Add axis title and ylabel to BFMI column
+    # Add title for BFMI plot
     title_kwargs = get_visual_kwargs(visuals, "title")
     if title_kwargs is not False:
         _, title_aes, title_ignore = filter_aes(
@@ -254,6 +254,7 @@ def plot_energy(
         )
         plot_collection.coords = None
 
+    # Add ylabel for BFMI plot
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         ylabel_kwargs.setdefault("text", "Chain")
