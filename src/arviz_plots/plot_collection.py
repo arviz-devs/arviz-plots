@@ -1321,9 +1321,7 @@ class PlotCollection:
 
         legend_title = None if text_only else title
 
-        # TODO: store, maybe have a group in viz called legend as if it were a visual more
-        # but then it has only scalar variables with name `dim_str`
-        return plot_bknd.legend(
+        self.viz[f"legend/{dim_str}"] = plot_bknd.legend(
             self,
             kwarg_list,
             label_list,

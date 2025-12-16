@@ -12,16 +12,30 @@ def dealiase_line_kwargs(**kwargs):
 
 
 def legend(
-    target, kwarg_list, label_list, title=None, artist_type="line", artist_kwargs=None, **kwargs
+    plot_collection,
+    kwarg_list,
+    label_list,
+    title=None,
+    visual_type="line",
+    visual_kwargs=None,
+    legend_dim=None,
+    update_visuals=True,
+    **kwargs,
 ):
     """Generate a legend on a figure given lists of labels and property kwargs."""
-    if artist_kwargs is None:
-        artist_kwargs = {}
-    kwargs.setdefault("loc", "outside right upper")
-    if artist_type == "line":
-        artist_fun = Line2D
+    if visual_kwargs is None:
+        visual_kwargs = {}
+    if "legend" in plot_collection.viz.children:
+        legend_number = len(plot_collection.viz["legend"].data_vars) + 1
+    else:
+        legend_number = 1
+    default_y = {1: "right upper", 2: "right lower", 3: "center right"}[legend_number]
+    kwargs.setdefault("loc", f"outside {default_y}")
+    if visual_type == "line":
+        visual_fun = Line2D
         kwarg_list = [dealiase_line_kwargs(**kws) for kws in kwarg_list]
     else:
         raise NotImplementedError("Only line type legends supported for now")
-    handles = [artist_fun([], [], **{**artist_kwargs, **kws}) for kws in kwarg_list]
-    return target.legend(handles, label_list, title=title, **kwargs)
+    handles = [visual_fun([], [], **{**visual_kwargs, **kws}) for kws in kwarg_list]
+    figure = plot_collection.get_viz("figure")
+    return figure.legend(handles, label_list, title=title, **kwargs)

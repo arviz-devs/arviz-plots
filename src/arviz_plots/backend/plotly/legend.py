@@ -41,8 +41,8 @@ def legend(
 
     Parameters
     ----------
-    target : plotly.graph_objects.Figure
-        The figure to add the legend to
+    plot_collection : PlotCollection
+        The PlotCollection for which a legend should be generated
     kwarg_list : list
         List of style dictionaries for each legend entry
     label_list : list
@@ -64,6 +64,21 @@ def legend(
         The legend is added to the target figure inplace
     """
     figure = plot_collection.get_viz("figure")
+    if "legend" in plot_collection.viz.children:
+        legend_number = len(plot_collection.viz["legend"].data_vars) + 1
+        legend_id = f"legend{legend_number}"
+    else:
+        legend_number = 1
+        legend_id = "legend"
+    kwargs.setdefault("legend_y", {1: 1, 2: 0, 3: 0.5}[legend_number])
+    kwargs["legend_title_text"] = title
+    legend_kwargs = kwargs.pop(legend_id, {}).copy()
+    kwargs_list = list(kwargs.items())
+    for key, value in kwargs_list:
+        if key.startswith("legend"):
+            kwargs.pop(key)
+            legend_kwargs[key[len("legend_") :]] = value
+    kwargs[legend_id] = legend_kwargs
     if visual_kwargs is None:
         visual_kwargs = {}
     else:
@@ -82,9 +97,7 @@ def legend(
             if group in {"plot", "row_index", "col_index"}:
                 continue
             viz_ds = viz_data.dataset
-            if ("__variable__" not in legend_dim) and (
-                not all(d in viz_ds.dims for d in legend_dim)
-            ):
+            if any((d not in viz_ds.dims) and (d != "__variable__") for d in legend_dim):
                 continue
             for var_name, sel, _ in xarray_sel_iter(viz_ds, skip_dims={}):
                 target_viz = viz_ds[var_name].sel(sel).item()
@@ -97,7 +110,6 @@ def legend(
                     return (
                         (getattr(trace, "mode", "na") == getattr(target_viz, "mode", "na"))
                         and (getattr(trace, "line", "na") == getattr(target_viz, "line", "na"))
-                        and (trace.line == target_viz.line)
                         and (trace.marker == target_viz.marker)
                         and (trace.text == target_viz.text)
                         and (trace.x.shape == target_viz.x.shape)
@@ -126,7 +138,9 @@ def legend(
             name=str(label),
             mode=mode,
             showlegend=True,
+            legend=legend_id,
             **{**visual_kwargs, **kws},
         )
 
-    figure.update_layout(showlegend=True, legend_title_text=title, **kwargs)
+    figure.update_layout(showlegend=True, **kwargs)
+    return figure.layout.legend
