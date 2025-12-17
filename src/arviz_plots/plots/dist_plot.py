@@ -217,7 +217,7 @@ def plot_dist(
         visuals = {}
     else:
         visuals = visuals.copy()
-    if kind in ("hist", "ecdf"):
+    if kind == "ecdf":
         visuals.setdefault("remove_axis", False)
 
     if stats is None:
