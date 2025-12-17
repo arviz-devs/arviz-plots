@@ -205,17 +205,13 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
     )
     assert "plot" in pc.viz.children
     for visual, value in visuals.items():
-        if visual == "face" and kind == "dot":
+        if value is False:
             assert visual not in pc.viz.children
         else:
-            if value is False:
-                assert visual not in pc.viz.children
-            else:
-                assert visual in pc.viz.children
-                assert all(
-                    var_name in pc.viz[visual].data_vars
-                    for var_name in datatree["posterior"].data_vars
-                )
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
+            )
 
 
 @given(
