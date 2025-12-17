@@ -18,8 +18,8 @@ def legend(
     title=None,
     visual_type="line",
     visual_kwargs=None,
-    legend_dim=None,
-    update_visuals=True,
+    legend_dim=None,  # pylint: disable=unused-argument
+    update_visuals=True,  # pylint: disable=unused-argument
     **kwargs,
 ):
     """Generate a legend on a figure given lists of labels and property kwargs."""
