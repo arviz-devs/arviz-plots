@@ -1041,6 +1041,63 @@ class PlotCollection:
         """Get the target that corresponds to the given variable and selection."""
         return self.get_viz("plot", var_name, selection)
 
+    def iget_target(self, row_index, col_index):
+        """Get a plot representing object from the ``.viz`` attribute by positional index.
+
+        Parameters
+        ----------
+        row_index, col_index : int
+            Indexes for the target plot to return.
+
+        Notes
+        -----
+        At first glance, the logic of this function seems to be simplifiable to a call to the
+        where method ``.where(viz["row_index"] == i & viz["col_index"] == j)`` followed by
+        some checks on Dataset/DataArray inputs. However, that is not the case.
+        In at least matplotlib, using `.where` with ``drop=True`` triggers a copy,
+        so if on a notebook, we end up with multiple instances of basically the same plot,
+        with the final tweaks after the positional indexing only applied to the last one.
+
+        Therefore, this method uses `.where` only on the row and column indexes data which
+        have integer dtype and extracts the variable and indexes from there. This allows
+        using sel/isel selection on to retrieve the plot objects.
+        """
+        if "plot" in self.viz.data_vars:
+            row_da = self.viz["row_index"]
+            col_da = self.viz["col_index"]
+            if row_index < 0:
+                row_index = int(row_da.max() + 1 + row_index)
+            if col_index < 0:
+                col_index = int(col_da.max() + 1 + col_index)
+            condition = (row_da == row_index) & (col_da == col_index)
+            if not condition.any():
+                raise ValueError(
+                    f"Mo match found for provided indexes (row: {row_index}, column: {col_index}). "
+                    "Check indexes are within the grid size and don't represent an empty plot"
+                )
+            target_index = np.unravel_index(condition.argmax(), condition.shape)
+            return self.viz["plot"].isel(dict(zip(condition.dims, target_index))).item()
+        row_ds = self.viz["row_index"].dataset
+        col_ds = self.viz["col_index"].dataset
+        if row_index < 0:
+            row_index = int(row_ds.max().to_array().max() + 1 + row_index)
+        if col_index < 0:
+            col_index = int(col_ds.max().to_array().max() + 1 + col_index)
+        condition = (row_ds == row_index) & (col_ds == col_index)
+        var_condition = condition.any().to_array()
+        if not var_condition.any():
+            raise ValueError(
+                f"Mo match found for provided indexes (row: {row_index}, column: {col_index}). "
+                "Check indexes are within the grid size and don't represent an empty plot"
+            )
+        target_var = var_condition.coords["variable"][var_condition.argmax("variable")].item()
+        target_index = np.unravel_index(condition[target_var].argmax(), condition[target_var].shape)
+        return (
+            self.viz["plot"][target_var]
+            .isel(dict(zip(condition[target_var].dims, target_index)))
+            .item()
+        )
+
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary.
 
