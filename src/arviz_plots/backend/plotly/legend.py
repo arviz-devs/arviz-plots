@@ -64,6 +64,7 @@ def legend(
         The legend is added to the target figure inplace
     """
     figure = plot_collection.get_viz("figure")
+    # NOTE: Legend IDs in Plotly must be 'legend', 'legend2', 'legend3', etc.
     if "legend" in plot_collection.viz.children:
         legend_number = len(plot_collection.viz["legend"].data_vars) + 1
         legend_id = f"legend{legend_number}"
