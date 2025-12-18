@@ -219,7 +219,6 @@ def plot_dgof_dist(
 
     stats_dgof = {"ecdf_pit": stats.get("ecdf_pit", {})}
     stats_dgof["dist"] = stats.get("dist", {})
-    print(stats_dgof)
 
     plot_collection.coords = {"column": "gof"}
     plot_dgof(
