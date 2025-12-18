@@ -8,7 +8,7 @@ the Δ-ECDF-PIT plots.
 ---
 
 :::{seealso}
-API Documentation: {func}`~arviz_plots.plot_dgof`
+API Documentation: {func}`~arviz_plots.plot_dgof_dist`
 
 EABM chapter on [Visualization of Random Variables with ArviZ](https://arviz-devs.github.io/EABM/Chapters/Distributions.html)
 :::
