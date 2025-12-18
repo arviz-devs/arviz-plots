@@ -1075,8 +1075,7 @@ class PlotCollection:
                     f"Mo match found for provided indexes (row: {row_index}, column: {col_index}). "
                     "Check indexes are within the grid size and don't represent an empty plot"
                 )
-            target_index = np.unravel_index(condition.argmax(), condition.shape)
-            return self.viz["plot"].isel(dict(zip(condition.dims, target_index))).item()
+            return self.viz["plot"].isel(condition.argmax(...)).item()
         row_ds = self.viz["row_index"].dataset
         col_ds = self.viz["col_index"].dataset
         if row_index < 0:
@@ -1091,12 +1090,7 @@ class PlotCollection:
                 "Check indexes are within the grid size and don't represent an empty plot"
             )
         target_var = var_condition.coords["variable"][var_condition.argmax("variable")].item()
-        target_index = np.unravel_index(condition[target_var].argmax(), condition[target_var].shape)
-        return (
-            self.viz["plot"][target_var]
-            .isel(dict(zip(condition[target_var].dims, target_index)))
-            .item()
-        )
+        return self.viz["plot"][target_var].isel(condition[target_var].argmax(...)).item()
 
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary.
