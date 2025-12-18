@@ -1,8 +1,10 @@
 """Plotly legend generation."""
+from functools import partial
+
 import numpy as np
 import xarray as xr
 from arviz_base import xarray_sel_iter
-from plotly.graph_objects import Bar, Contour, Heatmap, Scatter
+from plotly.graph_objects import Bar, Scatter
 
 from .core import expand_aesthetic_aliases
 
@@ -12,6 +14,19 @@ def dealiase_line_kwargs(**kwargs):
     """Convert arviz common interface properties to plotly ones."""
     prop_map = {"linewidth": "width", "linestyle": "dash"}
     return {prop_map.get(key, key): value for key, value in kwargs.items()}
+
+
+def _trace_matcher(trace, target_viz):
+    """See if a plotly trace matches a target trace `target_viz`."""
+    return (
+        (getattr(trace, "mode", "na") == getattr(target_viz, "mode", "na"))
+        and (getattr(trace, "line", "na") == getattr(target_viz, "line", "na"))
+        and (trace.marker == target_viz.marker)
+        and (trace.text == target_viz.text)
+        and (trace.x.shape == target_viz.x.shape)
+        and np.allclose(trace.y, target_viz.y)
+        and np.allclose(trace.x, target_viz.x)
+    )
 
 
 LINE_SUBKEYS = [
@@ -107,22 +122,12 @@ def legend(
                 if not isinstance(target_viz, (Scatter, Bar)):
                     break
 
-                def trace_matcher(trace):
-                    return (
-                        (getattr(trace, "mode", "na") == getattr(target_viz, "mode", "na"))
-                        and (getattr(trace, "line", "na") == getattr(target_viz, "line", "na"))
-                        and (trace.marker == target_viz.marker)
-                        and (trace.text == target_viz.text)
-                        and (trace.x.shape == target_viz.x.shape)
-                        and np.allclose(trace.y, target_viz.y)
-                        and np.allclose(trace.x, target_viz.x)
-                    )
-
                 target_plot = plot_collection.get_target(var_name, sel)
                 if isinstance(target_plot, xr.DataArray):
                     target_plot = target_plot.data
                 else:
                     target_plot = [target_plot]
+                trace_matcher = partial(_trace_matcher, target_viz=target_viz)
                 for element in target_plot:
                     element.update_traces(
                         selector=trace_matcher,
