@@ -18,12 +18,11 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.visuals import ecdf_line, hist, line_xy, scatter_xy
+from arviz_plots.visuals import ecdf_line, line_xy, scatter_xy, step_hist
 
 
 def plot_ppc_dist(
     dt,
-    data_pairs=None,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",
@@ -55,10 +54,6 @@ def plot_ppc_dist(
         If group is "posterior_predictive", it should contain the ``posterior_predictive`` and
         ``observed_data`` groups. If group is "prior_predictive", it should contain the
         ``prior_predictive`` group.
-    data_pairs : dict, optional
-        Dictionary of keys prior/posterior predictive data and values observed data variable names.
-        If None, it will assume that the observed data and the predictive data have
-        the same variable name.
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -73,9 +68,9 @@ def plot_ppc_dist(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    kind : {"kde", "hist", "ecdf"}, optional
-        How to represent the marginal density.
-        Defaults to ``rcParams["plot.density_kind"]``
+    kind : {"kde", "hist", "ecdf", "dot"}, optional
+        How to represent the marginal density. Defaults to ``rcParams["plot.density_kind"]``
+        If "dot" is selected, only the top points of the predictive draws are shown.
     num_samples : int, optional
         Number of samples to plot. Defaults to 100.
     plot_collection : PlotCollection, optional
@@ -184,13 +179,8 @@ def plot_ppc_dist(
 
     pp_dims = list(sample_dims) + [dims for dims in dt[group].dims if dims not in sample_dims]
 
-    if data_pairs is None:
-        data_pairs = (var_names, var_names)
-    else:
-        data_pairs = (list(data_pairs.keys()), list(data_pairs.values()))
-
     predictive_dist = process_group_variables_coords(
-        dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
+        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     predictive_types = [
         predictive_dist[var].values.dtype.kind == "i" for var in predictive_dist.data_vars
@@ -200,7 +190,7 @@ def plot_ppc_dist(
         observed_dist = process_group_variables_coords(
             dt,
             group="observed_data",
-            var_names=data_pairs[1],
+            var_names=var_names,
             filter_vars=filter_vars,
             coords=coords,
         )
@@ -226,6 +216,9 @@ def plot_ppc_dist(
     if num_samples > n_pp_samples:
         num_samples = n_pp_samples
         warnings.warn("num_samples is larger than the number of predictive samples.")
+
+    if kind == "dot":
+        stats.setdefault("predictive_dist", {"top_only": True})
 
     pp_sample_ix = rng.choice(n_pp_samples, size=num_samples, replace=False)
     predictive_dist = predictive_dist.stack(sample=sample_dims).isel(sample=pp_sample_ix)
@@ -263,9 +256,6 @@ def plot_ppc_dist(
     if pred_density_kwargs is not False:
         visuals.setdefault("dist", pred_density_kwargs)
         visuals["dist"].setdefault("alpha", 0.3)
-        if kind == "hist":
-            if visuals["dist"] is not False:
-                visuals["dist"].setdefault("color", None)
 
         plot_collection = plot_dist(
             predictive_dist,
@@ -288,9 +278,6 @@ def plot_ppc_dist(
     if observed_density_kwargs is not False:
         observed_stats_kwargs = stats.get("observed_dist", {}).copy()
         observed_density_kwargs.setdefault("color", "B1")
-        if kind == "hist":
-            observed_density_kwargs.setdefault("alpha", 0.3)
-            observed_density_kwargs.setdefault("edgecolor", None)
 
         _, _, observed_ignore = filter_aes(
             plot_collection, aes_by_visuals, "observed_dist", sample_dims
@@ -312,7 +299,7 @@ def plot_ppc_dist(
             dt_observed = observed_dist.azstats.histogram(dim=pp_dims, **observed_stats_kwargs)
 
             plot_collection.map(
-                hist,
+                step_hist,
                 "observed_dist",
                 data=dt_observed,
                 ignore_aes=observed_ignore,
