@@ -140,9 +140,8 @@ def plot_dist(
 
           Defaults to False. Depending on the value of `kind` it is passed to:
 
-          * "kde" or "ecdf" -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+          * "kde", "ecdf" or "dot" -> passed to :func:`~arviz_plots.visuals.fill_between_y`
           * "hist" -> passed to :func:`~arviz_plots.visuals.hist`
-          * dot -> ignored
 
         * credible_interval -> passed to :func:`~arviz_plots.visuals.line_x`
         * point_estimate -> passed to :func:`~arviz_plots.visuals.scatter_x`
@@ -335,7 +334,7 @@ def plot_dist(
             )
 
     # filled face
-    if face_kwargs is not False and kind != "dot":
+    if face_kwargs is not False:
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
 
         if "color" not in face_aes:
@@ -343,7 +342,12 @@ def plot_dist(
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
 
-        if kind in ("kde", "ecdf"):
+        if kind == "dot":
+            kwargs = stats.get("dist", {}).copy()
+            kwargs.setdefault("top_only", True)
+            density = distribution.azstats.qds(dim=density_dims, **kwargs)
+
+        if kind in ("kde", "ecdf", "dot"):
             face_density = (
                 density.rename(plot_axis="kwarg")
                 .sel(kwarg=["x", "y"])
@@ -357,6 +361,7 @@ def plot_dist(
                 ignore_aes=face_ignore,
                 **face_kwargs,
             )
+
         elif kind == "hist":
             plot_collection.map(
                 hist,
