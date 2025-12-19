@@ -22,12 +22,14 @@ from arviz_plots.visuals import (
     labelled_y,
     scatter_xy,
     set_y_scale,
+    set_ylim,
 )
 
 
 def plot_ppc_rootogram(
     dt,
     ci_prob=None,
+    point_estimate=None,
     yscale="sqrt",
     data_pairs=None,
     var_names=None,
@@ -81,7 +83,9 @@ def plot_ppc_rootogram(
         ``observed_data`` groups. If group is "prior_predictive", it should contain the
         ``prior_predictive`` group.
     ci_prob : float, optional
-        Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
+        Probability for the credible interval. Defaults to rcParam :data:`stats.ci_prob`.
+    point_estimate : {"mean", "median", "mode"}, optional
+        Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
     yscale : str, optional
         Scale for the y-axis. Defaults to "sqrt", pass "linear" for linear scale.
         Currently only "matplotlib" backend is supported. For "bokeh" and "plotly"
@@ -104,7 +108,7 @@ def plot_ppc_rootogram(
         Coordinates to plot.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
-        Defaults to ``rcParams["data.sample_dims"]``
+        Defaults to rcParam :data:`data.sample_dims`.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -161,6 +165,8 @@ def plot_ppc_rootogram(
         ci_prob = rcParams["stats.ci_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if point_estimate is None:
+        point_estimate = rcParams["stats.point_estimate"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
@@ -210,11 +216,14 @@ def plot_ppc_rootogram(
     if any(predictive_types + observed_types):
         raise ValueError(
             "Detected at least one continuous variable.\n"
-            "Use plot_ppc variants specific for continuous data, "
-            "such as plot_ppc_dist.",
+            "This function only works for discrete (count) data.\n"
+            "Consider using other functions such as plot_ppc_dist\n"
+            "plot_ppc_pit, or plot_ppc_tstat.",
         )
 
-    ds_predictive = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
+    ds_predictive = point_interval_unique(
+        dt, predictive_dist.data_vars, group, ci_prob, point_estimate
+    )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -372,6 +381,13 @@ def plot_ppc_rootogram(
         store_artist=backend == "none",
         ignore_aes=plot_collection.aes_set,
         scale=yscale,
+    )
+
+    plot_collection.map(
+        set_ylim,
+        limits=(0, None),
+        store_artist=backend == "none",
+        ignore_aes=plot_collection.aes_set,
     )
 
     return plot_collection
