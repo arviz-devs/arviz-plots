@@ -31,7 +31,6 @@ def plot_ppc_rootogram(
     ci_prob=None,
     point_estimate=None,
     yscale="sqrt",
-    data_pairs=None,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",
@@ -90,10 +89,6 @@ def plot_ppc_rootogram(
         Scale for the y-axis. Defaults to "sqrt", pass "linear" for linear scale.
         Currently only "matplotlib" backend is supported. For "bokeh" and "plotly"
         the y-axis is linear.
-    data_pairs : dict, optional
-        Dictionary of keys prior/posterior predictive data and values observed data variable names.
-        If None, it will assume that the observed data and the predictive data have
-        the same variable name.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -184,13 +179,8 @@ def plot_ppc_rootogram(
     if labeller is None:
         labeller = BaseLabeller()
 
-    if data_pairs is None:
-        data_pairs = (var_names, var_names)
-    else:
-        data_pairs = (list(data_pairs.keys()), list(data_pairs.values()))
-
     predictive_dist = process_group_variables_coords(
-        dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
+        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
     predictive_types = [
@@ -201,7 +191,7 @@ def plot_ppc_rootogram(
         observed_dist = process_group_variables_coords(
             dt,
             group="observed_data",
-            var_names=data_pairs[1],
+            var_names=var_names,
             filter_vars=filter_vars,
             coords=coords,
         )
