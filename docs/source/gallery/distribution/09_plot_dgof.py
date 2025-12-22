@@ -20,7 +20,7 @@ import arviz_plots as azp
 azp.style.use("arviz-variat")
 
 dt = load_arviz_data("radon")
-azp.plot_dgof(dt,
+pc = azp.plot_dgof(dt,
     var_names="g",
     kind="hist",
     stats={"dist": {"bins":30}},

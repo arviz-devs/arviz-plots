@@ -20,7 +20,7 @@ import arviz_plots as azp
 azp.style.use("arviz-variat")
 
 dt = load_arviz_data("radon")
-azp.plot_dgof_dist(dt,
+pc = azp.plot_dgof_dist(dt,
     var_names="g",
     kind="kde",
     backend="none"  # change to preferred backend
