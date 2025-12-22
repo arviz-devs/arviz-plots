@@ -211,7 +211,7 @@ def plot_ppc_rootogram(
             "plot_ppc_pit, or plot_ppc_tstat.",
         )
 
-    ds_predictive = point_interval_unique(
+    predictive_ds = point_interval_unique(
         dt, predictive_dist.data_vars, group, ci_prob, point_estimate
     )
 
@@ -223,10 +223,10 @@ def plot_ppc_rootogram(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", "__variable__")
 
-        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_predictive)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, predictive_ds)
 
         plot_collection = PlotCollection.wrap(
-            ds_predictive,
+            predictive_ds,
             backend=backend,
             **pc_kwargs,
         )
@@ -253,7 +253,7 @@ def plot_ppc_rootogram(
         plot_collection.map(
             scatter_xy,
             "predictive_markers",
-            data=ds_predictive,
+            data=predictive_ds,
             ignore_aes=predictive_ms_ignore,
             **predictive_ms_kwargs,
         )
@@ -274,7 +274,7 @@ def plot_ppc_rootogram(
         plot_collection.map(
             ci_line_y,
             "credible_interval",
-            data=ds_predictive,
+            data=predictive_ds,
             ignore_aes=ci_ignore,
             **ci_kwargs,
         )
