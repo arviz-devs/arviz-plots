@@ -1,7 +1,6 @@
 """Bokeh manual legend generation."""
 import warnings
 
-import numpy as np
 from bokeh.models import Legend
 
 from .core import expand_aesthetic_aliases
@@ -15,12 +14,14 @@ def dealiase_line_kwargs(**kwargs):
 
 
 def legend(
-    target,
+    plot_collection,
     kwarg_list,
     label_list,
     title=None,
-    artist_type="line",
-    artist_kwargs=None,
+    visual_type="line",
+    visual_kwargs=None,
+    legend_dim=None,  # pylint: disable=unused-argument
+    update_visuals=False,  # pylint: disable=unused-argument
     legend_target=None,
     side="right",
     **kwargs,
@@ -29,43 +30,53 @@ def legend(
 
     Parameters
     ----------
+    plot_collection : PlotCollection
+    kwarg_list : sequence of mapping
+        Sequence with length equal to the number of entries to add to the legend.
+        The elements in the list are the kwargs to use when defining the legend
+        miniatures.
+    label_list : sequence of str
+        Sequence with length equal to the number of entries to add to the legend.
+        The elements in the list are the labels to give each miniature in the legend.
+    title : str, optional
+        The title to give the legend.
+    visual_type : {"line", "scatter", "rectangle"}, default "line"
+    visual_kwargs : mapping, optional
+        Passed to all visuals when generating legend miniatures.
+        For "line" visual type passed to :meth:`bokeh.plotting.figure.line`
+    legend_dim : str or sequence of str, optional
+        Dimension or dimensions whose mappings should be used to generate the legend.
+    update_visuals : bool, optional
+        If relevant for the backend, update objects representing :term:`visual` elements
+        of the plot to improve or allow interactivity for the legend.
     legend_target : (int, int), default (0, -1)
         Row and colum indicators of the :term:`plot` where the legend will be placed.
         Bokeh does not support :term:`figure` level legend.
     side : str, optional
         Side of the plot on which to place the legend. Use "center" to put the legend
         inside the plotting area.
+    **kwargs
+        Passed to :class:`bokeh.models.Legend`
     """
-    if artist_kwargs is None:
-        artist_kwargs = {}
+    if visual_kwargs is None:
+        visual_kwargs = {}
     if legend_target is None:
         legend_target = (0, -1)
     if side == "right":
         kwargs.setdefault("margin", -55)
 
-    # TODO: improve selection of Figure object from what is stored as "figure"
-    children = target.children
-    if not isinstance(children[0], tuple):
-        children = children[1].children
-    plots = [child[0] for child in children]
-    row_id = np.array([child[1] for child in children], dtype=int)
-    col_id = np.array([child[2] for child in children], dtype=int)
-    legend_id = np.argmax(
-        (row_id == np.unique(row_id)[legend_target[0]])
-        & (col_id == np.unique(col_id)[legend_target[1]])
-    )
-    target_plot = plots[legend_id]
+    target_plot = plot_collection.iget_target(*legend_target)
     if target_plot.legend:
         warnings.warn("This target plot already contains a legend")
     glyph_list = []
-    if artist_type == "line":
-        artist_fun = target_plot.line
+    if visual_type == "line":
+        visual_fun = target_plot.line
         kwarg_list = [dealiase_line_kwargs(**kws) for kws in kwarg_list]
     else:
         raise NotImplementedError("Only line type legends supported for now")
 
     for kws in kwarg_list:
-        glyph = artist_fun(**{**artist_kwargs, **kws})
+        glyph = visual_fun(**{**visual_kwargs, **kws})
         glyph_list.append(glyph)
 
     leg = Legend(

@@ -1041,6 +1041,57 @@ class PlotCollection:
         """Get the target that corresponds to the given variable and selection."""
         return self.get_viz("plot", var_name, selection)
 
+    def iget_target(self, row_index, col_index):
+        """Get a plot representing object from the ``.viz`` attribute by positional index.
+
+        Parameters
+        ----------
+        row_index, col_index : int
+            Indexes for the target plot to return.
+
+        Notes
+        -----
+        At first glance, the logic of this function seems to be simplifiable to a call to the
+        where method ``.where(viz["row_index"] == i & viz["col_index"] == j)`` followed by
+        some checks on Dataset/DataArray inputs. However, that is not the case.
+        In at least matplotlib, using `.where` with ``drop=True`` triggers a copy,
+        so if on a notebook, we end up with multiple instances of basically the same plot,
+        with the final tweaks after the positional indexing only applied to the last one.
+
+        Therefore, this method uses `.where` only on the row and column indexes data which
+        have integer dtype and extracts the variable and indexes from there. This allows
+        using sel/isel selection on to retrieve the plot objects.
+        """
+        if "plot" in self.viz.data_vars:
+            row_da = self.viz["row_index"]
+            col_da = self.viz["col_index"]
+            if row_index < 0:
+                row_index = int(row_da.max() + 1 + row_index)
+            if col_index < 0:
+                col_index = int(col_da.max() + 1 + col_index)
+            condition = (row_da == row_index) & (col_da == col_index)
+            if not condition.any():
+                raise ValueError(
+                    f"Mo match found for provided indexes (row: {row_index}, column: {col_index}). "
+                    "Check indexes are within the grid size and don't represent an empty plot"
+                )
+            return self.viz["plot"].isel(condition.argmax(...)).item()
+        row_ds = self.viz["row_index"].dataset
+        col_ds = self.viz["col_index"].dataset
+        if row_index < 0:
+            row_index = int(row_ds.max().to_array().max() + 1 + row_index)
+        if col_index < 0:
+            col_index = int(col_ds.max().to_array().max() + 1 + col_index)
+        condition = (row_ds == row_index) & (col_ds == col_index)
+        var_condition = condition.any().to_array()
+        if not var_condition.any():
+            raise ValueError(
+                f"Mo match found for provided indexes (row: {row_index}, column: {col_index}). "
+                "Check indexes are within the grid size and don't represent an empty plot"
+            )
+        target_var = var_condition.coords["variable"][var_condition.argmax("variable")].item()
+        return self.viz["plot"][target_var].isel(condition[target_var].argmax(...)).item()
+
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary.
 
@@ -1219,7 +1270,7 @@ class PlotCollection:
         self,
         dim,
         aes=None,
-        artist_kwargs=None,
+        visual_kwargs=None,
         title=None,
         text_only=False,
         # position=(0, -1),  # TODO: add argument
@@ -1246,7 +1297,7 @@ class PlotCollection:
             Specific aesthetics to take into account when generating the legend.
             They should all be mapped to `dim`. Defaults to all aesthetics matching
             that mapping with the exception "x" and "y" which are never included.
-        artist_kwargs : mapping, optional
+        visual_kwargs : mapping, optional
             Keyword arguments passed to the backend visual function used to
             generate the miniatures in the legend.
         title : str, optional
@@ -1268,6 +1319,15 @@ class PlotCollection:
             dim = (dim,)
         else:
             dim = tuple(dim)
+        update_visuals = False
+        if "legendgroup" not in self.aes.children and self.backend == "plotly":
+            # TODO: keep if to avoid duplicating legendgroup but don't make it plotly specific
+            # also, should we add an "interactive" argument to disable this behaviour
+            # even if it would be possible?
+            update_visuals = True
+            self.update_aes_from_dataset(
+                "legendgroup", self.generate_aes_dt({"legendgroup": dim})["legendgroup"].dataset
+            )
         dim_str = ", ".join(("variable" if d == "__variable__" else d for d in dim))
         if title is None:
             title = dim_str
@@ -1302,7 +1362,7 @@ class PlotCollection:
             ]
         if text_only:
             kwarg_list = [{} for _ in subset_iterator]
-            artist_kwargs = {"linestyle": "none", "linewidth": 0, "color": "none"}
+            visual_kwargs = {"linestyle": "none", "linewidth": 0, "color": "none"}
         else:
             kwarg_list = [
                 self.get_aes_kwargs(aes, var_name, sel) for var_name, sel, _ in subset_iterator
@@ -1312,13 +1372,13 @@ class PlotCollection:
 
         legend_title = None if text_only else title
 
-        # TODO: store, maybe have a group in viz called legend as if it were a visual more
-        # but then it has only scalar variables with name `dim_str`
-        return plot_bknd.legend(
-            self.viz["figure"].item(),
+        self.viz[f"legend/{dim_str}"] = plot_bknd.legend(
+            self,
             kwarg_list,
             label_list,
             title=legend_title,
-            artist_kwargs=artist_kwargs,
+            visual_kwargs=visual_kwargs,
+            legend_dim=dim,
+            update_visuals=update_visuals,
             **kwargs,
         )

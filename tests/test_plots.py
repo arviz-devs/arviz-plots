@@ -206,8 +206,9 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "mu" in pc.viz["min_ess"]
         assert "mu" in pc.viz["title"]
         assert "rug" not in pc.viz.children
-        assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
-        assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
+        child_list = [viz_ds for visual, viz_ds in pc.viz.children.items() if visual != "legend"]
+        assert all("hierarchy" not in child["mu"].dims for child in child_list)
+        assert all("hierarchy" in child["theta"].dims for child in child_list)
         assert "model" in pc.viz["ess"]["mu"].dims
         # checking aesthetics
         assert "/color" in pc.aes.groups
