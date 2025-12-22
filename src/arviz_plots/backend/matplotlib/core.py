@@ -608,6 +608,8 @@ def remove_axis(target, axis="y"):
 def set_y_scale(target, scale):
     """Interface to matplotlib for setting the y scale of a plot."""
     target.set_yscale(scale)
+    if scale == "sqrt":
+        target.set_ylim(bottom=0)
 
 
 @expand_aesthetic_aliases

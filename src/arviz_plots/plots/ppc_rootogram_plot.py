@@ -28,8 +28,8 @@ from arviz_plots.visuals import (
 def plot_ppc_rootogram(
     dt,
     ci_prob=None,
+    point_estimate=None,
     yscale="sqrt",
-    data_pairs=None,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",
@@ -81,15 +81,13 @@ def plot_ppc_rootogram(
         ``observed_data`` groups. If group is "prior_predictive", it should contain the
         ``prior_predictive`` group.
     ci_prob : float, optional
-        Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
+        Probability for the credible interval. Defaults to rcParam :data:`stats.ci_prob`.
+    point_estimate : {"mean", "median", "mode"}, optional
+        Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
     yscale : str, optional
         Scale for the y-axis. Defaults to "sqrt", pass "linear" for linear scale.
         Currently only "matplotlib" backend is supported. For "bokeh" and "plotly"
         the y-axis is linear.
-    data_pairs : dict, optional
-        Dictionary of keys prior/posterior predictive data and values observed data variable names.
-        If None, it will assume that the observed data and the predictive data have
-        the same variable name.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -104,7 +102,7 @@ def plot_ppc_rootogram(
         Coordinates to plot.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
-        Defaults to ``rcParams["data.sample_dims"]``
+        Defaults to rcParam :data:`data.sample_dims`.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -161,6 +159,8 @@ def plot_ppc_rootogram(
         ci_prob = rcParams["stats.ci_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
+    if point_estimate is None:
+        point_estimate = rcParams["stats.point_estimate"]
     if isinstance(sample_dims, str):
         sample_dims = [sample_dims]
     sample_dims = list(sample_dims)
@@ -178,13 +178,8 @@ def plot_ppc_rootogram(
     if labeller is None:
         labeller = BaseLabeller()
 
-    if data_pairs is None:
-        data_pairs = (var_names, var_names)
-    else:
-        data_pairs = (list(data_pairs.keys()), list(data_pairs.values()))
-
     predictive_dist = process_group_variables_coords(
-        dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
+        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
     predictive_types = [
@@ -195,7 +190,7 @@ def plot_ppc_rootogram(
         observed_dist = process_group_variables_coords(
             dt,
             group="observed_data",
-            var_names=data_pairs[1],
+            var_names=var_names,
             filter_vars=filter_vars,
             coords=coords,
         )
@@ -210,11 +205,14 @@ def plot_ppc_rootogram(
     if any(predictive_types + observed_types):
         raise ValueError(
             "Detected at least one continuous variable.\n"
-            "Use plot_ppc variants specific for continuous data, "
-            "such as plot_ppc_dist.",
+            "This function only works for discrete (count) data.\n"
+            "Consider using other functions such as plot_ppc_dist\n"
+            "plot_ppc_pit, or plot_ppc_tstat.",
         )
 
-    ds_predictive = point_interval_unique(dt, predictive_dist.data_vars, group, ci_prob)
+    predictive_ds = point_interval_unique(
+        dt, predictive_dist.data_vars, group, ci_prob, point_estimate
+    )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -224,10 +222,10 @@ def plot_ppc_rootogram(
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", "__variable__")
 
-        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_predictive)
+        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, predictive_ds)
 
         plot_collection = PlotCollection.wrap(
-            ds_predictive,
+            predictive_ds,
             backend=backend,
             **pc_kwargs,
         )
@@ -254,7 +252,7 @@ def plot_ppc_rootogram(
         plot_collection.map(
             scatter_xy,
             "predictive_markers",
-            data=ds_predictive,
+            data=predictive_ds,
             ignore_aes=predictive_ms_ignore,
             **predictive_ms_kwargs,
         )
@@ -275,7 +273,7 @@ def plot_ppc_rootogram(
         plot_collection.map(
             ci_line_y,
             "credible_interval",
-            data=ds_predictive,
+            data=predictive_ds,
             ignore_aes=ci_ignore,
             **ci_kwargs,
         )
