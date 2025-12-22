@@ -22,7 +22,6 @@ from arviz_plots.visuals import (
     labelled_y,
     scatter_xy,
     set_y_scale,
-    set_ylim,
 )
 
 
@@ -371,13 +370,6 @@ def plot_ppc_rootogram(
         store_artist=backend == "none",
         ignore_aes=plot_collection.aes_set,
         scale=yscale,
-    )
-
-    plot_collection.map(
-        set_ylim,
-        limits=(0, None),
-        store_artist=backend == "none",
-        ignore_aes=plot_collection.aes_set,
     )
 
     return plot_collection
