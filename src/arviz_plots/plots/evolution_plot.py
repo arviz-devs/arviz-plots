@@ -347,7 +347,7 @@ def plot_ess_evolution(
             dim="ess_dim",
         )
 
-        # converting xdata into a xr dataarray
+        # converting xdata into an xr dataarray
         xdata_da = xr.DataArray(xdata, dims="ess_dim")
         # broadcasting xdata_da to match shape of each variable in ess_y_dataset and
         # creating a new dataset from dict of broadcasted xdata
