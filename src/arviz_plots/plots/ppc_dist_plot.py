@@ -1,4 +1,4 @@
-"""Posterior/prior predictive check using densities."""
+"""Predictive check using densities."""
 
 import warnings
 from collections.abc import Mapping, Sequence
@@ -18,6 +18,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
+from arviz_plots.plots.utils_plot_types import warn_if_binary, warn_if_discrete
 from arviz_plots.visuals import ecdf_line, line_xy, scatter_xy, step_hist
 
 
@@ -46,7 +47,7 @@ def plot_ppc_dist(
     **pc_kwargs,
 ):
     """
-    Plot 1D marginals for the posterior/prior predictive distribution and the observed data.
+    Plot 1D marginals for the predictive distribution and the observed data.
 
     Parameters
     ----------
@@ -182,9 +183,6 @@ def plot_ppc_dist(
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
-    predictive_types = [
-        predictive_dist[var].values.dtype.kind == "i" for var in predictive_dist.data_vars
-    ]
 
     if "observed_data" in dt:
         observed_dist = process_group_variables_coords(
@@ -194,20 +192,11 @@ def plot_ppc_dist(
             filter_vars=filter_vars,
             coords=coords,
         )
-        observed_types = [
-            observed_dist[var].values.dtype.kind == "i" for var in observed_dist.data_vars
-        ]
     else:
-        observed_types = []
+        observed_dist = None
 
-    if any(predictive_types + observed_types):
-        warnings.warn(
-            "Detected at least one discrete variable.\n"
-            "Consider using plot_ppc variants specific for discrete data, "
-            "such as plot_ppc_pava or plot_ppc_rootogram.",
-            UserWarning,
-            stacklevel=2,
-        )
+    warn_if_binary(observed_dist, predictive_dist)
+    warn_if_discrete(observed_dist, predictive_dist, kind)
 
     # Select a random subset of samples
     n_pp_samples = np.prod(

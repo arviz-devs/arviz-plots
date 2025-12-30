@@ -14,6 +14,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
+from arviz_plots.plots.utils_plot_types import raise_if_continuous, warn_if_binary
 from arviz_plots.visuals import (
     ci_line_y,
     grid,
@@ -182,10 +183,6 @@ def plot_ppc_rootogram(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
 
-    predictive_types = [
-        predictive_dist[var].values.dtype.kind == "f" for var in predictive_dist.data_vars
-    ]
-
     if "observed_data" in dt:
         observed_dist = process_group_variables_coords(
             dt,
@@ -194,21 +191,12 @@ def plot_ppc_rootogram(
             filter_vars=filter_vars,
             coords=coords,
         )
-
-        observed_types = [
-            observed_dist[var].values.dtype.kind == "f" for var in observed_dist.data_vars
-        ]
         observed_ds = point_unique(dt, observed_dist.data_vars)
     else:
-        observed_types = []
+        observed_dist = None
 
-    if any(predictive_types + observed_types):
-        raise ValueError(
-            "Detected at least one continuous variable.\n"
-            "This function only works for discrete (count) data.\n"
-            "Consider using other functions such as plot_ppc_dist\n"
-            "plot_ppc_pit, or plot_ppc_tstat.",
-        )
+    warn_if_binary(observed_dist, predictive_dist)
+    raise_if_continuous(observed_dist, predictive_dist)
 
     predictive_ds = point_interval_unique(
         dt, predictive_dist.data_vars, group, ci_prob, point_estimate

@@ -15,6 +15,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
+from arviz_plots.plots.utils_plot_types import warn_if_binary
 from arviz_plots.visuals import scatter_x
 
 
@@ -246,6 +247,10 @@ def plot_ppc_tstat(
             filter_vars=filter_vars,
             coords=coords,
         )
+    else:
+        observed_dist = None
+
+    warn_if_binary(observed_dist, predictive_dist)
 
     # we use observed_tstat_kwargs as a flag to indicate if
     # we should compute and plot the observed t-statistics
