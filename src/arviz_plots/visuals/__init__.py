@@ -453,7 +453,7 @@ def labelled_y(
 def labelled_x(
     da, target, *, text=None, labeller=None, var_name=None, sel=None, isel=None, **kwargs
 ):
-    """Add a x label to a plot using an ArviZ labeller."""
+    """Add an x label to a plot using an ArviZ labeller."""
     if text is None and labeller is None:
         raise ValueError("Either text or labeller must be provided")
     if text is not None and labeller is not None:
