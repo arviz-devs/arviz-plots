@@ -34,11 +34,14 @@ class TestFaceting:
         assert pc.viz["plot"].shape == (7,)
         assert pc.viz["row_index"].max() == 1
         assert pc.viz["col_index"].max() == 3
-    
+
     def test_wrap_col_wrap_none(self, dataset, backend):
         pc = PlotCollection.wrap(
-            dataset[["theta", "eta"]], backend=backend, cols=["hierarchy"], col_wrap=None,
-            )
+            dataset[["theta", "eta"]],
+            backend=backend,
+            cols=["hierarchy"],
+            col_wrap=None,
+        )
         assert pc.viz["col_index"].max() == 2
         assert pc.viz["row_index"].max() == 2
 
