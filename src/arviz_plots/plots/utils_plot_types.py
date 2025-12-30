@@ -19,9 +19,9 @@ def warn_if_binary(observed_dist, predictive_dist):
 
 def warn_if_discrete(observed_dist, predictive_dist, kind):
     """Warn if data is discrete."""
-    observed_types, predictive_types = get_types(observed_dist, predictive_dist)
+    observed_discrete, predictive_discrete = get_discrete_flags(observed_dist, predictive_dist)
 
-    if any(predictive_types + observed_types) and kind != "ecdf":
+    if any(predictive_discrete + observed_discrete) and kind != "ecdf":
         warnings.warn(
             "Detected at least one discrete variable.\n"
             "Consider using plot_ppc variants specific for discrete data, "
@@ -33,8 +33,8 @@ def warn_if_discrete(observed_dist, predictive_dist, kind):
 
 def raise_if_continuous(observed_dist, predictive_dist):
     """Raise error if data is continuous."""
-    observed_types, predictive_types = get_types(observed_dist, predictive_dist)
-    if any(predictive_types + observed_types):
+    observed_discrete, predictive_discrete = get_discrete_flags(observed_dist, predictive_dist)
+    if not all(predictive_discrete + observed_discrete):
         raise ValueError(
             "Detected at least one continuous variable.\n"
             "This function only works for discrete data.\n"
@@ -54,17 +54,17 @@ def warn_if_prior_predictive(group):
         )
 
 
-def get_types(observed_dist, predictive_dist):
-    """Get types of observed and predictive distributions."""
-    predictive_types = [
+def get_discrete_flags(observed_dist, predictive_dist):
+    """Get list of discrete flags for observed and predictive distributions."""
+    predictive_discrete = [
         predictive_dist[var].values.dtype.kind == "i" for var in predictive_dist.data_vars
     ]
 
     if observed_dist is not None:
-        observed_types = [
+        observed_discrete = [
             observed_dist[var].values.dtype.kind == "i" for var in observed_dist.data_vars
         ]
     else:
-        observed_types = []
+        observed_discrete = []
 
-    return observed_types, predictive_types
+    return observed_discrete, predictive_discrete
