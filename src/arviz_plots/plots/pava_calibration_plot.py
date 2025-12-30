@@ -62,7 +62,7 @@ def plot_ppc_pava(
     """PAV-adjusted calibration plot.
 
     Uses the pool adjacent violators (PAV) algorithm for isotonic regression.
-    An a 45-degree line corresponds to perfect calibration.
+    A 45-degree line corresponds to perfect calibration.
     Details are discussed in [1]_ and [2]_.
 
     Parameters
