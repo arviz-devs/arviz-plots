@@ -47,7 +47,7 @@ def warn_if_prior_predictive(group):
     """Warn if group is prior_predictive."""
     if group == "prior_predictive":
         warnings.warn(
-            "\n`This plot always use the `observed_data` group."
+            "This plot always uses the `observed_data` group."
             "\nBe cautious when using it for prior predictive checks.",
             UserWarning,
             stacklevel=2,
