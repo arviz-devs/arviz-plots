@@ -762,7 +762,7 @@ class PlotCollection:
         n_plots, plots_per_var = process_facet_dims(data, cols)
 
         if col_wrap is None:
-            col_wrap = int(np.ceil(np.sqrt(n_plots))) if n_plots > 0 else 1
+            col_wrap = int(np.ceil(np.sqrt(n_plots)))
         else:
             if not isinstance(col_wrap, (int, np.integer)):
                 raise TypeError(f"col_wrap must be an int or None, got {type(col_wrap)!r}")
