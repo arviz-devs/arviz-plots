@@ -1,5 +1,4 @@
 """Plot ppc pit."""
-import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
@@ -8,10 +7,15 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_stats.ecdf_utils import difference_ecdf_pit
-from numpy import unique
 
 from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, set_wrap_layout
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_visual_kwargs,
+    process_group_variables_coords,
+    set_wrap_layout,
+)
+from arviz_plots.plots.utils_plot_types import warn_if_binary, warn_if_prior_predictive
 from arviz_plots.visuals import (
     ecdf_line,
     fill_between_y,
@@ -27,10 +31,9 @@ def plot_ppc_pit(
     ci_prob=0.99,
     coverage=False,
     var_names=None,
-    data_pairs=None,
-    filter_vars=None,  # pylint: disable=unused-argument
+    filter_vars=None,
     group="posterior_predictive",
-    coords=None,  # pylint: disable=unused-argument
+    coords=None,
     sample_dims=None,
     plot_collection=None,
     backend=None,
@@ -87,10 +90,6 @@ def plot_ppc_pit(
         Defaults to 0.99.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
-    data_pairs : dict, optional
-        Dictionary of keys prior/posterior predictive data and values observed data variable names.
-        If None, it will assume that the observed data and the predictive data have
-        the same variable name.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -192,29 +191,18 @@ def plot_ppc_pit(
     if labeller is None:
         labeller = BaseLabeller()
 
-    if data_pairs is None:
-        data_pairs = {var_names: var_names}
-    if None in data_pairs.keys():
-        data_pairs = dict(zip(dt[group].data_vars, dt.observed_data.data_vars))
+    predictive_dist = process_group_variables_coords(
+        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
+    )
+    observed_dist = process_group_variables_coords(
+        dt, group="observed_data", var_names=var_names, filter_vars=filter_vars, coords=coords
+    )
 
-    randomized = [
-        (dt[group][pred_var].values.dtype.kind == "i")
-        or (dt.observed_data[obs_var].values.dtype.kind == "i")
-        for pred_var, obs_var in data_pairs.items()
-    ]
-
-    if any(randomized):
-        if any(
-            set(unique(dt.observed_data[var].values)).issubset({0, 1})
-            for var in data_pairs.values()
-        ):
-            warnings.warn(
-                "Observed data is binary. Use plot_ppc_pava instead",
-                stacklevel=2,
-            )
+    warn_if_binary(observed_dist, predictive_dist)
+    warn_if_prior_predictive(group)
 
     ds_ecdf = difference_ecdf_pit(
-        dt, data_pairs, group, ci_prob, coverage, randomized, **ecdf_pit_kwargs
+        predictive_dist, observed_dist, ci_prob, coverage, **ecdf_pit_kwargs
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
