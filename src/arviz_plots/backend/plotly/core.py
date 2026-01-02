@@ -111,6 +111,8 @@ def str_to_plotly_html(string):
 
 def combine_color_alpha(color, alpha=1):
     """Combine a color and alpha value into the equivalent rgba."""
+    if color is unset or alpha is unset:
+        return color
     if isinstance(color, str):
         if color.startswith("rgba("):
             warnings.warn("Found rgba color, value for `alpha` is ignored.")
