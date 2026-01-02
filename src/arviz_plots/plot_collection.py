@@ -732,10 +732,11 @@ class PlotCollection:
             called ``__variable__`` is also available, to indicate that
             each variable of the input Dataset should have their own plot;
             it can also be combined with other dimensions.
-        col_wrap : int, default 4
+        col_wrap : int or None, default 4
             Number of columns in the generated grid. If more than `col_wrap`
             plots are needed from :term:`faceting` according to `cols`,
-            new rows are created.
+            new rows are created. If ``None``, the number of columns is inferred
+            to create a grid as close to a square as possible.
         backend : str, optional
             Plotting backend.
         figure_kwargs : mapping, optional
@@ -759,6 +760,15 @@ class PlotCollection:
         data = concat_model_dict(data)
 
         n_plots, plots_per_var = process_facet_dims(data, cols)
+
+        if col_wrap is None:
+            col_wrap = int(np.ceil(np.sqrt(n_plots)))
+        else:
+            if not isinstance(col_wrap, (int, np.integer)):
+                raise TypeError(f"col_wrap must be an int or None, got {type(col_wrap)!r}")
+            if col_wrap < 1:
+                raise ValueError(f"col_wrap >= 1, got {col_wrap}")
+
         if n_plots <= col_wrap:
             n_rows, n_cols = 1, n_plots
         else:
