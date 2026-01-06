@@ -155,7 +155,8 @@ def plot_dist(
 
         * dist -> passed to kde, ecdf, ...
         * credible_interval -> passed to eti or hdi
-        * point_estimate -> passed to mean, median or mode
+        * point_estimate -> passed to mean, median or mode. Defaults to
+        round the result according to ``rcParams["stats.round_to"]``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -223,6 +224,11 @@ def plot_dist(
         stats = {}
     else:
         stats = stats.copy()
+
+    point_estimate_stats = {
+        "round_to": rcParams["stats.round_to"],
+        **stats.get("point_estimate", {}),
+    }
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -432,11 +438,11 @@ def plot_dist(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
         )
         if point_estimate == "median":
-            point = distribution.azstats.median(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.median(dim=pe_dims, **point_estimate_stats)
         elif point_estimate == "mean":
-            point = distribution.azstats.mean(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.mean(dim=pe_dims, **point_estimate_stats)
         elif point_estimate == "mode":
-            point = distribution.azstats.mode(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.mode(dim=pe_dims, **point_estimate_stats)
         else:
             raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
 
