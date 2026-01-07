@@ -225,10 +225,8 @@ def plot_dist(
     else:
         stats = stats.copy()
 
-    point_estimate_stats = {
-        "round_to": rcParams["stats.round_to"],
-        **stats.get("point_estimate", {}),
-    }
+    stats.setdefault("point_estimate", {})
+    stats["point_estimate"].setdefault("round_to", rcParams["stats.round_to"])
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -438,11 +436,11 @@ def plot_dist(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
         )
         if point_estimate == "median":
-            point = distribution.azstats.median(dim=pe_dims, **point_estimate_stats)
+            point = distribution.azstats.median(dim=pe_dims, **stats.get("point_estimate", {}))
         elif point_estimate == "mean":
-            point = distribution.azstats.mean(dim=pe_dims, **point_estimate_stats)
+            point = distribution.azstats.mean(dim=pe_dims, **stats.get("point_estimate", {}))
         elif point_estimate == "mode":
-            point = distribution.azstats.mode(dim=pe_dims, **point_estimate_stats)
+            point = distribution.azstats.mode(dim=pe_dims, **stats.get("point_estimate", {}))
         else:
             raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
 
