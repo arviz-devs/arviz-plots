@@ -5,6 +5,8 @@ from .bf_plot import plot_bf
 from .combine import combine_plots
 from .compare_plot import plot_compare
 from .convergence_dist_plot import plot_convergence_dist
+from .dgof_dist_plot import plot_dgof_dist
+from .dgof_plot import plot_dgof
 from .dist_plot import plot_dist
 from .ecdf_plot import plot_ecdf_pit
 from .energy_plot import plot_energy
@@ -42,6 +44,8 @@ __all__ = [
     "plot_bf",
     "plot_compare",
     "plot_convergence_dist",
+    "plot_dgof",
+    "plot_dgof_dist",
     "plot_dist",
     "plot_forest",
     "plot_trace",

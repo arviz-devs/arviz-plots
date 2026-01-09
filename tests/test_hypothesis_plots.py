@@ -10,6 +10,8 @@ from arviz_plots import (
     plot_autocorr,
     plot_bf,
     plot_convergence_dist,
+    plot_dgof,
+    plot_dgof_dist,
     plot_dist,
     plot_ecdf_pit,
     plot_energy,
@@ -43,6 +45,7 @@ from arviz_plots import (
 pytestmark = pytest.mark.usefixtures("no_artist_kwargs")
 
 kind_value = st.sampled_from(("kde", "ecdf", "dot"))
+kind_value_no_hist = st.sampled_from(("kde", "hist", "dot"))
 ess_kind_value = st.sampled_from(("local", "quantile"))
 t_stat_value = st.sampled_from(("mean", "median", "std", "var", "min", "max", "iqr", "0.5", 0.5))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
@@ -201,6 +204,73 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
         kind=kind,
         ci_kind=ci_kind,
         point_estimate=point_estimate,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "ecdf_lines": visuals_value,
+            "credible_interval": visuals_value,
+            "title": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+        },
+    ),
+    kind=kind_value_no_hist,
+    ci_prob=ci_prob_value,
+)
+def test_plot_dgof(datatree, kind, ci_prob, visuals):
+    pc = plot_dgof(
+        datatree,
+        backend="none",
+        kind=kind,
+        ci_prob=ci_prob,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars for var_name in datatree["posterior"].data_vars
+            )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "dist": visuals_value,
+            "ecdf_lines": visuals_value,
+            "credible_interval": visuals_value,
+            "title": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+        },
+    ),
+    kind=kind_value_no_hist,
+    ci_prob=ci_prob_value,
+)
+def test_plot_dgof_dist(datatree, kind, ci_prob, visuals):
+    pc = plot_dgof_dist(
+        datatree,
+        backend="none",
+        kind=kind,
+        ci_prob=ci_prob,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
