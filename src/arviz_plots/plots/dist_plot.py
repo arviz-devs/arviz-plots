@@ -155,7 +155,8 @@ def plot_dist(
 
         * dist -> passed to kde, ecdf, ...
         * credible_interval -> passed to eti or hdi
-        * point_estimate -> passed to mean, median or mode
+        * point_estimate -> passed to mean, median or mode. Defaults to
+        round the result according to ``rcParams["stats.round_to"]``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -223,6 +224,9 @@ def plot_dist(
         stats = {}
     else:
         stats = stats.copy()
+
+    stats.setdefault("point_estimate", {})
+    stats["point_estimate"].setdefault("round_to", rcParams["stats.round_to"])
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
