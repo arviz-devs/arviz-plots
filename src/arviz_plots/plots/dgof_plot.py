@@ -123,7 +123,7 @@ def plot_dgof(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data("centered_eight")
-        >>> azp.plot_dgof(dt, var_names=["mu" , "tau"], kind="dot");
+        >>> plot_dgof(dt, var_names=["mu" , "tau"], kind="dot");
 
     .. minigallery:: plot_dgof
 
