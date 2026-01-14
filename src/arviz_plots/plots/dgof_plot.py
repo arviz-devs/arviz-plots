@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
+from arviz_base import rcParams
 from arviz_stats.ecdf_utils import (
     compute_pit_for_histogram,
     compute_pit_for_kde,
@@ -22,7 +23,7 @@ def plot_dgof(
     group="posterior",
     coords=None,
     sample_dims=None,
-    kind="kde",
+    kind=None,
     ci_prob=0.99,
     plot_collection=None,
     backend=None,
@@ -65,12 +66,14 @@ def plot_dgof(
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, optional, default=None
+    filter_vars : {None, "like", "regex"}, optional, default=None
         If None (default), interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
+        If "like", interpret var_names as substrings of the real variables names.
+        If "regex", interpret var_names as regular expressions on the real variables names.
     group : str, default "posterior"
         Group to be plotted.
+    coords : dict, optional
+        Coordinates to be used to index data variables.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -144,6 +147,8 @@ def plot_dgof(
         stats = {}
     else:
         stats = stats.copy()
+    if kind is None:
+        kind = rcParams["plot.density_kind"]
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
