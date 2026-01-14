@@ -103,7 +103,7 @@ def plot_rank(
         Valid keys are:
 
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulation": 1000}``.
+          ``{"n_simulations": 1000}``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
