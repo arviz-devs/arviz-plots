@@ -156,7 +156,7 @@ def plot_dist(
         * dist -> passed to kde, ecdf, ...
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode. Defaults to
-        round the result according to ``rcParams["stats.round_to"]``.
+          round the result according to ``rcParams["stats.round_to"]``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
