@@ -17,7 +17,7 @@ import arviz_plots as azp
 
 azp.style.use("arviz-variat")
 
-dt = load_arviz_data("regression1d")
+dt = load_arviz_data("radon")
 pc = azp.plot_ppc_tstat(
     dt,
     t_stat="median",
