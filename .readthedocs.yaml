@@ -11,7 +11,6 @@ sphinx:
   fail_on_warning: True
   configuration: docs/source/conf.py
 
-
 python:
    install:
    - method: pip
