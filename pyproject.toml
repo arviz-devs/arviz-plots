@@ -26,7 +26,7 @@ classifiers = [
 ]
 dynamic = ["version", "description"]
 dependencies = [
-  "arviz-base>=0.8.0,<0.9.0",
+  "arviz-base>=0.8.1,<0.9.0",
   "arviz-stats[xarray]>=0.8.0,<0.9.0",
 ]
 
