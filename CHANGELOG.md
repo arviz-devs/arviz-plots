@@ -1,3 +1,57 @@
+<a id="v0.8.0"></a>
+# [v0.8.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v0.8.0) - 2026-01-16
+
+## What's Changed
+
+### New features
+
+* Add Pareto shape plot by [@jordandeklerk](https://github.com/jordandeklerk) in [#356](https://github.com/arviz-devs/arviz-plots/pull/356)
+* Use mean and median accessors by [@aloctavodia](https://github.com/aloctavodia) in [#374](https://github.com/arviz-devs/arviz-plots/pull/374)
+* Add `plot_ppc_pava_residuals` by [@aloctavodia](https://github.com/aloctavodia) in [#382](https://github.com/arviz-devs/arviz-plots/pull/382)
+* Add goodness of fit for density visualizations by [@aloctavodia](https://github.com/aloctavodia) in [#383](https://github.com/arviz-devs/arviz-plots/pull/383)
+* Add quantile dots plot by [@aloctavodia](https://github.com/aloctavodia) in [#386](https://github.com/arviz-devs/arviz-plots/pull/386)
+* Support interactivity and multiple legens in Plotly by [@OriolAbril](https://github.com/OriolAbril) in [#388](https://github.com/arviz-devs/arviz-plots/pull/388)
+* Add bfmi to energy plot by [@aloctavodia](https://github.com/aloctavodia) in [#390](https://github.com/arviz-devs/arviz-plots/pull/390)
+* Add `face` option for quantile dot plots by [@aloctavodia](https://github.com/aloctavodia) in [#392](https://github.com/arviz-devs/arviz-plots/pull/392)
+* Add `pointestimate` option to rootogram by [@aloctavodia](https://github.com/aloctavodia) in [#395](https://github.com/arviz-devs/arviz-plots/pull/395)
+* Allow `col_wrap=None` to infer square grids by [@RohanAich](https://github.com/RohanAich) in [#399](https://github.com/arviz-devs/arviz-plots/pull/399)
+
+### Maintenance and bug fixes
+
+* Expose `visuals` as a submodule by [@OriolAbril](https://github.com/OriolAbril) in [#368](https://github.com/arviz-devs/arviz-plots/pull/368)
+* Add tests for core data processing functions by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#369](https://github.com/arviz-devs/arviz-plots/pull/369)
+* Improve usability of style functions by [@aloctavodia](https://github.com/aloctavodia) in [#373](https://github.com/arviz-devs/arviz-plots/pull/373)
+* Remove outdated comment in `plot_rank` by [@aloctavodia](https://github.com/aloctavodia) in [#376](https://github.com/arviz-devs/arviz-plots/pull/376)
+* Bump actions/checkout from 5 to 6 by [@dependabot](https://github.com/dependabot)[bot] in [#377](https://github.com/arviz-devs/arviz-plots/pull/377)
+* Update `plot_ppc_pava` to use fixed isotonic fit, remove bootstrapping by [@aloctavodia](https://github.com/aloctavodia) in [#380](https://github.com/arviz-devs/arviz-plots/pull/380)
+* Fix plot_dist by [@aloctavodia](https://github.com/aloctavodia) in [#385](https://github.com/arviz-devs/arviz-plots/pull/385)
+* Bump actions/download-artifact from 6 to 7 by [@dependabot](https://github.com/dependabot)[bot] in [#391](https://github.com/arviz-devs/arviz-plots/pull/391)
+* Change defaults for `plot_ppc_dist` by [@aloctavodia](https://github.com/aloctavodia) in [#393](https://github.com/arviz-devs/arviz-plots/pull/393)
+* Unify warnings for plot_ppcs by [@aloctavodia](https://github.com/aloctavodia) in [#400](https://github.com/arviz-devs/arviz-plots/pull/400)
+* Use `rcParam["stats.round_to"]` by default in `plot_dist` point by [@aloctavodia](https://github.com/aloctavodia) in [#401](https://github.com/arviz-devs/arviz-plots/pull/401)
+* Fix Plotly backend when color is unset by [@Sakshee-D](https://github.com/Sakshee-D) in [#403](https://github.com/arviz-devs/arviz-plots/pull/403)
+* Fix example in docstring for `plot_dgof_dist` and `plot_dgof` by [@aloctavodia](https://github.com/aloctavodia) in [#404](https://github.com/arviz-devs/arviz-plots/pull/404)
+
+### Documentation
+
+* Add API crossref by [@OriolAbril](https://github.com/OriolAbril) in [#368](https://github.com/arviz-devs/arviz-plots/pull/368)
+* Minor correction by [@star1327p](https://github.com/star1327p) in [#375](https://github.com/arviz-devs/arviz-plots/pull/375)
+* Minor changes on a/an usage by [@star1327p](https://github.com/star1327p) in [#398](https://github.com/arviz-devs/arviz-plots/pull/398)
+* Replace TODO with `PlotCollection` cross-reference by [@sanjiti-gill](https://github.com/sanjiti-gill) in [#397](https://github.com/arviz-devs/arviz-plots/pull/397)
+
+## New Contributors
+
+* [@jordandeklerk](https://github.com/jordandeklerk) made their first contribution in [#356](https://github.com/arviz-devs/arviz-plots/pull/356)
+* [@RohanAich](https://github.com/RohanAich) made their first contribution in [#399](https://github.com/arviz-devs/arviz-plots/pull/399)
+* [@sanjiti-gill](https://github.com/sanjiti-gill) made their first contribution in [#397](https://github.com/arviz-devs/arviz-plots/pull/397)
+* [@Sakshee-D](https://github.com/Sakshee-D) made their first contribution in [#403](https://github.com/arviz-devs/arviz-plots/pull/403)
+* [@tomicapretto](https://github.com/tomicapretto) made their first contribution in [#405](https://github.com/arviz-devs/arviz-plots/pull/405)
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v0.7.0...v0.8.0
+
+[Changes][v0.8.0]
+
+
 <a id="v0.7.0"></a>
 # [v0.7.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v0.7.0) - 2025-11-11
 
@@ -240,6 +294,7 @@
 [Changes][v0.4.0]
 
 
+[v0.8.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.6.0...v0.7.0
 [v0.6.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.5.0...v0.6.0
 [v0.5.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.4.0...v0.5.0
