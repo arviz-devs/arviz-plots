@@ -47,7 +47,7 @@ test = [
     "hypothesis",
     "pytest",
     "pytest-cov",
-    "h5netcdf",
+    "h5netcdf[h5py]",
     "kaleido",
 ]
 doc = [
@@ -59,7 +59,7 @@ doc = [
     "sphinx>=6",
     "sphinx-design",
     "jupyter-sphinx",
-    "h5netcdf",
+    "h5netcdf[h5py]",
     "plotly<6",
 ]
 
