@@ -5,6 +5,7 @@ Notes
 :term:`visuals` are returned, but it seems modifying them won't modify the figure.
 """
 
+import inspect
 import math
 import re
 import warnings
@@ -266,12 +267,17 @@ class PlotlyPlot:
     def __getattr__(self, name):
         """Expose all methods of the plotly figure with row and col arguments set."""
         if hasattr(self.figure, name):
-            original_fun = getattr(self.figure, name)
+            original_attr = getattr(self.figure, name)
+            if not callable(original_attr):
+                return original_attr
+            fun_params = inspect.signature(original_attr).parameters
+            if ("row" not in fun_params) or ("col" not in fun_params):
+                return original_attr
 
             def aux_fun(*args, **kwargs):
-                return original_fun(*args, **kwargs, row=self.row, col=self.col)
+                return original_attr(*args, **kwargs, row=self.row, col=self.col)
 
-            aux_fun.__doc__ = remove_row_col_from_doc(original_fun.__doc__)
+            aux_fun.__doc__ = remove_row_col_from_doc(original_attr.__doc__)
             return aux_fun
         raise AttributeError(f"Attribute {name} not available")
 
