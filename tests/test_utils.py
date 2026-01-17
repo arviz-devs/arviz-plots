@@ -1,9 +1,22 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test utility functions for plotting."""
+from importlib import import_module
+
+import numpy as np
 import pytest
 import xarray as xr
 
-from arviz_plots.plots.utils import get_group, get_visual_kwargs, process_group_variables_coords
+from arviz_plots import PlotCollection
+from arviz_plots.plots.utils import (
+    annotate_bin_text,
+    filter_aes,
+    format_coords_as_labels,
+    get_group,
+    get_visual_kwargs,
+    process_group_variables_coords,
+    set_grid_layout,
+    set_wrap_layout,
+)
 
 
 class TestUtils:
@@ -113,3 +126,129 @@ class TestUtils:
                 coords=None,
                 allow_dict=False,
             )
+
+    # --- Tests for filter_aes ---
+
+    def test_filter_aes_basic(self, datatree):
+        """Test filter_aes correctly splits aesthetics and dimensions."""
+
+        pc = PlotCollection.grid(
+            datatree["posterior"].ds, backend="none", aes={"color": ["chain"], "marker": ["draw"]}
+        )
+        aes_by_visuals = {"my_visual": ["color"]}
+        sample_dims = ["chain", "draw"]
+
+        artist_dims, artist_aes, ignore_aes = filter_aes(
+            pc, aes_by_visuals, "my_visual", sample_dims
+        )
+
+        assert list(artist_aes) == ["color"]
+        assert "marker" in ignore_aes
+        assert "color" not in ignore_aes
+        assert "draw" in artist_dims
+        assert "chain" not in artist_dims
+
+    def test_filter_aes_missing_visual(self, datatree):
+        """Test filter_aes returns empty aesthetics for missing visual."""
+
+        pc = PlotCollection.grid(datatree["posterior"].ds, backend="none")
+        aes_by_visuals = {"other_visual": ["alpha"]}
+        sample_dims = ["chain", "draw"]
+
+        artist_dims, artist_aes, ignore_aes = filter_aes(
+            pc, aes_by_visuals, "missing_visual", sample_dims
+        )
+
+        assert artist_aes == {}
+        assert len(ignore_aes) == 0
+        assert artist_dims == sample_dims
+
+    # --- Tests for set_wrap_layout ---
+
+    def test_set_wrap_layout(self, datatree):
+        """Test set_wrap_layout sets figsize correctly for wrapping columns."""
+
+        plot_bknd = import_module("arviz_plots.backend.none")
+        ds = datatree["posterior"].ds
+        pc_kwargs = {
+            "figure_kwargs": {},
+            "cols": ["chain"],
+            "col_wrap": 2,
+        }
+
+        result = set_wrap_layout(pc_kwargs, plot_bknd, ds)
+
+        assert result["figure_kwargs"]["figsize"] is not None
+        assert result["figure_kwargs"]["figsize_units"] == "dots"
+        assert result["col_wrap"] == 2
+
+    # --- Tests for set_grid_layout ---
+
+    def test_set_grid_layout(self, datatree):
+        """Test set_grid_layout sets figsize for explicit grid."""
+
+        plot_bknd = import_module("arviz_plots.backend.none")
+        ds = datatree["posterior"].ds
+        pc_kwargs = {
+            "figure_kwargs": {},
+            "cols": ["chain"],
+            "rows": [],
+        }
+
+        result = set_grid_layout(pc_kwargs, plot_bknd, ds)
+
+        assert result["figure_kwargs"]["figsize"] is not None
+        assert result["figure_kwargs"]["figsize_units"] == "dots"
+
+    # --- Tests for format_coords_as_labels ---
+
+    def test_format_coords_as_labels(self):
+        """Test format_coords_as_labels generates correct labels."""
+
+        da = xr.DataArray(np.zeros((2, 2)), coords={"a": ["x", "y"], "b": [1, 2]}, dims=["a", "b"])
+
+        labels = format_coords_as_labels(da)
+
+        assert labels.size == 4
+        assert labels.dtype == object
+        assert "x" in labels[0]
+        assert "1" in labels[0]
+
+    def test_format_coords_as_labels_skip_dims(self):
+        """Test skip_dims excludes dimensions from labels."""
+
+        da = xr.DataArray(np.zeros((2, 2)), coords={"a": ["x", "y"], "b": [1, 2]}, dims=["a", "b"])
+
+        labels = format_coords_as_labels(da, skip_dims=["a"])
+
+        assert labels.size == 2
+        first_label = str(labels[0])
+        assert "1" in first_label
+        assert "x" not in first_label
+        assert "y" not in first_label
+
+    # --- Tests for annotate_bin_text ---
+
+    def test_annotate_bin_text(self):
+        """Test annotate_bin_text formats text correctly."""
+
+        target = []
+        da = xr.DataArray(np.array([0]))
+
+        result = annotate_bin_text(
+            da=da, target=target, x=0, y=0, count_da=10, n_da=100, bin_format="{count} ({pct:.1f}%)"
+        )
+
+        assert result["string"] == "10 (10.0%)"
+
+    def test_annotate_bin_text_zero_total(self):
+        """Test annotate_bin_text handles zero total gracefully."""
+
+        target = []
+        da = xr.DataArray(np.array([0]))
+
+        result = annotate_bin_text(
+            da=da, target=target, x=0, y=0, count_da=0, n_da=0, bin_format="{count} ({pct:.1f}%)"
+        )
+
+        assert result["string"] == "0 (0.0%)"
