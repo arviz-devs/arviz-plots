@@ -1,18 +1,13 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the plotly backend."""
-import pytest
-
-if pytest.config.get_config().getoption("--skip-plotly"):
-    pytest.skip(
-        reason="Requested skipping plotly tests via command line argument", allow_module_level=True
-    )
-
-
 import plotly.graph_objects as go
+import pytest
 from plotly.subplots import make_subplots
 
 from arviz_plots.backend.plotly import line
 from arviz_plots.backend.plotly.core import PlotlyPlot
+
+pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.plotly]
 
 
 @pytest.fixture(scope="function")
