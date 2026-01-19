@@ -52,11 +52,13 @@ def subset_matrix_da(
         if not (dim_x in da.coords and dim_y in da.coords):
             continue
         if dim in selection_x:
-            coords[dim_x] = selection_x[dim]
-            out = out.set_xindex(dim_x)
+            if out.coords[dim_x].ndim > 0:
+                coords[dim_x] = selection_x[dim]
+                out = out.set_xindex(dim_x)
         if dim in selection_y:
-            coords[dim_y] = selection_y[dim]
-            out = out.set_xindex(dim_y)
+            if out.coords[dim_y].ndim > 0:
+                coords[dim_y] = selection_y[dim]
+                out = out.set_xindex(dim_y)
         if coords:
             out = out.sel(coords)
     if return_dataarray:

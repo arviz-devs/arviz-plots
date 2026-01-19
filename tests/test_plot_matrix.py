@@ -112,6 +112,35 @@ def test_plot_matrix_map(dataset):
                 )
 
 
+def test_plot_matrix_map_scalar_coord(dataset):
+    pc = PlotMatrix(
+        dataset.isel(hierarchy=[0]),
+        ["__variable__", "hierarchy", "group"],
+        backend="none",
+        aes={"color": ["chain"]},
+    )
+    target_list = []
+    kwarg_list = []
+    pc.map(
+        map_auxiliar,
+        "aux",
+        target_list=target_list,
+        kwarg_list=kwarg_list,
+    )
+    assert all(len(aux_list) == 5 * 2 for aux_list in (target_list, kwarg_list))
+    assert pc.viz["aux"].dims == ("row_index", "col_index", "chain")
+    for i in range(5):
+        for j in range(5):
+            if i == j:
+                assert all(
+                    elem is not None for elem in pc.viz["aux"].sel(row_index=i, col_index=j).values
+                )
+            else:
+                assert all(
+                    elem is None for elem in pc.viz["aux"].sel(row_index=i, col_index=j).values
+                )
+
+
 @pytest.mark.parametrize("triangle", ("both", "lower", "upper"))
 def test_plot_matrix_map_triangle(dataset, triangle):
     pc = PlotMatrix(
@@ -133,6 +162,45 @@ def test_plot_matrix_map_triangle(dataset, triangle):
     assert pc.viz["aux"].dims == ("row_index", "col_index", "chain")
     for i in range(9):
         for j in range(9):
+            is_none = (elem is None for elem in pc.viz["aux"].sel(row_index=i, col_index=j).values)
+            if i == j:
+                assert all(is_none)
+            elif i > j:
+                if triangle in ("both", "lower"):
+                    assert not any(is_none)
+                else:
+                    assert all(is_none)
+            else:
+                if triangle in ("both", "upper"):
+                    assert not any(is_none)
+                else:
+                    assert all(is_none)
+
+
+@pytest.mark.parametrize("triangle", ("both", "lower", "upper"))
+def test_plot_matrix_map_triangle_scalar_coord(dataset, triangle):
+    pc = PlotMatrix(
+        dataset.isel(hierarchy=[0]),
+        ["__variable__", "hierarchy", "group"],
+        backend="none",
+        aes={"color": ["chain"]},
+    )
+    target_list = []
+    kwarg_list = []
+    pc.map_triangle(
+        map_auxiliar_couple,
+        "aux",
+        target_list=target_list,
+        kwarg_list=kwarg_list,
+        triangle=triangle,
+    )
+    aux_len = sum(range(5)) * 2
+    if triangle == "both":
+        aux_len *= 2
+    assert all(len(aux_list) == aux_len for aux_list in (target_list, kwarg_list))
+    assert pc.viz["aux"].dims == ("row_index", "col_index", "chain")
+    for i in range(5):
+        for j in range(5):
             is_none = (elem is None for elem in pc.viz["aux"].sel(row_index=i, col_index=j).values)
             if i == j:
                 assert all(is_none)
