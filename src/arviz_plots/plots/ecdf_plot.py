@@ -185,16 +185,16 @@ def plot_ecdf_pit(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_size = np.prod([len(distribution[dims]) for dims in sample_dims])
 
     if coverage:
         distribution = distribution / distribution.max()
         distribution = 2 * np.abs(distribution - 0.5)
 
-    dt_ecdf = distribution.azstats.ecdf(dim=sample_dims, pit=True)
+    dt_ecdf = distribution.azstats.ecdf(dim=sample_dims, pit=True, npoints=sample_size)
 
     # Compute envelope
-    dummy_vals_size = np.prod([len(distribution[dims]) for dims in sample_dims])
-    dummy_vals = np.linspace(0, 1, dummy_vals_size)
+    dummy_vals = np.linspace(0, 1, sample_size)
     x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
@@ -261,6 +261,7 @@ def plot_ecdf_pit(
             x=x_ci,
             y_bottom=lower_ci,
             y_top=upper_ci,
+            step=True,
             ignore_aes=ci_ignore,
             **ci_kwargs,
         )
