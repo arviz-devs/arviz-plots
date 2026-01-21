@@ -397,6 +397,132 @@ class PlotCollection:
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         plot_bknd.savefig(self.viz["figure"].item(), Path(filename), **kwargs)
 
+    def set_xlim(self, limits, coords=None, **kwargs):
+        """Set x-axis limits for all plots or a subset of plots.
+
+        This method provides a convenient way to set x-axis limits across
+        all plots in the :class:`PlotCollection` or a subset defined by `coords`.
+
+        Parameters
+        ----------
+        limits : tuple of (min, max)
+            A tuple specifying the minimum and maximum values for the x-axis.
+        coords : mapping, optional
+            Dictionary of {coordinate names : coordinate values} to select
+            a subset of plots. If None, limits are applied to all plots.
+        **kwargs : mapping, optional
+            Additional keyword arguments passed to the backend xlim function.
+
+        Examples
+        --------
+        Set x-axis limits for all plots:
+
+        .. jupyter-execute::
+
+            import arviz_base as azb
+            import arviz_plots as azp
+
+            data = azb.load_arviz_data("centered_eight")
+            pc = azp.plot_trace(data, var_names=["mu", "tau"])
+            pc.set_xlim((-5, 15))
+
+        Set x-axis limits for a specific variable:
+
+        .. jupyter-execute::
+
+            pc = azp.plot_trace(data, var_names=["mu", "tau"])
+            pc.set_xlim((-2, 10), coords={"__variable__": "mu"})
+        """
+        self._set_axis_lim("xlim", limits, coords, **kwargs)
+
+    def set_ylim(self, limits, coords=None, **kwargs):
+        """Set y-axis limits for all plots or a subset of plots.
+
+        This method provides a convenient way to set y-axis limits across
+        all plots in the :class:`PlotCollection` or a subset defined by `coords`.
+
+        Parameters
+        ----------
+        limits : tuple of (min, max)
+            A tuple specifying the minimum and maximum values for the y-axis.
+        coords : mapping, optional
+            Dictionary of {coordinate names : coordinate values} to select
+            a subset of plots. If None, limits are applied to all plots.
+        **kwargs : mapping, optional
+            Additional keyword arguments passed to the backend ylim function.
+
+        Examples
+        --------
+        Set y-axis limits for all plots:
+
+        .. jupyter-execute::
+
+            import arviz_base as azb
+            import arviz_plots as azp
+
+            data = azb.load_arviz_data("centered_eight")
+            pc = azp.plot_dist(data, var_names=["mu", "tau"])
+            pc.set_ylim((0, 1))
+
+        Set y-axis limits for a specific variable:
+
+        .. jupyter-execute::
+
+            pc = azp.plot_dist(data, var_names=["mu", "tau"])
+            pc.set_ylim((0, 0.5), coords={"__variable__": "tau"})
+        """
+        self._set_axis_lim("ylim", limits, coords, **kwargs)
+
+    def _set_axis_lim(self, axis_func, limits, coords=None, **kwargs):
+        """Set axis limits for plots.
+
+        Parameters
+        ----------
+        axis_func : str
+            Either "xlim" or "ylim" to determine which backend function to call.
+        limits : tuple of (min, max)
+            A tuple specifying the minimum and maximum values for the axis.
+        coords : mapping, optional
+            Dictionary of {coordinate names : coordinate values} to select
+            a subset of plots. If None, limits are applied to all plots.
+        **kwargs : mapping, optional
+            Additional keyword arguments passed to the backend function.
+        """
+        if "plot" not in self.viz:
+            raise ValueError("No plots found in PlotCollection")
+
+        plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
+        axis_func_backend = getattr(plot_bknd, axis_func)
+
+        plot_viz = self.viz["plot"]
+        if isinstance(plot_viz, xr.DataArray):
+            # Single variable case - plot_viz is a DataArray
+            if coords is not None:
+                subset_coords = sel_subset(coords, plot_viz)
+                plot_viz = plot_viz.sel(subset_coords)
+            for target in np.nditer(plot_viz.values, flags=["refs_ok"]):
+                target_item = target.item()
+                if target_item is not None:
+                    axis_func_backend(limits, target_item, **kwargs)
+        else:
+            # Multiple variables case - plot_viz is a Dataset
+            for var_name in plot_viz.data_vars:
+                da = plot_viz[var_name]
+                if coords is not None:
+                    # Check if __variable__ filter applies
+                    if "__variable__" in coords:
+                        if coords["__variable__"] != var_name:
+                            continue
+                    subset_coords = sel_subset(
+                        {k: v for k, v in coords.items() if k != "__variable__"}, da
+                    )
+                    if subset_coords:
+                        da = da.sel(subset_coords)
+                for target in np.nditer(da.values, flags=["refs_ok"]):
+                    target_item = target.item()
+                    if target_item is not None:
+                        axis_func_backend(limits, target_item, **kwargs)
+
     def generate_aes_dt(self, aes, data=None, **kwargs):
         """Generate the aesthetic mappings.
 
