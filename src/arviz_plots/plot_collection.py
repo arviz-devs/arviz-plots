@@ -717,6 +717,7 @@ class PlotCollection:
         col_wrap=4,
         backend=None,
         figure_kwargs=None,
+        figure_title=None,
         **kwargs,
     ):
         """Instantiate a PlotCollection and generate a grid iterating over subsets and wrapping.
@@ -739,6 +740,8 @@ class PlotCollection:
             to create a grid as close to a square as possible.
         backend : str, optional
             Plotting backend.
+        figure_title : str, optional
+            Title for the entire figure. Can also be passed via ``figure_kwargs``.
         figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
@@ -757,6 +760,9 @@ class PlotCollection:
             figure_kwargs = {}
         if backend is None:
             backend = rcParams["plot.backend"]
+        # allow passing figure_title directly or via figure_kwargs
+        if figure_title is not None:
+            figure_kwargs = {**figure_kwargs, "figure_title": figure_title}
         data = concat_model_dict(data)
 
         n_plots, plots_per_var = process_facet_dims(data, cols)
@@ -868,6 +874,7 @@ class PlotCollection:
         rows=None,
         backend=None,
         figure_kwargs=None,
+        figure_title=None,
         **kwargs,
     ):
         """Instantiate a PlotCollection and generate a plot grid iterating over rows and columns.
@@ -888,6 +895,8 @@ class PlotCollection:
             of values within `cols` and `rows`.
         backend : str, optional
             Plotting backend.
+        figure_title : str, optional
+            Title for the entire figure. Can also be passed via ``figure_kwargs``.
         figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
         **kwargs : mapping, optional
@@ -908,6 +917,9 @@ class PlotCollection:
             figure_kwargs = {}
         if backend is None:
             backend = rcParams["plot.backend"]
+        # allow passing figure_title directly or via figure_kwargs
+        if figure_title is not None:
+            figure_kwargs = {**figure_kwargs, "figure_title": figure_title}
         repeated_dims = [col for col in cols if col in rows]
         if repeated_dims:
             raise ValueError("The same dimension can't be used for both cols and rows.")
@@ -1275,6 +1287,44 @@ class PlotCollection:
     def store_in_artist_da(self, aux_artist, fun_label, var_name, sel):
         """Store the visual object of `var_name`+`sel` combination in `fun_label` variable."""
         self.viz[fun_label][var_name].loc[sel] = aux_artist
+
+    def add_title(self, text, **kwargs):
+        """Add a title to the figure.
+
+        Parameters
+        ----------
+        text : str
+            The title text.
+        **kwargs : mapping, optional
+            Additional keyword arguments passed to the backend title function.
+            For matplotlib, these are passed to `fig.suptitle()`.
+            For plotly, these are passed to `fig.update_layout(title=...)`.
+            For bokeh, these are passed to the title Div element.
+
+        Returns
+        -------
+        title : object
+            The title object for the backend.
+        """
+        fig = self.viz["figure"].item()
+
+        if self.backend == "matplotlib":
+            return fig.suptitle(text, **kwargs)
+        if self.backend == "plotly":
+            title_kwargs = {"text": text, "x": 0.5, "xanchor": "center"}
+            title_kwargs.update(kwargs)
+            fig.update_layout(title=title_kwargs)
+            return fig.layout.title
+        if self.backend == "bokeh":
+            from bokeh.layouts import column
+            from bokeh.models import Div
+
+            style = kwargs.get("style", "text-align: center;")
+            title_div = Div(text=f"<h2 style='{style}'>{text}</h2>")
+            new_layout = column(title_div, fig)
+            self.viz["figure"] = xr.DataArray(new_layout)
+            return title_div
+        return None
 
     def add_legend(
         self,

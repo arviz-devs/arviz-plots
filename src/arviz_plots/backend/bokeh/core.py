@@ -268,6 +268,7 @@ def create_plotting_grid(
     height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
+    figure_title=None,
     **kwargs,
 ):
     """Create a figure with a grid of plotting targets in it.
@@ -290,8 +291,11 @@ def create_plotting_grid(
         Whether to create plots with polar coordinate axes.
     width_ratios, height_ratios : array-like, optional
         Ratios between widths/heights of columns/rows in the generated :term:`plot` grid.
+    plot_hspace : float, optional
     subplot_kws : dict, optional
         Passed to :func:`~bokeh.plotting.figure`
+    figure_title : str, optional
+        Title for the entire figure
     **kwargs :
         Passed to :func:`~bokeh.layouts.gridplot`
 
@@ -393,6 +397,18 @@ def create_plotting_grid(
     if squeeze and figures.size == 1:
         return None, figures[0, 0]
     layout = gridplot(figures.tolist(), **kwargs)
+
+    # add title if specified
+    if figure_title is not None:
+        from bokeh.layouts import column
+        from bokeh.models import Div
+
+        title_div = Div(
+            text=f"<h2 style='text-align: center;'>{figure_title}</h2>",
+            width=layout.width if hasattr(layout, "width") else 800,
+        )
+        layout = column(title_div, layout)
+
     return layout, figures.squeeze() if squeeze else figures
 
 

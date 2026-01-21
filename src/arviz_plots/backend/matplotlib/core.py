@@ -220,6 +220,7 @@ def create_plotting_grid(
     height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
+    figure_title=None,
     **kwargs,
 ):
     """Create a figure with a grid of plotting targets in it.
@@ -237,8 +238,13 @@ def create_plotting_grid(
     squeeze : bool, default True
     sharex, sharey : bool, default False
     polar : bool
-    subplot_kws : bool
+    width_ratios : list, optional
+    height_ratios : list, optional
+    plot_hspace : float, optional
+    subplot_kws : dict, optional
         Passed to :func:`~matplotlib.pyplot.subplots` as ``subplot_kw``
+    figure_title : str, optional
+        Title for the entire figure
     **kwargs: dict, optional
         Passed to :func:`~matplotlib.pyplot.subplots`
 
@@ -279,6 +285,10 @@ def create_plotting_grid(
         for i, ax in enumerate(axes.ravel("C")):
             if i >= number:
                 ax.set_axis_off()
+
+    if figure_title is not None:
+        fig.suptitle(figure_title)
+
     return fig, axes
 
 

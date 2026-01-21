@@ -316,6 +316,7 @@ def create_plotting_grid(
     height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,  # pylint: disable=unused-argument
+    figure_title=None,
     **kwargs,
 ):
     """Create a figure with a grid of plotting targets in it.
@@ -334,8 +335,13 @@ def create_plotting_grid(
     squeeze : bool, default True
     sharex, sharey : bool, default False
     polar : bool
-    subplot_kws : bool
+    width_ratios : list, optional
+    height_ratios : list, optional
+    plot_hspace : float, optional
+    subplot_kws : dict, optional
         Ignored
+    figure_title : str, optional
+        Title for the entire figure
     **kwargs: dict, optional
         Passed to :func:`~plotly.subplots.make_subplots`
 
@@ -380,6 +386,10 @@ def create_plotting_grid(
     for row in range(rows):
         for col in range(cols):
             plots[row, col] = PlotlyPlot(figure, row + 1, col + 1)
+
+    if figure_title is not None:
+        figure.update_layout(title={"text": figure_title, "x": 0.5, "xanchor": "center"})
+
     if squeeze and plots.size == 1:
         return figure, plots[0, 0]
     return figure, plots.squeeze() if squeeze else plots
