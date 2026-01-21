@@ -109,6 +109,7 @@ def plot_rank(
 
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
           ``{"n_simulations": 1000}``.
+        * thin -> passed to :func:`~arviz_stats.thin`
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -173,7 +174,7 @@ def plot_rank(
     ecdf_dims = ["draw"]
 
     if thin:
-        distribution = distribution.azstats.thin()
+        distribution = distribution.azstats.thin(sample_dims=ecdf_dims, **stats.get("thin", {}))
 
     sample_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     # Compute ranks
