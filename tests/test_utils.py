@@ -129,11 +129,11 @@ class TestUtils:
 
     # --- Tests for filter_aes ---
 
-    def test_filter_aes_basic(self, datatree):
+    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
+    def test_filter_aes_basic(self, datatree, backend):
         """Test filter_aes correctly splits aesthetics and dimensions."""
-
         pc = PlotCollection.grid(
-            datatree["posterior"].ds, backend="none", aes={"color": ["chain"], "marker": ["draw"]}
+            datatree["posterior"].ds, backend=backend, aes={"color": ["chain"], "marker": ["draw"]}
         )
         aes_by_visuals = {"my_visual": ["color"]}
         sample_dims = ["chain", "draw"]
@@ -148,10 +148,12 @@ class TestUtils:
         assert "draw" in artist_dims
         assert "chain" not in artist_dims
 
-    def test_filter_aes_missing_visual(self, datatree):
+    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
+    def test_filter_aes_missing_visual(self, datatree, backend):
         """Test filter_aes returns empty aesthetics for missing visual."""
-
-        pc = PlotCollection.grid(datatree["posterior"].ds, backend="none")
+        pc = PlotCollection.grid(
+            datatree["posterior"].ds, backend=backend, aes={"color": ["chain"]}
+        )
         aes_by_visuals = {"other_visual": ["alpha"]}
         sample_dims = ["chain", "draw"]
 
@@ -160,15 +162,15 @@ class TestUtils:
         )
 
         assert artist_aes == {}
-        assert len(ignore_aes) == 0
+        assert "color" in ignore_aes
         assert artist_dims == sample_dims
 
     # --- Tests for set_wrap_layout ---
 
-    def test_set_wrap_layout(self, datatree):
+    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
+    def test_set_wrap_layout(self, datatree, backend):
         """Test set_wrap_layout sets figsize correctly for wrapping columns."""
-
-        plot_bknd = import_module("arviz_plots.backend.none")
+        plot_bknd = import_module(f"arviz_plots.backend.{backend}")
         ds = datatree["posterior"].ds
         pc_kwargs = {
             "figure_kwargs": {},
@@ -184,10 +186,10 @@ class TestUtils:
 
     # --- Tests for set_grid_layout ---
 
-    def test_set_grid_layout(self, datatree):
+    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
+    def test_set_grid_layout(self, datatree, backend):
         """Test set_grid_layout sets figsize for explicit grid."""
-
-        plot_bknd = import_module("arviz_plots.backend.none")
+        plot_bknd = import_module(f"arviz_plots.backend.{backend}")
         ds = datatree["posterior"].ds
         pc_kwargs = {
             "figure_kwargs": {},
@@ -204,34 +206,30 @@ class TestUtils:
 
     def test_format_coords_as_labels(self):
         """Test format_coords_as_labels generates correct labels."""
-
-        da = xr.DataArray(np.zeros((2, 2)), coords={"a": ["x", "y"], "b": [1, 2]}, dims=["a", "b"])
-
-        labels = format_coords_as_labels(da)
-
-        assert labels.size == 4
-        assert labels.dtype == object
-        assert "x" in labels[0]
-        assert "1" in labels[0]
+        data = xr.DataArray(
+            np.random.randn(2, 3),
+            coords={"chain": [0, 1], "draw": [0, 1, 2]},
+            dims=("chain", "draw"),
+        )
+        labels = format_coords_as_labels(data)
+        assert labels.shape == (6,)
+        assert labels[0] == "0, 0"
 
     def test_format_coords_as_labels_skip_dims(self):
-        """Test skip_dims excludes dimensions from labels."""
-
-        da = xr.DataArray(np.zeros((2, 2)), coords={"a": ["x", "y"], "b": [1, 2]}, dims=["a", "b"])
-
-        labels = format_coords_as_labels(da, skip_dims=["a"])
-
-        assert labels.size == 2
-        first_label = str(labels[0])
-        assert "1" in first_label
-        assert "x" not in first_label
-        assert "y" not in first_label
+        """Test format_coords_as_labels respects skip_dims argument."""
+        data = xr.DataArray(
+            np.random.randn(2, 3),
+            coords={"chain": [0, 1], "draw": [0, 1, 2]},
+            dims=("chain", "draw"),
+        )
+        labels = format_coords_as_labels(data, skip_dims={"draw"})
+        assert labels.shape == (2,)
+        assert labels[0] == "0"
 
     # --- Tests for annotate_bin_text ---
 
     def test_annotate_bin_text(self):
         """Test annotate_bin_text formats text correctly."""
-
         target = []
         da = xr.DataArray(np.array([0]))
 
@@ -243,7 +241,6 @@ class TestUtils:
 
     def test_annotate_bin_text_zero_total(self):
         """Test annotate_bin_text handles zero total gracefully."""
-
         target = []
         da = xr.DataArray(np.array([0]))
 
