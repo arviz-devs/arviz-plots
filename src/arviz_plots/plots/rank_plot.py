@@ -21,13 +21,13 @@ from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, label
 
 def plot_rank(
     dt,
-    thin=True,
     var_names=None,
     filter_vars=None,
     group="posterior",
     coords=None,
     sample_dims=None,
     ci_prob=0.99,
+    thin=True,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -69,8 +69,6 @@ def plot_rank(
     ----------
     dt : DataTree
         Input data
-    thin : bool, optional
-        Whether to thin the data before plotting. Defaults to True.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -88,6 +86,8 @@ def plot_rank(
     ci_prob : float
         Indicates the probability that should be contained within the plotted credible interval.
         Defaults to 0.99.
+    thin : bool, optional
+        Whether to thin the data before plotting. Defaults to True.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
