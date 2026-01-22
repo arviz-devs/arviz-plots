@@ -22,6 +22,7 @@ pc = azp.plot_ppc_rootogram(
     dt,
     aes={"color": ["__variable__"]}, # map variable to color
     aes_by_visuals={"title": ["color"]}, # change title's color per variable
+    figure_title="Posterior Predictive Rootogram for Rugby Model",
     backend="none",
 )
 pc.show()

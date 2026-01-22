@@ -22,7 +22,8 @@ pc = azp.plot_dist(
     data,
     kind="kde",
     var_names=["mu"],
-    sample_dims=["draw"],    
+    sample_dims=["draw"],
+    figure_title="KDE of μ by Chain (Centered Eight)",
     backend="none"  # change to preferred backend
 )
 pc.show()
