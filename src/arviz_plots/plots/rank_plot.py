@@ -86,8 +86,8 @@ def plot_rank(
     ci_prob : float
         Indicates the probability that should be contained within the plotted credible interval.
         Defaults to 0.99.
-    thin : bool, optional
-        Whether to thin the data before plotting. Defaults to True.
+    thin : bool, default True
+        Whether to thin the data before plotting.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
