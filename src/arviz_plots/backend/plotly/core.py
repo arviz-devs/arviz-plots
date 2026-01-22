@@ -301,6 +301,41 @@ def savefig(figure, path, **kwargs):
         figure.write_image(path, **kwargs)
 
 
+def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
+    """Set a title for the entire figure.
+
+    Parameters
+    ----------
+    figure : `~plotly.graph_objects.Figure`
+        The figure to add the title to.
+    text : str
+        The title text.
+    color : str, optional
+        Color of the title text.
+    size : float, optional
+        Font size of the title.
+    **artist_kws : dict, optional
+        Additional keyword arguments passed to `fig.update_layout(title=...)`.
+
+    Returns
+    -------
+    `~plotly.graph_objects.Figure`
+        The figure object (unchanged).
+    dict
+        The title layout dict from the figure.
+    """
+    title_kwargs = {"text": text, "x": 0.5, "xanchor": "center"}
+    if color is not None:
+        title_kwargs["font"] = title_kwargs.get("font", {})
+        title_kwargs["font"]["color"] = color
+    if size is not None:
+        title_kwargs["font"] = title_kwargs.get("font", {})
+        title_kwargs["font"]["size"] = size
+    title_kwargs.update(artist_kws)
+    figure.update_layout(title=title_kwargs)
+    return figure, figure.layout.title
+
+
 def create_plotting_grid(
     number,  # pylint: disable=unused-argument
     rows=1,
@@ -316,7 +351,6 @@ def create_plotting_grid(
     height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,  # pylint: disable=unused-argument
-    figure_title=None,
     **kwargs,
 ):
     """Create a figure with a grid of plotting targets in it.
@@ -340,8 +374,6 @@ def create_plotting_grid(
     plot_hspace : float, optional
     subplot_kws : dict, optional
         Ignored
-    figure_title : str, optional
-        Title for the entire figure
     **kwargs: dict, optional
         Passed to :func:`~plotly.subplots.make_subplots`
 
@@ -386,9 +418,6 @@ def create_plotting_grid(
     for row in range(rows):
         for col in range(cols):
             plots[row, col] = PlotlyPlot(figure, row + 1, col + 1)
-
-    if figure_title is not None:
-        figure.update_layout(title={"text": figure_title, "x": 0.5, "xanchor": "center"})
 
     if squeeze and plots.size == 1:
         return figure, plots[0, 0]

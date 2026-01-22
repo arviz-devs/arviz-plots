@@ -18,7 +18,7 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("centered_eight")
 pc = azp.plot_trace(
     data,
-    figure_title="MCMC Sampling Traces: Centered Eight Model",
     backend="none"  # change to preferred backend
 )
+pc.add_title("MCMC Sampling Traces: Centered Eight Model")
 pc.show()

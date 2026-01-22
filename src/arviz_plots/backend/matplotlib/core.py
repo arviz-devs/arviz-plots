@@ -200,6 +200,37 @@ def savefig(figure, path, **kwargs):
     figure.savefig(path, **kwargs)
 
 
+def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
+    """Set a title for the entire figure.
+
+    Parameters
+    ----------
+    figure : `~matplotlib.figure.Figure`
+        The figure to add the title to.
+    text : str
+        The title text.
+    color : str or tuple, optional
+        Color of the title text.
+    size : float, optional
+        Font size of the title.
+    **artist_kws : dict, optional
+        Additional keyword arguments passed to `fig.suptitle()`.
+
+    Returns
+    -------
+    `~matplotlib.figure.Figure`
+        The figure object (unchanged).
+    `~matplotlib.text.Text`
+        The title text object.
+    """
+    if color is not None:
+        artist_kws["color"] = color
+    if size is not None:
+        artist_kws["fontsize"] = size
+    title_obj = figure.suptitle(text, **artist_kws)
+    return figure, title_obj
+
+
 def get_figsize(plot_collection):
     """Get the size of the :term:`figure` element and its units."""
     return plot_collection.viz["figure"].item().get_size_inches(), "inches"
@@ -220,7 +251,6 @@ def create_plotting_grid(
     height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
-    figure_title=None,
     **kwargs,
 ):
     """Create a figure with a grid of plotting targets in it.
@@ -243,8 +273,6 @@ def create_plotting_grid(
     plot_hspace : float, optional
     subplot_kws : dict, optional
         Passed to :func:`~matplotlib.pyplot.subplots` as ``subplot_kw``
-    figure_title : str, optional
-        Title for the entire figure
     **kwargs: dict, optional
         Passed to :func:`~matplotlib.pyplot.subplots`
 
@@ -285,9 +313,6 @@ def create_plotting_grid(
         for i, ax in enumerate(axes.ravel("C")):
             if i >= number:
                 ax.set_axis_off()
-
-    if figure_title is not None:
-        fig.suptitle(figure_title)
 
     return fig, axes
 

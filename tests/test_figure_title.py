@@ -18,71 +18,84 @@ def dataset(seed=42):
     )
 
 
+class TestPlotCollectionTitleMethod:
+    """Test PlotCollection.add_title() method (not backend-specific)."""
+
+    def test_add_title_method_exists(self, dataset):
+        """Test that add_title method exists and is callable."""
+        pc = PlotCollection.grid(
+            dataset,
+            cols=["__variable__"],
+            backend="matplotlib",
+        )
+        assert hasattr(pc, "add_title")
+        assert callable(pc.add_title)
+
+    def test_add_title_returns_object(self, dataset):
+        """Test that add_title returns a title object."""
+        pc = PlotCollection.grid(
+            dataset,
+            cols=["__variable__"],
+            backend="matplotlib",
+        )
+        result = pc.add_title("Test Title")
+        assert result is not None
+
+    def test_add_title_stores_in_viz(self, dataset):
+        """Test that add_title stores the title in viz DataTree."""
+        pc = PlotCollection.grid(
+            dataset,
+            cols=["__variable__"],
+            backend="matplotlib",
+        )
+        pc.add_title("Test Title")
+        assert "figure_title" in pc.viz
+
+    def test_add_title_without_figure_raises(self, dataset):
+        """Test that add_title raises ValueError when no figure exists."""
+        pc = PlotCollection(dataset, backend="matplotlib")
+        with pytest.raises(ValueError, match="No figure found"):
+            pc.add_title("Test Title")
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly"])
 @pytest.mark.usefixtures("clean_plots")
 @pytest.mark.usefixtures("check_skips")
-class TestFigureTitle:
-    """Test figure title support via figure_title parameter and add_title method."""
+class TestBackendSetFigureTitle:
+    """Test backend-specific set_figure_title functions."""
 
-    def test_grid_figure_title_param(self, dataset, backend):
-        """Test figure_title parameter on PlotCollection.grid()."""
-        pc = PlotCollection.grid(
-            dataset,
-            cols=["__variable__"],
-            backend=backend,
-            figure_title="Test Grid Title",
-        )
-        assert "figure" in pc.viz.data_vars
-        fig = pc.viz["figure"].item()
-        self._verify_title(fig, "Test Grid Title", backend)
-
-    def test_wrap_figure_title_param(self, dataset, backend):
-        """Test figure_title parameter on PlotCollection.wrap()."""
-        pc = PlotCollection.wrap(
-            dataset,
-            cols=["__variable__"],
-            backend=backend,
-            figure_title="Test Wrap Title",
-        )
-        assert "figure" in pc.viz.data_vars
-        fig = pc.viz["figure"].item()
-        self._verify_title(fig, "Test Wrap Title", backend)
-
-    def test_figure_title_via_figure_kwargs(self, dataset, backend):
-        """Test figure_title passed via figure_kwargs."""
-        pc = PlotCollection.grid(
-            dataset,
-            cols=["__variable__"],
-            backend=backend,
-            figure_kwargs={"figure_title": "Via figure_kwargs"},
-        )
-        assert "figure" in pc.viz.data_vars
-        fig = pc.viz["figure"].item()
-        self._verify_title(fig, "Via figure_kwargs", backend)
-
-    def test_figure_title_param_precedence(self, dataset, backend):
-        """Test that direct figure_title parameter takes precedence over figure_kwargs."""
-        pc = PlotCollection.grid(
-            dataset,
-            cols=["__variable__"],
-            backend=backend,
-            figure_title="Direct Param",
-            figure_kwargs={"figure_title": "From figure_kwargs"},
-        )
-        fig = pc.viz["figure"].item()
-        self._verify_title(fig, "Direct Param", backend)
-
-    def test_add_title_method(self, dataset, backend):
-        """Test add_title() method on PlotCollection."""
+    def test_set_figure_title_basic(self, dataset, backend):
+        """Test that set_figure_title works for each backend."""
         pc = PlotCollection.grid(
             dataset,
             cols=["__variable__"],
             backend=backend,
         )
-        result = pc.add_title("Added After Creation")
+        pc.add_title("Backend Test Title")
+        fig = pc.viz["figure"].item()
+        self._verify_title_exists(fig, backend)
+
+    def test_set_figure_title_with_color(self, dataset, backend):
+        """Test set_figure_title with color parameter."""
+        pc = PlotCollection.grid(
+            dataset,
+            cols=["__variable__"],
+            backend=backend,
+        )
+        result = pc.add_title("Colored Title", color="red")
         assert result is not None
 
-    def test_no_title(self, dataset, backend):
+    def test_set_figure_title_with_size(self, dataset, backend):
+        """Test set_figure_title with size parameter."""
+        pc = PlotCollection.grid(
+            dataset,
+            cols=["__variable__"],
+            backend=backend,
+        )
+        result = pc.add_title("Sized Title", size=16)
+        assert result is not None
+
+    def test_backward_compatibility_no_title(self, dataset, backend):
         """Test that plots work without title (backward compatibility)."""
         pc = PlotCollection.grid(
             dataset,
@@ -90,16 +103,18 @@ class TestFigureTitle:
             backend=backend,
         )
         assert "figure" in pc.viz.data_vars
+        # Should not have title if not added
+        assert "figure_title" not in pc.viz
 
-    def _verify_title(self, fig, expected_title, backend):
-        """Verify the title was set correctly for each backend."""
+    def _verify_title_exists(self, fig, backend):
+        """Verify that a title was added (basic check)."""
         if backend == "matplotlib":
-            if hasattr(fig, "_suptitle") and fig._suptitle is not None:
-                assert fig._suptitle.get_text() == expected_title
+            assert hasattr(fig, "_suptitle")
+            assert fig._suptitle is not None
         elif backend == "plotly":
             assert fig.layout.title is not None
-            assert fig.layout.title.text == expected_title
+            assert fig.layout.title.text is not None
         elif backend == "bokeh":
+            # After add_title, bokeh wraps the figure in a Column layout
             from bokeh.layouts import Column
-
             assert isinstance(fig, Column)

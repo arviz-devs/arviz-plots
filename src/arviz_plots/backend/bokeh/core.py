@@ -234,6 +234,47 @@ def savefig(figure, path, **kwargs):
         )
 
 
+def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
+    """Set a title for the entire figure.
+
+    Parameters
+    ----------
+    figure : bokeh layout or None
+        The figure/layout to add the title to.
+    text : str
+        The title text.
+    color : str, optional
+        Color of the title text.
+    size : float, optional
+        Font size of the title.
+    **artist_kws : dict, optional
+        Additional keyword arguments for styling the title Div element.
+
+    Returns
+    -------
+    bokeh layout
+        The new layout with title added (column of title_div and original figure).
+    `~bokeh.models.Div`
+        The title Div element.
+    """
+    from bokeh.layouts import column
+    from bokeh.models import Div
+
+    style_parts = ["text-align: center;"]
+    if color is not None:
+        style_parts.append(f"color: {color};")
+    if size is not None:
+        style_parts.append(f"font-size: {size}px;")
+    style = " ".join(style_parts)
+    
+    if "style" in artist_kws:
+        style = artist_kws.pop("style")
+    
+    title_div = Div(text=f"<h2 style='{style}'>{text}</h2>", **artist_kws)
+    new_layout = column(title_div, figure)
+    return new_layout, title_div
+
+
 def get_figsize(plot_collection):
     """Get the size of the :term:`figure` element and its units."""
     figure = plot_collection.viz["figure"].item()
@@ -268,7 +309,6 @@ def create_plotting_grid(
     height_ratios=None,
     plot_hspace=None,
     subplot_kws=None,
-    figure_title=None,
     **kwargs,
 ):
     """Create a figure with a grid of plotting targets in it.
@@ -294,8 +334,6 @@ def create_plotting_grid(
     plot_hspace : float, optional
     subplot_kws : dict, optional
         Passed to :func:`~bokeh.plotting.figure`
-    figure_title : str, optional
-        Title for the entire figure
     **kwargs :
         Passed to :func:`~bokeh.layouts.gridplot`
 
@@ -397,17 +435,6 @@ def create_plotting_grid(
     if squeeze and figures.size == 1:
         return None, figures[0, 0]
     layout = gridplot(figures.tolist(), **kwargs)
-
-    # add title if specified
-    if figure_title is not None:
-        from bokeh.layouts import column
-        from bokeh.models import Div
-
-        title_div = Div(
-            text=f"<h2 style='text-align: center;'>{figure_title}</h2>",
-            width=layout.width if hasattr(layout, "width") else 800,
-        )
-        layout = column(title_div, layout)
 
     return layout, figures.squeeze() if squeeze else figures
 
