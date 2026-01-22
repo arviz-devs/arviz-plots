@@ -24,4 +24,9 @@ pc = azp.plot_dist(
     visuals={"point_estimate_text": False},
     backend="none"  # change to preferred backend
 )
+
+# Set custom x-axis limits for specific plots to better show distribution details
+pc.set_xlim((-10, 20), coords={"school": ["Deerfield"]})
+pc.set_xlim((0, 15), coords={"__variable__": "tau"})
+
 pc.show()
