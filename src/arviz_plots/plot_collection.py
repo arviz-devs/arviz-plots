@@ -513,10 +513,13 @@ class PlotCollection:
                     if "__variable__" in coords:
                         if coords["__variable__"] != var_name:
                             continue
-                    subset_coords = sel_subset(
-                        {k: v for k, v in coords.items() if k != "__variable__"}, da
-                    )
-                    if subset_coords:
+                    # Get non-__variable__ coords to check against this variable's dimensions
+                    non_var_coords = {k: v for k, v in coords.items() if k != "__variable__"}
+                    if non_var_coords:
+                        subset_coords = sel_subset(non_var_coords, da)
+                        # Skip this variable if coords were specified but don't apply to it
+                        if not subset_coords:
+                            continue
                         da = da.sel(subset_coords)
                 for target in np.nditer(da.values, flags=["refs_ok"]):
                     target_item = target.item()
