@@ -26,7 +26,6 @@ def plot_rank(
     group="posterior",
     coords=None,
     sample_dims=None,
-    ci_prob=None,
     envelope_prob=None,
     thin=True,
     plot_collection=None,
@@ -84,11 +83,8 @@ def plot_rank(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    ci_prob : float, optional
-        This argument is deprecated for diagnostic plots. Use ``envelope_prob`` instead.
-        Defaults to ``rcParams["stats.envelope_prob"]``
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the plotted envelope.
+        Indicates the probability that should be contained within the envelope.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     thin : bool, default True
         Whether to thin the data before plotting.
@@ -144,8 +140,6 @@ def plot_rank(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
-    if ci_prob is not None and envelope_prob is None:
-        envelope_prob = ci_prob
     if envelope_prob is None:
         envelope_prob = rcParams["stats.envelope_prob"]
 
