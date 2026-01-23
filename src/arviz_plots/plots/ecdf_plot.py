@@ -34,7 +34,7 @@ def plot_ecdf_pit(
     group="prior_sbc",
     coords=None,
     sample_dims=None,
-    ci_prob=0.99,
+    envelope_prob=None,
     coverage=False,
     plot_collection=None,
     backend=None,
@@ -97,9 +97,9 @@ def plot_ecdf_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     plot_collection : PlotCollection, optional
@@ -154,6 +154,8 @@ def plot_ecdf_pit(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if envelope_prob is None:
+        envelope_prob = rcParams["stats.envelope_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -195,7 +197,7 @@ def plot_ecdf_pit(
 
     # Compute envelope
     dummy_vals = np.linspace(0, 1, sample_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 

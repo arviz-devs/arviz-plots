@@ -32,7 +32,7 @@ def plot_rank_dist(
     compact=True,
     combined=False,
     kind=None,
-    ci_prob=0.99,
+    envelope_prob=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -87,10 +87,9 @@ def plot_rank_dist(
     kind : {"kde", "hist", "ecdf", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval for
-        the fractional ranks.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
     labeller : labeller, optional
@@ -370,7 +369,7 @@ def plot_rank_dist(
         group=group,
         coords=coords,
         sample_dims=sample_dims,
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         plot_collection=plot_collection,
         labeller=labeller,
         aes_by_visuals=aes_by_visuals_rank,

@@ -24,7 +24,7 @@ def plot_dgof(
     coords=None,
     sample_dims=None,
     kind=None,
-    ci_prob=0.99,
+    envelope_prob=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -80,9 +80,9 @@ def plot_dgof(
     kind : {"kde", "hist", "dot"}, optional
         Which method to diagnose the distribution fit.
         Defaults to ``rcParams["plot.density_kind"]``
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -137,6 +137,8 @@ def plot_dgof(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if envelope_prob is None:
+        envelope_prob = rcParams["stats.envelope_prob"]
     if visuals is None:
         visuals = {}
     else:
@@ -175,7 +177,7 @@ def plot_dgof(
         new_dt,
         coords=coords,
         sample_dims="sample",
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
