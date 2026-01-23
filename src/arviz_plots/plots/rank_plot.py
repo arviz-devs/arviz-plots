@@ -26,7 +26,8 @@ def plot_rank(
     group="posterior",
     coords=None,
     sample_dims=None,
-    ci_prob=0.99,
+    ci_prob=None,
+    envelope_prob=None,
     thin=True,
     plot_collection=None,
     backend=None,
@@ -83,9 +84,12 @@ def plot_rank(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    ci_prob : float, optional
+        This argument is deprecated for diagnostic plots. Use ``envelope_prob`` instead.
+        Defaults to ``rcParams["stats.envelope_prob"]``
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the plotted envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     thin : bool, default True
         Whether to thin the data before plotting.
     plot_collection : PlotCollection, optional
@@ -140,6 +144,11 @@ def plot_rank(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if ci_prob is not None and envelope_prob is None:
+        envelope_prob = ci_prob
+    if envelope_prob is None:
+        envelope_prob = rcParams["stats.envelope_prob"]
+
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -184,7 +193,7 @@ def plot_rank(
 
     # Compute envelope
     dummy_vals = np.linspace(0, 1, sample_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 
