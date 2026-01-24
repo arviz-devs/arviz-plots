@@ -2,10 +2,11 @@
 """Tests specific to the plotly backend."""
 import plotly.graph_objects as go
 import pytest
+import numpy as np
+from arviz_plots.backend.plotly import line
 from plotly.subplots import make_subplots
 
-from arviz_plots.backend.plotly import line
-from arviz_plots.backend.plotly.core import PlotlyPlot
+from arviz_plots.backend.plotly.core import PlotlyPlot, fill_between_y, multiple_lines
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.plotly]
 
@@ -32,3 +33,52 @@ def test_line_args(figure):
         assert visual.line["color"] == "orange"
         assert "width" in visual.line
         assert visual.line["width"] == 2.2
+
+        
+def test_multiple_lines_without_color(figure):
+    x = np.array([0, 1, 2, 3])
+    ys = np.array(
+        [
+            [10, 100],
+            [11, 101],
+            [12, 102],
+            [13, 103],
+        ]
+    )
+
+    multiple_lines(x, ys, figure)
+
+    assert len(figure.figure.data) == 1
+
+    trace = figure.figure.data[0]
+
+    assert trace.mode == "lines"
+
+    assert np.isnan(trace.x).any()
+
+    assert np.isnan(trace.y).any()
+
+    assert np.isnan(trace.y).sum() == ys.shape[1]
+
+
+def test_fill_between_y_without_color(figure):
+    x = np.array([0, 1, 2, 3])
+    y1 = np.sin(x)
+    y2 = np.cos(x)
+    fill_between_y(x, y1, y2, figure)
+
+    assert len(figure.figure.data) == 2
+
+    trace1, trace2 = figure.figure.data
+
+    assert trace1.type == "scatter"
+    assert trace2.type == "scatter"
+
+    assert trace1.mode == "lines"
+    assert trace2.mode == "none"
+
+    assert trace1.fill is None
+    assert trace2.fill == "tonexty"
+
+    assert np.array_equal(trace1.x, x)
+    assert np.array_equal(trace2.x, x)
