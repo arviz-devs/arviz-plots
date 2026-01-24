@@ -21,6 +21,10 @@ settings.register_profile("chron", deadline=3000, max_examples=500)
 settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "fast"))
 
 
+def _has_marker(name, request_obj):
+    return (name in request_obj.keywords) and isinstance(request_obj.keywords[name], pytest.Mark)
+
+
 def pytest_addoption(parser):
     """Definition for command line option to save figures from tests or skip backends."""
     parser.addoption("--save", nargs="?", const="test_images", help="Save images rendered by plot")
@@ -79,6 +83,7 @@ def check_skips(request):
     skip_bokeh = request.config.getoption("--skip-bokeh")
     skip_plotly = request.config.getoption("--skip-plotly")
 
+    # tests parametrized with a `backend` argument get skips without extra markers
     if "backend" in request.fixturenames:
         if skip_mpl and any("matplotlib" in key for key in request.keywords.keys()):
             pytest.skip(reason="Requested skipping matplolib tests via command line argument")
@@ -86,6 +91,13 @@ def check_skips(request):
             pytest.skip(reason="Requested skipping bokeh tests via command line argument")
         if skip_plotly and any("plotly" in key for key in request.keywords.keys()):
             pytest.skip(reason="Requested skipping plotly tests via command line argument")
+
+    if skip_mpl and _has_marker("matplotlib", request):
+        pytest.skip(reason="Requested skipping matplolib tests via command line argument")
+    if skip_bokeh and _has_marker("bokeh", request):
+        pytest.skip(reason="Requested skipping bokeh tests via command line argument")
+    if skip_plotly and _has_marker("plotly", request):
+        pytest.skip(reason="Requested skipping plotly tests via command line argument")
 
 
 @pytest.fixture(scope="function")
