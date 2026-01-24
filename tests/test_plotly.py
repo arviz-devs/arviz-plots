@@ -1,11 +1,11 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the plotly backend."""
+import numpy as np
 import plotly.graph_objects as go
 import pytest
-import numpy as np
-from arviz_plots.backend.plotly import line
 from plotly.subplots import make_subplots
 
+from arviz_plots.backend.plotly import line
 from arviz_plots.backend.plotly.core import PlotlyPlot, fill_between_y, multiple_lines
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.plotly]
@@ -34,7 +34,7 @@ def test_line_args(figure):
         assert "width" in visual.line
         assert visual.line["width"] == 2.2
 
-        
+
 def test_multiple_lines_without_color(figure):
     x = np.array([0, 1, 2, 3])
     ys = np.array(
