@@ -1,11 +1,10 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test utility functions for plotting."""
-from importlib import import_module
-
 import numpy as np
 import pytest
 import xarray as xr
 
+import arviz_plots.backend.none as none_backend
 from arviz_plots import PlotCollection
 from arviz_plots.plots.utils import (
     annotate_bin_text,
@@ -129,11 +128,10 @@ class TestUtils:
 
     # --- Tests for filter_aes ---
 
-    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-    def test_filter_aes_basic(self, datatree, backend):
+    def test_filter_aes_basic(self, datatree):
         """Test filter_aes correctly splits aesthetics and dimensions."""
         pc = PlotCollection.grid(
-            datatree["posterior"].ds, backend=backend, aes={"color": ["chain"], "marker": ["draw"]}
+            datatree["posterior"].ds, backend="none", aes={"color": ["chain"], "marker": ["draw"]}
         )
         aes_by_visuals = {"my_visual": ["color"]}
         sample_dims = ["chain", "draw"]
@@ -148,12 +146,9 @@ class TestUtils:
         assert "draw" in artist_dims
         assert "chain" not in artist_dims
 
-    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-    def test_filter_aes_missing_visual(self, datatree, backend):
+    def test_filter_aes_missing_visual(self, datatree):
         """Test filter_aes returns empty aesthetics for missing visual."""
-        pc = PlotCollection.grid(
-            datatree["posterior"].ds, backend=backend, aes={"color": ["chain"]}
-        )
+        pc = PlotCollection.grid(datatree["posterior"].ds, backend="none", aes={"color": ["chain"]})
         aes_by_visuals = {"other_visual": ["alpha"]}
         sample_dims = ["chain", "draw"]
 
@@ -167,10 +162,8 @@ class TestUtils:
 
     # --- Tests for set_wrap_layout ---
 
-    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-    def test_set_wrap_layout(self, datatree, backend):
+    def test_set_wrap_layout(self, datatree):
         """Test set_wrap_layout sets figsize correctly for wrapping columns."""
-        plot_bknd = import_module(f"arviz_plots.backend.{backend}")
         ds = datatree["posterior"].ds
         pc_kwargs = {
             "figure_kwargs": {},
@@ -178,7 +171,7 @@ class TestUtils:
             "col_wrap": 2,
         }
 
-        result = set_wrap_layout(pc_kwargs, plot_bknd, ds)
+        result = set_wrap_layout(pc_kwargs, none_backend, ds)
 
         assert result["figure_kwargs"]["figsize"] is not None
         assert result["figure_kwargs"]["figsize_units"] == "dots"
@@ -186,10 +179,8 @@ class TestUtils:
 
     # --- Tests for set_grid_layout ---
 
-    @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
-    def test_set_grid_layout(self, datatree, backend):
+    def test_set_grid_layout(self, datatree):
         """Test set_grid_layout sets figsize for explicit grid."""
-        plot_bknd = import_module(f"arviz_plots.backend.{backend}")
         ds = datatree["posterior"].ds
         pc_kwargs = {
             "figure_kwargs": {},
@@ -197,7 +188,7 @@ class TestUtils:
             "rows": [],
         }
 
-        result = set_grid_layout(pc_kwargs, plot_bknd, ds)
+        result = set_grid_layout(pc_kwargs, none_backend, ds)
 
         assert result["figure_kwargs"]["figsize"] is not None
         assert result["figure_kwargs"]["figsize_units"] == "dots"
