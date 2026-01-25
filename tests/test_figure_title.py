@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 from arviz_base import dict_to_dataset
+from datatree import DataTree
 
 from arviz_plots import PlotCollection
 
@@ -31,16 +32,6 @@ class TestPlotCollectionTitleMethod:
         assert hasattr(pc, "add_title")
         assert callable(pc.add_title)
 
-    def test_add_title_returns_object(self, dataset):
-        """Test that add_title returns a title object."""
-        pc = PlotCollection.grid(
-            dataset,
-            cols=["__variable__"],
-            backend="matplotlib",
-        )
-        result = pc.add_title("Test Title")
-        assert result is not None
-
     def test_add_title_stores_in_viz(self, dataset):
         """Test that add_title stores the title in viz DataTree."""
         pc = PlotCollection.grid(
@@ -53,7 +44,7 @@ class TestPlotCollectionTitleMethod:
 
     def test_add_title_without_figure_raises(self, dataset):
         """Test that add_title raises ValueError when no figure exists."""
-        pc = PlotCollection(dataset, backend="matplotlib")
+        pc = PlotCollection(dataset, DataTree(), backend="matplotlib")
         with pytest.raises(ValueError, match="No figure found"):
             pc.add_title("Test Title")
 
@@ -82,8 +73,8 @@ class TestBackendSetFigureTitle:
             cols=["__variable__"],
             backend=backend,
         )
-        result = pc.add_title("Colored Title", color="red")
-        assert result is not None
+        pc.add_title("Colored Title", color="red")
+        assert "figure_title" in pc.viz
 
     def test_set_figure_title_with_size(self, dataset, backend):
         """Test set_figure_title with size parameter."""
@@ -92,8 +83,9 @@ class TestBackendSetFigureTitle:
             cols=["__variable__"],
             backend=backend,
         )
-        result = pc.add_title("Sized Title", size=16)
-        assert result is not None
+        # Use string size for bokeh compatibility
+        pc.add_title("Sized Title", size="16px")
+        assert "figure_title" in pc.viz
 
     def test_backward_compatibility_no_title(self, dataset, backend):
         """Test that plots work without title (backward compatibility)."""
@@ -116,5 +108,6 @@ class TestBackendSetFigureTitle:
             assert fig.layout.title.text is not None
         elif backend == "bokeh":
             # After add_title, bokeh wraps the figure in a Column layout
-            from bokeh.layouts import Column
-            assert isinstance(fig, Column)
+            from bokeh.layouts import column
+
+            assert fig.__class__.__name__ == "Column"

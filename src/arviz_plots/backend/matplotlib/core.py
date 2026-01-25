@@ -209,12 +209,12 @@ def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
         The figure to add the title to.
     text : str
         The title text.
-    color : str or tuple, optional
+    color : optional
         Color of the title text.
-    size : float, optional
+    size : optional
         Font size of the title.
     **artist_kws : dict, optional
-        Additional keyword arguments passed to `fig.suptitle()`.
+        Additional keyword arguments passed to :func:`~matplotlib.figure.Figure.suptitle`.
 
     Returns
     -------
@@ -223,11 +223,12 @@ def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
     `~matplotlib.text.Text`
         The title text object.
     """
+    kwargs = {}
     if color is not None:
-        artist_kws["color"] = color
+        kwargs["color"] = color
     if size is not None:
-        artist_kws["fontsize"] = size
-    title_obj = figure.suptitle(text, **artist_kws)
+        kwargs["fontsize"] = size
+    title_obj = figure.suptitle(text, **kwargs, **artist_kws)
     return figure, title_obj
 
 

@@ -1281,23 +1281,18 @@ class PlotCollection:
         self.viz[fun_label][var_name].loc[sel] = aux_artist
 
     def add_title(self, text, *, color=None, size=None, **artist_kws):
-        """Add a title to the figure.
+        """Add a title to the :term:`figure`.
 
         Parameters
         ----------
         text : str
             The title text.
-        color : str or tuple, optional
+        color : optional
             Color of the title text.
-        size : float, optional
+        size : optional
             Font size of the title.
         **artist_kws : mapping, optional
-            Additional keyword arguments passed to the backend title function.
-
-        Returns
-        -------
-        title : object
-            The title object for the backend.
+            Additional keyword arguments passed to :func:`~.backend.set_figure_title`.
 
         Examples
         --------
@@ -1319,23 +1314,21 @@ class PlotCollection:
             pc = azp.plot_trace(data, var_names=["mu"])
             pc.add_title("MCMC Trace", color="darkblue", size=16)
         """
-        if "figure" not in self.viz:
+        if "figure" not in self.viz.data_vars:
             raise ValueError("No figure found to add title to")
 
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         fig = self.viz["figure"].item()
-        
+
         new_fig, title_obj = plot_bknd.set_figure_title(
             fig, text, color=color, size=size, **artist_kws
         )
-        
+
         # bokeh returns a new column layout, so we need to update the stored figure
         if new_fig is not fig:
             self.viz["figure"] = xr.DataArray(new_fig)
-        
+
         self.viz["figure_title"] = xr.DataArray(title_obj)
-        
-        return title_obj
 
     def add_legend(
         self,

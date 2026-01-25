@@ -8,17 +8,19 @@ import bokeh.colors.named as named_colors
 import numpy as np
 from bokeh.colors import Color
 from bokeh.io.export import export_png, export_svg
-from bokeh.layouts import GridBox, gridplot
+from bokeh.layouts import GridBox, column, gridplot
 from bokeh.models import (
     BoxAnnotation,
     ColumnDataSource,
     CustomJSTickFormatter,
+    Div,
     FixedTicker,
     GridPlot,
     Range1d,
     Span,
     Title,
 )
+from bokeh.models.css import Styles
 from bokeh.plotting import figure as _figure
 from bokeh.plotting import output_file, save
 from bokeh.plotting import show as _show
@@ -234,7 +236,7 @@ def savefig(figure, path, **kwargs):
         )
 
 
-def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
+def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     """Set a title for the entire figure.
 
     Parameters
@@ -243,12 +245,12 @@ def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
         The figure/layout to add the title to.
     text : str
         The title text.
-    color : str, optional
+    color : optional
         Color of the title text.
-    size : float, optional
+    size : optional
         Font size of the title.
     **artist_kws : dict, optional
-        Additional keyword arguments for styling the title Div element.
+        Additional keyword arguments passed to :class:`~bokeh.models.Div`.
 
     Returns
     -------
@@ -257,20 +259,21 @@ def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
     `~bokeh.models.Div`
         The title Div element.
     """
-    from bokeh.layouts import column
-    from bokeh.models import Div
+    if color is None:
+        color = unset
+    if size is None:
+        size = unset
 
-    style_parts = ["text-align: center;"]
-    if color is not None:
-        style_parts.append(f"color: {color};")
-    if size is not None:
-        style_parts.append(f"font-size: {size}px;")
-    style = " ".join(style_parts)
-    
-    if "style" in artist_kws:
-        style = artist_kws.pop("style")
-    
-    title_div = Div(text=f"<h2 style='{style}'>{text}</h2>", **artist_kws)
+    styles = artist_kws.pop("styles", {})
+    if isinstance(styles, dict):
+        styles = Styles(**styles)
+    kwargs = {"color": color, "font_size": _float_or_str_size(size)}
+    kwargs = {key: value for key, value in kwargs.items() if value is not unset}
+    styles.update(**kwargs)
+    if styles.text_align is None:
+        styles.text_align = "center"
+
+    title_div = Div(text=text, styles=styles, **artist_kws)
     new_layout = column(title_div, figure)
     return new_layout, title_div
 
@@ -451,8 +454,8 @@ def _float_or_str_size(size):
 
     Convert float sizes to string ones in px units.
     """
-    if size is unset:
-        return size
+    if size is unset or size is None:
+        return unset
     if isinstance(size, str):
         return size
     return f"{size:.0f}px"
