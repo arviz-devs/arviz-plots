@@ -236,6 +236,7 @@ def savefig(figure, path, **kwargs):
         )
 
 
+@expand_aesthetic_aliases
 def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     """Set a title for the entire figure.
 
@@ -259,19 +260,14 @@ def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     `~bokeh.models.Div`
         The title Div element.
     """
-    if color is None:
-        color = unset
-    if size is None:
-        size = unset
-
     styles = artist_kws.pop("styles", {})
     if isinstance(styles, dict):
         styles = Styles(**styles)
-    kwargs = {"color": color, "font_size": _float_or_str_size(size)}
-    kwargs = {key: value for key, value in kwargs.items() if value is not unset}
-    styles.update(**kwargs)
+    styles.update(**_filter_kwargs({"color": color, "font_size": _float_or_str_size(size)}, {}))
     if styles.text_align is None:
         styles.text_align = "center"
+    if styles.width is None:
+        styles.width = "auto"
 
     title_div = Div(text=text, styles=styles, **artist_kws)
     new_layout = column(title_div, figure)
@@ -454,7 +450,7 @@ def _float_or_str_size(size):
 
     Convert float sizes to string ones in px units.
     """
-    if size is unset or size is None:
+    if size is unset:
         return unset
     if isinstance(size, str):
         return size

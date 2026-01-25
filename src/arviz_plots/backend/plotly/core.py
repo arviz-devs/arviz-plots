@@ -301,7 +301,8 @@ def savefig(figure, path, **kwargs):
         figure.write_image(path, **kwargs)
 
 
-def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
+@expand_aesthetic_aliases
+def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     """Set a title for the entire figure.
 
     Parameters
@@ -325,11 +326,9 @@ def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
         The title layout object from the figure.
     """
     title_kwargs = {"text": text, "x": 0.5, "xanchor": "center"}
-    if color is not None:
-        title_kwargs["font_color"] = color
-    if size is not None:
-        title_kwargs["font_size"] = size
-    title_kwargs.update(artist_kws)
+    title_kwargs = _filter_kwargs(
+        {"font_color": color, "font_size": size}, {**title_kwargs, **artist_kws}
+    )
     figure.update_layout(title=title_kwargs)
     return figure, figure.layout.title
 

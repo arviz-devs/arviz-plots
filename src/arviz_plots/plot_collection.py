@@ -1280,7 +1280,7 @@ class PlotCollection:
         """Store the visual object of `var_name`+`sel` combination in `fun_label` variable."""
         self.viz[fun_label][var_name].loc[sel] = aux_artist
 
-    def add_title(self, text, *, color=None, size=None, **artist_kws):
+    def add_title(self, text, *, color="B1", size=None, **kwargs):
         """Add a title to the :term:`figure`.
 
         Parameters
@@ -1288,10 +1288,10 @@ class PlotCollection:
         text : str
             The title text.
         color : optional
-            Color of the title text.
+            Color of the title text. Defaults to "B1" which is a high contrast color.
         size : optional
             Font size of the title.
-        **artist_kws : mapping, optional
+        **kwargs : mapping, optional
             Additional keyword arguments passed to :func:`~.backend.set_figure_title`.
 
         Examples
@@ -1320,9 +1320,11 @@ class PlotCollection:
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         fig = self.viz["figure"].item()
 
-        new_fig, title_obj = plot_bknd.set_figure_title(
-            fig, text, color=color, size=size, **artist_kws
-        )
+        title_kwargs = {"color": color}
+        if size is not None:
+            title_kwargs["size"] = size
+
+        new_fig, title_obj = plot_bknd.set_figure_title(fig, text, **title_kwargs, **kwargs)
 
         # bokeh returns a new column layout, so we need to update the stored figure
         if new_fig is not fig:

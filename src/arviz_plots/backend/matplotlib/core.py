@@ -200,7 +200,8 @@ def savefig(figure, path, **kwargs):
     figure.savefig(path, **kwargs)
 
 
-def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
+@expand_aesthetic_aliases
+def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     """Set a title for the entire figure.
 
     Parameters
@@ -223,12 +224,8 @@ def set_figure_title(figure, text, *, color=None, size=None, **artist_kws):
     `~matplotlib.text.Text`
         The title text object.
     """
-    kwargs = {}
-    if color is not None:
-        kwargs["color"] = color
-    if size is not None:
-        kwargs["fontsize"] = size
-    title_obj = figure.suptitle(text, **kwargs, **artist_kws)
+    kwargs = {"color": color, "fontsize": size}
+    title_obj = figure.suptitle(text, **_filter_kwargs(kwargs, None, artist_kws))
     return figure, title_obj
 
 
