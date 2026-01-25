@@ -2,4 +2,4 @@
 None backend
 ============
 
-.. automodule:: arviz_plots.backend.none
+.. automodule:: arviz_plots.backend
