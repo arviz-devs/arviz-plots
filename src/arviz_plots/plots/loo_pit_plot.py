@@ -11,7 +11,7 @@ from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 
 def plot_loo_pit(
     dt,
-    ci_prob=0.99,
+    envelope_prob=None,
     coverage=False,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
@@ -70,9 +70,9 @@ def plot_loo_pit(
     ----------
     dt : DataTree
         Input data
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     var_names : str or list of str, optional
@@ -177,7 +177,7 @@ def plot_loo_pit(
         group="loo_pit",
         coords=coords,
         sample_dims=lpv.dims,
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         coverage=coverage,
         plot_collection=plot_collection,
         backend=backend,

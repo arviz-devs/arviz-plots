@@ -50,6 +50,9 @@ ess_kind_value = st.sampled_from(("local", "quantile"))
 t_stat_value = st.sampled_from(("mean", "median", "std", "var", "min", "max", "iqr", "0.5", 0.5))
 ci_kind_value = st.sampled_from(("eti", "hdi"))
 ci_prob_value = st.floats(min_value=0.1, max_value=0.99, allow_nan=False, allow_infinity=False)
+envelope_prob_value = st.floats(
+    min_value=0.1, max_value=0.99, allow_nan=False, allow_infinity=False
+)
 point_estimate_value = st.sampled_from(("mean", "median"))
 visuals_value = st.sampled_from(({}, False, True, {"color": "red"}))
 visuals_value_no_false = st.sampled_from(({}, {"color": "red"}))
@@ -229,14 +232,14 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
         },
     ),
     kind=kind_value_no_hist,
-    ci_prob=ci_prob_value,
+    envelope_prob=envelope_prob_value,
 )
-def test_plot_dgof(datatree, kind, ci_prob, visuals):
+def test_plot_dgof(datatree, kind, envelope_prob, visuals):
     pc = plot_dgof(
         datatree,
         backend="none",
         kind=kind,
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
@@ -263,14 +266,14 @@ def test_plot_dgof(datatree, kind, ci_prob, visuals):
         },
     ),
     kind=kind_value_no_hist,
-    ci_prob=ci_prob_value,
+    envelope_prob=envelope_prob_value,
 )
-def test_plot_dgof_dist(datatree, kind, ci_prob, visuals):
+def test_plot_dgof_dist(datatree, kind, envelope_prob, visuals):
     pc = plot_dgof_dist(
         datatree,
         backend="none",
         kind=kind,
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
@@ -323,14 +326,14 @@ def test_plot_energy(datatree, kind, visuals):
             "remove_axis": st.just(False),
         },
     ),
-    ci_prob=ci_prob_value,
+    envelope_prob=envelope_prob_value,
 )
-def test_plot_ecdf_pit(datatree, ci_prob, visuals):
+def test_plot_ecdf_pit(datatree, envelope_prob, visuals):
     pc = plot_ecdf_pit(
         datatree,
         group="prior",
         backend="none",
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
@@ -562,14 +565,14 @@ def test_plot_khat(datatree_with_loo, threshold, visuals):
             "remove_axis": st.just(False),
         },
     ),
-    ci_prob=ci_prob_value,
+    envelope_prob=envelope_prob_value,
     coverage=st.booleans(),
 )
-def test_plot_loo_pit(datatree, ci_prob, coverage, visuals):
+def test_plot_loo_pit(datatree, envelope_prob, coverage, visuals):
     pc = plot_loo_pit(
         datatree,
         backend="none",
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         coverage=coverage,
         visuals=visuals,
     )
@@ -916,14 +919,14 @@ def test_plot_ppc_rootogram(datatree3, ci_prob, visuals):
         },
     ),
     coverage=st.booleans(),
-    ci_prob=ci_prob_value,
+    envelope_prob=envelope_prob_value,
 )
-def test_plot_ppc_pit(datatree, coverage, ci_prob, visuals):
+def test_plot_ppc_pit(datatree, coverage, envelope_prob, visuals):
     pc = plot_ppc_pit(
         datatree,
         backend="none",
         coverage=coverage,
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
@@ -1092,13 +1095,13 @@ def test_plot_psense_quantities(datatree, quantities, mcse, visuals):
             "remove_axis": st.just(False),
         },
     ),
-    ci_prob=ci_prob_value,
+    envelope_prob=envelope_prob_value,
 )
-def test_plot_rank(datatree, ci_prob, visuals):
+def test_plot_rank(datatree, envelope_prob, visuals):
     pc = plot_rank(
         datatree,
         backend="none",
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children

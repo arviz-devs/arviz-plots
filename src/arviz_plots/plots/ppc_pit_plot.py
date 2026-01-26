@@ -28,7 +28,7 @@ from arviz_plots.visuals import (
 
 def plot_ppc_pit(
     dt,
-    ci_prob=0.99,
+    envelope_prob=None,
     coverage=False,
     var_names=None,
     filter_vars=None,
@@ -85,9 +85,9 @@ def plot_ppc_pit(
     ----------
     dt : DataTree
         Input data
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     var_names : str or list of str, optional
@@ -164,6 +164,8 @@ def plot_ppc_pit(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if envelope_prob is None:
+        envelope_prob = rcParams["stats.envelope_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -202,7 +204,7 @@ def plot_ppc_pit(
     warn_if_prior_predictive(group)
 
     ds_ecdf = difference_ecdf_pit(
-        predictive_dist, observed_dist, ci_prob, coverage, **ecdf_pit_kwargs
+        predictive_dist, observed_dist, envelope_prob, coverage, **ecdf_pit_kwargs
     )
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
