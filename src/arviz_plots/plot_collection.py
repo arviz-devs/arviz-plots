@@ -741,6 +741,8 @@ class PlotCollection:
             Plotting backend.
         figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
+            To add a figure title, use :meth:`~arviz_plots.PlotCollection.add_title` after
+            creating the PlotCollection.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.
@@ -890,6 +892,8 @@ class PlotCollection:
             Plotting backend.
         figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
+            To add a figure title, use :meth:`~arviz_plots.PlotCollection.add_title` after
+            creating the PlotCollection.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.
@@ -1275,6 +1279,58 @@ class PlotCollection:
     def store_in_artist_da(self, aux_artist, fun_label, var_name, sel):
         """Store the visual object of `var_name`+`sel` combination in `fun_label` variable."""
         self.viz[fun_label][var_name].loc[sel] = aux_artist
+
+    def add_title(self, text, *, color="B1", size=None, **kwargs):
+        """Add a title to the :term:`figure`.
+
+        Parameters
+        ----------
+        text : str
+            The title text.
+        color : optional
+            Color of the title text. Defaults to "B1" which is a high contrast color.
+        size : optional
+            Font size of the title.
+        **kwargs : mapping, optional
+            Additional keyword arguments passed to :func:`~.backend.set_figure_title`.
+
+        Examples
+        --------
+        Add a title after creating a plot:
+
+        .. jupyter-execute::
+
+            import arviz_base as azb
+            import arviz_plots as azp
+
+            data = azb.load_arviz_data("centered_eight")
+            pc = azp.plot_dist(data)
+            pc.add_title("Posterior Distributions")
+
+        Add a colored title with custom size:
+
+        .. jupyter-execute::
+
+            pc = azp.plot_trace(data, var_names=["mu"])
+            pc.add_title("MCMC Trace", color="darkblue", size=16)
+        """
+        if "figure" not in self.viz.data_vars:
+            raise ValueError("No figure found to add title to")
+
+        plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
+        fig = self.viz["figure"].item()
+
+        title_kwargs = {"color": color}
+        if size is not None:
+            title_kwargs["size"] = size
+
+        new_fig, title_obj = plot_bknd.set_figure_title(fig, text, **title_kwargs, **kwargs)
+
+        # bokeh returns a new column layout, so we need to update the stored figure
+        if new_fig is not fig:
+            self.viz["figure"] = xr.DataArray(new_fig)
+
+        self.viz["figure_title"] = xr.DataArray(title_obj)
 
     def add_legend(
         self,
