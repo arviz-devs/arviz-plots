@@ -1,7 +1,15 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the matplotlib backend."""
-import matplotlib.pyplot as plt
+import os
+
 import pytest
+
+if os.environ.get("ARVIZ_REQUIRE_ALL_DEPS", False):
+    import matplotlib  # pylint: disable=unused-import
+else:
+    pytest.importorskip("matplotlib")
+
+import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from arviz_plots.backend.matplotlib import line

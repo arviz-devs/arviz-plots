@@ -1,7 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the plotly backend."""
 import os
-
 import numpy as np
 import pytest
 
@@ -42,7 +41,7 @@ def test_line_args(figure):
         assert "width" in visual.line
         assert visual.line["width"] == 2.2
 
-
+        
 def test_multiple_lines_without_color(figure):
     x = np.array([0, 1, 2, 3])
     ys = np.array(
@@ -88,3 +87,4 @@ def test_fill_between_y_without_color(figure):
 
     assert np.array_equal(trace1.x, x)
     assert np.array_equal(trace2.x, x)
+

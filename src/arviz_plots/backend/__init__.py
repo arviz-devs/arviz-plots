@@ -8,3 +8,4 @@ Each submodule inside ``arviz_plots.backend`` is expected to implement the same 
 with the same call signature. Thus, adding a new backend requires only
 implementing this common interface for it, with no changes to any of the other modules.
 """
+from arviz_plots.backend.none import *
