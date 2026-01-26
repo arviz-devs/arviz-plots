@@ -45,7 +45,8 @@ plotting backends with minimal duplication.
 
 Therefore, all tests that depend on the plotting backend should be parametrized
 with `@pytest.mark.parametrize("backend", backend_list)` to make sure all backends
-pass all relevant tests.
+pass all relevant tests. In addition, backend specific tests, like `test_plotly.py`,
+should be marked with `pytest.mark.<backend_name>`.
 
 At the same time however, arviz-plots considers all backends optional dependencies,
 so not all backends might be installed and consequently, not all tests can be executed.
