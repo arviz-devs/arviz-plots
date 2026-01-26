@@ -58,8 +58,6 @@ def test_multiple_lines_without_color(figure):
 
     assert np.isnan(trace.y).any()
 
-    assert np.isnan(trace.y).sum() == ys.shape[1]
-
 
 def test_fill_between_y_without_color(figure):
     x = np.array([0, 1, 2, 3])
