@@ -1,8 +1,16 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the plotly backend."""
+import os
+
 import numpy as np
-import plotly.graph_objects as go
 import pytest
+
+if os.environ.get("ARVIZ_REQUIRE_ALL_DEPS", False):
+    import plotly  # pylint: disable=unused-import
+else:
+    pytest.importorskip("plotly")
+
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from arviz_plots.backend.plotly import line
