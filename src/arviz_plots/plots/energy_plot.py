@@ -15,9 +15,10 @@ from arviz_plots.visuals import labelled_title, labelled_y, scatter_xy, vline
 
 def plot_energy(
     dt,
+    *,
+    sample_dims=None,
     kind=None,
     threshold=0.3,
-    sample_dims=None,
     plot_collection=None,
     backend=None,
     labeller=None,

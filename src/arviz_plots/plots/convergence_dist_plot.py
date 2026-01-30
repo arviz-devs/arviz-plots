@@ -15,14 +15,15 @@ from arviz_plots.visuals import vline
 
 def plot_convergence_dist(
     dt,
-    diagnostics=None,
-    grouped=True,
-    ref_line=True,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",
     coords=None,
     sample_dims=None,
+    diagnostics=None,
+    grouped=True,
+    ref_line=True,
     kind="ecdf",
     point_estimate=None,
     ci_kind=None,

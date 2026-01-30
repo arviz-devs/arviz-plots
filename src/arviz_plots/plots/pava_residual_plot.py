@@ -22,14 +22,15 @@ from arviz_plots.visuals import (
 
 def plot_ppc_pava_residuals(
     dt,
+    *,
     x_var,
-    data_type="binary",
-    ci_prob=None,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
     group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
+    data_type="binary",
+    ci_prob=None,
     plot_collection=None,
     backend=None,
     labeller=None,

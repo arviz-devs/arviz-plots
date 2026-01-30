@@ -16,6 +16,7 @@ from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_a
 
 def plot_forest(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

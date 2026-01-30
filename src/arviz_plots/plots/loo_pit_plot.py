@@ -11,13 +11,14 @@ from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 
 def plot_loo_pit(
     dt,
-    envelope_prob=None,
-    coverage=False,
+    *,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
     group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
+    envelope_prob=None,
+    coverage=False,
     plot_collection=None,
     backend=None,
     labeller=None,

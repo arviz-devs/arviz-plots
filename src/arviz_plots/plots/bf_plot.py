@@ -14,9 +14,10 @@ from arviz_plots.plots.utils import add_lines, filter_aes, get_visual_kwargs
 def plot_bf(
     dt,
     var_names,
+    *,
+    sample_dims=None,
     ref_val=0,
     kind=None,
-    sample_dims=None,
     plot_collection=None,
     backend=None,
     labeller=None,

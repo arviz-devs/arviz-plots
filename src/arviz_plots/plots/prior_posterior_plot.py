@@ -20,6 +20,7 @@ from arviz_plots.plots.utils import (
 
 def plot_prior_posterior(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group=None,  # pylint: disable=unused-argument

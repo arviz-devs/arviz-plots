@@ -28,14 +28,15 @@ from arviz_plots.visuals import (
 
 def plot_ppc_rootogram(
     dt,
-    ci_prob=None,
-    point_estimate=None,
-    yscale="sqrt",
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",
     coords=None,
     sample_dims=None,
+    ci_prob=None,
+    point_estimate=None,
+    yscale="sqrt",
     plot_collection=None,
     backend=None,
     labeller=None,

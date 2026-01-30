@@ -24,6 +24,7 @@ from arviz_plots.visuals import ecdf_line, line_xy, scatter_xy, step_hist
 
 def plot_ppc_dist(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",

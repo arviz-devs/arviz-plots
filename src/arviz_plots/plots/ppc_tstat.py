@@ -21,19 +21,20 @@ from arviz_plots.visuals import scatter_x
 
 def plot_ppc_tstat(
     dt,
+    *,
     var_names=None,
-    group="posterior_predictive",
     filter_vars=None,
+    group="posterior_predictive",
+    coords=None,
     sample_dims=None,
     t_stat="median",
     kind=None,
     point_estimate=None,
     ci_kind=None,
     ci_prob=None,
-    plot_collection=None,
-    coords=None,
-    backend=None,
     data_pairs=None,
+    plot_collection=None,
+    backend=None,
     labeller=None,
     aes_by_visuals: Mapping[
         Literal[

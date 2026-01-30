@@ -19,6 +19,7 @@ from arviz_plots.plots.utils import (
 
 def plot_psense_dist(
     dt,
+    *,
     alphas=None,
     var_names=None,
     filter_vars=None,

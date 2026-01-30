@@ -33,6 +33,7 @@ from arviz_plots.visuals import (
 
 def plot_lm(
     dt,
+    *,
     x=None,
     y=None,
     y_obs=None,

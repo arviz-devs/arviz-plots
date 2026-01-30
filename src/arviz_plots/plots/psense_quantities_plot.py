@@ -20,6 +20,7 @@ from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scat
 
 def plot_psense_quantities(
     dt,
+    *,
     alphas=None,
     quantities=None,
     mcse=True,

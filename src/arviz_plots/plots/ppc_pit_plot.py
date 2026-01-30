@@ -28,13 +28,14 @@ from arviz_plots.visuals import (
 
 def plot_ppc_pit(
     dt,
-    envelope_prob=None,
-    coverage=False,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",
     coords=None,
     sample_dims=None,
+    envelope_prob=None,
+    coverage=False,
     plot_collection=None,
     backend=None,
     labeller=None,
