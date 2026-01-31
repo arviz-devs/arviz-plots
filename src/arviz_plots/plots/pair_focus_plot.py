@@ -21,8 +21,8 @@ from arviz_plots.visuals import labelled_x, labelled_y, scatter_x, scatter_xy
 
 def plot_pair_focus(
     dt,
-    *,
     focus_var,
+    *,
     focus_var_coords=None,
     var_names=None,
     filter_vars=None,

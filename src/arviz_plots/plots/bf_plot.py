@@ -56,14 +56,14 @@ def plot_bf(
     var_names : str, optional
         Variables for which the bayes factor will be computed and the prior and
         posterior will be plotted.
+    sample_dims : str or sequence of hashable, optional
+        Dimensions to reduce unless mapped to an aesthetic.
+        Defaults to ``rcParams["data.sample_dims"]``
     ref_val : int or float, default 0
         Reference (point-null) value for Bayes factor estimation.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
-    sample_dims : str or sequence of hashable, optional
-        Dimensions to reduce unless mapped to an aesthetic.
-        Defaults to ``rcParams["data.sample_dims"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional

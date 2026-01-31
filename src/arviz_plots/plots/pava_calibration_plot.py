@@ -70,15 +70,6 @@ def plot_ppc_pava(
     ----------
     dt : DataTree
         Input data
-    data_type : str
-        Defaults to "binary". Other options are "categorical" and "ordinal".
-        If "categorical", the plot will show the "one-vs-others" calibration and generate one plot
-        per category. If "ordinal", the plot will display cumulative conditional event
-        probabilities and generate (number of categories - 1) plots.
-    ci_prob : float, optional
-        Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
-    num_samples : int, optional
-        Number of samples to use for the plot. Defaults to 100.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -95,7 +86,16 @@ def plot_ppc_pava(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    data_type : str
+        Defaults to "binary". Other options are "categorical" and "ordinal".
+        If "categorical", the plot will show the "one-vs-others" calibration and generate one plot
+        per category. If "ordinal", the plot will display cumulative conditional event
+        probabilities and generate (number of categories - 1) plots.
+    ci_prob : float, optional
+        Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
     plot_collection : PlotCollection, optional
+    num_samples : int, optional
+        Number of samples to use for the plot. Defaults to 100.
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
     aes_by_visuals : mapping of {str : sequence of str}, optional

@@ -82,14 +82,6 @@ def plot_ppc_rootogram(
         If group is "posterior_predictive", it should contain the ``posterior_predictive`` and
         ``observed_data`` groups. If group is "prior_predictive", it should contain the
         ``prior_predictive`` group.
-    ci_prob : float, optional
-        Probability for the credible interval. Defaults to rcParam :data:`stats.ci_prob`.
-    point_estimate : {"mean", "median", "mode"}, optional
-        Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
-    yscale : str, optional
-        Scale for the y-axis. Defaults to "sqrt", pass "linear" for linear scale.
-        Currently only "matplotlib" backend is supported. For "bokeh" and "plotly"
-        the y-axis is linear.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -105,6 +97,14 @@ def plot_ppc_rootogram(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to rcParam :data:`data.sample_dims`.
+    ci_prob : float, optional
+        Probability for the credible interval. Defaults to rcParam :data:`stats.ci_prob`.
+    point_estimate : {"mean", "median", "mode"}, optional
+        Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
+    yscale : str, optional
+        Scale for the y-axis. Defaults to "sqrt", pass "linear" for linear scale.
+        Currently only "matplotlib" backend is supported. For "bokeh" and "plotly"
+        the y-axis is linear.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional

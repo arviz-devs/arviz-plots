@@ -60,15 +60,15 @@ def plot_energy(
     ----------
     dt : DataTree
         ``sample_stats`` group with an ``energy`` variable is mandatory.
+    sample_dims : sequence of str, optional
+        Dimensions to consider as sample dimensions when computing BFMI.
+        Defaults to ``rcParams["data.sample_dims"]``
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     threshold : float, default 0.3
         Reference threshold for BFMI values, values below this indicate poor exploration of the
         energy distribution.
-    sample_dims : sequence of str, optional
-        Dimensions to consider as sample dimensions when computing BFMI.
-        Defaults to ``rcParams["data.sample_dims"]``
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional

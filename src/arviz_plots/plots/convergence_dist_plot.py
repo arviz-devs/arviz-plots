@@ -63,17 +63,6 @@ def plot_convergence_dist(
     ----------
     dt : DataTree
         Input data
-    diagnostics : list of str, optional
-        List of diagnostics to plot. Defaults to ["ess_bulk", "ess_tail", "rhat_rank"].
-        Valid diagnostics are "rhat_rank", "rhat_folded", "rhat_z_scale", "rhat_split",
-        "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd", "ess_quantile",
-        "ess_local", "ess_median", "ess_mad", "ess_z_scale", "ess_folded" and "ess_identity".
-    grouped: bool, optional
-        Whether to plot all variables listed in ``var_names`` together (True)
-        or separately (False). Defaults to True.
-        If False, all variables listed in ``var_names`` must be multidimensional.
-    ref_line : bool, default True
-        Whether to plot a reference line for the recommended value of each diagnostic.
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -88,6 +77,17 @@ def plot_convergence_dist(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    diagnostics : list of str, optional
+        List of diagnostics to plot. Defaults to ["ess_bulk", "ess_tail", "rhat_rank"].
+        Valid diagnostics are "rhat_rank", "rhat_folded", "rhat_z_scale", "rhat_split",
+        "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd", "ess_quantile",
+        "ess_local", "ess_median", "ess_mad", "ess_z_scale", "ess_folded" and "ess_identity".
+    grouped: bool, optional
+        Whether to plot all variables listed in ``var_names`` together (True)
+        or separately (False). Defaults to True.
+        If False, all variables listed in ``var_names`` must be multidimensional.
+    ref_line : bool, default True
+        Whether to plot a reference line for the recommended value of each diagnostic.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the distribution of diagnostics. Default to ecdf
     plot_collection : PlotCollection, optional
