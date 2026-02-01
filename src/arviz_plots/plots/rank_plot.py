@@ -188,7 +188,6 @@ def plot_rank(
     # Compute envelope
     dummy_vals = np.linspace(0, 1, sample_size)
     x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 
