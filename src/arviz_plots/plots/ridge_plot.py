@@ -12,7 +12,14 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, process_group_variables_coords
-from arviz_plots.visuals import annotate_label, fill_between_y, line_xy, remove_axis
+from arviz_plots.visuals import (
+    annotate_label,
+    fill_between_y,
+    hist,
+    line_xy,
+    remove_axis,
+    scatter_xy,
+)
 
 
 def plot_ridge(
@@ -25,6 +32,7 @@ def plot_ridge(
     combined=True,
     ridge_height=0.9,
     labels=None,
+    kind: Literal["kde", "ecdf", "hist", "qds"] = "kde",
     shade_label=None,
     plot_collection=None,
     backend=None,
@@ -89,6 +97,8 @@ def plot_ridge(
         except "chain" and "model" (if present). The order of `labels` is ignored,
         only elements being present in it matters.
         It can include the special "__variable__" indicator, and does so by default.
+    kind : {"kde", "ecdf", "hist", "qds"}, default "kde"
+        Type of distribution visualization.
     shade_label : str, default None
         Element of `labels` that should be used to add shading horizontal strips to the plot.
         Note that labels and credible intervals are plotted in different :term:`plots`.
@@ -197,6 +207,8 @@ def plot_ridge(
     ]
     if labels is None:
         labels = labellable_dims
+    if kind is None:
+        kind = "kde"
     if not combined and "chain" not in distribution.dims:
         combined = True
 
@@ -346,30 +358,60 @@ def plot_ridge(
         with warnings.catch_warnings():
             if "model" in distribution:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            density = distribution.azstats.kde(dim=edge_dims, **stats.get("dist", {}))
-        # rescaling kde
-        density.loc[{"plot_axis": "y"}] = (
-            density.sel(plot_axis="y")
-            / density.sel(plot_axis="y").max().to_array().max()
-            * ridge_height
-        )
+            if kind == "kde":
+                density = distribution.azstats.kde(dim=edge_dims, **stats.get("dist", {}))
+            elif kind == "hist":
+                density = distribution.azstats.histogram(dim=edge_dims, **stats.get("dist", {}))
+            elif kind == "ecdf":
+                density = distribution.azstats.ecdf(dim=edge_dims, **stats.get("dist", {}))
+            elif kind == "qds":
+                density = distribution.azstats.qds(dim=edge_dims, **stats.get("dist", {}))
+            else:
+                raise ValueError(
+                    f"Unsupported kind '{kind}'. "
+                    "Supported kinds are 'kde', 'hist', 'ecdf','qds'."
+                )
+        # rescaling distribution to ridge_height
+        if kind == "hist":
+            density.loc[{"plot_axis": "histogram"}] = (
+                density.sel(plot_axis="histogram")
+                / density.sel(plot_axis="histogram").max().to_array().max()
+                * ridge_height
+            )
+        else:
+            density.loc[{"plot_axis": "y"}] = (
+                density.sel(plot_axis="y")
+                / density.sel(plot_axis="y").max().to_array().max()
+                * ridge_height
+            )
 
     if face_kwargs is not False:  # create face_density dataset only if required
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
-        face_density = density.rename({"plot_axis": "kwarg"})
-        face_density = face_density.assign_coords(
-            kwarg=[
-                "y_top" if coord == "y" else coord for coord in face_density.coords["kwarg"].values
-            ]
-        )
-        # adding a new coord 'y_bottom' set to all zeros
-        zeros = xr.full_like(face_density.sel(kwarg="x"), 0)
-        zeros = zeros.assign_coords(kwarg=["y_bottom"])
-        face_density = xr.concat([face_density, zeros], dim="kwarg")
+        if kind == "hist":
+            # For histogram, face_density uses histogram format directly
+            face_density = density
+        else:
+            face_density = density.rename({"plot_axis": "kwarg"})
+            face_density = face_density.assign_coords(
+                kwarg=[
+                    "y_top" if coord == "y" else coord
+                    for coord in face_density.coords["kwarg"].values
+                ]
+            )
+            # adding a new coord 'y_bottom' set to all zeros
+            zeros = xr.full_like(face_density.sel(kwarg="x"), 0)
+            zeros = zeros.assign_coords(kwarg=["y_bottom"])
+            face_density = xr.concat([face_density, zeros], dim="kwarg")
 
     # computing x_range
     if edge_kwargs is not False or face_kwargs is not False:
-        x_range = density.sel(plot_axis="x")
+        if kind == "hist":
+            x_range = xr.concat(
+                [density.sel(plot_axis="left_edges"), density.sel(plot_axis="right_edges")],
+                dim="edge",
+            )
+        else:
+            x_range = density.sel(plot_axis="x")
     else:
         x_range = xr.ones_like(distribution)
 
@@ -469,28 +511,80 @@ def plot_ridge(
     if edge_kwargs is not False:
         if "color" not in edge_aes:
             edge_kwargs.setdefault("color", "C0")
-        plot_collection.map(
-            line_xy,
-            "edge",
-            data=density,
-            ignore_aes=edge_ignore,
-            coords={"column": "ridge"},
-            **edge_kwargs,
-        )
+        if kind == "hist":
+            plot_collection.map(
+                hist,
+                "edge",
+                data=density,
+                ignore_aes=edge_ignore,
+                coords={"column": "ridge"},
+                **edge_kwargs,
+            )
+        elif kind == "qds":
+            plot_collection.map(
+                scatter_xy,
+                "edge",
+                data=density,
+                ignore_aes=edge_ignore,
+                coords={"column": "ridge"},
+                **edge_kwargs,
+            )
+        else:
+            plot_collection.map(
+                line_xy,
+                "edge",
+                data=density,
+                ignore_aes=edge_ignore,
+                coords={"column": "ridge"},
+                **edge_kwargs,
+            )
 
     if face_kwargs is not False:
         if "color" not in face_aes:
             face_kwargs.setdefault("color", "C0")
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
-        plot_collection.map(
-            fill_between_y,
-            "face",
-            data=face_density,
-            ignore_aes=face_ignore,
-            coords={"column": "ridge"},
-            **face_kwargs,
-        )
+        if kind == "hist":
+            plot_collection.map(
+                hist,
+                "face",
+                data=face_density,
+                ignore_aes=face_ignore,
+                coords={"column": "ridge"},
+                **face_kwargs,
+            )
+        elif kind == "qds":
+            qds_face_kwargs = stats.get("dist", {}).copy()
+            qds_face_kwargs.setdefault("top_only", True)
+            qds_face_density = distribution.azstats.qds(dim=edge_dims, **qds_face_kwargs)
+            qds_face_density.loc[{"plot_axis": "y"}] = (
+                qds_face_density.sel(plot_axis="y")
+                / density.sel(plot_axis="y").max().to_array().max()
+                * ridge_height
+            )
+            qds_face_density = (
+                qds_face_density.rename(plot_axis="kwarg")
+                .sel(kwarg=["x", "y"])
+                .pad(kwarg=(0, 1), constant_values=0)
+                .assign_coords(kwarg=["x", "y_top", "y_bottom"])
+            )
+            plot_collection.map(
+                fill_between_y,
+                "face",
+                data=qds_face_density,
+                ignore_aes=face_ignore,
+                coords={"column": "ridge"},
+                **face_kwargs,
+            )
+        else:
+            plot_collection.map(
+                fill_between_y,
+                "face",
+                data=face_density,
+                ignore_aes=face_ignore,
+                coords={"column": "ridge"},
+                **face_kwargs,
+            )
 
     if shade_label is not None:
         plot_bknd.xlim(xlim_labels, plot_collection.get_target(None, {"column": "labels"}))

@@ -313,7 +313,7 @@ def hist(
     """Interface to matplotlib for a histogram bar plot."""
     artist_kws.setdefault("zorder", 2)
     if np.any(bottom != 0):
-        height = y - bottom
+        height = y + bottom
     else:
         height = y
     if color is not unset:
@@ -321,11 +321,12 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-
+    bottom = np.full_like(height, bottom)
     kwargs = {"color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
     return target.fill_between(
         np.r_[l_e, r_e[-1]],
         np.r_[height, height[-1]],
+        np.r_[bottom, bottom[-1]],
         step="post",
         **_filter_kwargs(kwargs, None, artist_kws),
     )
