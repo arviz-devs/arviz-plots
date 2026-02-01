@@ -371,7 +371,6 @@ def plot_ridge(
                     f"Unsupported kind '{kind}'. "
                     "Supported kinds are 'kde', 'hist', 'ecdf','qds'."
                 )
-        # rescaling distribution to ridge_height
         if kind == "hist":
             density.loc[{"plot_axis": "histogram"}] = (
                 density.sel(plot_axis="histogram")
@@ -388,8 +387,22 @@ def plot_ridge(
     if face_kwargs is not False:  # create face_density dataset only if required
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
         if kind == "hist":
-            # For histogram, face_density uses histogram format directly
             face_density = density
+        elif kind == "qds":
+            qds_face_kwargs = stats.get("dist", {}).copy()
+            qds_face_kwargs.setdefault("top_only", True)
+            face_density = distribution.azstats.qds(dim=edge_dims, **qds_face_kwargs)
+            face_density.loc[{"plot_axis": "y"}] = (
+                face_density.sel(plot_axis="y")
+                / density.sel(plot_axis="y").max().to_array().max()
+                * ridge_height
+            )
+            face_density = (
+                face_density.rename(plot_axis="kwarg")
+                .sel(kwarg=["x", "y"])
+                .pad(kwarg=(0, 1), constant_values=0)
+                .assign_coords(kwarg=["x", "y_top", "y_bottom"])
+            )
         else:
             face_density = density.rename({"plot_axis": "kwarg"})
             face_density = face_density.assign_coords(
@@ -554,24 +567,10 @@ def plot_ridge(
                 **face_kwargs,
             )
         elif kind == "qds":
-            qds_face_kwargs = stats.get("dist", {}).copy()
-            qds_face_kwargs.setdefault("top_only", True)
-            qds_face_density = distribution.azstats.qds(dim=edge_dims, **qds_face_kwargs)
-            qds_face_density.loc[{"plot_axis": "y"}] = (
-                qds_face_density.sel(plot_axis="y")
-                / density.sel(plot_axis="y").max().to_array().max()
-                * ridge_height
-            )
-            qds_face_density = (
-                qds_face_density.rename(plot_axis="kwarg")
-                .sel(kwarg=["x", "y"])
-                .pad(kwarg=(0, 1), constant_values=0)
-                .assign_coords(kwarg=["x", "y_top", "y_bottom"])
-            )
             plot_collection.map(
                 fill_between_y,
                 "face",
-                data=qds_face_density,
+                data=face_density,
                 ignore_aes=face_ignore,
                 coords={"column": "ridge"},
                 **face_kwargs,
