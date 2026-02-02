@@ -20,7 +20,6 @@ from arviz_plots.plots.utils import (
 def plot_psense_dist(
     dt,
     *,
-    alphas=None,
     var_names=None,
     filter_vars=None,
     prior_var_names=None,
@@ -29,6 +28,7 @@ def plot_psense_dist(
     likelihood_coords=None,
     coords=None,
     sample_dims=None,
+    alphas=None,
     kind=None,
     point_estimate=None,
     ci_kind=None,
@@ -75,8 +75,6 @@ def plot_psense_dist(
     ----------
     dt : DataTree
         Input data
-    alphas : tuple of float
-        Lower and upper alpha values for power scaling. Defaults to (0.8, 1.25).
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -98,6 +96,8 @@ def plot_psense_dist(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    alphas : tuple of float
+        Lower and upper alpha values for power scaling. Defaults to (0.8, 1.25).
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal distribution.
     point_estimate : {"mean", "median", "mode"}, optional

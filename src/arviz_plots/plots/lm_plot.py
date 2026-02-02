@@ -38,11 +38,11 @@ def plot_lm(
     y=None,
     y_obs=None,
     plot_dim=None,
-    smooth=True,
     filter_vars=None,
     group="posterior_predictive",
     coords=None,
     sample_dims=None,
+    smooth=True,
     ci_kind=None,
     ci_prob=None,
     point_estimate=None,
@@ -99,8 +99,6 @@ def plot_lm(
     plot_dim : str, optional
         Dimension to be represented as the x axis. Defaults to the first dimension
         in the data for `x`. It should be present in the data for `y` too.
-    smooth : bool, default True
-        If True, apply a Savitzky-Golay filter to smooth the lines.
     filter_vars: {None, “like”, “regex”}, default None
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
@@ -113,6 +111,8 @@ def plot_lm(
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    smooth : bool, default True
+        If True, apply a Savitzky-Golay filter to smooth the lines.
     ci_kind : {"hdi", "eti"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
     ci_prob : float or array-like of float, optional
