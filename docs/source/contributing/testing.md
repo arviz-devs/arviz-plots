@@ -1,3 +1,4 @@
+(contributing_testing)=
 # Testing
 
 ## How to run the test suite
