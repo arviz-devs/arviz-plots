@@ -1,3 +1,4 @@
+(contributing_docs)=
 # Documentation
 
 ## How to build the documentation locally
