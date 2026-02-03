@@ -32,11 +32,11 @@ def plot_ridge(
     combined=True,
     ridge_height=0.9,
     labels=None,
-    kind: None,
     shade_label=None,
     plot_collection=None,
     backend=None,
     labeller=None,
+    kind=None,
     aes_by_visuals: Mapping[
         Literal[
             "edge",
@@ -208,6 +208,8 @@ def plot_ridge(
     ]
     if labels is None:
         labels = labellable_dims
+    if kind is None:
+        kind = rcParams["plot.density_kind"]
     if kind not in ("kde", "hist", "ecdf", "dot"):
         raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
     if not combined and "chain" not in distribution.dims:
@@ -558,18 +560,9 @@ def plot_ridge(
             face_kwargs.setdefault("color", "C0")
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
-        if kind == "hist":
+        if kind in ["hist", "qds"]:
             plot_collection.map(
                 hist,
-                "face",
-                data=face_density,
-                ignore_aes=face_ignore,
-                coords={"column": "ridge"},
-                **face_kwargs,
-            )
-        elif kind == "qds":
-            plot_collection.map(
-                fill_between_y,
                 "face",
                 data=face_density,
                 ignore_aes=face_ignore,
