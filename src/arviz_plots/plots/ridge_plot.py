@@ -32,7 +32,7 @@ def plot_ridge(
     combined=True,
     ridge_height=0.9,
     labels=None,
-    kind: Literal["kde", "ecdf", "hist", "qds"] = "kde",
+    kind: None,
     shade_label=None,
     plot_collection=None,
     backend=None,
@@ -97,8 +97,9 @@ def plot_ridge(
         except "chain" and "model" (if present). The order of `labels` is ignored,
         only elements being present in it matters.
         It can include the special "__variable__" indicator, and does so by default.
-    kind : {"kde", "ecdf", "hist", "qds"}, default "kde"
-        Type of distribution visualization.
+    kind : {"kde", "ecdf", "hist", "dot"}, optional
+        How to represent the marginal density.
+        Defaults to ``rcParams["plot.density_kind"]``
     shade_label : str, default None
         Element of `labels` that should be used to add shading horizontal strips to the plot.
         Note that labels and credible intervals are plotted in different :term:`plots`.
@@ -207,8 +208,8 @@ def plot_ridge(
     ]
     if labels is None:
         labels = labellable_dims
-    if kind is None:
-        kind = "kde"
+    if kind not in ("kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
     if not combined and "chain" not in distribution.dims:
         combined = True
 
@@ -364,12 +365,12 @@ def plot_ridge(
                 density = distribution.azstats.histogram(dim=edge_dims, **stats.get("dist", {}))
             elif kind == "ecdf":
                 density = distribution.azstats.ecdf(dim=edge_dims, **stats.get("dist", {}))
-            elif kind == "qds":
+            elif kind == "dot":
                 density = distribution.azstats.qds(dim=edge_dims, **stats.get("dist", {}))
             else:
                 raise ValueError(
                     f"Unsupported kind '{kind}'. "
-                    "Supported kinds are 'kde', 'hist', 'ecdf','qds'."
+                    "Supported kinds are 'kde', 'hist', 'ecdf', 'qds'."
                 )
         if kind == "hist":
             density.loc[{"plot_axis": "histogram"}] = (
@@ -394,7 +395,7 @@ def plot_ridge(
             face_density = distribution.azstats.qds(dim=edge_dims, **qds_face_kwargs)
             face_density.loc[{"plot_axis": "y"}] = (
                 face_density.sel(plot_axis="y")
-                / density.sel(plot_axis="y").max().to_array().max()
+                / face_density.sel(plot_axis="y").max().to_array().max()
                 * ridge_height
             )
             face_density = (
