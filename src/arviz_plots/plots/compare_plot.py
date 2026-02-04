@@ -13,6 +13,7 @@ from arviz_plots.plots.utils import get_visual_kwargs
 
 def plot_compare(
     cmp_df,
+    *,
     relative_scale=False,
     rotated=False,
     hide_top_model=False,

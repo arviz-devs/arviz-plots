@@ -29,6 +29,7 @@ from arviz_plots.visuals import (
 
 def plot_ecdf_pit(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="prior_sbc",

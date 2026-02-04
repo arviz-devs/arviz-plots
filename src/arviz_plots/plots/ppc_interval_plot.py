@@ -20,6 +20,7 @@ from arviz_plots.visuals import ci_bound_y, labelled_title, labelled_x, labelled
 
 def plot_ppc_interval(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",

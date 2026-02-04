@@ -21,6 +21,7 @@ from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, label
 
 def plot_rank(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

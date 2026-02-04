@@ -20,9 +20,7 @@ from arviz_plots.visuals import hline, labelled_title, labelled_x, line_xy, scat
 
 def plot_psense_quantities(
     dt,
-    alphas=None,
-    quantities=None,
-    mcse=True,
+    *,
     var_names=None,
     filter_vars=None,
     prior_var_names=None,
@@ -31,6 +29,9 @@ def plot_psense_quantities(
     likelihood_coords=None,
     coords=None,
     sample_dims=None,
+    alphas=None,
+    quantities=None,
+    mcse=True,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -71,13 +72,6 @@ def plot_psense_quantities(
     ----------
     dt : DataTree
         Input data
-    alphas : tuple of float
-        Lower and upper alpha values for power scaling. Defaults to (0.8, 1.25).
-    quantities : list of str
-        Quantities to plot. Options are 'mean', 'sd', 'median'. For quantiles, use
-        '0.25', '0.5', etc. Defaults to ['mean', 'sd'].
-    mcse : bool
-        Whether to plot the Monte Carlo standard error for each quantity. Defaults to True.
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -99,6 +93,13 @@ def plot_psense_quantities(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    alphas : tuple of float
+        Lower and upper alpha values for power scaling. Defaults to (0.8, 1.25).
+    quantities : list of str
+        Quantities to plot. Options are 'mean', 'sd', 'median'. For quantiles, use
+        '0.25', '0.5', etc. Defaults to ['mean', 'sd'].
+    mcse : bool
+        Whether to plot the Monte Carlo standard error for each quantity. Defaults to True.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional

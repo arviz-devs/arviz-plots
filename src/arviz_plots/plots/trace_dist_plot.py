@@ -23,6 +23,7 @@ from arviz_plots.visuals import labelled_x, labelled_y, ticklabel_props, trace_r
 
 def plot_trace_dist(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

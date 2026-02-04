@@ -17,6 +17,7 @@ from arviz_plots.visuals import annotate_label, fill_between_y, line_xy, remove_
 
 def plot_ridge(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

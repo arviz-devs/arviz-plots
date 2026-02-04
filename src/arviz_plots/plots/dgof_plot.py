@@ -18,6 +18,7 @@ from arviz_plots.plots.utils import process_group_variables_coords
 
 def plot_dgof(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

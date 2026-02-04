@@ -28,13 +28,14 @@ from arviz_plots.visuals import (
 
 def plot_ppc_pit(
     dt,
-    envelope_prob=None,
-    coverage=False,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",
     coords=None,
     sample_dims=None,
+    envelope_prob=None,
+    coverage=False,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -85,11 +86,6 @@ def plot_ppc_pit(
     ----------
     dt : DataTree
         Input data
-    envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
-        Defaults to ``rcParams["stats.envelope_prob"]``.
-    coverage : bool, optional
-        If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -105,6 +101,11 @@ def plot_ppc_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
+    coverage : bool, optional
+        If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional

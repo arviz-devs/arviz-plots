@@ -19,6 +19,7 @@ from arviz_plots.plots.utils import (
 
 def plot_dgof_dist(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

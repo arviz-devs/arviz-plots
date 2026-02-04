@@ -20,6 +20,7 @@ from arviz_plots.visuals import multiple_lines, set_xticks
 
 def plot_parallel(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",
