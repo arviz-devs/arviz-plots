@@ -22,6 +22,8 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_bf
    plot_compare
    plot_convergence_dist
+   plot_dgof
+   plot_dgof_dist
    plot_dist
    plot_ecdf_pit
    plot_energy
