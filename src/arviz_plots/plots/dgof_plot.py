@@ -103,7 +103,7 @@ def plot_dgof(
         Valid keys are:
 
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`.
-        Default is ``{"n_simulations": 1000}``.
+          Default is ``{"n_simulations": 1000}``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
