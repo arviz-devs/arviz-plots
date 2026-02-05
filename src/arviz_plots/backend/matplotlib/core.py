@@ -225,7 +225,7 @@ def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
         The title text object.
     """
     kwargs = {"color": color, "fontsize": size}
-    title_obj = figure.suptitle(text, **_filter_kwargs(kwargs, None, artist_kws))
+    title_obj = figure.suptitle(text, **_filter_kwargs(kwargs, Text, artist_kws))
     return figure, title_obj
 
 

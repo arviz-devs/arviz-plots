@@ -1,5 +1,0 @@
-Hey! Thanks for the detailed review - just pushed all the changes.
-
-Switched to the `unset` pattern for bokeh, moved those imports to the top, and refactored to use the `Styles` class instead of inline CSS. Also cleaned up the docstrings with the proper sphinx references and removed the return value from `add_title()` like you suggested.
-
-Everything's working on my end. Let me know if I missed anything or if there's anything else you'd like me to adjust!

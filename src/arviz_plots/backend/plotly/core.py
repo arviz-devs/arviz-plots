@@ -325,9 +325,9 @@ def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     plotly title object
         The title layout object from the figure.
     """
-    title_kwargs = {"text": text, "x": 0.5, "xanchor": "center"}
     title_kwargs = _filter_kwargs(
-        {"font_color": color, "font_size": size}, {**title_kwargs, **artist_kws}
+        {"font_color": color, "font_size": size, "text": text},
+        {"x": 0.5, "xanchor": "center"} | artist_kws,
     )
     figure.update_layout(title=title_kwargs)
     return figure, figure.layout.title
