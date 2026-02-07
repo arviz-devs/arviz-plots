@@ -226,7 +226,7 @@ def plot_trace(
             **title_kwargs,
         )
 
-    # Add "Steps" as x_label for trace
+   # Add x-axis label for trace; default to sample dimension when available
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         _, xlabel_aes, xlabel_ignore = filter_aes(
@@ -240,7 +240,7 @@ def plot_trace(
             labelled_x,
             "xlabel",
             ignore_aes=xlabel_ignore,
-            text="Steps" if xname is None else xname.capitalize(),
+            text="draw" if xname is None else xname,
             **xlabel_kwargs,
         )
 

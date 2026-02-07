@@ -788,6 +788,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" in pc.viz.children
         assert pc.viz["trace"]["mu"].shape == (4,)
 
+    def test_plot_trace_xlabel_text(self, datatree, backend):
+        if backend != "none":
+            pytest.skip("Semantic xlabel text is only stored for backend='none'")
+        pc = plot_trace(datatree, backend=backend)
+        assert "xlabel" in pc.viz.children
+        xlabel_ds = pc.viz["xlabel"]["mu"]
+        assert xlabel_ds.item()["string"] == "draw"
+
     def test_plot_trace_sample(self, datatree_sample, backend):
         pc = plot_trace(datatree_sample, sample_dims="sample", backend=backend)
         assert "figure" in pc.viz.data_vars
