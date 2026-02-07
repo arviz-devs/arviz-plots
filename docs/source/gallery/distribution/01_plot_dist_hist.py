@@ -25,8 +25,8 @@ pc = azp.plot_dist(
     backend="none"  # change to preferred backend
 )
 
-# Set custom x-axis limits for specific plots to better show distribution details
-pc.set_xlim((-10, 20), coords={"school": ["Deerfield"]})
-pc.set_xlim((0, 15), coords={"__variable__": "tau"})
+# Use facet_map to set axis limits for specific subsets
+pc.facet_map("set_xlim", limits=(-10, 20), coords={"school": ["Deerfield"]})
+pc.facet_map("set_xlim", limits=(0, 15), var_names="tau")
 
 pc.show()
