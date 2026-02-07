@@ -397,135 +397,6 @@ class PlotCollection:
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         plot_bknd.savefig(self.viz["figure"].item(), Path(filename), **kwargs)
 
-    def set_xlim(self, limits, coords=None, **kwargs):
-        """Set x-axis limits for all plots or a subset of plots.
-
-        This method provides a convenient way to set x-axis limits across
-        all plots in the :class:`PlotCollection` or a subset defined by `coords`.
-
-        Parameters
-        ----------
-        limits : tuple of (min, max)
-            A tuple specifying the minimum and maximum values for the x-axis.
-        coords : mapping, optional
-            Dictionary of {coordinate names : coordinate values} to select
-            a subset of plots. If None, limits are applied to all plots.
-        **kwargs : mapping, optional
-            Additional keyword arguments passed to the backend xlim function.
-
-        Examples
-        --------
-        Set x-axis limits for all plots:
-
-        .. jupyter-execute::
-
-            import arviz_base as azb
-            import arviz_plots as azp
-
-            data = azb.load_arviz_data("centered_eight")
-            pc = azp.plot_trace(data, var_names=["mu", "tau"])
-            pc.set_xlim((-5, 15))
-
-        Set x-axis limits for a specific variable:
-
-        .. jupyter-execute::
-
-            pc = azp.plot_trace(data, var_names=["mu", "tau"])
-            pc.set_xlim((-2, 10), coords={"__variable__": "mu"})
-        """
-        self._set_axis_lim("xlim", limits, coords, **kwargs)
-
-    def set_ylim(self, limits, coords=None, **kwargs):
-        """Set y-axis limits for all plots or a subset of plots.
-
-        This method provides a convenient way to set y-axis limits across
-        all plots in the :class:`PlotCollection` or a subset defined by `coords`.
-
-        Parameters
-        ----------
-        limits : tuple of (min, max)
-            A tuple specifying the minimum and maximum values for the y-axis.
-        coords : mapping, optional
-            Dictionary of {coordinate names : coordinate values} to select
-            a subset of plots. If None, limits are applied to all plots.
-        **kwargs : mapping, optional
-            Additional keyword arguments passed to the backend ylim function.
-
-        Examples
-        --------
-        Set y-axis limits for all plots:
-
-        .. jupyter-execute::
-
-            import arviz_base as azb
-            import arviz_plots as azp
-
-            data = azb.load_arviz_data("centered_eight")
-            pc = azp.plot_dist(data, var_names=["mu", "tau"])
-            pc.set_ylim((0, 1))
-
-        Set y-axis limits for a specific variable:
-
-        .. jupyter-execute::
-
-            pc = azp.plot_dist(data, var_names=["mu", "tau"])
-            pc.set_ylim((0, 0.5), coords={"__variable__": "tau"})
-        """
-        self._set_axis_lim("ylim", limits, coords, **kwargs)
-
-    def _set_axis_lim(self, axis_func, limits, coords=None, **kwargs):
-        """Set axis limits for plots.
-
-        Parameters
-        ----------
-        axis_func : str
-            Either "xlim" or "ylim" to determine which backend function to call.
-        limits : tuple of (min, max)
-            A tuple specifying the minimum and maximum values for the axis.
-        coords : mapping, optional
-            Dictionary of {coordinate names : coordinate values} to select
-            a subset of plots. If None, limits are applied to all plots.
-        **kwargs : mapping, optional
-            Additional keyword arguments passed to the backend function.
-        """
-        if "plot" not in self.viz:
-            raise ValueError("No plots found in PlotCollection")
-
-        plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        axis_func_backend = getattr(plot_bknd, axis_func)
-
-        plot_viz = self.viz["plot"]
-        if isinstance(plot_viz, xr.DataArray):
-            # Single variable case - plot_viz is a DataArray
-            if coords is not None:
-                subset_coords = sel_subset(coords, plot_viz)
-                plot_viz = plot_viz.sel(subset_coords)
-            for target in np.nditer(plot_viz.values, flags=["refs_ok"]):
-                target_item = target.item()
-                if target_item is not None:
-                    axis_func_backend(limits, target_item, **kwargs)
-        else:
-            # Multiple variables case - plot_viz is a Dataset
-            for var_name in plot_viz.data_vars:
-                da = plot_viz[var_name]
-                if coords is not None:
-                    # Check if __variable__ filter applies
-                    if "__variable__" in coords:
-                        if coords["__variable__"] != var_name:
-                            continue
-                    # Get non-__variable__ coords to check against this variable's dimensions
-                    non_var_coords = {k: v for k, v in coords.items() if k != "__variable__"}
-                    if non_var_coords:
-                        subset_coords = sel_subset(non_var_coords, da)
-                        # Skip this variable if coords were specified but don't apply to it
-                        if not subset_coords:
-                            continue
-                        da = da.sel(subset_coords)
-                for target in np.nditer(da.values, flags=["refs_ok"]):
-                    target_item = target.item()
-                    if target_item is not None:
-                        axis_func_backend(limits, target_item, **kwargs)
-
     def generate_aes_dt(self, aes, data=None, **kwargs):
         """Generate the aesthetic mappings.
 
@@ -1479,6 +1350,93 @@ class PlotCollection:
             self.viz["figure"] = xr.DataArray(new_fig)
 
         self.viz["figure_title"] = xr.DataArray(title_obj)
+
+    def facet_map(self, func, *, var_names=None, coords=None, **kwargs):
+        """Apply a visual function to plots filtered by variable names and coordinates.
+
+        This is a convenience wrapper around :meth:`~.PlotCollection.map` that uses
+        the same ``var_names`` and ``coords`` interface as plotting functions like
+        :func:`~arviz_plots.plot_dist`.
+
+        Parameters
+        ----------
+        func : str or callable
+            Visual function to apply. If a string, it's looked up in the visuals module
+            (e.g., "set_xlim" becomes :func:`arviz_plots.visuals.set_xlim`).
+        var_names : str or list of str, optional
+            Variables to apply the function to. If not provided, applies to all variables.
+        coords : mapping, optional
+            Coordinates to filter which plots get updated. Only plots with matching
+            coordinate values will be affected.
+        **kwargs
+            Passed to ``func``.
+
+        Returns
+        -------
+        PlotCollection
+            Returns self to allow method chaining.
+
+        Examples
+        --------
+        Set x-axis limits on a specific variable:
+
+        .. jupyter-execute::
+
+            import arviz_base as azb
+            import arviz_plots as azp
+            data = azb.load_arviz_data("centered_eight")
+            pc = azp.plot_dist(data)
+            pc.facet_map("set_xlim", limits=(-15, 15), var_names="mu")
+
+        Apply to multiple variables with coordinate filtering:
+
+        .. jupyter-execute::
+
+            pc = azp.plot_dist(data, var_names=["mu", "tau", "theta"])
+            pc.facet_map("set_xlim", limits=(-5, 5),
+                         var_names=["mu", "tau"],
+                         coords={"school": ["Choate", "Deerfield"]})
+
+        Chain multiple operations:
+
+        .. jupyter-execute::
+
+            pc = azp.plot_dist(data)
+            pc.facet_map("set_xlim", limits=(-10, 10)).facet_map("set_ylim", limits=(0, 0.5))
+
+        See Also
+        --------
+        PlotCollection.map
+        """
+        from importlib import import_module
+
+        # look up string function names in visuals module
+        if isinstance(func, str):
+            visuals = import_module(".visuals", package="arviz_plots")
+            if not hasattr(visuals, func):
+                available = [name for name in dir(visuals) if not name.startswith("_")]
+                raise ValueError(
+                    f"Function '{func}' not found in visuals module. "
+                    f"Available: {', '.join(available[:10])}..."
+                )
+            func = getattr(visuals, func)
+
+        # filter the data using same logic as plotting functions
+        filtered_data = self.data
+        if var_names is not None:
+            from arviz_base.utils import _var_names
+
+            var_list = _var_names(var_names, filtered_data, filter_vars=None)
+            if var_list is not None:
+                filtered_data = filtered_data[var_list]
+
+        if coords is not None:
+            filtered_data = filtered_data.sel(coords)
+
+        # use .map with ignore_aes to only loop over facets
+        self.map(func, data=filtered_data, ignore_aes="all", store_artist=False, **kwargs)
+
+        return self
 
     def add_legend(
         self,

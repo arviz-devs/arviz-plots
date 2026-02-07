@@ -31,6 +31,7 @@ Plotting
 
    PlotCollection.add_legend
    PlotCollection.map
+   PlotCollection.facet_map
 
 Attributes
 ..........
