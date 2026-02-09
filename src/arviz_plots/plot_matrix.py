@@ -136,6 +136,13 @@ class PlotMatrix(PlotCollection):
         )
         n_pairs = len(pairs)
         n_plots = n_pairs**2
+        max_plots = rcParams["plot.max_subplots"]
+        if max_plots is not None and n_plots > max_plots:
+            raise ValueError(
+                f"Requested {n_plots} subplots, which exceeds "
+                f"rcParams['plot.max_subplots']={max_plots}. "
+                "Reduce the number of plots or increase this limit."
+            )
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
             n_plots, n_pairs, n_pairs, squeeze=False, **figure_kwargs
