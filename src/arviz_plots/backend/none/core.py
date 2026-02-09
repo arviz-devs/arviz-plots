@@ -130,6 +130,40 @@ def savefig(figure, path, **kwargs):
     raise TypeError("'none' backend figures can't be saved.")
 
 
+def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
+    """Set a title for the entire figure.
+
+    Parameters
+    ----------
+    figure : dict
+        The figure element dict.
+    string : str
+        The title text.
+    color : optional
+        Color of the title text.
+    size : optional
+        Font size of the title.
+    **artist_kws : dict, optional
+        Additional keyword arguments.
+
+    Returns
+    -------
+    dict
+        The figure element dict (unchanged).
+    dict
+        The title element dict.
+    """
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    kwargs = {"color": color, "size": size}
+    title_element = {
+        "function": "set_figure_title",
+        "string": string,
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    return figure, title_element
+
+
 def get_figsize(plot_collection):
     """Get the size of the :term:`figure` element and its units."""
     figure_element = plot_collection.viz["figure"].item()

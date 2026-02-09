@@ -200,6 +200,35 @@ def savefig(figure, path, **kwargs):
     figure.savefig(path, **kwargs)
 
 
+@expand_aesthetic_aliases
+def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
+    """Set a title for the entire figure.
+
+    Parameters
+    ----------
+    figure : `~matplotlib.figure.Figure`
+        The figure to add the title to.
+    string : str
+        The title text.
+    color : optional
+        Color of the title text.
+    size : optional
+        Font size of the title.
+    **artist_kws : dict, optional
+        Additional keyword arguments passed to :func:`~matplotlib.figure.Figure.suptitle`.
+
+    Returns
+    -------
+    `~matplotlib.figure.Figure`
+        The figure object (unchanged).
+    `~matplotlib.text.Text`
+        The title text object.
+    """
+    kwargs = {"color": color, "fontsize": size}
+    title_obj = figure.suptitle(string, **_filter_kwargs(kwargs, Text, artist_kws))
+    return figure, title_obj
+
+
 def get_figsize(plot_collection):
     """Get the size of the :term:`figure` element and its units."""
     return plot_collection.viz["figure"].item().get_size_inches(), "inches"
@@ -237,7 +266,10 @@ def create_plotting_grid(
     squeeze : bool, default True
     sharex, sharey : bool, default False
     polar : bool
-    subplot_kws : bool
+    width_ratios : list, optional
+    height_ratios : list, optional
+    plot_hspace : float, optional
+    subplot_kws : dict, optional
         Passed to :func:`~matplotlib.pyplot.subplots` as ``subplot_kw``
     **kwargs: dict, optional
         Passed to :func:`~matplotlib.pyplot.subplots`
@@ -279,6 +311,7 @@ def create_plotting_grid(
         for i, ax in enumerate(axes.ravel("C")):
             if i >= number:
                 ax.set_axis_off()
+
     return fig, axes
 
 

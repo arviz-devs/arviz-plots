@@ -20,4 +20,5 @@ pc = azp.plot_trace(
     data,
     backend="none"  # change to preferred backend
 )
+pc.add_title("MCMC Sampling Traces: Centered Eight Model")
 pc.show()

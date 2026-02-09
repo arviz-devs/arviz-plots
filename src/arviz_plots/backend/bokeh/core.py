@@ -8,17 +8,19 @@ import bokeh.colors.named as named_colors
 import numpy as np
 from bokeh.colors import Color
 from bokeh.io.export import export_png, export_svg
-from bokeh.layouts import GridBox, gridplot
+from bokeh.layouts import GridBox, column, gridplot
 from bokeh.models import (
     BoxAnnotation,
     ColumnDataSource,
     CustomJSTickFormatter,
+    Div,
     FixedTicker,
     GridPlot,
     Range1d,
     Span,
     Title,
 )
+from bokeh.models.css import Styles
 from bokeh.plotting import figure as _figure
 from bokeh.plotting import output_file, save
 from bokeh.plotting import show as _show
@@ -234,6 +236,44 @@ def savefig(figure, path, **kwargs):
         )
 
 
+@expand_aesthetic_aliases
+def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
+    """Set a title for the entire figure.
+
+    Parameters
+    ----------
+    figure : bokeh layout or None
+        The figure/layout to add the title to.
+    string : str
+        The title text.
+    color : optional
+        Color of the title text.
+    size : optional
+        Font size of the title.
+    **artist_kws : dict, optional
+        Additional keyword arguments passed to :class:`~bokeh.models.Div`.
+
+    Returns
+    -------
+    bokeh layout
+        The new layout with title added (column of title_div and original figure).
+    `~bokeh.models.Div`
+        The title Div element.
+    """
+    styles = artist_kws.pop("styles", {})
+    if isinstance(styles, dict):
+        styles = Styles(**styles)
+    styles.update(**_filter_kwargs({"color": color, "font_size": _float_or_str_size(size)}, {}))
+    if styles.text_align is None:
+        styles.text_align = "center"
+    if styles.width is None:
+        styles.width = "auto"
+
+    title_div = Div(text=string, styles=styles, **artist_kws)
+    new_layout = column(title_div, figure)
+    return new_layout, title_div
+
+
 def get_figsize(plot_collection):
     """Get the size of the :term:`figure` element and its units."""
     figure = plot_collection.viz["figure"].item()
@@ -290,6 +330,7 @@ def create_plotting_grid(
         Whether to create plots with polar coordinate axes.
     width_ratios, height_ratios : array-like, optional
         Ratios between widths/heights of columns/rows in the generated :term:`plot` grid.
+    plot_hspace : float, optional
     subplot_kws : dict, optional
         Passed to :func:`~bokeh.plotting.figure`
     **kwargs :
@@ -393,6 +434,7 @@ def create_plotting_grid(
     if squeeze and figures.size == 1:
         return None, figures[0, 0]
     layout = gridplot(figures.tolist(), **kwargs)
+
     return layout, figures.squeeze() if squeeze else figures
 
 
@@ -409,7 +451,7 @@ def _float_or_str_size(size):
     Convert float sizes to string ones in px units.
     """
     if size is unset:
-        return size
+        return unset
     if isinstance(size, str):
         return size
     return f"{size:.0f}px"
