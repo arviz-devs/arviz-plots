@@ -237,14 +237,14 @@ def savefig(figure, path, **kwargs):
 
 
 @expand_aesthetic_aliases
-def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
+def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
     """Set a title for the entire figure.
 
     Parameters
     ----------
     figure : bokeh layout or None
         The figure/layout to add the title to.
-    text : str
+    string : str
         The title text.
     color : optional
         Color of the title text.
@@ -269,7 +269,7 @@ def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     if styles.width is None:
         styles.width = "auto"
 
-    title_div = Div(text=text, styles=styles, **artist_kws)
+    title_div = Div(text=string, styles=styles, **artist_kws)
     new_layout = column(title_div, figure)
     return new_layout, title_div
 

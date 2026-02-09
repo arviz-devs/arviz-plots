@@ -130,14 +130,14 @@ def savefig(figure, path, **kwargs):
     raise TypeError("'none' backend figures can't be saved.")
 
 
-def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
+def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
     """Set a title for the entire figure.
 
     Parameters
     ----------
     figure : dict
         The figure element dict.
-    text : str
+    string : str
         The title text.
     color : optional
         Color of the title text.
@@ -158,7 +158,7 @@ def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
     kwargs = {"color": color, "size": size}
     title_element = {
         "function": "set_figure_title",
-        "text": text,
+        "string": string,
         **_filter_kwargs(kwargs, artist_kws),
     }
     return figure, title_element

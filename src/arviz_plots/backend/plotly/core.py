@@ -302,14 +302,14 @@ def savefig(figure, path, **kwargs):
 
 
 @expand_aesthetic_aliases
-def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
+def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
     """Set a title for the entire figure.
 
     Parameters
     ----------
     figure : `~plotly.graph_objects.Figure`
         The figure to add the title to.
-    text : str
+    string : str
         The title text.
     color : optional
         Color of the title text.
@@ -326,7 +326,7 @@ def set_figure_title(figure, text, *, color=unset, size=unset, **artist_kws):
         The title layout object from the figure.
     """
     title_kwargs = _filter_kwargs(
-        {"font_color": color, "font_size": size, "text": text},
+        {"font_color": color, "font_size": size, "text": string},
         {"x": 0.5, "xanchor": "center"} | artist_kws,
     )
     figure.update_layout(title=title_kwargs)
