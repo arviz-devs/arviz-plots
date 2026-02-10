@@ -41,8 +41,8 @@ def get_default_aes(aes_key, n, kwargs=None):
     ----------
     aes_key : str
         The key for which default values should be generated.
-        Note :term:`aesthetics` can be arbitrary keyword arguments, but for those where
-        possible you should ideally use
+        Note :term:`aesthetics` can be arbitrary keyword arguments, but whenever
+        possible you should use
         :ref:`common interface arguments <backend_interface_arguments>`
         to take advantage of all the available features and defaults.
         For example, `color` will get a default cycle assigned automatically
