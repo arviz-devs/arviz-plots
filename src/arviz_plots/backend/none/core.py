@@ -301,7 +301,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     **artist_kws
         Passed to the backend plotting function of the respective backend:
 
-        * matplotlib -> :meth:`~matplotlib.axes.Axes.line`
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.plot`
         * plotly -> :class:`~plotly.graph_objects.Scatter` with (``mode="lines"``)
         * bokeh -> :meth:`~bokeh.plotting.figure.line`
 

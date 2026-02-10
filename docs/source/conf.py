@@ -125,6 +125,7 @@ intersphinx_mapping = {
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "bokeh": ("https://docs.bokeh.org/en/latest", None),
+    "plotly": ("https://plotly.com/python-api-reference/", None),
 }
 
 # -- Options for HTML output
