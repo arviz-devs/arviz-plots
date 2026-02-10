@@ -479,7 +479,33 @@ def scatter(
     width=unset,
     **artist_kws,
 ):
-    """Interface to bokeh for a scatter plot."""
+    """Interface to bokeh for a scatter plot.
+
+    Parameters
+    ----------
+    x, y : array_like of shape (n,)
+        Data for the points to plot
+    target : bokeh.plotting.figure
+        The backend object representing a :term:`plot` where this :term:`visual` should be added.
+    size
+        Defines ``size`` in bokeh function called.
+    marker
+        Defines ``marker`` in bokeh function called. It can also take "|" as indicated
+        in :ref:`backend_interface_arguments`
+    alpha
+        Defines both ``line_alpha`` and ``fill_alpha``
+    color, facecolor, edgecolor : any
+        Define ``fill_color`` and ``line_color``.
+    width : any
+        Defines ``line_width``
+    **artist_kws
+        Additional keyword arguments passed to :func:`~bokeh.plotting.figure.scatter`
+
+    Returns
+    -------
+    scatter_visual : bokeh.models.GlyphRenderer
+        The bokeh object representing the plotted collection of points.
+    """
     if color is not unset:
         if facecolor is unset and edgecolor is unset:
             facecolor = color

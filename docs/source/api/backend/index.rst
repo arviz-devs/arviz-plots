@@ -94,7 +94,7 @@ Common interface definition
         Style of the line plotted.
 
     marker
-        Marker to be added to the plot.
+        Marker to be added to the plot. Needs to accept `|` as a valid value.
 
     rotation
         Rotation of axis labels in degrees.

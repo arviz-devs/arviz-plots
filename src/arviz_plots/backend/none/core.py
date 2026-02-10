@@ -17,6 +17,10 @@ ALLOW_KWARGS = True
 class UnsetDefault:
     """Specific class to indicate an aesthetic hasn't been set."""
 
+    def __repr__(self):
+        """Set custom repr for docs."""
+        return "<unset>"
+
 
 unset = UnsetDefault()
 
@@ -283,7 +287,29 @@ def hist(
 
 
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
-    """Interface to a line plot."""
+    """Interface to a line plot.
+
+    Parameters
+    ----------
+    x, y : array-like of shape (n,)
+        The x and y data to be plotted as a line
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual` should be added.
+    color, alpha, width, linestyle
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.line`
+        * plotly -> :class:`~plotly.graph_objects.Scatter` with (``mode="lines"``)
+        * bokeh -> :meth:`~bokeh.plotting.figure.line`
+
+    Returns
+    -------
+    line_visual : any
+        The backend object representing the generated line.
+    """
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -348,7 +374,33 @@ def scatter(
     width=unset,
     **artist_kws,
 ):
-    """Interface to a scatter plot."""
+    """Interface to a scatter plot.
+
+    .. important::
+
+        For backend specific details see the
+        :func:`matplotlib <arviz_plots.backend.matplotlib.scatter>`,
+        :func:`plotly <arviz_plots.backend.plotly.scatter>`,
+        and :func:`bokeh <arviz_plots.backend.bokeh.scatter>`
+        interfaces.
+
+    Parameters
+    ----------
+    x, y : array_like of shape (n,)
+        Data for the points to plot
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual` should be added.
+    size, marker, alpha, color, facecolor, edgecolor, width : any
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Additional keyword arguments.
+
+    Returns
+    -------
+    scatter_visual : any
+        The backend object representing the plotted collection of points.
+    """
     if color is not unset:
         if facecolor is unset and edgecolor is unset:
             facecolor = color
