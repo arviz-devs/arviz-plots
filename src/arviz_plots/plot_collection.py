@@ -763,6 +763,14 @@ class PlotCollection:
 
         n_plots, plots_per_var = process_facet_dims(data, cols)
 
+        max_plots = rcParams["plot.max_subplots"]
+        if max_plots is not None and n_plots > max_plots:
+            raise ValueError(
+                f"Requested {n_plots} subplots, which exceeds "
+                f"rcParams['plot.max_subplots']={max_plots}. "
+                "Reduce the number of plots or increase this limit."
+            )
+
         if col_wrap is None:
             col_wrap = int(np.ceil(np.sqrt(n_plots)))
         else:
@@ -921,6 +929,13 @@ class PlotCollection:
         n_rows, rows_per_var = process_facet_dims(data, rows)
 
         n_plots = n_cols * n_rows
+        max_plots = rcParams["plot.max_subplots"]
+        if max_plots is not None and n_plots > max_plots:
+            raise ValueError(
+                f"Requested {n_plots} subplots, which exceeds "
+                f"rcParams['plot.max_subplots']={max_plots}. "
+                "Reduce the number of plots or increase this limit."
+            )
         plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
             n_plots, n_rows, n_cols, squeeze=False, **figure_kwargs

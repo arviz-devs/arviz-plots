@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 import xarray as xr
-from arviz_base import dict_to_dataset
+from arviz_base import dict_to_dataset, rc_context
 
 from arviz_plots import PlotMatrix
 from arviz_plots.plot_matrix import subset_matrix_da
@@ -55,7 +55,8 @@ def test_subset_matrix_da_offdiag(matrix_da, subset_x, subset_y):
 
 
 def test_plot_matrix_init(dataset):
-    pc = PlotMatrix(dataset, ["__variable__", "hierarchy", "group"], backend="none")
+    with rc_context({"plot.max_subplots": None}):
+        pc = PlotMatrix(dataset, ["__variable__", "hierarchy", "group"], backend="none")
     assert "plot" in pc.viz.data_vars
     coord_names = ("var_name_x", "var_name_y", "hierarchy_x", "hierarchy_y", "group_x", "group_y")
     missing_coord_names = [name for name in coord_names if name not in pc.viz["plot"].coords]
@@ -64,9 +65,13 @@ def test_plot_matrix_init(dataset):
 
 
 def test_plot_matrix_aes(dataset):
-    pc = PlotMatrix(
-        dataset, ["__variable__", "hierarchy", "group"], backend="none", aes={"color": ["chain"]}
-    )
+    with rc_context({"plot.max_subplots": None}):
+        pc = PlotMatrix(
+            dataset,
+            ["__variable__", "hierarchy", "group"],
+            backend="none",
+            aes={"color": ["chain"]},
+        )
     assert "/color" in pc.aes.groups
     assert "mapping" in pc.aes["color"].data_vars
     assert "neutral_element" not in pc.aes["color"].data_vars
@@ -87,9 +92,13 @@ def map_auxiliar_couple(da_x, da_y, target, target_list, kwarg_list, **kwargs):
 
 
 def test_plot_matrix_map(dataset):
-    pc = PlotMatrix(
-        dataset, ["__variable__", "hierarchy", "group"], backend="none", aes={"color": ["chain"]}
-    )
+    with rc_context({"plot.max_subplots": None}):
+        pc = PlotMatrix(
+            dataset,
+            ["__variable__", "hierarchy", "group"],
+            backend="none",
+            aes={"color": ["chain"]},
+        )
     target_list = []
     kwarg_list = []
     pc.map(
@@ -113,12 +122,13 @@ def test_plot_matrix_map(dataset):
 
 
 def test_plot_matrix_map_scalar_coord(dataset):
-    pc = PlotMatrix(
-        dataset.isel(hierarchy=[0]),
-        ["__variable__", "hierarchy", "group"],
-        backend="none",
-        aes={"color": ["chain"]},
-    )
+    with rc_context({"plot.max_subplots": None}):
+        pc = PlotMatrix(
+            dataset.isel(hierarchy=[0]),
+            ["__variable__", "hierarchy", "group"],
+            backend="none",
+            aes={"color": ["chain"]},
+        )
     target_list = []
     kwarg_list = []
     pc.map(
@@ -143,9 +153,13 @@ def test_plot_matrix_map_scalar_coord(dataset):
 
 @pytest.mark.parametrize("triangle", ("both", "lower", "upper"))
 def test_plot_matrix_map_triangle(dataset, triangle):
-    pc = PlotMatrix(
-        dataset, ["__variable__", "hierarchy", "group"], backend="none", aes={"color": ["chain"]}
-    )
+    with rc_context({"plot.max_subplots": None}):
+        pc = PlotMatrix(
+            dataset,
+            ["__variable__", "hierarchy", "group"],
+            backend="none",
+            aes={"color": ["chain"]},
+        )
     target_list = []
     kwarg_list = []
     pc.map_triangle(
@@ -179,12 +193,13 @@ def test_plot_matrix_map_triangle(dataset, triangle):
 
 @pytest.mark.parametrize("triangle", ("both", "lower", "upper"))
 def test_plot_matrix_map_triangle_scalar_coord(dataset, triangle):
-    pc = PlotMatrix(
-        dataset.isel(hierarchy=[0]),
-        ["__variable__", "hierarchy", "group"],
-        backend="none",
-        aes={"color": ["chain"]},
-    )
+    with rc_context({"plot.max_subplots": None}):
+        pc = PlotMatrix(
+            dataset.isel(hierarchy=[0]),
+            ["__variable__", "hierarchy", "group"],
+            backend="none",
+            aes={"color": ["chain"]},
+        )
     target_list = []
     kwarg_list = []
     pc.map_triangle(
