@@ -111,9 +111,10 @@ disallow_untyped_defs = true
 # module = "thirdparty.*"
 # ignore_missing_imports = true
 
-[tool.pytest.ini_options]
+[tool.pytest]
 filterwarnings = ["error"]
-addopts = "--durations=10"
+addopts = ["--strict-markers", "--durations=10"]
+markers = ["matplotlib", "bokeh", "plotly"]
 testpaths = [
     "tests",
 ]
