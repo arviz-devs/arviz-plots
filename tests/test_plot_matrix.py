@@ -58,14 +58,7 @@ def test_plot_matrix_init(dataset):
     with rc_context({"plot.max_subplots": None}):
         pc = PlotMatrix(dataset, ["__variable__", "hierarchy", "group"], backend="none")
     assert "plot" in pc.viz.data_vars
-    coord_names = (
-        "var_name_x",
-        "var_name_y",
-        "hierarchy_x",
-        "hierarchy_y",
-        "group_x",
-        "group_y",
-    )
+    coord_names = ("var_name_x", "var_name_y", "hierarchy_x", "hierarchy_y", "group_x", "group_y")
     missing_coord_names = [name for name in coord_names if name not in pc.viz["plot"].coords]
     assert not missing_coord_names, list(pc.viz["plot"].coords)
     assert pc.viz["plot"].sizes == {"row_index": 9, "col_index": 9}
