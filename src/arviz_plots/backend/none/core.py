@@ -186,6 +186,9 @@ def create_plotting_grid(
         plots[idx] = None if i + 1 > number else []
     if squeeze:
         plots = plots.squeeze()
+        if np.ndim(plots) == 0:
+            plots = np.array([[plots]], dtype=object)
+
     if not ALLOW_KWARGS:
         if subplot_kws:
             raise ValueError("'subplot_kws' is not empty")
