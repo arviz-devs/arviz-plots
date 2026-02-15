@@ -186,8 +186,8 @@ def create_plotting_grid(
         plots[idx] = None if i + 1 > number else []
     if squeeze:
         plots = plots.squeeze()
-        if np.ndim(plots) == 0:
-            plots = np.array([[plots]], dtype=object)
+        if squeeze and isinstance(plots, np.ndarray) and plots.shape == ():
+            plots = np.array([plots.item()], dtype=object)
 
     if not ALLOW_KWARGS:
         if subplot_kws:
