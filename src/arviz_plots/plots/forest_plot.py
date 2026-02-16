@@ -72,7 +72,7 @@ def plot_forest(
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, default None
+    filter_vars : {None, "like", "regex"}, default None
         If None, interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
@@ -89,7 +89,7 @@ def plot_forest(
         Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
     ci_kind : {"eti", "hdi"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
-    ci_probs : (float, float), optional
+    ci_probs : array-like of shape (2,), optional
         Indicates the probabilities that should be contained within the plotted credible intervals.
         It should be sorted as the elements refer to the probabilities of the "trunk" and "twig"
         elements. Defaults to ``(0.5, rcParams["stats.ci_prob"])``
