@@ -1,0 +1,29 @@
+[tool.docstub.type_prefixes]
+numbers = "numbers"
+xarray = "xarray"
+pandas = "pandas"
+numpyro = "numpyro"
+emcee = "emcee"
+cmdstanpy = "cmdstanpy"
+stan = "stan"
+types = "types"
+
+# Specify human-friendly aliases that can be used instead of Python-parsable
+# annotations.
+[tool.docstub.type_nicknames]
+sequence = "Sequence"
+iterable = "Iterable"
+mapping = "Mapping"
+hashable = "Hashable"
+hashable_key = "Any"
+iterator = "Iterator"
+module = "types.ModuleType"
+callable = "Callable"
+labeller = "arviz_base.labels.Labeller"
+Dataset = "xarray.Dataset"
+DataTree = "xarray.DataTree"
+# TODO: define a meta/pseudo type for DataTree-like
+DataTree-like = "xarray.DataTree"
+DataArray = "xarray.DataArray"
+scalar = "numbers.Number"
+any = "Any"
