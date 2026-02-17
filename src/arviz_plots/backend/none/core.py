@@ -376,14 +376,6 @@ def scatter(
 ):
     """Interface to a scatter plot.
 
-    .. important::
-
-        For backend specific details see the
-        :func:`matplotlib <arviz_plots.backend.matplotlib.scatter>`,
-        :func:`plotly <arviz_plots.backend.plotly.scatter>`,
-        and :func:`bokeh <arviz_plots.backend.bokeh.scatter>`
-        interfaces.
-
     Parameters
     ----------
     x, y : array_like of shape (n,)
@@ -394,7 +386,11 @@ def scatter(
         Properties of the generated :term:`visual`.
         If needed, see :ref:`backend_interface_arguments` for more details.
     **artist_kws
-        Additional keyword arguments.
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.scatter`
+        * plotly -> :class:`~plotly.graph_objects.Scatter` with (``mode="markers"``)
+        * bokeh -> :meth:`~bokeh.plotting.figure.scatter`
 
     Returns
     -------
