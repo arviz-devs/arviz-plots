@@ -12,22 +12,22 @@ Available backends
     :gutter: 2
 
     .. grid-item-card::
-        :alt: matplotlib
+        :img-alt: Matplotlib
         :img-background: ../../_static/matplotlib-logo-light.svg
         :class-img-bottom: dark-light
 
     .. grid-item-card::
-        :alt: bokeh
+        :img-alt: Bokeh
         :img-background: ../../_static/bokeh-logo-light.svg
         :class-img-bottom: dark-light
 
     .. grid-item-card::
-        :alt: plotly
+        :img-alt: Plotly
         :img-background: ../../_static/plotly-logo-light.png
         :class-img-bottom: dark-light
 
     .. grid-item-card::
-        :alt: none
+        :img-alt: None (only processing, no plotting)
         :img-background: ../../_static/none-logo-light.png
         :class-img-bottom: dark-light
 
