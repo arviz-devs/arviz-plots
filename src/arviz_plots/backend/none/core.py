@@ -17,12 +17,23 @@ ALLOW_KWARGS = True
 class UnsetDefault:
     """Specific class to indicate an aesthetic hasn't been set."""
 
+    def __repr__(self):
+        """Set custom repr for docs."""
+        return "<unset>"
+
 
 unset = UnsetDefault()
 
 
 def get_background_color():
-    """Get the background color."""
+    """Get the background color of active style.
+
+    See Also
+    --------
+    arviz_plots.backend.bokeh.get_background_color
+    arviz_plots.backend.matplotlib.get_background_color
+    arviz_plots.backend.plotly.get_background_color
+    """
     return "#ffffff"
 
 
@@ -34,7 +45,12 @@ def get_default_aes(aes_key, n, kwargs=None):
     ----------
     aes_key : str
         The key for which default values should be generated.
-        Ideally part of {ref}`common interface arguments <backend_interface_arguments>`.
+        Note :term:`aesthetics` can be arbitrary keyword arguments, but whenever
+        possible you should use
+        :ref:`common interface arguments <backend_interface_arguments>`
+        to take advantage of all the available features and defaults.
+        For example, `color` will get a default cycle assigned automatically
+        whereas `fill_color` won't.
     n : int
         Number of values to generate.
     kwargs : mapping of {str : array_like}, optional
@@ -46,6 +62,12 @@ def get_default_aes(aes_key, n, kwargs=None):
     -------
     ndarray of shape (n,)
         The requested `n` default values for `aes_key`. They might not be unique.
+
+    See Also
+    --------
+    arviz_plots.backend.bokeh.get_default_aes
+    arviz_plots.backend.matplotlib.get_default_aes
+    arviz_plots.backend.plotly.get_default_aes
     """
     if kwargs is None:
         kwargs = {}
@@ -80,8 +102,14 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
     Returns
     -------
-    figsize : tuple of (float, float) or None
+    figsize : tuple of (float, float)
         Size of figure in dots
+
+    See Also
+    --------
+    arviz_plots.backend.bokeh.scale_fig_size
+    arviz_plots.backend.matplotlib.scale_fig_size
+    arviz_plots.backend.plotly.scale_fig_size
     """
     if figsize_units is None:
         figsize_units = "dots"
@@ -111,6 +139,12 @@ def show(figure):
     Parameters
     ----------
     figure : figure_type
+
+    See Also
+    --------
+    arviz_plots.backend.bokeh.show
+    arviz_plots.backend.matplotlib.show
+    arviz_plots.backend.plotly.show
     """
     raise TypeError("'none' backend objects can't be shown.")
 
@@ -126,6 +160,12 @@ def savefig(figure, path, **kwargs):
         The path to save the figure to.
     **kwargs : dict, optional
         Additional keyword arguments.
+
+    See Also
+    --------
+    arviz_plots.backend.bokeh.savefig
+    arviz_plots.backend.matplotlib.savefig
+    arviz_plots.backend.plotly.savefig
     """
     raise TypeError("'none' backend figures can't be saved.")
 
@@ -246,6 +286,7 @@ def _filter_kwargs(kwargs, artist_kws):
     return {**artist_kws, **kwargs}
 
 
+# "geoms"
 def hist(
     y,
     l_e,
@@ -279,9 +320,30 @@ def hist(
     return artist_element
 
 
-# "geoms"
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
-    """Interface to a line plot."""
+    """Interface to a line plot.
+
+    Parameters
+    ----------
+    x, y : array-like of shape (n,)
+        The x and y data to be plotted as a line
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual` should be added.
+    color, alpha, width, linestyle
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.plot`
+        * plotly -> :class:`~plotly.graph_objects.Scatter` with (``mode="lines"``)
+        * bokeh -> :meth:`~bokeh.plotting.figure.line`
+
+    Returns
+    -------
+    line_visual : any
+        The backend object representing the generated line.
+    """
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -346,7 +408,29 @@ def scatter(
     width=unset,
     **artist_kws,
 ):
-    """Interface to a scatter plot."""
+    """Interface to a scatter plot.
+
+    Parameters
+    ----------
+    x, y : array_like of shape (n,)
+        Data for the points to plot
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual` should be added.
+    size, marker, alpha, color, facecolor, edgecolor, width : any
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.scatter`
+        * plotly -> :class:`~plotly.graph_objects.Scatter` with (``mode="markers"``)
+        * bokeh -> :meth:`~bokeh.plotting.figure.scatter`
+
+    Returns
+    -------
+    scatter_visual : any
+        The backend object representing the plotted collection of points.
+    """
     if color is not unset:
         if facecolor is unset and edgecolor is unset:
             facecolor = color
