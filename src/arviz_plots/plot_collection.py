@@ -1064,7 +1064,11 @@ class PlotCollection:
                     for dim in inherited_dims
                 },
             )
-        self._viz_dt[fun_label] = artist_dt
+        if fun_label in self._viz_dt.children:
+            for var_name, da in artist_dt.items():
+                self._viz_dt[fun_label][var_name] = da
+        else:
+            self._viz_dt[fun_label] = artist_dt
 
     def get_target(self, var_name, selection):
         """Get the target that corresponds to the given variable and selection."""
