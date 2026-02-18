@@ -226,7 +226,7 @@ def plot_psense_quantities(
     name_quantities = []
 
     if "mean" in quantities:
-        to_concat_quantities.append(distribution.azstats.mean(sample_dims))
+        to_concat_quantities.append(distribution.azstats.mean(sample_dims, round_to="none"))
         if mcse:
             to_concat_mcse.append(ds_posterior.azstats.mcse(method="mean"))
         name_quantities.append("mean")
@@ -236,7 +236,7 @@ def plot_psense_quantities(
             to_concat_mcse.append(ds_posterior.azstats.mcse(method="sd"))
         name_quantities.append("sd")
     if "median" in quantities:
-        to_concat_quantities.append(distribution.azstats.median(sample_dims))
+        to_concat_quantities.append(distribution.azstats.median(sample_dims, round_to="none"))
         if mcse:
             to_concat_mcse.append(ds_posterior.azstats.mcse(method="median"))
         name_quantities.append("median")

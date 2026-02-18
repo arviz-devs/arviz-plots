@@ -436,12 +436,14 @@ def plot_dist(
         pe_dims, pe_aes, pe_ignore = filter_aes(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
         )
+        pe_stats_kwargs = stats.get("point_estimate", {})
+        pe_stats_kwargs.setdefault("round_to", "none")
         if point_estimate == "median":
-            point = distribution.azstats.median(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.median(dim=pe_dims, **pe_stats_kwargs)
         elif point_estimate == "mean":
-            point = distribution.azstats.mean(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.mean(dim=pe_dims, **pe_stats_kwargs)
         elif point_estimate == "mode":
-            point = distribution.azstats.mode(dim=pe_dims, **stats.get("point_estimate", {}))
+            point = distribution.azstats.mode(dim=pe_dims, **pe_stats_kwargs)
         else:
             raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
 

@@ -383,6 +383,8 @@ def plot_forest(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
         )
         pe_stats = stats.get("point_estimate", {})
+        if isinstance(pe_stats, dict):
+            pe_stats.setdefault("round_to", "none")
         if isinstance(pe_stats, xr.Dataset):
             point = pe_stats
         elif point_estimate == "median":
