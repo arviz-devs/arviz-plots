@@ -1,6 +1,5 @@
 """dist plot code."""
 
-import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
@@ -12,7 +11,9 @@ from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
+    compute_dist,
     filter_aes,
+    filter_aes_full,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -212,8 +213,8 @@ def plot_dist(
         point_estimate = rcParams["stats.point_estimate"]
     if kind is None:
         kind = rcParams["plot.density_kind"]
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
+    if kind not in ("auto", "kde", "hist", "ecdf", "dot"):
+        raise ValueError("kind must be either 'auto', 'kde', 'hist', 'ecdf' or 'dot'")
     if visuals is None:
         visuals = {}
     else:
@@ -281,64 +282,17 @@ def plot_dist(
     if labeller is None:
         labeller = BaseLabeller()
 
-    density = distribution
-    if density_kwargs is not False or face_kwargs is not False:
-        density_dims, _, _ = filter_aes(plot_collection, aes_by_visuals, "dist", sample_dims)
-        if kind == "kde":
-            with warnings.catch_warnings():
-                if "model" in distribution:
-                    warnings.filterwarnings("ignore", message="Your data appears to have a single")
-                density = density.azstats.kde(dim=density_dims, **stats.get("dist", {}))
-        elif kind == "ecdf":
-            density = distribution.azstats.ecdf(dim=density_dims, **stats.get("dist", {}))
-        elif kind == "hist":
-            hist_kwargs = stats.pop("dist", {}).copy()
-            hist_kwargs.setdefault("density", True)
-            density = distribution.azstats.histogram(dim=density_dims, **hist_kwargs)
-        elif kind == "dot":
-            density = distribution.azstats.qds(dim=density_dims, **stats.get("dist", {}))
+    density_reduce, density_active, density_aes, density_ignore = filter_aes_full(
+        plot_collection, aes_by_visuals, "dist", sample_dims
+    )
+    density = compute_dist(distribution, density_reduce, density_active, kind=kind, stats=stats)
+    kind_var_map = {
+        kind_i: [k for k, da in density.items() if kind_i == da.attrs["kind"]]
+        for kind_i in ("dot", "ecdf", "hist", "kde")
+    }
+    kind_var_map = {k: v for k, v in kind_var_map.items() if v}
 
-    # density
-    if density_kwargs is not False:
-        _, density_aes, density_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "dist", sample_dims
-        )
-
-        if "color" not in density_aes:
-            density_kwargs.setdefault("color", "C0")
-
-        if kind == "kde":
-            plot_collection.map(
-                line_xy, "dist", data=density, ignore_aes=density_ignore, **density_kwargs
-            )
-
-        elif kind == "ecdf":
-            plot_collection.map(
-                ecdf_line,
-                "dist",
-                data=density,
-                ignore_aes=density_ignore,
-                **density_kwargs,
-            )
-
-        elif kind == "hist":
-            plot_collection.map(
-                step_hist,
-                "dist",
-                data=density,
-                ignore_aes=density_ignore,
-                **density_kwargs,
-            )
-        elif kind == "dot":
-            plot_collection.map(
-                scatter_xy,
-                "dist",
-                data=density,
-                ignore_aes=density_ignore,
-                **density_kwargs,
-            )
-
-    # filled face
+    # filled face (should go under the dist visual if both present)
     if face_kwargs is not False:
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
 
@@ -347,14 +301,23 @@ def plot_dist(
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
 
-        if kind == "dot":
+        if "dot" in kind_var_map:
             kwargs = stats.get("dist", {}).copy()
-            kwargs.setdefault("top_only", True)
-            density = distribution.azstats.qds(dim=density_dims, **kwargs)
+            kwargs["top_only"] = True
+            top_only_qds = distribution[kind_var_map["dot"]].azstats.qds(
+                dim=density_reduce, **kwargs
+            )
+            density = xr.merge((top_only_qds, density), compat="override")
 
-        if kind in ("kde", "ecdf", "dot"):
+        if any(kind_i in kind_var_map for kind_i in ("kde", "ecdf", "dot")):
+            fill_between_vars = [
+                var_name
+                for kind_i in ("kde", "ecdf", "dot")
+                for var_name in kind_var_map.get(kind_i, [])
+            ]
             face_density = (
-                density.rename(plot_axis="kwarg")
+                density[fill_between_vars]
+                .rename(plot_axis="kwarg")
                 .sel(kwarg=["x", "y"])
                 .pad(kwarg=(0, 1), constant_values=0)
                 .assign_coords(kwarg=["x", "y_top", "y_bottom"])
@@ -367,13 +330,53 @@ def plot_dist(
                 **face_kwargs,
             )
 
-        elif kind == "hist":
+        if "hist" in kind_var_map:
             plot_collection.map(
                 hist,
                 "face",
-                data=density,
+                data=density[kind_var_map["hist"]],
                 ignore_aes=face_ignore,
                 **face_kwargs,
+            )
+
+    # density
+    if density_kwargs is not False:
+        if "color" not in density_aes:
+            density_kwargs.setdefault("color", "C0")
+
+        if "kde" in kind_var_map:
+            plot_collection.map(
+                line_xy,
+                "dist",
+                data=density[kind_var_map["kde"]],
+                ignore_aes=density_ignore,
+                **density_kwargs,
+            )
+
+        if "ecdf" in kind_var_map:
+            plot_collection.map(
+                ecdf_line,
+                "dist",
+                data=density[kind_var_map["ecdf"]],
+                ignore_aes=density_ignore,
+                **density_kwargs,
+            )
+
+        if "hist" in kind_var_map:
+            plot_collection.map(
+                step_hist,
+                "dist",
+                data=density[kind_var_map["hist"]],
+                ignore_aes=density_ignore,
+                **density_kwargs,
+            )
+        if "dot" in kind_var_map:
+            plot_collection.map(
+                scatter_xy,
+                "dist",
+                data=density[kind_var_map["dot"]],
+                ignore_aes=density_ignore,
+                **density_kwargs,
             )
 
     # rug
@@ -405,9 +408,16 @@ def plot_dist(
         and ("model" in distribution)
         and (plot_collection.coords is None)
     ):
-        var_y = {"kde": "y", "ecdf": "y", "dot": "y", "hist": "histogram"}
         y_ds = plot_collection.get_aes_as_dataset("y")["mapping"]
-        y_ds = 0.15 * y_ds * density.sel(plot_axis=var_y[kind], drop=True).max(["model"]).max()
+        density_ys = density.sel(
+            plot_axis=[
+                coord for coord in density["plot_axis"].values if coord in ("y", "histogram")
+            ]
+        )
+        density_ys_max = density_ys.max(
+            [dim for dim in density_ys.dims if dim not in plot_collection.facet_dims]
+        )
+        y_ds = 0.15 * y_ds * density_ys_max
         plot_collection.update_aes_from_dataset("y", y_ds)
 
     # credible interval
@@ -460,33 +470,18 @@ def plot_dist(
 
     # point estimate text
     if pet_kwargs is not False:
+        # TODO: handle multiple kinds
         if density_kwargs is False and face_kwargs is False:
             point_y = xr.full_like(point, 0.05)
-        elif kind == "kde":
-            point_density_diff = [
-                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
-            ]
-            point_density_diff = ["kde_dim"] + point_density_diff
-            point_y = 0.1 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
-        elif kind == "ecdf":
-            # ecdf max is always 1
-            point_y = xr.full_like(point, 0.1)
-        elif kind == "hist":
-            point_density_diff = [
-                dim for dim in density.sel(plot_axis="histogram").dims if dim not in point.dims
-            ]
-            point_density_diff = [
-                f"hist_dim_{var_name}" for var_name in density.data_vars
-            ] + point_density_diff
-            point_y = 0.1 * density.sel(plot_axis="histogram", drop=True).max(
-                dim=point_density_diff
+        else:
+            density_ys = density.sel(
+                plot_axis=[
+                    coord for coord in density["plot_axis"].values if coord in ("y", "histogram")
+                ]
             )
-        elif kind == "dot":
-            point_density_diff = [
-                dim for dim in density.sel(plot_axis="y").dims if dim not in point.dims
-            ]
-            point_density_diff = ["qd_dim"] + point_density_diff
-            point_y = 0.1 * density.sel(plot_axis="y", drop=True).max(dim=point_density_diff)
+            point_y = 0.1 * density_ys.max(
+                [dim for dim in density_ys.dims if dim not in point.dims]
+            )
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(

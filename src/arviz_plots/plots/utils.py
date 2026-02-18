@@ -5,9 +5,10 @@ from importlib import import_module
 
 import numpy as np
 import xarray as xr
-from arviz_base import references_to_dataset, xarray_sel_iter
+from arviz_base import rcParams, references_to_dataset, xarray_sel_iter
 from arviz_base.labels import BaseLabeller
 from arviz_base.utils import _var_names
+from arviz_stats import ecdf, histogram, kde, qds
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
 from arviz_plots.visuals import annotate_xy, hline, hspan, vline, vspan
@@ -119,14 +120,26 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
 
 
 def filter_aes(pc, aes_by_visuals, visual, sample_dims):
+    """Simplified version of `filter_aes_full` that doesn't return "active_dimensions"."""
+    reduce_dims, _, artist_aes, ignore_aes = filter_aes_full(
+        pc, aes_by_visuals, visual, sample_dims
+    )
+    return reduce_dims, artist_aes, ignore_aes
+
+
+def filter_aes_full(pc, aes_by_visuals, visual, sample_dims):
     """Split aesthetics and get relevant dimensions.
 
     Returns
     -------
-    artist_dims : list
+    reduce_dims : list
         Dimensions that should be reduced for this visual.
         That is, all dimensions in `sample_dims` that are not
         mapped to any aesthetic.
+    active_dims : list
+        Dimensions that have either faceting or aesthetic mappings
+        active for that visual. Should not be reduced and should have
+        a groupby performed on them if computing summaries.
     artist_aes : iterable
     ignore_aes : set
     """
@@ -134,8 +147,9 @@ def filter_aes(pc, aes_by_visuals, visual, sample_dims):
     pc_aes = pc.aes_set
     ignore_aes = set(pc_aes).difference(artist_aes)
     _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)
-    artist_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
-    return artist_dims, artist_aes, ignore_aes
+    reduce_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
+    active_dims = [dim for dim in all_loop_dims if dim not in sample_dims]
+    return reduce_dims, active_dims, artist_aes, ignore_aes
 
 
 def set_wrap_layout(pc_kwargs, plot_bknd, ds):
@@ -209,6 +223,127 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     pc_kwargs["figure_kwargs"]["figsize"] = figsize
     pc_kwargs["figure_kwargs"]["figsize_units"] = figsize_units
     return pc_kwargs
+
+
+def _compute_viz_for_subset(viz, data, var_names, active_dims, reduce_dims, kwargs):
+    func = {"dot": qds, "ecdf": ecdf, "hist": histogram, "kde": kde}[viz]
+    viz_out = xr.Dataset()
+    for var_name in var_names:
+        viz_da = data[var_name]
+        groupby_dims = [
+            dim
+            for dim in active_dims
+            if dim in viz_da.dims and (len(np.unique(viz_da.coords[dim])) != viz_da.sizes[dim])
+        ]
+        if groupby_dims:
+            viz_da = viz_da.groupby(groupby_dims)
+        with warnings.catch_warnings():
+            if "model" in viz_da.dims:
+                warnings.filterwarnings("ignore", message="Your data appears to have a single")
+            viz_out[var_name] = func(viz_da, dim=reduce_dims, **kwargs)
+        viz_out[var_name].attrs["kind"] = viz
+    return viz_out
+
+
+def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
+    """Compute marginal uncertainty visualization data for different kinds and facet/aes combos.
+
+    Parameters
+    ----------
+    data : Dataset
+    reduce_dims : sequence of hashable
+        Dimensions of `data` that should be reduced. They will not be present in the output.
+    active_dims : sequence of hashable
+        Dimensions of `data` used for faceting or with an aesthetic mapped to it.
+        These will be partially reduced through a groupby if needed so the output continues
+        to have these dimensions but with unique coordinate values.
+    kind : {"auto", "kde", "hist", "ecdf", "dot"}, optional
+        Kind of 1d marginal uncertainty visualisation to use.
+        If ``None``, the ``plot.density_kind`` rcParam will be used.
+        If "auto" the type of visualization will be variable dependent through some heuristics.
+    stats : mapping, optional
+        Stats dictionary argument to plots like :func:`~arviz_plots.plot_dist`.
+        If the values stored in the "dist" key are a :class:`~xarray.Dataset`
+        they will be returned as is as they are understood to be pre-computed visualization data.
+        This argument will be ignored if `kind` is "auto".
+    """
+    if stats is None:
+        stats = {}
+    # quick exit if pre-computed elements in `stats`
+    stats_dist_value = stats.get("dist", {})
+    if isinstance(stats_dist_value, xr.Dataset):
+        return stats_dist_value
+    if kind is None:
+        kind = rcParams["plot.density_kind"]
+    if set(reduce_dims).intersection(active_dims):
+        raise ValueError("'reduce_dims' and 'active_dims' can't share elements")
+    ecdf_vars, ecdf_kwargs = [], {}
+    hist_vars, hist_kwargs = [], {}
+    kde_vars, kde_kwargs = [], {}
+    dot_vars, dot_kwargs = [], {}
+    if kind == "auto":
+        for var_name, da in data.items():
+            reduced_size = np.prod([da.sizes[dim] for dim in reduce_dims if dim in da.dims])
+            groupby_dims = [dim for dim in active_dims if dim in da.dims]
+            if groupby_dims:
+                reduced_size *= np.prod(
+                    [
+                        np.min(np.unique(da.coords[dim], return_counts=True)[1])
+                        for dim in groupby_dims
+                    ]
+                )
+            if reduced_size < 100:
+                ecdf_vars.append(var_name)
+            elif da.dtype.kind == "f":
+                kde_vars.append(var_name)
+            else:
+                hist_vars.append(var_name)
+    elif kind == "dot":
+        dot_vars = list(data.data_vars)
+        dot_kwargs = stats_dist_value
+    elif kind == "ecdf":
+        ecdf_vars = list(data.data_vars)
+        ecdf_kwargs = stats_dist_value
+    elif kind == "hist":
+        hist_vars = list(data.data_vars)
+        hist_kwargs = stats_dist_value
+    elif kind == "kde":
+        kde_vars = list(data.data_vars)
+        kde_kwargs = stats_dist_value
+    else:
+        raise ValueError(f"provided 'kind' {kind} is not valid")
+
+    hist_kwargs.setdefault("density", True)
+
+    dot_out = _compute_viz_for_subset(
+        "dot", data, dot_vars, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=dot_kwargs
+    )
+    ecdf_out = _compute_viz_for_subset(
+        "ecdf",
+        data,
+        ecdf_vars,
+        active_dims=active_dims,
+        reduce_dims=reduce_dims,
+        kwargs=ecdf_kwargs,
+    )
+
+    hist_out = _compute_viz_for_subset(
+        "hist",
+        data,
+        hist_vars,
+        active_dims=active_dims,
+        reduce_dims=reduce_dims,
+        kwargs=hist_kwargs,
+    )
+
+    kde_out = _compute_viz_for_subset(
+        "kde", data, kde_vars, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=kde_kwargs
+    )
+    return xr.merge(
+        [da for ds in (dot_out, ecdf_out, hist_out, kde_out) for da in ds.values()],
+        compat="override",
+        join="outer",
+    )
 
 
 def add_lines(
