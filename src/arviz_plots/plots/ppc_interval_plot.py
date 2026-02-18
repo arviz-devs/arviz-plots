@@ -210,12 +210,14 @@ def plot_ppc_interval(
     ci_trunk = ci_fun(prob=ci_probs[1], dim=sample_dims, **stats.get("trunk", {}))
     ci_twig = ci_fun(prob=ci_probs[0], dim=sample_dims, **stats.get("twig", {}))
 
+    pe_stats = stats.get("point_estimate", {})
+    pe_stats.setdefault("round_to", "none")
     if point_estimate == "median":
-        point = ds_predictive.azstats.median(dim=sample_dims, **stats.get("point_estimate", {}))
+        point = ds_predictive.azstats.median(dim=sample_dims, **pe_stats)
     elif point_estimate == "mean":
-        point = ds_predictive.azstats.mean(dim=sample_dims, **stats.get("point_estimate", {}))
+        point = ds_predictive.azstats.mean(dim=sample_dims, **pe_stats)
     elif point_estimate == "mode":
-        point = ds_predictive.azstats.mode(dim=sample_dims, **stats.get("point_estimate", {}))
+        point = ds_predictive.azstats.mode(dim=sample_dims, **pe_stats)
     else:
         raise ValueError(
             f"point_estimate must be 'mean', 'median' or 'mode', but {point_estimate} was passed."
