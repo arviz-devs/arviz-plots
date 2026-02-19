@@ -19,11 +19,14 @@ def hist(da, target, **kwargs):
     The input argument `da` is split into l_e, r_e and y using the dimension ``plot_axis``.
     """
     plot_backend = backend_from_object(target)
+    bottom = kwargs.pop("y", 0)
+    y = da.sel(plot_axis="histogram").values
     return plot_backend.hist(
-        da.sel(plot_axis="histogram"),
+        y,
         da.sel(plot_axis="left_edges"),
         da.sel(plot_axis="right_edges"),
         target,
+        bottom=bottom,
         **kwargs,
     )
 
@@ -34,7 +37,7 @@ def step_hist(da, target, **kwargs):
     r_e = da.sel(plot_axis="right_edges").values
     y = da.sel(plot_axis="histogram").values
 
-    bottom = kwargs.pop("bottom", 0)
+    bottom = kwargs.pop("y", 0)
     if np.any(bottom != 0):
         height = y - bottom
     else:
