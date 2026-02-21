@@ -78,6 +78,7 @@ tutorials/overview
 tutorials/plots_intro
 tutorials/intro_to_plotcollection
 tutorials/compose_own_plot
+tutorials/accessing_backend_objects
 ```
 
 ```{toctree}
