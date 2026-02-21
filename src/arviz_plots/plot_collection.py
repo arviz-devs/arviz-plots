@@ -1295,6 +1295,93 @@ class PlotCollection:
         """Store the visual object of `var_name`+`sel` combination in `fun_label` variable."""
         self.viz[fun_label][var_name].loc[sel] = aux_artist
 
+    def facet_map(self, func, *, var_names=None, coords=None, **kwargs):
+        """Apply a visual function to plots filtered by variable names and coordinates.
+
+        This is a convenience wrapper around :meth:`~.PlotCollection.map` that uses
+        the same ``var_names`` and ``coords`` interface as plotting functions like
+        :func:`~arviz_plots.plot_dist`.
+
+        Parameters
+        ----------
+        func : str or callable
+            Visual function to apply. If a string, it's looked up in the visuals module
+            (e.g., "set_xlim" becomes :func:`arviz_plots.visuals.set_xlim`).
+        var_names : str or list of str, optional
+            Variables to apply the function to. If not provided, applies to all variables.
+        coords : mapping, optional
+            Coordinates to filter which plots get updated. Only plots with matching
+            coordinate values will be affected.
+        **kwargs
+            Passed to ``func``.
+
+        Returns
+        -------
+        PlotCollection
+            Returns self to allow method chaining.
+
+        Examples
+        --------
+        Set x-axis limits on a specific variable:
+
+        .. jupyter-execute::
+
+            import arviz_base as azb
+            import arviz_plots as azp
+            data = azb.load_arviz_data("centered_eight")
+            pc = azp.plot_dist(data)
+            pc.facet_map("set_xlim", limits=(-15, 15), var_names="mu")
+
+        Apply to multiple variables with coordinate filtering:
+
+        .. jupyter-execute::
+
+            pc = azp.plot_dist(data, var_names=["mu", "tau", "theta"])
+            pc.facet_map("set_xlim", limits=(-5, 5),
+                         var_names=["mu", "tau"],
+                         coords={"school": ["Choate", "Deerfield"]})
+
+        Chain multiple operations:
+
+        .. jupyter-execute::
+
+            pc = azp.plot_dist(data)
+            pc.facet_map("set_xlim", limits=(-10, 10)).facet_map("set_ylim", limits=(0, 0.5))
+
+        See Also
+        --------
+        PlotCollection.map
+        """
+        from importlib import import_module
+
+        # look up string function names in visuals module
+        if isinstance(func, str):
+            visuals = import_module(".visuals", package="arviz_plots")
+            if not hasattr(visuals, func):
+                available = [name for name in dir(visuals) if not name.startswith("_")]
+                raise ValueError(
+                    f"Function '{func}' not found in visuals module. "
+                    f"Available: {', '.join(available[:10])}..."
+                )
+            func = getattr(visuals, func)
+
+        # filter the data using same logic as plotting functions
+        filtered_data = self.data
+        if var_names is not None:
+            from arviz_base.utils import _var_names
+
+            var_list = _var_names(var_names, filtered_data, filter_vars=None)
+            if var_list is not None:
+                filtered_data = filtered_data[var_list]
+
+        if coords is not None:
+            filtered_data = filtered_data.sel(coords)
+
+        # use .map with ignore_aes to only loop over facets
+        self.map(func, data=filtered_data, ignore_aes="all", store_artist=False, **kwargs)
+
+        return self
+
     def add_title(self, text, *, color="B1", size=None, **kwargs):
         """Add a title to the :term:`figure`.
 
