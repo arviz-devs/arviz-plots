@@ -16,6 +16,7 @@ from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_a
 
 def plot_forest(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",
@@ -382,6 +383,8 @@ def plot_forest(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
         )
         pe_stats = stats.get("point_estimate", {})
+        if isinstance(pe_stats, dict):
+            pe_stats.setdefault("round_to", "none")
         if isinstance(pe_stats, xr.Dataset):
             point = pe_stats
         elif point_estimate == "median":

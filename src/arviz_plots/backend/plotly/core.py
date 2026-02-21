@@ -5,6 +5,7 @@ Notes
 :term:`visuals` are returned, but it seems modifying them won't modify the figure.
 """
 
+import inspect
 import math
 import re
 import warnings
@@ -266,12 +267,17 @@ class PlotlyPlot:
     def __getattr__(self, name):
         """Expose all methods of the plotly figure with row and col arguments set."""
         if hasattr(self.figure, name):
-            original_fun = getattr(self.figure, name)
+            original_attr = getattr(self.figure, name)
+            if not callable(original_attr):
+                return original_attr
+            fun_params = inspect.signature(original_attr).parameters
+            if ("row" not in fun_params) or ("col" not in fun_params):
+                return original_attr
 
             def aux_fun(*args, **kwargs):
-                return original_fun(*args, **kwargs, row=self.row, col=self.col)
+                return original_attr(*args, **kwargs, row=self.row, col=self.col)
 
-            aux_fun.__doc__ = remove_row_col_from_doc(original_fun.__doc__)
+            aux_fun.__doc__ = remove_row_col_from_doc(original_attr.__doc__)
             return aux_fun
         raise AttributeError(f"Attribute {name} not available")
 
@@ -299,6 +305,38 @@ def savefig(figure, path, **kwargs):
         figure.write_html(path, **kwargs)
     else:
         figure.write_image(path, **kwargs)
+
+
+@expand_aesthetic_aliases
+def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
+    """Set a title for the entire figure.
+
+    Parameters
+    ----------
+    figure : `~plotly.graph_objects.Figure`
+        The figure to add the title to.
+    string : str
+        The title text.
+    color : optional
+        Color of the title text.
+    size : optional
+        Font size of the title.
+    **artist_kws : dict, optional
+        Additional keyword arguments passed to :meth:`~plotly.graph_objects.Figure.update_layout`.
+
+    Returns
+    -------
+    `~plotly.graph_objects.Figure`
+        The figure object (unchanged).
+    plotly title object
+        The title layout object from the figure.
+    """
+    title_kwargs = _filter_kwargs(
+        {"font_color": color, "font_size": size, "text": string},
+        {"x": 0.5, "xanchor": "center"} | artist_kws,
+    )
+    figure.update_layout(title=title_kwargs)
+    return figure, figure.layout.title
 
 
 def create_plotting_grid(
@@ -334,7 +372,10 @@ def create_plotting_grid(
     squeeze : bool, default True
     sharex, sharey : bool, default False
     polar : bool
-    subplot_kws : bool
+    width_ratios : list, optional
+    height_ratios : list, optional
+    plot_hspace : float, optional
+    subplot_kws : dict, optional
         Ignored
     **kwargs: dict, optional
         Passed to :func:`~plotly.subplots.make_subplots`
@@ -380,6 +421,7 @@ def create_plotting_grid(
     for row in range(rows):
         for col in range(cols):
             plots[row, col] = PlotlyPlot(figure, row + 1, col + 1)
+
     if squeeze and plots.size == 1:
         return figure, plots[0, 0]
     return figure, plots.squeeze() if squeeze else plots

@@ -20,6 +20,7 @@ from arviz_plots.visuals import labelled_title, labelled_x, line, ticklabel_prop
 
 def plot_trace(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

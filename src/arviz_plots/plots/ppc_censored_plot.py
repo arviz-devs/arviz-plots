@@ -19,6 +19,7 @@ from arviz_plots.visuals import ecdf_line, labelled_title, labelled_x, labelled_
 
 def plot_ppc_censored(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior_predictive",

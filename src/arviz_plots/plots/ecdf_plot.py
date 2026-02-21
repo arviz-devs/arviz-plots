@@ -29,12 +29,13 @@ from arviz_plots.visuals import (
 
 def plot_ecdf_pit(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="prior_sbc",
     coords=None,
     sample_dims=None,
-    ci_prob=0.99,
+    envelope_prob=None,
     coverage=False,
     plot_collection=None,
     backend=None,
@@ -97,9 +98,9 @@ def plot_ecdf_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     plot_collection : PlotCollection, optional
@@ -154,6 +155,8 @@ def plot_ecdf_pit(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if envelope_prob is None:
+        envelope_prob = rcParams["stats.envelope_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -185,17 +188,17 @@ def plot_ecdf_pit(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_size = np.prod([len(distribution[dims]) for dims in sample_dims])
 
     if coverage:
         distribution = distribution / distribution.max()
         distribution = 2 * np.abs(distribution - 0.5)
 
-    dt_ecdf = distribution.azstats.ecdf(dim=sample_dims, pit=True)
+    dt_ecdf = distribution.azstats.ecdf(dim=sample_dims, pit=True, npoints=sample_size)
 
     # Compute envelope
-    dummy_vals_size = np.prod([len(distribution[dims]) for dims in sample_dims])
-    dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
+    dummy_vals = np.linspace(0, 1, sample_size)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 
@@ -261,6 +264,7 @@ def plot_ecdf_pit(
             x=x_ci,
             y_bottom=lower_ci,
             y_top=upper_ci,
+            step=True,
             ignore_aes=ci_ignore,
             **ci_kwargs,
         )

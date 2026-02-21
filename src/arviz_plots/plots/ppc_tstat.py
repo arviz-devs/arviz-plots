@@ -21,19 +21,20 @@ from arviz_plots.visuals import scatter_x
 
 def plot_ppc_tstat(
     dt,
+    *,
     var_names=None,
-    group="posterior_predictive",
     filter_vars=None,
+    group="posterior_predictive",
+    coords=None,
     sample_dims=None,
     t_stat="median",
     kind=None,
     point_estimate=None,
     ci_kind=None,
     ci_prob=None,
-    plot_collection=None,
-    coords=None,
-    backend=None,
     data_pairs=None,
+    plot_collection=None,
+    backend=None,
     labeller=None,
     aes_by_visuals: Mapping[
         Literal[
@@ -77,13 +78,14 @@ def plot_ppc_tstat(
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    group : str,
-        Group to be plotted. Defaults to "posterior_predictive".
-        It could also be "prior_predictive".
     filter_vars : {None, “like”, “regex”}, default=None
         If None, interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str,
+        Group to be plotted. Defaults to "posterior_predictive".
+        It could also be "prior_predictive".
+    coords : dict, optional
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -104,7 +106,6 @@ def plot_ppc_tstat(
         Indicates the probability that should be contained within the plotted credible interval.
         Defaults to ``rcParams["stats.ci_prob"]``
     plot_collection : PlotCollection, optional
-    coords : dict, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
     data_pairs : dict, optional

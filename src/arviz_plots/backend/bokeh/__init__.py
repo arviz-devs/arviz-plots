@@ -16,6 +16,7 @@ from .core import (
     savefig,
     scale_fig_size,
     scatter,
+    set_figure_title,
     set_ticklabel_visibility,
     set_y_scale,
     show,

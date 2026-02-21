@@ -23,13 +23,14 @@ from arviz_plots.visuals import (
 def plot_ppc_pava_residuals(
     dt,
     x_var,
-    data_type="binary",
-    ci_prob=None,
+    *,
     var_names=None,
     filter_vars=None,  # pylint: disable=unused-argument
     group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
+    data_type="binary",
+    ci_prob=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -73,13 +74,6 @@ def plot_ppc_pava_residuals(
     x_var : array-like, series, DataArray, or str
         Variable to use for x-axis. If a string is given, it should be the name of a variable
         in the `constant_data` group.
-    data_type : str
-        Defaults to "binary". Other options are "categorical" and "ordinal".
-        If "categorical", the plot will show the "one-vs-others" calibration and generate one plot
-        per category. If "ordinal", the plot will display cumulative conditional event
-        probabilities and generate (number of categories - 1) plots.
-    ci_prob : float, optional
-        Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -96,6 +90,13 @@ def plot_ppc_pava_residuals(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    data_type : str
+        Defaults to "binary". Other options are "categorical" and "ordinal".
+        If "categorical", the plot will show the "one-vs-others" calibration and generate one plot
+        per category. If "ordinal", the plot will display cumulative conditional event
+        probabilities and generate (number of categories - 1) plots.
+    ci_prob : float, optional
+        Probability for the credible interval. Defaults to ``rcParams["stats.ci_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional

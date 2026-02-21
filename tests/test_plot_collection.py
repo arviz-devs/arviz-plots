@@ -510,3 +510,23 @@ class TestMap:
             assert isinstance(kwargs["ds"], DataArray)
             assert "school" not in kwargs["ds"].dims
             assert "school" not in kwargs["da_hierarchy"].dims
+
+
+class TestAddTitle:
+    """Test PlotCollection.add_title() method."""
+
+    def test_add_title_stores_in_viz(self, dataset):
+        """Test that add_title stores the title in viz DataTree."""
+        pc = PlotCollection.grid(
+            dataset,
+            cols=["__variable__"],
+            backend="none",
+        )
+        pc.add_title("Test Title")
+        assert "figure_title" in pc.viz.data_vars
+
+    def test_add_title_without_figure_raises(self, dataset):
+        """Test that add_title raises ValueError when no figure exists."""
+        pc = PlotCollection(dataset, DataTree(), backend="none")
+        with pytest.raises(ValueError, match="No figure found"):
+            pc.add_title("Test Title")

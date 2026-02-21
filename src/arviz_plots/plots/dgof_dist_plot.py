@@ -19,13 +19,14 @@ from arviz_plots.plots.utils import (
 
 def plot_dgof_dist(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",
     coords=None,
     sample_dims=None,
     kind=None,
-    ci_prob=0.99,
+    envelope_prob=None,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -76,9 +77,9 @@ def plot_dgof_dist(
     kind : {"kde", "hist", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -106,7 +107,7 @@ def plot_dgof_dist(
 
         * dist -> passed to kde, ecdf and qds for both dist plot and dgof plot
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-        ``{"n_simulations": 1000}``.
+          ``{"n_simulations": 1000}``.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -139,6 +140,8 @@ def plot_dgof_dist(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if envelope_prob is None:
+        envelope_prob = rcParams["stats.envelope_prob"]
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -225,7 +228,7 @@ def plot_dgof_dist(
     plot_collection.coords = {"column": "gof"}
     plot_dgof(
         dt,
-        ci_prob=ci_prob,
+        envelope_prob=envelope_prob,
         kind=kind,
         var_names=var_names,
         filter_vars=filter_vars,

@@ -20,6 +20,7 @@ from arviz_plots.visuals import fill_between_y, labelled_title, labelled_x, line
 
 def plot_autocorr(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",

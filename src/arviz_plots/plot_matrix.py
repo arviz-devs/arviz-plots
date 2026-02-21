@@ -52,11 +52,13 @@ def subset_matrix_da(
         if not (dim_x in da.coords and dim_y in da.coords):
             continue
         if dim in selection_x:
-            coords[dim_x] = selection_x[dim]
-            out = out.set_xindex(dim_x)
+            if out.coords[dim_x].ndim > 0:
+                coords[dim_x] = selection_x[dim]
+                out = out.set_xindex(dim_x)
         if dim in selection_y:
-            coords[dim_y] = selection_y[dim]
-            out = out.set_xindex(dim_y)
+            if out.coords[dim_y].ndim > 0:
+                coords[dim_y] = selection_y[dim]
+                out = out.set_xindex(dim_y)
         if coords:
             out = out.sel(coords)
     if return_dataarray:
@@ -134,6 +136,13 @@ class PlotMatrix(PlotCollection):
         )
         n_pairs = len(pairs)
         n_plots = n_pairs**2
+        max_plots = rcParams["plot.max_subplots"]
+        if max_plots is not None and n_plots > max_plots:
+            raise ValueError(
+                f"Requested {n_plots} subplots, which exceeds "
+                f"rcParams['plot.max_subplots']={max_plots}. "
+                "Reduce the number of plots or increase this limit."
+            )
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
         fig, ax_ary = plot_bknd.create_plotting_grid(
             n_plots, n_pairs, n_pairs, squeeze=False, **figure_kwargs

@@ -33,6 +33,7 @@ from arviz_plots.visuals import (
 
 def plot_khat(
     elpd_data,
+    *,
     threshold=None,
     hover_format="{index}: {label}",
     legend=None,

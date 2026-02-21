@@ -265,7 +265,7 @@ def dline(da, target, x=None, y=None, **kwargs):
     return plot_backend.line([xy_min, xy_max], [xy_min, xy_max], target, **kwargs)
 
 
-def fill_between_y(da, target, *, x=None, y_bottom=None, y=None, y_top=None, **kwargs):
+def fill_between_y(da, target, *, x=None, y_bottom=None, y=None, y_top=None, step=False, **kwargs):
     """Fill the region between to given y values."""
     if "kwarg" in da.dims:
         if "x" in da.kwarg:
@@ -286,6 +286,18 @@ def fill_between_y(da, target, *, x=None, y_bottom=None, y=None, y_top=None, **k
     if np.ndim(np.squeeze(y_bottom)) == 0:
         y_bottom = np.full_like(x, y_bottom)
     plot_backend = backend_from_object(target)
+
+    if step:
+        y_bottom[0] = y_bottom[1]
+        y_top[0] = y_top[1]
+        y_bottom[-1] = y_bottom[-2]
+        y_top[-1] = y_top[-2]
+
+        edges = np.concatenate(([x[0]], x))
+        x = np.repeat(edges, 2)[1:-1]
+
+        y_bottom = np.repeat(y_bottom, 2)
+        y_top = np.repeat(y_top, 2)
 
     return plot_backend.fill_between_y(x, y_bottom, y_top, target, **kwargs)
 

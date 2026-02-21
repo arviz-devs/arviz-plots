@@ -21,12 +21,14 @@ from arviz_plots.visuals import ecdf_line, fill_between_y, labelled_title, label
 
 def plot_rank(
     dt,
+    *,
     var_names=None,
     filter_vars=None,
     group="posterior",
     coords=None,
     sample_dims=None,
-    ci_prob=0.99,
+    envelope_prob=None,
+    thin=True,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -61,6 +63,8 @@ def plot_rank(
     uniformly in [0, 1]. Additionally, we plot the Δ-ECDF, that is, the difference between the
     expected CDF from the observed ECDF.
     Simultaneous confidence bands are computed using the simulation method described in [1]_.
+    The confidence bands assumes no autocorrelation, thus by default the draws are thinned following
+    the recommendation in [1]_.
 
     Parameters
     ----------
@@ -80,9 +84,11 @@ def plot_rank(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    ci_prob : float
-        Indicates the probability that should be contained within the plotted credible interval.
-        Defaults to 0.99.
+    envelope_prob : float, optional
+        Indicates the probability that should be contained within the envelope.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
+    thin : bool, default True
+        Whether to thin the data before plotting.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -104,6 +110,7 @@ def plot_rank(
 
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
           ``{"n_simulations": 1000}``.
+        * thin -> passed to :func:`~arviz_stats.thin`
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -134,6 +141,9 @@ def plot_rank(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if envelope_prob is None:
+        envelope_prob = rcParams["stats.envelope_prob"]
+
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -167,15 +177,18 @@ def plot_rank(
     ecdf_pit_kwargs.setdefault("n_chains", distribution.sizes["chain"])
     ecdf_dims = ["draw"]
 
+    if thin:
+        distribution = distribution.azstats.thin(sample_dims=ecdf_dims, **stats.get("thin", {}))
+
+    sample_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     # Compute ranks
     dt_ecdf_ranks = distribution.azstats.compute_ranks(dim=sample_dims)
     # Compute ECDF
-    dt_ecdf = dt_ecdf_ranks.azstats.ecdf(dim=ecdf_dims, pit=True)
+    dt_ecdf = dt_ecdf_ranks.azstats.ecdf(dim=ecdf_dims, pit=True, npoints=sample_size)
 
     # Compute envelope
-    dummy_vals_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
-    dummy_vals = np.linspace(0, 1, dummy_vals_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, ci_prob, **ecdf_pit_kwargs)
+    dummy_vals = np.linspace(0, 1, sample_size)
+    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
     lower_ci = lower_ci - x_ci
     upper_ci = upper_ci - x_ci
 
@@ -235,6 +248,7 @@ def plot_rank(
             x=x_ci,
             y_bottom=lower_ci,
             y_top=upper_ci,
+            step=True,
             ignore_aes=ci_ignore,
             **ci_kwargs,
         )
