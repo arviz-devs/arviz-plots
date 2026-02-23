@@ -9,7 +9,6 @@ visualizes credible intervals around predictions alongside observed data points.
 :::{seealso}
 API Documentation: {func}`~arviz_plots.plot_lm`
 
-Old ArviZ `plot_lm` [documentation](https://python.arviz.org/en/v0.23.0/api/generated/arviz.plot_lm.html)
 :::
 """
 import numpy as np
