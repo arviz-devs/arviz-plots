@@ -184,7 +184,23 @@ def plot_lm(
 
     Returns
     -------
-    PlotMatrix
+    PlotCollection
+
+    Examples
+    --------
+    Linear model plot for roaches_zinb dataset.
+
+    .. plot::
+        :context: close-figs
+
+        >>> from arviz_plots import plot_lm, style
+        >>> style.use("arviz-variat")
+        >>> from arviz_base import load_arviz_data
+        >>> dt = load_arviz_data('roaches_zinb')
+        >>> plot_lm(dt)
+
+
+    .. minigallery:: plot_lm
 
     """
     if sample_dims is None:
