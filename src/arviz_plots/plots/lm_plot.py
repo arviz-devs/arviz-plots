@@ -188,7 +188,7 @@ def plot_lm(
 
     Examples
     --------
-    Linear model plot for roaches_zinb dataset.
+    Customized linear model plot for roaches_zinb dataset.
 
     .. plot::
         :context: close-figs
@@ -197,8 +197,15 @@ def plot_lm(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('roaches_zinb')
-        >>> plot_lm(dt)
-
+        >>> pc = plot_lm(dt,
+        >>>     ci_prob=(0.50, 0.90),
+        >>>     point_estimate="median",
+        >>>     visuals={
+        >>>         "pe_line":{"color":"C2", "linestyle":"C1"},
+        >>>         "ci_band":{"color":"C1"},
+        >>>         "observed_scatter":False,
+        >>>        },
+        >>> )
 
     .. minigallery:: plot_lm
 
