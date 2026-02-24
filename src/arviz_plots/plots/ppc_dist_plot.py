@@ -179,7 +179,7 @@ def plot_ppc_dist(
 
     rng = np.random.default_rng(4214)
 
-    pp_dims = list(sample_dims) + [dims for dims in dt[group].dims if dims not in sample_dims]
+    pp_dims = [dims for dims in dt[group].dims if dims not in sample_dims]
 
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
