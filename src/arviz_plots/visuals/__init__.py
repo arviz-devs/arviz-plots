@@ -8,7 +8,8 @@ and eventually they call the requested plotting backend.
 """
 import numpy as np
 import xarray as xr
-from arviz_base.labels import BaseLabeller, rcParams
+from arviz_base import rcParams
+from arviz_base.labels import BaseLabeller
 from arviz_stats.base.stats_utils import round_num
 
 from arviz_plots.plot_collection import backend_from_object
