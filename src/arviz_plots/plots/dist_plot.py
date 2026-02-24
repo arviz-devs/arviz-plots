@@ -4,13 +4,14 @@ from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
 
-import arviz_stats  # pylint: disable=unused-import
+import arviz_stats
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
+    _compute_func,
     compute_dist,
     filter_aes,
     filter_aes_full,
@@ -152,13 +153,17 @@ def plot_dist(
         * rug -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
-    stats : mapping, optional
+    stats : mapping of {str : mapping or Dataset}, optional
         Valid keys are:
 
-        * dist -> passed to kde, ecdf, ...
-        * credible_interval -> passed to eti or hdi
+            * dist -> passed to :func:`~arviz_stats.kde`, :func:`~arviz_stats.histogram`,
+              :func:`~arviz_stats.ecdf`, or :func:`~arviz_stats.qds` depending on `kind`
+        * credible_interval -> passed to :func:`~arviz_stats.eti` or :func:`arviz_stats.hdi`
         * point_estimate -> passed to mean, median or mode. Defaults to
           round the result according to ``rcParams["stats.round_to"]``.
+
+        In case a :class:`~xarray.Dataset` is provided, it will be interpreted
+        as pre-computed values for that statistic.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -215,6 +220,8 @@ def plot_dist(
         kind = rcParams["plot.density_kind"]
     if kind not in ("auto", "kde", "hist", "ecdf", "dot"):
         raise ValueError("kind must be either 'auto', 'kde', 'hist', 'ecdf' or 'dot'")
+    if point_estimate not in ("median", "mean", "mode"):
+        raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
     if visuals is None:
         visuals = {}
     else:
@@ -226,9 +233,6 @@ def plot_dist(
         stats = {}
     else:
         stats = stats.copy()
-
-    stats.setdefault("point_estimate", {})
-    stats["point_estimate"].setdefault("round_to", rcParams["stats.round_to"])
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -423,17 +427,31 @@ def plot_dist(
     # credible interval
     ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
     if ci_kwargs is not False:
-        ci_dims, ci_aes, ci_ignore = filter_aes(
+        ci_reduce, ci_active, ci_aes, ci_ignore = filter_aes_full(
             plot_collection, aes_by_visuals, "credible_interval", sample_dims
         )
-        if ci_kind == "eti":
-            ci = distribution.azstats.eti(
-                prob=ci_prob, dim=ci_dims, **stats.get("credible_interval", {})
-            )
-        elif ci_kind == "hdi":
-            ci = distribution.azstats.hdi(
-                prob=ci_prob, dim=ci_dims, **stats.get("credible_interval", {})
-            )
+        ci_stats_value = stats.get("credible_interval", {})
+        if isinstance(ci_stats_value, xr.Dataset):
+            ci = ci_stats_value
+        else:
+            ci_stats_kwargs = ci_stats_value.copy()
+            ci_stats_kwargs["prob"] = ci_prob
+            if ci_kind == "eti":
+                ci = _compute_func(
+                    arviz_stats.eti,
+                    distribution,
+                    active_dims=ci_active,
+                    reduce_dims=ci_reduce,
+                    kwargs=ci_stats_kwargs,
+                )
+            elif ci_kind == "hdi":
+                ci = _compute_func(
+                    arviz_stats.hdi,
+                    distribution,
+                    active_dims=ci_active,
+                    reduce_dims=ci_reduce,
+                    kwargs=ci_stats_kwargs,
+                )
 
         if "color" not in ci_aes:
             ci_kwargs.setdefault("color", "B2")
@@ -443,19 +461,27 @@ def plot_dist(
     pe_kwargs = get_visual_kwargs(visuals, "point_estimate")
     pet_kwargs = get_visual_kwargs(visuals, "point_estimate_text")
     if (pe_kwargs is not False) or (pet_kwargs is not False):
-        pe_dims, pe_aes, pe_ignore = filter_aes(
+        pe_reduce, pe_active, pe_aes, pe_ignore = filter_aes_full(
             plot_collection, aes_by_visuals, "point_estimate", sample_dims
         )
-        pe_stats_kwargs = stats.get("point_estimate", {})
-        pe_stats_kwargs.setdefault("round_to", "none")
-        if point_estimate == "median":
-            point = distribution.azstats.median(dim=pe_dims, **pe_stats_kwargs)
-        elif point_estimate == "mean":
-            point = distribution.azstats.mean(dim=pe_dims, **pe_stats_kwargs)
-        elif point_estimate == "mode":
-            point = distribution.azstats.mode(dim=pe_dims, **pe_stats_kwargs)
+        pe_stats_value = stats.get("point_estimate", {})
+        if isinstance(pe_stats_value, xr.Dataset):
+            point = pe_stats_value
         else:
-            raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
+            pe_stats_kwargs = pe_stats_value.copy()
+            pe_stats_kwargs["round_to"] = "none"
+            pe_func = {
+                "mean": arviz_stats.mean,
+                "median": arviz_stats.median,
+                "mode": arviz_stats.mode,
+            }[point_estimate]
+            point = _compute_func(
+                pe_func,
+                distribution,
+                active_dims=pe_active,
+                reduce_dims=pe_reduce,
+                kwargs=pe_stats_kwargs,
+            )
 
     if pe_kwargs is not False:
         if "color" not in pe_aes:
@@ -470,7 +496,6 @@ def plot_dist(
 
     # point estimate text
     if pet_kwargs is not False:
-        # TODO: handle multiple kinds
         if density_kwargs is False and face_kwargs is False:
             point_y = xr.full_like(point, 0.05)
         else:

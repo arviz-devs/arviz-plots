@@ -13,13 +13,11 @@ from arviz_base.labels import BaseLabeller
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
-    filter_aes,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
 )
 from arviz_plots.plots.utils_plot_types import warn_if_binary, warn_if_discrete
-from arviz_plots.visuals import ecdf_line, line_xy, scatter_xy, step_hist
 
 
 def plot_ppc_dist(
@@ -266,54 +264,26 @@ def plot_ppc_dist(
     )
 
     if observed_density_kwargs is not False:
-        observed_stats_kwargs = stats.get("observed_dist", {}).copy()
         observed_density_kwargs.setdefault("color", "B1")
-
-        _, _, observed_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "observed_dist", sample_dims
+        observed_visuals = {
+            "dist": observed_density_kwargs,
+            "credible_interval": False,
+            "point_estimate": False,
+            "point_estimate_text": False,
+            "title": False,
+            "rug_plot": False,
+            "remove_axis": False,
+        }
+        plot_collection = plot_dist(
+            observed_dist,
+            group="observed_data",
+            sample_dims=pp_dims,
+            kind=kind,
+            visuals=observed_visuals,
+            aes_by_visuals=aes_by_visuals,
+            plot_collection=plot_collection,
+            stats={"dist": stats.get("observed_dist", {})},
         )
-
-        if kind == "kde":
-            dt_observed = observed_dist.azstats.kde(dim=pp_dims, **observed_stats_kwargs)
-
-            plot_collection.map(
-                line_xy,
-                "observed_dist",
-                data=dt_observed,
-                ignore_aes=observed_ignore,
-                **observed_density_kwargs,
-            )
-
-        if kind == "hist":
-            observed_stats_kwargs.setdefault("density", True)
-            dt_observed = observed_dist.azstats.histogram(dim=pp_dims, **observed_stats_kwargs)
-
-            plot_collection.map(
-                step_hist,
-                "observed_dist",
-                data=dt_observed,
-                ignore_aes=observed_ignore,
-                **observed_density_kwargs,
-            )
-
-        if kind == "ecdf":
-            dt_observed = observed_dist.azstats.ecdf(dim=pp_dims, **observed_stats_kwargs)
-            plot_collection.map(
-                ecdf_line,
-                "observed_dist",
-                data=dt_observed,
-                ignore_aes=observed_ignore,
-                **observed_density_kwargs,
-            )
-        if kind == "dot":
-            dt_observed = observed_dist.azstats.qds(dim=pp_dims, **observed_stats_kwargs)
-
-            plot_collection.map(
-                scatter_xy,
-                "observed_dist",
-                data=dt_observed,
-                ignore_aes=observed_ignore,
-                **observed_density_kwargs,
-            )
+        plot_collection.rename_visuals(dist="observed_dist")
 
     return plot_collection

@@ -148,8 +148,7 @@ def filter_aes_full(pc, aes_by_visuals, visual, sample_dims):
     ignore_aes = set(pc_aes).difference(artist_aes)
     _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)
     reduce_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
-    active_dims = [dim for dim in all_loop_dims if dim not in sample_dims]
-    return reduce_dims, active_dims, artist_aes, ignore_aes
+    return reduce_dims, all_loop_dims, artist_aes, ignore_aes
 
 
 def set_wrap_layout(pc_kwargs, plot_bknd, ds):
@@ -225,9 +224,13 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     return pc_kwargs
 
 
-def _compute_viz_for_subset(viz, data, var_names, active_dims, reduce_dims, kwargs):
-    func = {"dot": qds, "ecdf": ecdf, "hist": histogram, "kde": kde}[viz]
+def _compute_func(func, data, active_dims, reduce_dims, var_names=None, kwargs=None):
+    """Compute given function for taking into account active and dimensions to reduce."""
     viz_out = xr.Dataset()
+    if kwargs is None:
+        kwargs = {}
+    if var_names is None:
+        var_names = data.data_vars
     for var_name in var_names:
         viz_da = data[var_name]
         groupby_dims = [
@@ -241,7 +244,8 @@ def _compute_viz_for_subset(viz, data, var_names, active_dims, reduce_dims, kwar
             if "model" in viz_da.dims:
                 warnings.filterwarnings("ignore", message="Your data appears to have a single")
             viz_out[var_name] = func(viz_da, dim=reduce_dims, **kwargs)
-        viz_out[var_name].attrs["kind"] = viz
+        func_to_name = {"qds": "dot", "histogram": "hist"}
+        viz_out[var_name].attrs["kind"] = func_to_name.get(func.__name__, func.__name__)
     return viz_out
 
 
@@ -315,29 +319,39 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
 
     hist_kwargs.setdefault("density", True)
 
-    dot_out = _compute_viz_for_subset(
-        "dot", data, dot_vars, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=dot_kwargs
-    )
-    ecdf_out = _compute_viz_for_subset(
-        "ecdf",
+    dot_out = _compute_func(
+        qds,
         data,
-        ecdf_vars,
+        var_names=dot_vars,
+        active_dims=active_dims,
+        reduce_dims=reduce_dims,
+        kwargs=dot_kwargs,
+    )
+    ecdf_out = _compute_func(
+        ecdf,
+        data,
+        var_names=ecdf_vars,
         active_dims=active_dims,
         reduce_dims=reduce_dims,
         kwargs=ecdf_kwargs,
     )
 
-    hist_out = _compute_viz_for_subset(
-        "hist",
+    hist_out = _compute_func(
+        histogram,
         data,
-        hist_vars,
+        var_names=hist_vars,
         active_dims=active_dims,
         reduce_dims=reduce_dims,
         kwargs=hist_kwargs,
     )
 
-    kde_out = _compute_viz_for_subset(
-        "kde", data, kde_vars, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=kde_kwargs
+    kde_out = _compute_func(
+        kde,
+        data,
+        var_names=kde_vars,
+        active_dims=active_dims,
+        reduce_dims=reduce_dims,
+        kwargs=kde_kwargs,
     )
     return xr.merge(
         [da for ds in (dot_out, ecdf_out, hist_out, kde_out) for da in ds.values()],
