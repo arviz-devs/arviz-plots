@@ -156,8 +156,8 @@ def plot_dist(
     stats : mapping of {str : mapping or Dataset}, optional
         Valid keys are:
 
-            * dist -> passed to :func:`~arviz_stats.kde`, :func:`~arviz_stats.histogram`,
-              :func:`~arviz_stats.ecdf`, or :func:`~arviz_stats.qds` depending on `kind`
+        * dist -> passed to :func:`~arviz_stats.kde`, :func:`~arviz_stats.histogram`,
+          :func:`~arviz_stats.ecdf`, or :func:`~arviz_stats.qds` depending on `kind`
         * credible_interval -> passed to :func:`~arviz_stats.eti` or :func:`arviz_stats.hdi`
         * point_estimate -> passed to mean, median or mode. Defaults to
           round the result according to ``rcParams["stats.round_to"]``.
