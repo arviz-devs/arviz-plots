@@ -3,12 +3,14 @@
 import arviz_stats  # pylint: disable=unused-import
 import hypothesis.strategies as st
 import numpy as np
+import pandas as pd
 import pytest
 from hypothesis import given
 
 from arviz_plots import (
     plot_autocorr,
     plot_bf,
+    plot_compare,
     plot_convergence_dist,
     plot_dgof,
     plot_dgof_dist,
@@ -69,6 +71,35 @@ def labels_shade(draw, elements):
     return (labels, labels[i])
 
 
+@st.composite
+def compare_df_strategy(draw):
+    """Generate a valid comparison DataFrame for plot_compare."""
+    n_models = draw(st.integers(min_value=2, max_value=5))
+    model_names = [f"model_{i}" for i in range(n_models)]
+    stat_name = draw(st.sampled_from(["elpd", "mlpd", "gmpd"]))
+
+    perf_values = sorted(
+        draw(
+            st.lists(
+                st.floats(min_value=-1000, max_value=1000, allow_nan=False, allow_infinity=False),
+                min_size=n_models,
+                max_size=n_models,
+            )
+        ),
+        reverse=True,
+    )
+
+    se_values = draw(
+        st.lists(
+            st.floats(min_value=0.1, max_value=100, allow_nan=False, allow_infinity=False),
+            min_size=n_models,
+            max_size=n_models,
+        )
+    )
+
+    return pd.DataFrame({stat_name: perf_values, "se": se_values}, index=model_names)
+
+
 @given(
     visuals=st.fixed_dictionaries(
         {},
@@ -125,6 +156,37 @@ def test_plot_bf(datatree, kind, ref_val, visuals):
             assert visual not in pc.viz.children
         else:
             assert visual in pc.viz.children
+
+
+@given(
+    cmp_df=compare_df_strategy(),
+    relative_scale=st.booleans(),
+    rotated=st.booleans(),
+    hide_top_model=st.booleans(),
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "point_estimate": visuals_value,
+            "error_bar": visuals_value,
+            "ref_line": visuals_value,
+            "ref_band": visuals_value,
+            "similar_line": visuals_value,
+            "labels": visuals_value,
+            "title": visuals_value,
+            "ticklabels": st.sampled_from(({}, False)),
+        },
+    ),
+)
+def test_plot_compare(cmp_df, relative_scale, rotated, hide_top_model, visuals):
+    pc = plot_compare(
+        cmp_df,
+        backend="none",
+        relative_scale=relative_scale,
+        rotated=rotated,
+        hide_top_model=hide_top_model,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.data_vars
 
 
 @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
