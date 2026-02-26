@@ -224,34 +224,40 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     return pc_kwargs
 
 
+def _compute_func_da(func, da, active_dims, reduce_dims, kwargs=None):
+    if kwargs is None:
+        kwargs = {}
+    groupby_dims = [
+        dim
+        for dim in active_dims
+        if dim in da.dims and (len(np.unique(da.coords[dim])) != da.sizes[dim])
+    ]
+    if groupby_dims and func.__name__ == "histogram":
+        raise ValueError(
+            "Histogram computation doesn't support groupby behaviour yet."
+            "Make sure coordinate values are unique or that dimension is not used for "
+            "faceting nor it has aesthetics mapped to it."
+        )
+    if groupby_dims:
+        da = da.groupby(groupby_dims)
+    with warnings.catch_warnings():
+        if "model" in da.dims:
+            warnings.filterwarnings("ignore", message="Your data appears to have a single")
+        out_da = func(da, dim=reduce_dims, **kwargs)
+    func_to_name = {"qds": "dot", "histogram": "hist"}
+    out_da.attrs["kind"] = func_to_name.get(func.__name__, func.__name__)
+    return out_da
+
+
 def _compute_func(func, data, active_dims, reduce_dims, var_names=None, kwargs=None):
     """Compute given function for taking into account active and dimensions to reduce."""
     viz_out = xr.Dataset()
-    if kwargs is None:
-        kwargs = {}
     if var_names is None:
         var_names = data.data_vars
     for var_name in var_names:
-        viz_da = data[var_name]
-        groupby_dims = [
-            dim
-            for dim in active_dims
-            if dim in viz_da.dims and (len(np.unique(viz_da.coords[dim])) != viz_da.sizes[dim])
-        ]
-        if groupby_dims and func.__name__ == "histogram":
-            raise ValueError(
-                "Histogram computation doesn't support groupby behaviour yet."
-                "Make sure coordinate values are unique or that dimension is not used for "
-                "faceting nor it has aesthetics mapped to it."
-            )
-        if groupby_dims:
-            viz_da = viz_da.groupby(groupby_dims)
-        with warnings.catch_warnings():
-            if "model" in viz_da.dims:
-                warnings.filterwarnings("ignore", message="Your data appears to have a single")
-            viz_out[var_name] = func(viz_da, dim=reduce_dims, **kwargs)
-        func_to_name = {"qds": "dot", "histogram": "hist"}
-        viz_out[var_name].attrs["kind"] = func_to_name.get(func.__name__, func.__name__)
+        viz_out[var_name] = _compute_func_da(
+            func, data[var_name], active_dims=active_dims, reduce_dims=reduce_dims, kwargs=kwargs
+        )
     return viz_out
 
 
@@ -287,12 +293,9 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
         kind = rcParams["plot.density_kind"]
     if set(reduce_dims).intersection(active_dims):
         raise ValueError("'reduce_dims' and 'active_dims' can't share elements")
-    ecdf_vars, ecdf_kwargs = [], {}
-    hist_vars, hist_kwargs = [], {}
-    kde_vars, kde_kwargs = [], {}
-    dot_vars, dot_kwargs = [], {}
     if kind == "auto":
-        for var_name, da in data.items():
+        out_das = []
+        for da in data.values():
             reduced_size = np.prod([da.sizes[dim] for dim in reduce_dims if dim in da.dims])
             groupby_dims = [dim for dim in active_dims if dim in da.dims]
             if groupby_dims:
@@ -303,67 +306,49 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
                     ]
                 )
             if reduced_size < 100:
-                ecdf_vars.append(var_name)
+                out_das.append(
+                    _compute_func_da(ecdf, da, active_dims=active_dims, reduce_dims=reduce_dims)
+                )
             elif da.dtype.kind == "f":
-                kde_vars.append(var_name)
+                out_das.append(
+                    _compute_func_da(kde, da, active_dims=active_dims, reduce_dims=reduce_dims)
+                )
             else:
-                hist_vars.append(var_name)
-    elif kind == "dot":
-        dot_vars = list(data.data_vars)
-        dot_kwargs = stats_dist_value
-    elif kind == "ecdf":
-        ecdf_vars = list(data.data_vars)
-        ecdf_kwargs = stats_dist_value
-    elif kind == "hist":
-        hist_vars = list(data.data_vars)
-        hist_kwargs = stats_dist_value
-    elif kind == "kde":
-        kde_vars = list(data.data_vars)
-        kde_kwargs = stats_dist_value
-    else:
-        raise ValueError(f"provided 'kind' {kind} is not valid")
-
-    hist_kwargs.setdefault("density", True)
-
-    dot_out = _compute_func(
-        qds,
-        data,
-        var_names=dot_vars,
-        active_dims=active_dims,
-        reduce_dims=reduce_dims,
-        kwargs=dot_kwargs,
-    )
-    ecdf_out = _compute_func(
-        ecdf,
-        data,
-        var_names=ecdf_vars,
-        active_dims=active_dims,
-        reduce_dims=reduce_dims,
-        kwargs=ecdf_kwargs,
-    )
-
-    hist_out = _compute_func(
-        histogram,
-        data,
-        var_names=hist_vars,
-        active_dims=active_dims,
-        reduce_dims=reduce_dims,
-        kwargs=hist_kwargs,
-    )
-
-    kde_out = _compute_func(
-        kde,
-        data,
-        var_names=kde_vars,
-        active_dims=active_dims,
-        reduce_dims=reduce_dims,
-        kwargs=kde_kwargs,
-    )
-    return xr.merge(
-        [da for ds in (dot_out, ecdf_out, hist_out, kde_out) for da in ds.values()],
-        compat="override",
-        join="outer",
-    )
+                out_das.append(
+                    _compute_func_da(
+                        histogram,
+                        da,
+                        active_dims=active_dims,
+                        reduce_dims=reduce_dims,
+                        kwargs={"density": True},
+                    )
+                )
+        return xr.merge(
+            out_das,
+            compat="override",
+            join="outer",
+        )
+    if kind == "dot":
+        return _compute_func(
+            qds, data, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=stats_dist_value
+        )
+    if kind == "ecdf":
+        return _compute_func(
+            ecdf, data, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=stats_dist_value
+        )
+    if kind == "hist":
+        return _compute_func(
+            histogram,
+            data,
+            active_dims=active_dims,
+            reduce_dims=reduce_dims,
+            kwargs=stats_dist_value,
+        )
+    if kind == "kde":
+        return _compute_func(
+            kde, data, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=stats_dist_value
+        )
+    raise ValueError(f"provided 'kind' {kind} is not valid")
 
 
 def add_lines(
