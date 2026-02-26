@@ -51,6 +51,14 @@ pytestmark = [
 ]
 
 
+def test_plot_dist_kind_auto(datatree):
+    data = datatree.posterior.to_dataset()
+    data["mu"] = data["mu"].astype(int)
+    pc = plot_dist(data, backend="none", kind="auto")
+    assert pc.get_viz("dist", "mu")["function"] == "step"
+    assert pc.get_viz("dist", "tau")["function"] == "line"
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
 class TestPlots:  # pylint: disable=too-many-public-methods
     def test_autocorr(self, datatree, backend):
@@ -169,6 +177,19 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "mu" in pc.viz["dist"].data_vars
         assert "hierarchy" not in pc.viz["dist"]["mu"].dims
         assert "model" in pc.viz["dist"]["mu"].dims
+
+    # TODO: add hist kind back once groubpy computation for histogram is working properly
+    @pytest.mark.parametrize("kind", ["kde", "ecdf", "dot"])
+    def test_plot_dist_groupby(self, datatree, backend, kind):
+        coords = ["a", "a", "b", "b", "b", "b", "c"]
+        data = datatree.posterior.to_dataset().assign_coords(hierarchy=coords)
+        pc = plot_dist(data, backend=backend, kind=kind)
+        visuals = ("plot", "dist", "credible_interval", "point_estimate")
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
+        assert all(
+            set(pc.viz[visual]["theta"]["hierarchy"].values) == set(coords) for visual in visuals
+        )
 
     def test_plot_ecdf_pit(self, datatree, backend):
         pc = plot_ecdf_pit(datatree, backend=backend, group="prior")

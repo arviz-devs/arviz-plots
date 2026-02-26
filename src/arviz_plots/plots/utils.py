@@ -238,6 +238,12 @@ def _compute_func(func, data, active_dims, reduce_dims, var_names=None, kwargs=N
             for dim in active_dims
             if dim in viz_da.dims and (len(np.unique(viz_da.coords[dim])) != viz_da.sizes[dim])
         ]
+        if groupby_dims and func.__name__ == "histogram":
+            raise ValueError(
+                "Histogram computation doesn't support groupby behaviour yet."
+                "Make sure coordinate values are unique or that dimension is not used for "
+                "faceting nor it has aesthetics mapped to it."
+            )
         if groupby_dims:
             viz_da = viz_da.groupby(groupby_dims)
         with warnings.catch_warnings():
