@@ -156,14 +156,15 @@ def plot_energy(
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     if plot_collection is None:
+        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         if show_bfmi:
             new_ds = energy_ds.expand_dims(column=2).assign_coords(column=["bfmi", "energy"])
+            pc_kwargs["figure_kwargs"].setdefault("width_ratios", [1, 3])
             num_cols = 2
         else:
             new_ds = energy_ds.expand_dims(column=1).assign_coords(column=["energy"])
             num_cols = 1
 
-        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", ["column"])
         pc_kwargs["aes"].setdefault("color", ["energy"])
