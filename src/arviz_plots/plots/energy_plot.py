@@ -18,6 +18,7 @@ def plot_energy(
     *,
     sample_dims=None,
     kind=None,
+    show_bfmi=True,
     threshold=0.3,
     plot_collection=None,
     backend=None,
@@ -37,6 +38,7 @@ def plot_energy(
             "legend",
             "remove_axis",
             "bfmi_points",
+            "ref_line",
             "title",
             "ylabel",
         ],
@@ -47,10 +49,10 @@ def plot_energy(
 ):
     r"""Plot energy distributions and bfmi from gradient-based algorithms.
 
-    Generate a figure with two plots: On the left the Bayesian Fraction of Missing Information
-    (BFMI) per chain, values below the threshold indicate poor exploration of the energy
-    distribution. On the right, the marginal energy distribution and the energy transition
-    distribution. Ideally, these two distributions should overlap closely.
+    Generate a figure with the marginal energy distribution and the energy transition
+    distribution. Optionally, include a BFMI panel to inspect chain-wise Bayesian Fraction
+    of Missing Information values. Values below the threshold indicate poor exploration
+    of the energy distribution.
 
     For details on BFMI and energy diagnostics see [1]_ for a more practical overview check
     the EABM chapter on MCMC diagnostic `of gradient-based algorithms <https://arviz-devs.github.io/EABM/Chapters/MCMC_diagnostics.html#diagnosis-of-gradient-based-algorithms>`_.
@@ -66,6 +68,8 @@ def plot_energy(
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
+    show_bfmi : bool, default True
+        Whether to include the BFMI scatter plot. If ``False``, only the energy plot will be shown.
     threshold : float, default 0.3
         Reference threshold for BFMI values, values below this indicate poor exploration of the
         energy distribution.
@@ -152,14 +156,18 @@ def plot_energy(
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     if plot_collection is None:
-        new_ds = energy_ds.expand_dims(column=2).assign_coords(column=["bfmi", "energy"])
+        if show_bfmi:
+            new_ds = energy_ds.expand_dims(column=2).assign_coords(column=["bfmi", "energy"])
+            num_cols = 2
+        else:
+            new_ds = energy_ds.expand_dims(column=1).assign_coords(column=["energy"])
+            num_cols = 1
 
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("cols", ["column"])
         pc_kwargs["aes"].setdefault("color", ["energy"])
-
-        pc_kwargs = set_grid_layout(pc_kwargs, plot_bknd, new_ds, num_cols=2, num_rows=1)
+        pc_kwargs = set_grid_layout(pc_kwargs, plot_bknd, new_ds, num_cols=num_cols, num_rows=1)
 
         plot_collection = PlotCollection.grid(
             new_ds,
@@ -206,75 +214,76 @@ def plot_energy(
         legend_kwargs.setdefault("title", "")
         plot_collection.add_legend(**legend_kwargs)
 
-    # Scatter plot of BFMI values
-    bfmi_ms_kwargs = get_visual_kwargs(visuals, "bfmi_points")
-    if bfmi_ms_kwargs is not False:
-        _, _, bfmi_ignore = filter_aes(plot_collection, aes_by_visuals, "bfmi_points", [])
+    if show_bfmi:
+        # Scatter plot of BFMI values
+        bfmi_ms_kwargs = get_visual_kwargs(visuals, "bfmi_points")
+        if bfmi_ms_kwargs is not False:
+            _, _, bfmi_ignore = filter_aes(plot_collection, aes_by_visuals, "bfmi_points", [])
 
-        bfmi_ms_kwargs.setdefault("color", "B1")
+            bfmi_ms_kwargs.setdefault("color", "B1")
 
-        plot_collection.coords = {"column": "bfmi"}
-        plot_collection.map(
-            scatter_xy,
-            "bfmi_points",
-            data=bfmi_ds,
-            ignore_aes=bfmi_ignore,
-            **bfmi_ms_kwargs,
-        )
-        plot_collection.coords = None
+            plot_collection.coords = {"column": "bfmi"}
+            plot_collection.map(
+                scatter_xy,
+                "bfmi_points",
+                data=bfmi_ds,
+                ignore_aes=bfmi_ignore,
+                **bfmi_ms_kwargs,
+            )
+            plot_collection.coords = None
 
-    # Reference line for BFMI threshold
-    ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
-    if ref_line_kwargs is not False:
-        _, ref_aes, ref_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "ref_line", sample_dims
-        )
-        if "color" not in ref_aes:
-            ref_line_kwargs.setdefault("color", "B2")
-        if "linestyle" not in ref_aes:
-            ref_line_kwargs.setdefault("linestyle", "C1")
+        # Reference line for BFMI threshold
+        ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
+        if ref_line_kwargs is not False:
+            _, ref_aes, ref_ignore = filter_aes(
+                plot_collection, aes_by_visuals, "ref_line", sample_dims
+            )
+            if "color" not in ref_aes:
+                ref_line_kwargs.setdefault("color", "B2")
+            if "linestyle" not in ref_aes:
+                ref_line_kwargs.setdefault("linestyle", "C1")
 
-        # Wrap threshold into an xr.Dataset for PlotCollection.map
-        ref_ds = xr.Dataset({"ref_line": xr.DataArray(threshold)})
-        plot_collection.coords = {"column": "bfmi"}
-        plot_collection.map(
-            vline, "ref_line", data=ref_ds, ignore_aes=ref_ignore, **ref_line_kwargs
-        )
-        plot_collection.coords = None
+            # Wrap threshold into an xr.Dataset for PlotCollection.map
+            ref_ds = xr.Dataset({"ref_line": xr.DataArray(threshold)})
+            plot_collection.coords = {"column": "bfmi"}
+            plot_collection.map(
+                vline, "ref_line", data=ref_ds, ignore_aes=ref_ignore, **ref_line_kwargs
+            )
+            plot_collection.coords = None
 
-    # Add title for BFMI plot
-    title_kwargs = get_visual_kwargs(visuals, "title")
-    if title_kwargs is not False:
-        _, title_aes, title_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "title", sample_dims
-        )
-        if "color" not in title_aes:
-            title_kwargs.setdefault("color", "B1")
-        plot_collection.coords = {"column": "bfmi"}
-        plot_collection.map(
-            labelled_title,
-            "title",
-            text="BFMI",
-            ignore_aes=title_ignore,
-            subset_info=True,
-            labeller=labeller,
-            **title_kwargs,
-        )
-        plot_collection.coords = None
+        # Add title for BFMI plot
+        title_kwargs = get_visual_kwargs(visuals, "title")
+        if title_kwargs is not False:
+            _, title_aes, title_ignore = filter_aes(
+                plot_collection, aes_by_visuals, "title", sample_dims
+            )
+            if "color" not in title_aes:
+                title_kwargs.setdefault("color", "B1")
+            plot_collection.coords = {"column": "bfmi"}
+            plot_collection.map(
+                labelled_title,
+                "title",
+                text="BFMI",
+                ignore_aes=title_ignore,
+                subset_info=True,
+                labeller=labeller,
+                **title_kwargs,
+            )
+            plot_collection.coords = None
 
-    # Add ylabel for BFMI plot
-    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
-    if ylabel_kwargs is not False:
-        ylabel_kwargs.setdefault("text", "Chain")
-        _, _, ylabel_ignore = filter_aes(plot_collection, {}, "ylabel", [])
-        plot_collection.coords = {"column": "bfmi"}
-        plot_collection.map(
-            labelled_y,
-            "ylabel",
-            ignore_aes=ylabel_ignore,
-            **ylabel_kwargs,
-        )
-        plot_collection.coords = None
+        # Add ylabel for BFMI plot
+        ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
+        if ylabel_kwargs is not False:
+            ylabel_kwargs.setdefault("text", "Chain")
+            _, _, ylabel_ignore = filter_aes(plot_collection, {}, "ylabel", [])
+            plot_collection.coords = {"column": "bfmi"}
+            plot_collection.map(
+                labelled_y,
+                "ylabel",
+                ignore_aes=ylabel_ignore,
+                **ylabel_kwargs,
+            )
+            plot_collection.coords = None
 
     return plot_collection
 

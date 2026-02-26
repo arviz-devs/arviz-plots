@@ -193,6 +193,15 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "marginal" in energy_coords
         assert "transition" in energy_coords
 
+    def test_plot_energy_dist_bfmi_false(self, datatree, backend):
+        pc = plot_energy(datatree, backend=backend, show_bfmi=False)
+        assert "plot" in pc.viz.data_vars
+        assert "column" in pc.viz["plot"].coords
+        assert list(pc.viz["plot"].coords["column"].values) == ["energy"]
+        assert "bfmi_points" not in pc.viz.children
+        assert "ref_line" not in pc.viz.children
+        assert "ylabel" not in pc.viz.children
+
     def test_plot_ess(self, datatree, backend):
         pc = plot_ess(datatree, backend=backend, rug=True)
         assert "figure" in pc.viz.data_vars

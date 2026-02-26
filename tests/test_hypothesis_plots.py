@@ -298,16 +298,22 @@ def test_plot_dgof_dist(datatree, kind, envelope_prob, visuals):
         },
     ),
     kind=kind_value,
+    show_bfmi=st.booleans(),
 )
-def test_plot_energy(datatree, kind, visuals):
+def test_plot_energy(datatree, kind, visuals, show_bfmi):
     pc = plot_energy(
         datatree,
         backend="none",
         kind=kind,
+        show_bfmi=show_bfmi,
         visuals=visuals,
     )
     assert "plot" in pc.viz.data_vars
+    bfmi_only_visuals = {"bfmi_points", "ref_line", "ylabel"}
     for visual, value in visuals.items():
+        if (visual in bfmi_only_visuals) and (not show_bfmi):
+            assert visual not in pc.viz.children
+            continue
         if value is False:
             assert visual not in pc.viz.children
         else:
