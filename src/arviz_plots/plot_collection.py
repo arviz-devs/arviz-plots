@@ -268,6 +268,26 @@ class PlotCollection:
         else:
             self._aes_dt = aes_dt
 
+    def _repr_html_(self):
+        if "figure" not in self.viz:
+            return repr(self)
+
+        fig = self.viz["figure"].item()
+        if fig is None:
+            return repr(self)
+
+        return fig._repr_html_()  # pylint: disable=protected-access
+
+    def _display_(self):
+        if "figure" not in self.viz:
+            return self
+
+        fig = self.viz["figure"].item()
+        if fig is None:
+            return self
+
+        return fig
+
     @property
     def aes(self):
         """Information about :term:`aesthetic mapping` as a DataTree.
