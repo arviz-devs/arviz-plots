@@ -629,7 +629,6 @@ def test_plot_khat(datatree_with_loo, threshold, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
