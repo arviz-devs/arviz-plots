@@ -26,7 +26,7 @@ classifiers = [
 ]
 dynamic = ["version", "description"]
 dependencies = [
-  "arviz-base @ git+https://github.com/arviz-devs/arviz-base",
+  "arviz-base @ git+https://github.com/arviz-devs/arviz-base@kind_auto",
   "arviz-stats[xarray] @ git+https://github.com/arviz-devs/arviz-stats",
 ]
 

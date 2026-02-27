@@ -8,6 +8,12 @@ import arviz_stats
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_ci_prob,
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -214,39 +220,19 @@ def plot_dist(
         JAGS, and Stan. Academic Press, 2014. ISBN 978-0-12-405888-0.
         https://www.sciencedirect.com/book/9780124058880
     """
-    if ci_kind not in ("hdi", "eti", None):
-        raise ValueError("ci_kind must be either 'hdi' or 'eti'")
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if ci_prob is None:
-        ci_prob = rcParams["stats.ci_prob"]
-    if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"] if "stats.ci_kind" in rcParams else "eti"
-    if point_estimate is None:
-        point_estimate = rcParams["stats.point_estimate"]
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if kind not in ("auto", "kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'auto', 'kde', 'hist', 'ecdf' or 'dot'")
-    if point_estimate not in ("median", "mean", "mode"):
-        raise ValueError("point_estimate must be either 'mean', 'median' or 'mode'")
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
+    ci_kind = validate_or_use_rcparam(ci_kind, "stats.ci_kind")
+    ci_prob = validate_ci_prob(ci_prob)
+    visuals = validate_dict_argument(visuals, (plot_dist, "visuals"))
+    stats = validate_dict_argument(stats, (plot_dist, "stats"))
     if kind == "ecdf":
         visuals.setdefault("remove_axis", False)
-
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
@@ -281,10 +267,7 @@ def plot_dist(
     face_kwargs = get_visual_kwargs(visuals, "face", False)
     density_kwargs = get_visual_kwargs(visuals, "dist")
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dist, "aes_by_visuals"))
     aes_by_visuals.setdefault("dist", plot_collection.aes_set.difference("y"))
     if face_kwargs is not False:
         aes_by_visuals.setdefault("face", set(aes_by_visuals["dist"]).difference({"linestyle"}))
