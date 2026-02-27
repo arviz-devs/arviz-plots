@@ -17,6 +17,7 @@ def plot_loo_pit(
     group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
+    method="envelope",
     envelope_prob=None,
     coverage=False,
     plot_collection=None,
@@ -45,7 +46,7 @@ def plot_loo_pit(
     stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
-    r"""LOO-PIT Δ-ECDF values with simultaneous confidence envelope.
+    r"""LOO-PIT Δ-ECDF uniformity test.
 
     For a calibrated model the LOO Probability Integral Transform (PIT) values,
     $p(\tilde{y}_i \le y_i \mid y_{-i})$, should be uniformly distributed.
@@ -56,8 +57,8 @@ def plot_loo_pit(
 
     This plot shows the empirical cumulative distribution function (ECDF) of the LOO-PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between the
-    observed ECDF and the expected CDF. Simultaneous confidence bands are computed using the method
-    described in described in [3]_.
+    observed ECDF and the expected CDF. Color code is used to indicate pointwise deviations from the
+    expected CDF.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -178,6 +179,7 @@ def plot_loo_pit(
         group="loo_pit",
         coords=coords,
         sample_dims=lpv.dims,
+        method=method,
         envelope_prob=envelope_prob,
         coverage=coverage,
         plot_collection=plot_collection,

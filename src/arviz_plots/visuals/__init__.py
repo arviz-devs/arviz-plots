@@ -339,7 +339,13 @@ def annotate_xy(
     horizontal_align=None,
     **kwargs,
 ):
-    """Annotate a point (x, y) in a plot."""
+    """Annotate a point (x, y) in a plot.
+
+    If ``text`` is callable, it will be called with the scalar value of ``da``
+    to produce the annotation string.
+    """
+    if callable(text):
+        text = text(da.item() if hasattr(da, "item") else da)
     if vertical_align is not None:
         kwargs["vertical_align"] = (
             vertical_align.item() if hasattr(vertical_align, "item") else vertical_align

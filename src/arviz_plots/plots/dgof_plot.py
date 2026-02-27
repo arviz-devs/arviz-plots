@@ -25,6 +25,7 @@ def plot_dgof(
     coords=None,
     sample_dims=None,
     kind=None,
+    method="pot_c",
     envelope_prob=None,
     plot_collection=None,
     backend=None,
@@ -81,6 +82,9 @@ def plot_dgof(
     kind : {"kde", "hist", "dot"}, optional
         Which method to diagnose the distribution fit.
         Defaults to ``rcParams["plot.density_kind"]``
+    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+        Which method to compute the simultaneous confidence bands for the Δ-ECDF-PIT diagnostic.
+        Defaults to "pot_c".
     envelope_prob : float, optional
         Indicates the probability that should be contained within the envelope.
         Defaults to ``rcParams["stats.envelope_prob"]``.
@@ -172,12 +176,15 @@ def plot_dgof(
     visuals.setdefault("ylabel", {})
     visuals.setdefault("xlabel", {"text": "PIT"})
 
-    stats_ecdf = {"ecdf_pit": stats.get("ecdf_pit", {})}
+    stats_ecdf = {
+        "ecdf_pit": stats.get("ecdf_pit", {}),
+    }
 
     plot_collection = plot_ecdf_pit(
         new_dt,
         coords=coords,
         sample_dims="sample",
+        method=method,
         envelope_prob=envelope_prob,
         plot_collection=plot_collection,
         backend=backend,

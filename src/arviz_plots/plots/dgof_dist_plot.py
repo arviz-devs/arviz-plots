@@ -26,6 +26,7 @@ def plot_dgof_dist(
     coords=None,
     sample_dims=None,
     kind=None,
+    method="pot_c",
     envelope_prob=None,
     plot_collection=None,
     backend=None,
@@ -77,6 +78,9 @@ def plot_dgof_dist(
     kind : {"kde", "hist", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
+    method : {"envelope", "pot_c", "prit_c", "piet_c"}, optional
+        Method to compute the simultaneous confidence bands for the Δ-ECDF-PIT diagnostic.
+        Defaults to "pot_c".
     envelope_prob : float, optional
         Indicates the probability that should be contained within the envelope.
         Defaults to ``rcParams["stats.envelope_prob"]``.
@@ -228,6 +232,7 @@ def plot_dgof_dist(
     plot_collection.coords = {"column": "gof"}
     plot_dgof(
         dt,
+        method=method,
         envelope_prob=envelope_prob,
         kind=kind,
         var_names=var_names,
