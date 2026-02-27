@@ -100,7 +100,7 @@ def plot_dist(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    kind : {"kde", "hist", "dot", "ecdf"}, optional
+    kind : {"auto", "kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     point_estimate : {"mean", "median", "mode"}, optional
@@ -195,6 +195,16 @@ def plot_dist(
         >>>     aes={"color": ["__variable__"]},
         >>>     aes_by_visuals={"title": ["color"]},
         >>> )
+
+    Faceting and aesthetics mappings happen on unique coordinate values. If there are repeated
+    coordinate values they will be grouped and reduced along with `sample_dims`.
+
+    .. plot::
+        :context: close-figs
+
+        >>> post = non_centered.posterior.to_dataset()
+        >>> repeated_coords = ["a", "a", "a", "b", "b", "b", "b", "c"]
+        >>> pc = plot_dist(post.assign_coords(school=repeated_coords))
 
     .. minigallery:: plot_dist
 

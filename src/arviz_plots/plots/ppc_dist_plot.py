@@ -66,9 +66,9 @@ def plot_ppc_dist(
         It could also be "prior_predictive".
     coords : dict, optional
     sample_dims : str or sequence of hashable, optional
-        Dimensions to reduce unless mapped to an aesthetic.
+        Sampled dimensions used to overlay `num_samples` lines.
         Defaults to ``rcParams["data.sample_dims"]``
-    kind : {"kde", "hist", "ecdf", "dot"}, optional
+    kind : {"auto", "kde", "hist", "ecdf", "dot"}, optional
         How to represent the marginal density. Defaults to ``rcParams["plot.density_kind"]``
         If "dot" is selected, only the top points of the predictive draws are shown.
     num_samples : int, optional
@@ -146,6 +146,29 @@ def plot_ppc_dist(
         >>>     },
         >>> )
 
+
+    Faceting and aesthetics mappings happen on unique coordinate values. If there are repeated
+    coordinate values they will be grouped and reduced along with `sample_dims`.
+    This example updates the coordinate values to have repeated values and requests
+    faceting along the "obs_id" dimension. It also keeps 90 out of the 919 observations
+    in the original dataset; otherwise we'd end up with 85 :term:`plots` in the :term:`figure`
+
+    .. plot::
+        :context: close-figs
+
+        >>> county = radon.constant_data["County"][radon.constant_data["county_idx"]]
+        >>> reindexed_dt = radon.filter(
+        >>>     lambda node: node.name in ("observed_data", "posterior_predictive")
+        >>> ).map_over_datasets(
+        >>>     lambda node: node.assign_coords(obs_id=county).isel(obs_id=slice(None, 90))
+        >>> )
+        >>> pc = azp.plot_ppc_dist(
+        >>>     reindexed_dt, cols=["obs_id"], kind="auto", visuals={"title": False}
+        >>> )
+
+    Note how counties with a lot of observations have a smoother ECDF whereas counties
+    with only 2-3 observations have only 2-3 steps in their ECDF.
+
     .. minigallery:: plot_ppc_dist
     """
     if sample_dims is None:
@@ -170,7 +193,7 @@ def plot_ppc_dist(
         else:
             backend = plot_collection.backend
 
-    if kind not in ("kde", "hist", "ecdf", "dot"):
+    if kind not in ("kde", "hist", "ecdf", "dot", "auto"):
         raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
