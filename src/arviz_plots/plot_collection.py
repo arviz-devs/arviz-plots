@@ -270,11 +270,11 @@ class PlotCollection:
 
     def _repr_html_(self):
         if "figure" not in self.viz:
-            return repr(self)
+            return None
 
         fig = self.viz["figure"].item()
         if fig is None:
-            return repr(self)
+            return None
 
         return fig._repr_html_()  # pylint: disable=protected-access
 
