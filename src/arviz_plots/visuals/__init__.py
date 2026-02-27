@@ -8,7 +8,9 @@ and eventually they call the requested plotting backend.
 """
 import numpy as np
 import xarray as xr
+from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_stats.base.stats_utils import round_num
 
 from arviz_plots.plot_collection import backend_from_object
 
@@ -351,7 +353,9 @@ def annotate_xy(
     return plot_backend.text(x, y, text, target, **kwargs)
 
 
-def point_estimate_text(da, target, *, point_estimate, x=None, y=None, point_label="x", **kwargs):
+def point_estimate_text(
+    da, target, *, point_estimate, x=None, y=None, point_label="x", round_to=None, **kwargs
+):
     """Annotate a point estimate."""
     x, y = _ensure_scalar(*_process_da_x_y(da, x, y))
     point = x if point_label == "x" else y
@@ -360,7 +364,9 @@ def point_estimate_text(da, target, *, point_estimate, x=None, y=None, point_lab
             "Found non-scalar point estimate. Check aes mapping and sample_dims. "
             f"The dimensions still left to reduce/facet are {point.dims}."
         )
-    text = f"{point:.3g} {point_estimate}"
+    if round_to is None:
+        round_to = rcParams["stats.round_to"]
+    text = f"{round_num(point, round_to)} {point_estimate}"
     plot_backend = backend_from_object(target)
     return plot_backend.text(
         x,

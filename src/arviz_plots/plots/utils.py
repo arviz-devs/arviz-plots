@@ -5,9 +5,10 @@ from importlib import import_module
 
 import numpy as np
 import xarray as xr
-from arviz_base import references_to_dataset, xarray_sel_iter
+from arviz_base import rcParams, references_to_dataset, xarray_sel_iter
 from arviz_base.labels import BaseLabeller
 from arviz_base.utils import _var_names
+from arviz_stats import ecdf, histogram, kde, qds
 
 from arviz_plots.plot_collection import concat_model_dict, process_facet_dims
 from arviz_plots.visuals import annotate_xy, hline, hspan, vline, vspan
@@ -119,14 +120,26 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
 
 
 def filter_aes(pc, aes_by_visuals, visual, sample_dims):
+    """Simplified version of `filter_aes_full` that doesn't return "active_dimensions"."""
+    reduce_dims, _, artist_aes, ignore_aes = filter_aes_full(
+        pc, aes_by_visuals, visual, sample_dims
+    )
+    return reduce_dims, artist_aes, ignore_aes
+
+
+def filter_aes_full(pc, aes_by_visuals, visual, sample_dims):
     """Split aesthetics and get relevant dimensions.
 
     Returns
     -------
-    artist_dims : list
+    reduce_dims : list
         Dimensions that should be reduced for this visual.
         That is, all dimensions in `sample_dims` that are not
         mapped to any aesthetic.
+    active_dims : list
+        Dimensions that have either faceting or aesthetic mappings
+        active for that visual. Should not be reduced and should have
+        a groupby performed on them if computing summaries.
     artist_aes : iterable
     ignore_aes : set
     """
@@ -134,8 +147,8 @@ def filter_aes(pc, aes_by_visuals, visual, sample_dims):
     pc_aes = pc.aes_set
     ignore_aes = set(pc_aes).difference(artist_aes)
     _, all_loop_dims = pc.update_aes(ignore_aes=ignore_aes)
-    artist_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
-    return artist_dims, artist_aes, ignore_aes
+    reduce_dims = [dim for dim in sample_dims if dim not in all_loop_dims]
+    return reduce_dims, all_loop_dims, artist_aes, ignore_aes
 
 
 def set_wrap_layout(pc_kwargs, plot_bknd, ds):
@@ -209,6 +222,133 @@ def set_grid_layout(pc_kwargs, plot_bknd, ds, num_rows=None, num_cols=None):
     pc_kwargs["figure_kwargs"]["figsize"] = figsize
     pc_kwargs["figure_kwargs"]["figsize_units"] = figsize_units
     return pc_kwargs
+
+
+def _compute_func_da(func, da, active_dims, reduce_dims, kwargs=None):
+    if kwargs is None:
+        kwargs = {}
+    groupby_dims = [
+        dim
+        for dim in active_dims
+        if dim in da.dims and (len(np.unique(da.coords[dim])) != da.sizes[dim])
+    ]
+    if groupby_dims and func.__name__ == "histogram":
+        raise ValueError(
+            "Histogram computation doesn't support groupby behaviour yet."
+            "Make sure coordinate values are unique or that dimension is not used for "
+            "faceting nor it has aesthetics mapped to it."
+        )
+    if groupby_dims:
+        da = da.groupby(groupby_dims)
+    with warnings.catch_warnings():
+        if "model" in da.dims:
+            warnings.filterwarnings("ignore", message="Your data appears to have a single")
+        out_da = func(da, dim=reduce_dims, **kwargs)
+    func_to_name = {"qds": "dot", "histogram": "hist"}
+    out_da.attrs["kind"] = func_to_name.get(func.__name__, func.__name__)
+    return out_da
+
+
+def _compute_func(func, data, active_dims, reduce_dims, var_names=None, kwargs=None):
+    """Compute given function for taking into account active and dimensions to reduce."""
+    viz_out = xr.Dataset()
+    if var_names is None:
+        var_names = data.data_vars
+    for var_name in var_names:
+        viz_out[var_name] = _compute_func_da(
+            func, data[var_name], active_dims=active_dims, reduce_dims=reduce_dims, kwargs=kwargs
+        )
+    return viz_out
+
+
+def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
+    """Compute marginal uncertainty visualization data for different kinds and facet/aes combos.
+
+    Parameters
+    ----------
+    data : Dataset
+    reduce_dims : sequence of hashable
+        Dimensions of `data` that should be reduced. They will not be present in the output.
+    active_dims : sequence of hashable
+        Dimensions of `data` used for faceting or with an aesthetic mapped to it.
+        These will be partially reduced through a groupby if needed so the output continues
+        to have these dimensions but with unique coordinate values.
+    kind : {"auto", "kde", "hist", "ecdf", "dot"}, optional
+        Kind of 1d marginal uncertainty visualisation to use.
+        If ``None``, the ``plot.density_kind`` rcParam will be used.
+        If "auto" the type of visualization will be variable dependent through some heuristics.
+    stats : mapping, optional
+        Stats dictionary argument to plots like :func:`~arviz_plots.plot_dist`.
+        If the values stored in the "dist" key are a :class:`~xarray.Dataset`
+        they will be returned as is as they are understood to be pre-computed visualization data.
+        This argument will be ignored if `kind` is "auto".
+    """
+    if stats is None:
+        stats = {}
+    # quick exit if pre-computed elements in `stats`
+    stats_dist_value = stats.get("dist", {})
+    if isinstance(stats_dist_value, xr.Dataset):
+        return stats_dist_value
+    if kind is None:
+        kind = rcParams["plot.density_kind"]
+    if set(reduce_dims).intersection(active_dims):
+        raise ValueError("'reduce_dims' and 'active_dims' can't share elements")
+    if kind == "auto":
+        out_das = []
+        for da in data.values():
+            reduced_size = np.prod([da.sizes[dim] for dim in reduce_dims if dim in da.dims])
+            groupby_dims = [dim for dim in active_dims if dim in da.dims]
+            if groupby_dims:
+                reduced_size *= np.prod(
+                    [
+                        np.min(np.unique(da.coords[dim], return_counts=True)[1])
+                        for dim in groupby_dims
+                    ]
+                )
+            if reduced_size < 100:
+                out_das.append(
+                    _compute_func_da(ecdf, da, active_dims=active_dims, reduce_dims=reduce_dims)
+                )
+            elif da.dtype.kind == "f":
+                out_das.append(
+                    _compute_func_da(kde, da, active_dims=active_dims, reduce_dims=reduce_dims)
+                )
+            else:
+                out_das.append(
+                    _compute_func_da(
+                        histogram,
+                        da,
+                        active_dims=active_dims,
+                        reduce_dims=reduce_dims,
+                        kwargs={"density": True},
+                    )
+                )
+        return xr.merge(
+            out_das,
+            compat="override",
+            join="outer",
+        )
+    if kind == "dot":
+        return _compute_func(
+            qds, data, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=stats_dist_value
+        )
+    if kind == "ecdf":
+        return _compute_func(
+            ecdf, data, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=stats_dist_value
+        )
+    if kind == "hist":
+        return _compute_func(
+            histogram,
+            data,
+            active_dims=active_dims,
+            reduce_dims=reduce_dims,
+            kwargs=stats_dist_value,
+        )
+    if kind == "kde":
+        return _compute_func(
+            kde, data, active_dims=active_dims, reduce_dims=reduce_dims, kwargs=stats_dist_value
+        )
+    raise ValueError(f"provided 'kind' {kind} is not valid")
 
 
 def add_lines(
