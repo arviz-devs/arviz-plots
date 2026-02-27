@@ -6,6 +6,7 @@ from typing import Any, Literal
 import numpy as np
 import xarray as xr
 from arviz_base import convert_to_dataset, rcParams
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
@@ -137,19 +138,11 @@ def plot_energy(
     .. [1] Betancourt. Diagnosing Suboptimal Cotangent Disintegrations in
         Hamiltonian Monte Carlo. (2016) https://arxiv.org/abs/1604.00695
     """  # pylint: disable=line-too-long
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
+    visuals = validate_dict_argument(visuals, (plot_energy, "visuals"))
 
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
-
-    energy_ds, bfmi_ds = _get_energy_ds(dt, sample_dims=sample_dims)
+    sample_stats = dt["sample_stats"]
+    sample_dims = validate_sample_dims(sample_dims, sample_stats)
+    energy_ds, bfmi_ds = _get_energy_ds(sample_stats, sample_dims=sample_dims)
 
     if backend is None:
         backend = rcParams["plot.backend"]
@@ -181,10 +174,7 @@ def plot_energy(
     visuals.setdefault("point_estimate_text", False)
     visuals.setdefault("face", True)
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_energy, "aes_by_visual"))
 
     # Energy distributions plot
     plot_collection.coords = {"column": "energy"}
@@ -289,7 +279,7 @@ def plot_energy(
     return plot_collection
 
 
-def _get_energy_ds(dt, sample_dims):
+def _get_energy_ds(sample_stats, sample_dims):
     """Extract energy and BFMI data from DataTree.
 
     Returns
@@ -299,8 +289,8 @@ def _get_energy_ds(dt, sample_dims):
     bfmi_ds : Dataset
         Dataset with bfmi variable containing BFMI values and chain indices
     """
-    energy = dt["sample_stats"].energy.values
-    bfmi_vals = dt.sample_stats["energy"].azstats.bfmi(sample_dims=sample_dims)
+    energy = sample_stats.energy.values
+    bfmi_vals = sample_stats["energy"].azstats.bfmi(sample_dims=sample_dims)
     n_chains = len(bfmi_vals)
     chain_indices = np.arange(n_chains)
 
