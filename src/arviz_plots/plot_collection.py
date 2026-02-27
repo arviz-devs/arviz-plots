@@ -7,7 +7,8 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams, xarray_sel_iter
-from arviz_base.labels import BaseLabeller
+from arviz_base.labels import BaseLabeller, NoVarLabeller
+from arviz_base.utils import _var_names
 
 
 def backend_from_object(obj, return_module=True):
@@ -670,6 +671,7 @@ class PlotCollection:
         ----------
         artist_name : str
         var_name : str, optional
+            If there is only one variable in that artist it will be the default.
         sel : mapping, optional
         **sel_kwargs : mapping, optional
             kwargs version of `sel`
@@ -682,6 +684,8 @@ class PlotCollection:
             out = out.dataset
             if var_name is not None:
                 out = out[var_name]
+            elif len(out.data_vars) == 1:
+                out = out[list(out.data_vars)[0]]
         subset = sel_subset(sel, out)
         if subset:
             out = out.sel(subset)
@@ -1351,7 +1355,9 @@ class PlotCollection:
 
         self.viz["figure_title"] = xr.DataArray(title_obj)
 
-    def facet_map(self, func, *, var_names=None, coords=None, **kwargs):
+    def facet_map(
+        self, func, func_label=None, *, var_names=None, filter_vars=None, coords=None, **kwargs
+    ):
         """Apply a visual function to plots filtered by variable names and coordinates.
 
         This is a convenience wrapper around :meth:`~.PlotCollection.map` that uses
@@ -1365,11 +1371,12 @@ class PlotCollection:
             (e.g., "set_xlim" becomes :func:`arviz_plots.visuals.set_xlim`).
         var_names : str or list of str, optional
             Variables to apply the function to. If not provided, applies to all variables.
+        filter_vars : {None, "like", "regex"}, default None
         coords : mapping, optional
             Coordinates to filter which plots get updated. Only plots with matching
             coordinate values will be affected.
         **kwargs
-            Passed to ``func``.
+            Passed to :meth:`~arviz_plots.PlotCollection.map`.
 
         Returns
         -------
@@ -1407,36 +1414,40 @@ class PlotCollection:
         See Also
         --------
         PlotCollection.map
-        """
-        from importlib import import_module
 
-        # look up string function names in visuals module
+        Notes
+        -----
+        When calling `.map` it sets `ignore_aes` as "all" if not present,
+        and if a "labeller" key is present in `kwargs` but has ``None`` as
+        value, the value is updated to either :class:`~arviz_base.labels.BaseLabeller`
+        or :class:`~arviz_base.labels.NoVarLabeller` (if the variable isn't used for facetting)
+        """
         if isinstance(func, str):
             visuals = import_module(".visuals", package="arviz_plots")
             if not hasattr(visuals, func):
-                available = [name for name in dir(visuals) if not name.startswith("_")]
-                raise ValueError(
-                    f"Function '{func}' not found in visuals module. "
-                    f"Available: {', '.join(available[:10])}..."
-                )
+                raise ValueError(f"Function '{func}' not found in visuals module.")
             func = getattr(visuals, func)
 
-        # filter the data using same logic as plotting functions
-        filtered_data = self.data
-        if var_names is not None:
-            from arviz_base.utils import _var_names
+        if coords is None:
+            coords = {}
 
-            var_list = _var_names(var_names, filtered_data, filter_vars=None)
-            if var_list is not None:
-                filtered_data = filtered_data[var_list]
+        if "plot" in self.viz.data_vars:
+            if var_names is not None:
+                warnings.warn("Variable not used for faceting so `var_names` is ignored.")
+            plot_data = self.viz["plot"].sel(coords).to_dataset()
+            default_labeller = NoVarLabeller()
+        else:
+            plot_data = self.viz["plot"].to_dataset()
+            var_names = _var_names(var_names, plot_data, filter_vars=filter_vars)
+            if var_names is not None:
+                plot_data = plot_data[var_names]
+            plot_data = plot_data.sel(coords)
+            default_labeller = BaseLabeller()
 
-        if coords is not None:
-            filtered_data = filtered_data.sel(coords)
-
-        # use .map with ignore_aes to only loop over facets
-        self.map(func, data=filtered_data, ignore_aes="all", store_artist=False, **kwargs)
-
-        return self
+        kwargs.setdefault("ignore_aes", "all")
+        if "labeller" in kwargs and kwargs["labeller"] is None:
+            kwargs["labeller"] = default_labeller
+        self.map(func, func_label, data=plot_data, **kwargs)
 
     def add_legend(
         self,

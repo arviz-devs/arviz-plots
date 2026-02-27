@@ -162,9 +162,7 @@ def plot_ppc_dist(
         >>> ).map_over_datasets(
         >>>     lambda node: node.assign_coords(obs_id=county).isel(obs_id=slice(None, 90))
         >>> )
-        >>> pc = azp.plot_ppc_dist(
-        >>>     reindexed_dt, cols=["obs_id"], kind="auto", visuals={"title": False}
-        >>> )
+        >>> pc = azp.plot_ppc_dist(reindexed_dt, cols=["obs_id"], kind="auto")
 
     Note how counties with a lot of observations have a smoother ECDF whereas counties
     with only 2-3 observations have only 2-3 steps in their ECDF.

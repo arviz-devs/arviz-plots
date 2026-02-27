@@ -25,8 +25,4 @@ pc = azp.plot_dist(
     backend="none"  # change to preferred backend
 )
 
-# Use facet_map to set axis limits for specific subsets
-pc.facet_map("set_xlim", limits=(-10, 20), coords={"school": ["Deerfield"]})
-pc.facet_map("set_xlim", limits=(0, 15), var_names="tau")
-
 pc.show()

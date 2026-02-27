@@ -300,11 +300,17 @@ class TestSaveFigures:
             assert file_path.stat().st_size > 0
 
 
-def map_auxiliar(da, target, da_list, target_list, kwarg_list, **kwargs):
-    da_list.append(da)
-    target_list.append(target)
-    kwarg_list.append(kwargs)
-    return da.mean()
+def map_auxiliar(da, target, da_list=None, target_list=None, kwarg_list=None, **kwargs):
+    if da_list is not None:
+        da_list.append(da)
+    if target_list is not None:
+        target_list.append(target)
+    if kwarg_list is not None:
+        kwarg_list.append(kwargs)
+    try:
+        return da.mean()
+    except (TypeError, ValueError):
+        return "non-numerical-da"
 
 
 def generate_plot_collection1(data):
@@ -510,6 +516,84 @@ class TestMap:
             assert isinstance(kwargs["ds"], DataArray)
             assert "school" not in kwargs["ds"].dims
             assert "school" not in kwargs["da_hierarchy"].dims
+
+
+class TestFacetMap:
+    def test_string_function(self, dataset):
+        pc = PlotCollection.wrap(dataset, cols=["__variable__"], backend="none")
+        pc.facet_map("set_xlim", limits=(-10, 10))
+        assert "set_xlim" in pc.viz.children
+
+    @pytest.mark.parametrize("var_name", ("mu", "theta", "eta", ["mu", "theta"]))
+    def test_var_names(self, dataset, var_name):
+        pc = generate_plot_collection1(dataset)
+        target_list = []
+        kwarg_list = []
+        pc.facet_map(
+            map_auxiliar,
+            var_names=var_name,
+            target_list=target_list,
+            kwarg_list=kwarg_list,
+        )
+        if isinstance(var_name, str):
+            var_name = [var_name]
+        assert target_list == [f"{var}_plot" for var in var_name]
+        assert kwarg_list == [{} for _ in var_name]
+
+    def test_coords(self):
+        pc = generate_plot_collection2()
+        target_list = []
+        kwarg_list = []
+        pc.facet_map(
+            map_auxiliar,
+            target_list=target_list,
+            kwarg_list=kwarg_list,
+            coords={"school": ["Choate", "Deerfield"]},
+        )
+        expected_targets = [
+            "mu_plot",
+            "tau_plot",
+            "theta_plot0",
+            "theta_plot1",
+            "theta_t_plot0",
+            "theta_t_plot1",
+        ]
+        assert target_list == expected_targets
+        assert kwarg_list == [{}] * 6
+
+    def test_aes(self):
+        pc = generate_plot_collection2()
+        target_list = []
+        kwarg_list = []
+        pc.facet_map(
+            map_auxiliar,
+            target_list=target_list,
+            kwarg_list=kwarg_list,
+            var_names=["theta", "theta_t"],
+            ignore_aes={"y"},
+        )
+        expected_targets = [f"{var}_plot{i}" for var in ("theta", "theta_t") for i in range(8)]
+        assert target_list == expected_targets
+        expected_kwargs = [
+            {"color": f"{var}_C{i}"} for var in ("theta", "theta_t") for i in range(8)
+        ]
+        assert kwarg_list == expected_kwargs
+
+    def test_only_dim_faceting(self, dataset):
+        pc = PlotCollection.wrap(dataset[["theta", "eta"]], cols=["hierarchy"], backend="none")
+        target_list = []
+        pc.facet_map(
+            map_auxiliar,
+            target_list=target_list,
+        )
+        # .map with ignore_aes="all" would call the function 14 times because
+        # of the two variables in the input data
+        assert len(target_list) == 7
+
+    def test_invalid_function(self):
+        pc = generate_plot_collection1(dataset)
+        with pytest.raises(ValueError, match="not found in visuals module"):
+            pc.facet_map("this_doesnt_exist")
 
 
 class TestAddTitle:

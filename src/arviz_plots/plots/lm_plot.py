@@ -9,7 +9,7 @@ import arviz_stats as azs
 import numpy as np
 import xarray as xr
 from arviz_base import extract, rcParams
-from arviz_base.labels import BaseLabeller, MapLabeller
+from arviz_base.labels import MapLabeller
 from scipy.interpolate import griddata
 from scipy.signal import savgol_filter
 
@@ -264,8 +264,6 @@ def plot_lm(
 
     y_to_x_map = dict(zip(y, x))
 
-    if xlabeller is None:
-        xlabeller = BaseLabeller()
     if ylabeller is None:
         ylabeller = MapLabeller(
             var_name_map={x_name: y_name for y_name, x_name in y_to_x_map.items()}
@@ -517,10 +515,9 @@ def plot_lm(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         _, _, xlabel_ignore = filter_aes(plot_collection, aes_by_visuals, "xlabel", sample_dims)
-        plot_collection.map(
+        plot_collection.facet_map(
             labelled_x,
             "xlabel",
-            data=plot_collection.viz["plot"].dataset,
             labeller=xlabeller,
             subset_info=True,
             ignore_aes=xlabel_ignore,
@@ -531,10 +528,9 @@ def plot_lm(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         _, _, ylabel_ignore = filter_aes(plot_collection, aes_by_visuals, "ylabel", sample_dims)
-        plot_collection.map(
+        plot_collection.facet_map(
             labelled_y,
             "ylabel",
-            data=plot_collection.viz["plot"].dataset,
             labeller=ylabeller,
             subset_info=True,
             ignore_aes=ylabel_ignore,
