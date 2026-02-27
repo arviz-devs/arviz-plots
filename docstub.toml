@@ -7,6 +7,8 @@ emcee = "emcee"
 cmdstanpy = "cmdstanpy"
 stan = "stan"
 types = "types"
+arviz_base = "arviz_base"
+arviz_plots = "arviz_plots"
 
 # Specify human-friendly aliases that can be used instead of Python-parsable
 # annotations.
@@ -27,3 +29,4 @@ DataTree-like = "xarray.DataTree"
 DataArray = "xarray.DataArray"
 scalar = "numbers.Number"
 any = "Any"
+PlotCollection = "arviz_plots.plot_collection.PlotCollection"
