@@ -1032,7 +1032,7 @@ class PlotCollection:
 
     def allocate_artist(
         self,
-        fun_label,
+        func_label,
         data,
         all_loop_dims,
         dim_to_idx=None,
@@ -1068,11 +1068,11 @@ class PlotCollection:
                     for dim in inherited_dims
                 },
             )
-        if fun_label in self._viz_dt.children:
+        if func_label in self._viz_dt.children:
             for var_name, da in artist_dt.items():
-                self._viz_dt[fun_label][var_name] = da
+                self._viz_dt[func_label][var_name] = da
         else:
-            self._viz_dt[fun_label] = artist_dt
+            self._viz_dt[func_label] = artist_dt
 
     def get_target(self, var_name, selection):
         """Get the target that corresponds to the given variable and selection."""
@@ -1180,8 +1180,8 @@ class PlotCollection:
 
     def map(
         self,
-        fun,
-        fun_label=None,
+        func,
+        func_label=None,
         *,
         data=None,
         coords=None,
@@ -1195,15 +1195,15 @@ class PlotCollection:
 
         Parameters
         ----------
-        fun : callable
+        func : callable
             Function with signature ``fun(da, target, **fun_kwargs)`` which should
             be applied for all combinations of :term:`plot` and :term:`aesthetic`.
             The object returned by `fun` is assumed to be a scalar unless
             `artist_dims` are provided. There is also the option of adding
             extra required keyword arguments with the `subset_info` flag.
-        fun_label : str, optional
-            Variable name with which to store the object returned by `fun`.
-            Defaults to ``fun.__name__``.
+        func_label : str, optional
+            Variable name with which to store the object returned by `func`.
+            Defaults to ``func.__name__``.
         data : Dataset or DataArray, optional
             Data to be subsetted at each iteration and to pass to `fun` as first positional
             argument. If `data` is a DataArray it must be named.
@@ -1234,11 +1234,15 @@ class PlotCollection:
             xarray object so dimensions with mapped asethetics not being present is not an issue.
             However, using Datasets that don't contain all the variable names in `data`
             will raise an error.
+
+        See Also
+        --------
+        arviz_plots.PlotCollection.facet_map : apply a function once per :term:`plot`
         """
         if coords is None:
             coords = {}
-        if fun_label is None:
-            fun_label = fun.__name__
+        if func_label is None:
+            func_label = func.__name__
         if isinstance(ignore_aes, str) and ignore_aes == "all":
             ignore_aes = self.aes_set
 
@@ -1263,7 +1267,7 @@ class PlotCollection:
         plotters = xarray_sel_iter(data, skip_dims=skip_dims, dim_to_idx=dim_to_idx)
         if store_artist:
             self.allocate_artist(
-                fun_label=fun_label,
+                func_label=func_label,
                 data=data,
                 all_loop_dims=all_loop_dims,
                 dim_to_idx=dim_to_idx,
@@ -1283,7 +1287,7 @@ class PlotCollection:
 
             aes_kwargs = self.get_aes_kwargs(aes, var_name, sel_plus)
 
-            fun_kwargs = {
+            func_kwargs = {
                 **aes_kwargs,
                 **{
                     key: process_kwargs_subset(values, var_name, sel)
@@ -1291,17 +1295,17 @@ class PlotCollection:
                 },
             }
             if subset_info:
-                fun_kwargs = {**fun_kwargs, "var_name": var_name, "sel": sel, "isel": isel}
+                func_kwargs = {**func_kwargs, "var_name": var_name, "sel": sel, "isel": isel}
 
-            aux_artist = fun(da, target=target, **fun_kwargs)
+            aux_artist = func(da, target=target, **func_kwargs)
             if store_artist:
                 if np.size(aux_artist) == 1:
                     aux_artist = np.squeeze(aux_artist)
-                self.store_in_artist_da(aux_artist, fun_label, var_name, sel)
+                self.store_in_artist_da(aux_artist, func_label, var_name, sel)
 
-    def store_in_artist_da(self, aux_artist, fun_label, var_name, sel):
-        """Store the visual object of `var_name`+`sel` combination in `fun_label` variable."""
-        self.viz[fun_label][var_name].loc[sel] = aux_artist
+    def store_in_artist_da(self, aux_artist, func_label, var_name, sel):
+        """Store the visual object of `var_name`+`sel` combination in `func_label` variable."""
+        self.viz[func_label][var_name].loc[sel] = aux_artist
 
     def add_title(self, text, *, color="B1", size=None, **kwargs):
         """Add a title to the :term:`figure`.
@@ -1369,6 +1373,9 @@ class PlotCollection:
         func : str or callable
             Visual function to apply. If a string, it's looked up in the visuals module
             (e.g., "set_xlim" becomes :func:`arviz_plots.visuals.set_xlim`).
+        func_label : str, optional
+            Variable name with which to store the object returned by `func`.
+            Defaults to ``fun.__name__``.
         var_names : str or list of str, optional
             Variables to apply the function to. If not provided, applies to all variables.
         filter_vars : {None, "like", "regex"}, default None
@@ -1395,25 +1402,25 @@ class PlotCollection:
             pc = azp.plot_dist(data)
             pc.facet_map("set_xlim", limits=(-15, 15), var_names="mu")
 
-        Apply to multiple variables with coordinate filtering:
+        Apply with coordinate filtering:
 
         .. jupyter-execute::
 
-            pc = azp.plot_dist(data, var_names=["mu", "tau", "theta"])
-            pc.facet_map("set_xlim", limits=(-5, 5),
-                         var_names=["mu", "tau"],
-                         coords={"school": ["Choate", "Deerfield"]})
+            pc = azp.plot_dist(data, coords={"school": ["Choate", "Deerfield", "Hotchkiss"]})
+            pc.facet_map(
+                "set_xlim",
+                limits=(-5, 5),
+                coords={"school": ["Choate", "Deerfield"]}
+            )
 
-        Chain multiple operations:
-
-        .. jupyter-execute::
-
-            pc = azp.plot_dist(data)
-            pc.facet_map("set_xlim", limits=(-10, 10)).facet_map("set_ylim", limits=(0, 0.5))
+        Note that the same way that ``plot_dist`` with no variable names specified plots
+        all of them, applying the filtering only to the relevant ones,
+        ``facet_map`` behaves the same when coords are given but no variable names.
 
         See Also
         --------
-        PlotCollection.map
+        arviz_plots.PlotCollection.map :
+            apply a function as many times as needed given faceting and aesthetic mappings
 
         Notes
         -----

@@ -203,7 +203,7 @@ class PlotMatrix(PlotCollection):
         )
 
     def allocate_artist(
-        self, fun_label, data, all_loop_dims, dim_to_idx=None, artist_dims=None, ignore_aes=None
+        self, func_label, data, all_loop_dims, dim_to_idx=None, artist_dims=None, ignore_aes=None
     ):
         """Allocate a visual in the ``viz`` DataTree."""
         if artist_dims is None:
@@ -220,14 +220,16 @@ class PlotMatrix(PlotCollection):
             + [data.sizes[dim] for dim in aes_dims]
             + list(artist_dims.values())
         )
-        self._viz_dt[fun_label] = xr.DataArray(
+        self._viz_dt[func_label] = xr.DataArray(
             np.full(artist_shape, None, dtype=object),
             dims=list(matrix_sizes) + aes_dims + list(artist_dims.keys()),
             coords={dim: data[dim] for dim in aes_dims},
             attrs=attrs,
         )
 
-    def store_in_artist_da(self, aux_artist, fun_label, var_name, sel, var_name_y=None, sel_y=None):
+    def store_in_artist_da(
+        self, aux_artist, func_label, var_name, sel, var_name_y=None, sel_y=None
+    ):
         """Store visual object or array into its preallocated DataArray within ``viz``.
 
         Parameters
@@ -258,7 +260,7 @@ class PlotMatrix(PlotCollection):
             selection_y=sel_y,
             return_dataarray=True,
         )
-        self._viz_dt[fun_label].loc[
+        self._viz_dt[func_label].loc[
             {"row_index": plot_da["row_index"], "col_index": plot_da["col_index"]}
         ] = aux_artist
 
@@ -272,8 +274,8 @@ class PlotMatrix(PlotCollection):
 
     def map_triangle(
         self,
-        fun,
-        fun_label=None,
+        func,
+        func_label=None,
         *,
         data=None,
         loop_data=None,
@@ -289,16 +291,16 @@ class PlotMatrix(PlotCollection):
 
         Parameters
         ----------
-        fun : callable
-            Function with signature ``fun(da_x, da_y, target, **fun_kwargs)`` which
+        func : callable
+            Function with signature ``func(da_x, da_y, target, **func_kwargs)`` which
             should be called for all couples of data pairs (each couple encoded in a :term:`plot`)
             and corresponding :term:`aesthetic`.
-            The object returned by `fun` is assumed to be a scalar unless
+            The object returned by `func` is assumed to be a scalar unless
             `artist_dims` are provided. There is also the option of adding extra
             keyword arguments with the `subset_info` flag.
-        fun_label : str, optional
+        func_label : str, optional
             Function identifier. It will be used as variable name to store the object
-            returned by `fun`. Defaults to ``fun.__name__``.
+            returned by `func`. Defaults to ``func.__name__``.
         data : Dataset, optional
             Data to be subsetted into pair elements then loop to cover all couple combinations.
             Defaults to the data used to initalize the ``PlotMatrix``.
@@ -338,8 +340,8 @@ class PlotMatrix(PlotCollection):
             )
         if coords is None:
             coords = {}
-        if fun_label is None:
-            fun_label = fun.__name__
+        if func_label is None:
+            func_label = func.__name__
 
         data = self.data if data is None else data
         if isinstance(loop_data, str) and loop_data == "plots":
@@ -371,7 +373,7 @@ class PlotMatrix(PlotCollection):
         )
         if store_artist:
             self.allocate_artist(
-                fun_label=fun_label,
+                func_label=func_label,
                 data=loop_data,
                 all_loop_dims=all_loop_dims,
                 artist_dims=artist_dims,
@@ -410,7 +412,7 @@ class PlotMatrix(PlotCollection):
                     target = self.get_target(var_name_x, sel_x_plus, var_name_y, sel_y_plus)
 
                     aes_kwargs = self.get_aes_kwargs(aes, var_name_x, aes_sel)
-                    fun_kwargs = {
+                    func_kwargs = {
                         **aes_kwargs,
                         **{
                             key: process_kwargs_subset(values, var_name_x, aes_sel)
@@ -418,8 +420,8 @@ class PlotMatrix(PlotCollection):
                         },
                     }
                     if subset_info:
-                        fun_kwargs = {
-                            **fun_kwargs,
+                        func_kwargs = {
+                            **func_kwargs,
                             "var_name_x": var_name_x,
                             "sel_x": sel_x,
                             "isel_x": isel_x,
@@ -428,13 +430,13 @@ class PlotMatrix(PlotCollection):
                             "isel_y": isel_y,
                         }
 
-                    aux_artist = fun(da_x, da_y, target=target, **fun_kwargs)
+                    aux_artist = func(da_x, da_y, target=target, **func_kwargs)
                     if store_artist:
                         if np.size(aux_artist) == 1:
                             aux_artist = np.squeeze(aux_artist)
                         self.store_in_artist_da(
                             aux_artist,
-                            fun_label,
+                            func_label,
                             var_name_x,
                             sel_x,
                             var_name_y=var_name_y,
@@ -443,8 +445,8 @@ class PlotMatrix(PlotCollection):
 
     def map(
         self,
-        fun,
-        fun_label=None,
+        func,
+        func_label=None,
         *,
         data=None,
         coords=None,
@@ -458,17 +460,17 @@ class PlotMatrix(PlotCollection):
 
         Parameters
         ----------
-        fun : callable
-            Function with signature ``fun(da, target, **fun_kwargs)`` which should
+        func : callable
+            Function with signature ``func(da, target, **func_kwargs)`` which should
             be applied for all combinations of :term:`plot` and :term:`aesthetic`.
-            The object returned by `fun` is assumed to be a scalar unless
+            The object returned by `func` is assumed to be a scalar unless
             `artist_dims` are provided. There is also the option of adding
             extra required keyword arguments with the `subset_info` flag.
-        fun_label : str, optional
-            Variable name with which to store the object returned by `fun`.
-            Defaults to ``fun.__name__``.
+        func_label : str, optional
+            Variable name with which to store the object returned by `func`.
+            Defaults to ``func.__name__``.
         data : Dataset, optional
-            Data to be subsetted at each iteration and to pass to `fun` as first positional
+            Data to be subsetted at each iteration and to pass to `func` as first positional
             argument. Defaults to the data used to initialize the ``PlotMatrix``.
         coords : mapping, optional
             Dictionary of {coordinate names : coordinate values} that should
@@ -503,8 +505,8 @@ class PlotMatrix(PlotCollection):
         arviz_plots.PlotMatrix.map_col
         """
         super().map(
-            fun=fun,
-            fun_label=fun_label,
+            func=func,
+            func_label=func_label,
             data=data,
             coords=coords,
             ignore_aes=ignore_aes,
@@ -530,8 +532,8 @@ class PlotMatrix(PlotCollection):
 
     def map_row(
         self,
-        fun,
-        fun_label=None,
+        func,
+        func_label=None,
         index=0,
         *,
         data=None,
@@ -546,19 +548,19 @@ class PlotMatrix(PlotCollection):
 
         Parameters
         ----------
-        fun : callable
-            Function with signature ``fun(da, target, **fun_kwargs)`` which should
+        func : callable
+            Function with signature ``func(da, target, **func_kwargs)`` which should
             be applied for all combinations of :term:`plot` and :term:`aesthetic`.
-            The object returned by `fun` is assumed to be a scalar unless
+            The object returned by `func` is assumed to be a scalar unless
             `artist_dims` are provided. There is also the option of adding
             extra required keyword arguments with the `subset_info` flag.
-        fun_label : str, optional
-            Variable name with which to store the object returned by `fun`.
-            Defaults to ``fun.__name__``.
+        func_label : str, optional
+            Variable name with which to store the object returned by `func`.
+            Defaults to ``func.__name__``.
         index : int, default 0
             Index of the row to be mapped by the given plotting function.
         data : Dataset, optional
-            Data to be subsetted at each iteration and to pass to `fun` as first positional
+            Data to be subsetted at each iteration and to pass to `func` as first positional
             argument. Defaults to the data used to initialize the ``PlotMatrix``.
         coords : mapping, optional
             Dictionary of {coordinate names : coordinate values} that should
@@ -594,8 +596,8 @@ class PlotMatrix(PlotCollection):
         """
         self.set_fixed_var_attributes(index, "row")
         super().map(
-            fun=fun,
-            fun_label=fun_label,
+            func=func,
+            func_label=func_label,
             data=data,
             coords=coords,
             ignore_aes=ignore_aes,
@@ -610,8 +612,8 @@ class PlotMatrix(PlotCollection):
 
     def map_col(
         self,
-        fun,
-        fun_label=None,
+        func,
+        func_label=None,
         index=0,
         *,
         data=None,
@@ -626,19 +628,19 @@ class PlotMatrix(PlotCollection):
 
         Parameters
         ----------
-        fun : callable
-            Function with signature ``fun(da, target, **fun_kwargs)`` which should
+        func : callable
+            Function with signature ``func(da, target, **func_kwargs)`` which should
             be applied for all combinations of :term:`plot` and :term:`aesthetic`.
-            The object returned by `fun` is assumed to be a scalar unless
+            The object returned by `func` is assumed to be a scalar unless
             `artist_dims` are provided. There is also the option of adding
             extra required keyword arguments with the `subset_info` flag.
-        fun_label : str, optional
-            Variable name with which to store the object returned by `fun`.
-            Defaults to ``fun.__name__``.
+        func_label : str, optional
+            Variable name with which to store the object returned by `func`.
+            Defaults to ``func.__name__``.
         index : int, default 0
             Index of the column to be mapped by the given plotting function.
         data : Dataset, optional
-            Data to be subsetted at each iteration and to pass to `fun` as first positional
+            Data to be subsetted at each iteration and to pass to `func` as first positional
             argument. Defaults to the data used to initialize the ``PlotMatrix``.
         coords : mapping, optional
             Dictionary of {coordinate names : coordinate values} that should
@@ -674,8 +676,8 @@ class PlotMatrix(PlotCollection):
         """
         self.set_fixed_var_attributes(index, "col")
         super().map(
-            fun=fun,
-            fun_label=fun_label,
+            func=func,
+            func_label=func_label,
             data=data,
             coords=coords,
             ignore_aes=ignore_aes,
