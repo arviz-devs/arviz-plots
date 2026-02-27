@@ -5,7 +5,7 @@
 aesthetic
 aesthetics
   When used as a noun, we use _an aesthetic_ as a graphical property that is
-  being used to encode data. 
+  being used to encode data.
 
   Moreover, within `arviz_plots` _aesthetics_ can actually be any arbitrary
   keyword argument accepted by the plotting function being used.
@@ -15,15 +15,25 @@ aesthetic mappings
   We use _aesthetic mapping_ to indicate the relation between the {term}`aesthetics`
   in our plot and properties in our dataset.
 
+EABM
+  Acronym for Exploratory Analysis of Bayesian Models. We use this concept to
+  reference all the tasks within a Bayesian workflow outside of
+  building and fitting or sampling a model. For more details, see the
+  [EABM virtual book](https://arviz-devs.github.io/EABM/)
+
+faceting
+faceted
+  Generate multiple similar {term}`plot` elements with each of them
+  referring to a specific property or value of the data.
+
 figure
   Highest level data visualization structure. All plotted elements
   are contained within a figure or its children.
 
-EABM
-  Acronym for Exploratory Analysis of Bayesian Models. We use this concept to
-  reference all the tasks within a Bayesian workflow outside of 
-  building and fitting or sampling a model. For more details, see the
-  [EABM virtual book](https://arviz-devs.github.io/EABM/)
+instance
+  A specific object created from a class in Python. In `arviz-plots`,
+  an instance refers to a particular, usable object of a `PlotCollection`
+  class that holds data and configuration for generating a figure.
 
 plot
 plots
@@ -34,11 +44,6 @@ visual
 visuals
   Graphical component or element added by `arviz-plots`
 
-faceting
-faceted
-  Generate multiple similar {term}`plot` elements with each of them
-  referring to a specific property or value of the data.
-  
 :::
 
 ## Equivalences with library specific objects
