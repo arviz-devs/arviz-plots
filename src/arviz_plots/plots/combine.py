@@ -165,7 +165,7 @@ def combine_plots(
             attrs = ds.attrs
             pc.map(
                 render,
-                fun_label=f"{viz_group}_{name}",
+                f"{viz_group}_{name}",
                 data=ds.dataset,
                 ignore_aes=attrs.get("ignore_aes", frozenset()),
             )
