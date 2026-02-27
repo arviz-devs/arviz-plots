@@ -5,13 +5,13 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "arviz-plots"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [
     {name = "ArviZ team", email = "arvizdevs@gmail.com"}
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Education",
@@ -20,9 +20,9 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dynamic = ["version", "description"]
 dependencies = [
@@ -40,9 +40,9 @@ documentation = "https://arviz-plots.readthedocs.io"
 funding = "https://opencollective.com/arviz"
 
 [project.optional-dependencies]
-matplotlib = ["matplotlib"]
-bokeh = ["bokeh"]
-plotly = ["plotly", "webcolors"]
+matplotlib = ["matplotlib>=3.9"]
+bokeh = ["bokeh>=3.4"]
+plotly = ["plotly>=5.19", "webcolors"]
 test = [
     "hypothesis",
     "pytest",
