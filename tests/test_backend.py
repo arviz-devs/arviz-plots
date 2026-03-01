@@ -10,6 +10,8 @@ pytestmark = [
     pytest.mark.usefixtures("clean_plots"),
     pytest.mark.usefixtures("check_skips"),
     pytest.mark.usefixtures("no_artist_kwargs"),
+    pytest.mark.filterwarnings("error::DeprecationWarning"),
+    pytest.mark.filterwarnings("error::FutureWarning"),
 ]
 
 
