@@ -24,4 +24,5 @@ pc = azp.plot_dist(
     visuals={"point_estimate_text": False},
     backend="none"  # change to preferred backend
 )
+
 pc.show()

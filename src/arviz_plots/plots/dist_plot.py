@@ -7,7 +7,6 @@ from typing import Any, Literal
 import arviz_stats
 import xarray as xr
 from arviz_base import rcParams
-from arviz_base.labels import BaseLabeller
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -293,8 +292,6 @@ def plot_dist(
         aes_by_visuals.setdefault("point_estimate", ["color", "y"])
     if "point_estimate" in aes_by_visuals and "point_estimate_text" not in aes_by_visuals:
         aes_by_visuals["point_estimate_text"] = aes_by_visuals["point_estimate"]
-    if labeller is None:
-        labeller = BaseLabeller()
 
     density_reduce, density_active, density_aes, density_ignore = filter_aes_full(
         plot_collection, aes_by_visuals, "dist", sample_dims
@@ -543,7 +540,7 @@ def plot_dist(
         )
         if "color" not in title_aes:
             title_kwargs.setdefault("color", "B1")
-        plot_collection.map(
+        plot_collection.facet_map(
             labelled_title,
             "title",
             ignore_aes=title_ignore,
@@ -552,11 +549,10 @@ def plot_dist(
             **title_kwargs,
         )
     if visuals.get("remove_axis", True) is not False:
-        plot_collection.map(
+        plot_collection.facet_map(
             remove_axis,
             store_artist=backend == "none",
             axis="y",
-            ignore_aes=plot_collection.aes_set,
         )
 
     return plot_collection
