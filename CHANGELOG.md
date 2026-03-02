@@ -1,3 +1,46 @@
+<a id="v1.0.0"></a>
+# [v1.0.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.0.0) - 2026-03-02
+
+## What's Changed
+
+### New features
+* Make plot_pair/matrix work with scalar coord by [@aloctavodia](https://github.com/aloctavodia) in [#412](https://github.com/arviz-devs/arviz-plots/pull/412)
+* Change defaults for rank and ecdf_pit plots by [@aloctavodia](https://github.com/aloctavodia) in [#413](https://github.com/arviz-devs/arviz-plots/pull/413)
+* Replacing ci_prob with envelope_prob [#347](https://github.com/arviz-devs/arviz-plots/issues/347) by [@NeerjaKasture](https://github.com/NeerjaKasture) in [#418](https://github.com/arviz-devs/arviz-plots/pull/418)
+* Add plot_dgof and plot_dgof_dist to API index by [@aloctavodia](https://github.com/aloctavodia) in [#422](https://github.com/arviz-devs/arviz-plots/pull/422)
+* Add show_bfmi argument to plot_energy by [@aloctavodia](https://github.com/aloctavodia) in [#437](https://github.com/arviz-devs/arviz-plots/pull/437)
+* pre-computed and kind=auto dist visualizations by [@OriolAbril](https://github.com/OriolAbril) in [#310](https://github.com/arviz-devs/arviz-plots/pull/310)
+* PlotCollection: Add _repr_html_ and _display_ methods by [@aloctavodia](https://github.com/aloctavodia) in [#436](https://github.com/arviz-devs/arviz-plots/pull/436)
+* Add facet_map methods to PlotCollection by [@Shlokpalrecha](https://github.com/Shlokpalrecha) in [#415](https://github.com/arviz-devs/arviz-plots/pull/415)
+
+### Maintenance and bug fixes
+* Ensure a consistent signature and enforce most arguments to be keyword-only by [@AAlexxis222](https://github.com/AAlexxis222) in [#419](https://github.com/arviz-devs/arviz-plots/pull/419)
+* Add tests for visual utility functions by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#410](https://github.com/arviz-devs/arviz-plots/pull/410)
+* Add support for global figure titles by [@Shlokpalrecha](https://github.com/Shlokpalrecha) in [#414](https://github.com/arviz-devs/arviz-plots/pull/414)
+* Add plot.max_subplots check before calling create_plotting_grid  by [@Sakshee-D](https://github.com/Sakshee-D) in [#425](https://github.com/arviz-devs/arviz-plots/pull/425)
+* Backend-specific tests by [@OriolAbril](https://github.com/OriolAbril) in [#409](https://github.com/arviz-devs/arviz-plots/pull/409)
+* Ensure no rounding in computation of point estimates by [@OriolAbril](https://github.com/OriolAbril) in [#431](https://github.com/arviz-devs/arviz-plots/pull/431)
+
+###  Documentation
+* Improvements to contributing docs and workflow by [@OriolAbril](https://github.com/OriolAbril) in [#421](https://github.com/arviz-devs/arviz-plots/pull/421)
+* Clarify how to run tests locally by [@sjiang83](https://github.com/sjiang83) in [#426](https://github.com/arviz-devs/arviz-plots/pull/426)
+* Add plot_lm to gallery by [@juanitorduz](https://github.com/juanitorduz) in [#432](https://github.com/arviz-devs/arviz-plots/pull/432)
+* plot_lm: Add example to doctring by [@aloctavodia](https://github.com/aloctavodia) in [#434](https://github.com/arviz-devs/arviz-plots/pull/434)
+
+
+
+## New Contributors
+* [@NeerjaKasture](https://github.com/NeerjaKasture) made their first contribution in [#418](https://github.com/arviz-devs/arviz-plots/pull/418)
+* [@AAlexxis222](https://github.com/AAlexxis222) made their first contribution in [#419](https://github.com/arviz-devs/arviz-plots/pull/419)
+* [@Shlokpalrecha](https://github.com/Shlokpalrecha) made their first contribution in [#414](https://github.com/arviz-devs/arviz-plots/pull/414)
+* [@sjiang83](https://github.com/sjiang83) made their first contribution in [#426](https://github.com/arviz-devs/arviz-plots/pull/426)
+* [@juanitorduz](https://github.com/juanitorduz) made their first contribution in [#432](https://github.com/arviz-devs/arviz-plots/pull/432)
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v0.8.0...v1.0.0
+
+[Changes][v1.0.0]
+
+
 <a id="v0.8.0"></a>
 # [v0.8.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v0.8.0) - 2026-01-16
 
@@ -294,6 +337,7 @@
 [Changes][v0.4.0]
 
 
+[v1.0.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.8.0...v1.0.0
 [v0.8.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.6.0...v0.7.0
 [v0.6.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.5.0...v0.6.0
