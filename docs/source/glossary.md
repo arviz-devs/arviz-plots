@@ -30,11 +30,6 @@ figure
   Highest level data visualization structure. All plotted elements
   are contained within a figure or its children.
 
-instance
-  A specific object created from a class in Python. In `arviz-plots`,
-  an instance refers to a particular, usable object of a `PlotCollection`
-  class that holds data and configuration for generating a figure.
-
 plot
 plots
   Area (or areas) where the data will be plotted into. A {term}`figure`
