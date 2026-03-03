@@ -102,6 +102,7 @@ ArviZ in Context <https://arviz-devs.github.io/EABM/>
 contributing/testing
 contributing/new_plot
 contributing/docs
+contributing/kwargs_conventions
 ```
 
 ```{toctree}
