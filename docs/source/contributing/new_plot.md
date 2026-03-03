@@ -279,3 +279,7 @@ than arviz-plots. So at this point there aren't many recommendations on the func
 Functions should reduce the dimensions returned by `filter_aes` (`artist_dims` above).
 Moreover, in order for the result to be valid `data` argument when calling `.map` it must
 be a `Dataset` with the same variables in `var_names` (or all variables in input data if not given).
+
+
+For conventions on `visuals`, `aes_by_visuals`, and `stats`, see
+{ref}`kwargs_conventions`.
