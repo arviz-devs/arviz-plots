@@ -39,7 +39,7 @@ def plot_ecdf_pit(
     group="prior_sbc",
     coords=None,
     sample_dims=None,
-    method="pot_c",
+    method="envelope",
     envelope_prob=None,
     coverage=False,
     plot_collection=None,
@@ -70,7 +70,7 @@ def plot_ecdf_pit(
         ],
         Mapping[str, Any] | bool,
     ] = None,
-    stats: Mapping[Literal["ecdf_pit", "uniformity_test"], Mapping[str, Any] | xr.Dataset] = None,
+    stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
     """Plot Δ-ECDF.
@@ -112,8 +112,8 @@ def plot_ecdf_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    method : str
-        Method to use for the uniformity test. Defaults to "pot_c". Valid options are "envelope",
+    method : {"envelope", "pot_c", "prit_c", "piet_c"}, optional
+        Method to use for the uniformity test. Defaults to "envelope". Valid options are "envelope",
         "pot_c", "prit_c" and "piet_c".
     envelope_prob : float, optional
         If method is "envelope", indicates the probability that should be contained within the
@@ -148,8 +148,8 @@ def plot_ecdf_pit(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulations": 1000}``.
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. or
+        :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -204,7 +204,10 @@ def plot_ecdf_pit(
         stats = stats.copy()
 
     ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
-    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+    if method == "envelope":
+        ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+    else:
+        ecdf_pit_kwargs.setdefault("gamma", 0)
 
     if backend is None:
         if plot_collection is None:
@@ -247,7 +250,7 @@ def plot_ecdf_pit(
             dim=sample_dims, method=method
         )
 
-        gamma = 0  # not sure this is something someone would want to change
+        gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
         highlight = (shapley_vals > gamma) & (p_values < alpha)
         suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
         # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
@@ -293,7 +296,7 @@ def plot_ecdf_pit(
             line_xy,
             "ref_line",
             data=dt_ecdf.sel(plot_axis="x"),
-            x=x_ci,
+            x=[0, 1],
             y=0,
             ignore_aes=ref_ls_ignore,
             **ref_ls_kwargs,
@@ -377,8 +380,8 @@ def plot_ecdf_pit(
                 plot_collection, aes_by_visuals, "p_value_text", sample_dims
             )
             p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
-            p_value_kwargs.setdefault("x", 0.25)
-            p_value_kwargs.setdefault("y", 0.8 * epsilon)
+            p_value_kwargs.setdefault("x", 0.15)
+            p_value_kwargs.setdefault("y", 0.85 * epsilon)
 
             plot_collection.map(
                 annotate_xy,
