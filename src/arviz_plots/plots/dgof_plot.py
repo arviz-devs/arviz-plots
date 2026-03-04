@@ -25,6 +25,7 @@ def plot_dgof(
     coords=None,
     sample_dims=None,
     kind=None,
+    method="envelope",
     envelope_prob=None,
     plot_collection=None,
     backend=None,
@@ -81,9 +82,13 @@ def plot_dgof(
     kind : {"kde", "hist", "dot"}, optional
         Which method to diagnose the distribution fit.
         Defaults to ``rcParams["plot.density_kind"]``
+    method : {"envelope", "pot_c", "prit_c", "piet_c"}, optional
+        Method to use for the uniformity test. Defaults to "pot_c". Valid options are "envelope",
+        "pot_c", "prit_c" and "piet_c".
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
-        Defaults to ``rcParams["stats.envelope_prob"]``.
+        If method is "envelope", indicates the probability that should be contained within the
+        envelope, otherwise indicates the probability threshold to highlight points.
+        Defaults to ``rcParams["stats.envelope_prob"]``..
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -103,8 +108,8 @@ def plot_dgof(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`.
-          Default is ``{"n_simulations": 1000}``.
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. or
+        :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -172,12 +177,15 @@ def plot_dgof(
     visuals.setdefault("ylabel", {})
     visuals.setdefault("xlabel", {"text": "PIT"})
 
-    stats_ecdf = {"ecdf_pit": stats.get("ecdf_pit", {})}
+    stats_ecdf = {
+        "ecdf_pit": stats.get("ecdf_pit", {}),
+    }
 
     plot_collection = plot_ecdf_pit(
         new_dt,
         coords=coords,
         sample_dims="sample",
+        method=method,
         envelope_prob=envelope_prob,
         plot_collection=plot_collection,
         backend=backend,

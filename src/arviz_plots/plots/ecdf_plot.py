@@ -17,13 +17,17 @@ from arviz_plots.plots.utils import (
     set_wrap_layout,
 )
 from arviz_plots.visuals import (
+    annotate_xy,
     ecdf_line,
     fill_between_y,
     labelled_title,
     labelled_x,
     labelled_y,
+    line_xy,
     remove_axis,
+    scatter_xy,
     set_xticks,
+    set_ylim,
 )
 
 
@@ -35,6 +39,7 @@ def plot_ecdf_pit(
     group="prior_sbc",
     coords=None,
     sample_dims=None,
+    method="envelope",
     envelope_prob=None,
     coverage=False,
     plot_collection=None,
@@ -44,6 +49,8 @@ def plot_ecdf_pit(
         Literal[
             "ecdf_lines",
             "credible_interval",
+            "suspicious_points",
+            "p_value_text",
             "xlabel",
             "ylabel",
             "title",
@@ -54,6 +61,8 @@ def plot_ecdf_pit(
         Literal[
             "ecdf_lines",
             "credible_interval",
+            "suspicious_points",
+            "p_value_text",
             "xlabel",
             "ylabel",
             "title",
@@ -70,7 +79,12 @@ def plot_ecdf_pit(
     It assumes the values in the DataTree have already been transformed to PIT values,
     as in the case of SBC analysis or values from ``arviz_base.loo_pit``.
 
-    Simultaneous confidence bands are computed using the simulation method described in [1]_.
+    The method "envelope" use simultaneous confidence bands computed using the simulation
+    method described in [1]_. This method is fine when there pit values are independent,
+    as in the case of SBC analysis. However, when the pit values are not independent,
+    as in the case of ``arviz_base.loo_pit``, it is better to use the "pot_c" method,
+    which instead of computing an envelope it highlights the points that most
+    contribute to deviations from uniformity [2]_.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -98,8 +112,14 @@ def plot_ecdf_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    method : {"envelope", "pot_c", "prit_c", "piet_c"}, optional
+        Method to use for the uniformity test. Defaults to "envelope". Valid options are "envelope",
+        "pot_c", "prit_c" and "piet_c".
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
+        If method is "envelope", indicates the probability that should be contained within the
+        envelope, otherwise indicates the probability threshold to highlight points.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
+    coverage : bool, optional
         Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
@@ -114,7 +134,12 @@ def plot_ecdf_pit(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`,
+          only when method is "envelope"
+        * ref_line -> passed to :func:`~arviz_plots.visuals.line_xy`
+        * suspicious_points -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * p_value_text -> passed to :func:`~arviz_plots.visuals.annotate_xy`
+          only when method is not "envelope"
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -123,8 +148,8 @@ def plot_ecdf_pit(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulations": 1000}``.
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. or
+        :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -144,7 +169,7 @@ def plot_ecdf_pit(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('sbc')
-        >>> plot_ecdf_pit(dt)
+        >>> plot_ecdf_pit(dt, method="envelope")
 
 
     .. minigallery:: plot_ecdf_pit
@@ -154,9 +179,11 @@ def plot_ecdf_pit(
     .. [1] Säilynoja et al. *Graphical test for discrete uniformity and
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     if envelope_prob is None:
         envelope_prob = rcParams["stats.envelope_prob"]
+    alpha = 1 - envelope_prob
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
     if isinstance(sample_dims, str):
@@ -166,7 +193,10 @@ def plot_ecdf_pit(
         visuals = {}
     else:
         visuals = visuals.copy()
-    visuals.setdefault("remove_axis", True)
+    if method == "envelope":
+        visuals.setdefault("remove_axis", True)
+    else:
+        visuals.setdefault("remove_axis", False)
 
     if stats is None:
         stats = {}
@@ -174,7 +204,10 @@ def plot_ecdf_pit(
         stats = stats.copy()
 
     ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
-    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+    if method == "envelope":
+        ecdf_pit_kwargs.setdefault("n_simulations", 1000)
+    else:
+        ecdf_pit_kwargs.setdefault("gamma", 0)
 
     if backend is None:
         if plot_collection is None:
@@ -190,23 +223,49 @@ def plot_ecdf_pit(
     )
     sample_size = np.prod([len(distribution[dims]) for dims in sample_dims])
 
+    if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
+        raise ValueError(
+            f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
+        )
+
+    # ensure we have PIT values between 0 and 1.
+    dist_max = distribution.max()
+    if any(float(dist_max[v]) > 1 for v in distribution.data_vars):
+        distribution = (distribution + 0.5) / (dist_max + 1)
+
     if coverage:
-        distribution = distribution / distribution.max()
         distribution = 2 * np.abs(distribution - 0.5)
 
     dt_ecdf = distribution.azstats.ecdf(dim=sample_dims, pit=True, npoints=sample_size)
+    x_ci = lower_ci = upper_ci = None
 
-    # Compute envelope
-    dummy_vals = np.linspace(0, 1, sample_size)
-    x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
-    lower_ci = lower_ci - x_ci
-    upper_ci = upper_ci - x_ci
+    if method == "envelope":
+        dummy_vals = np.linspace(0, 1, sample_size)
+        x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
+        lower_ci = lower_ci - x_ci
+        upper_ci = upper_ci - x_ci
+
+    else:
+        p_values, shapley_vals = distribution.azstats.uniformity_test(
+            dim=sample_dims, method=method
+        )
+
+        gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
+        highlight = (shapley_vals > gamma) & (p_values < alpha)
+        suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
+        # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
+        # to get the default y-limits for the plot.
+        expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size)) * 1.3
+
+        actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y").to_array()))
+        epsilon = max(expected_max, actual_max)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["figure_kwargs"].setdefault("sharex", True)
+        pc_kwargs["figure_kwargs"].setdefault("sharey", True)
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
@@ -225,6 +284,23 @@ def plot_ecdf_pit(
         aes_by_visuals = {}
     else:
         aes_by_visuals = aes_by_visuals.copy()
+
+    ## reference line
+    ref_ls_kwargs = get_visual_kwargs(visuals, "ref_line")
+    if ref_ls_kwargs is not False:
+        _, _, ref_ls_ignore = filter_aes(plot_collection, aes_by_visuals, "ref_line", sample_dims)
+        ref_ls_kwargs.setdefault("color", "B3")
+        ref_ls_kwargs.setdefault("linestyle", "C1")
+
+        plot_collection.map(
+            line_xy,
+            "ref_line",
+            data=dt_ecdf.sel(plot_axis="x"),
+            x=[0, 1],
+            y=0,
+            ignore_aes=ref_ls_ignore,
+            **ref_ls_kwargs,
+        )
 
     ## ecdf_line
     ecdf_ls_kwargs = get_visual_kwargs(visuals, "ecdf_lines")
@@ -251,23 +327,70 @@ def plot_ecdf_pit(
             store_artist=backend == "none",
         )
 
-    ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
-    if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", "B1")
-        ci_kwargs.setdefault("alpha", 0.1)
-
-        plot_collection.map(
-            fill_between_y,
-            "credible_interval",
-            data=dt_ecdf,
-            x=x_ci,
-            y_bottom=lower_ci,
-            y_top=upper_ci,
-            step=True,
-            ignore_aes=ci_ignore,
-            **ci_kwargs,
+    if method == "envelope":
+        ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
+        _, _, ci_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "credible_interval", sample_dims
         )
+        if ci_kwargs is not False:
+            ci_kwargs.setdefault("color", "B1")
+            ci_kwargs.setdefault("alpha", 0.1)
+
+            plot_collection.map(
+                fill_between_y,
+                "credible_interval",
+                data=dt_ecdf,
+                x=x_ci,
+                y_bottom=lower_ci,
+                y_top=upper_ci,
+                step=True,
+                ignore_aes=ci_ignore,
+                **ci_kwargs,
+            )
+    else:
+        suspicious_kwargs = get_visual_kwargs(visuals, "suspicious_points")
+        _, suspicious_aes, suspicious_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "suspicious_points", sample_dims
+        )
+        if suspicious_kwargs is not False:
+            if "color" not in suspicious_aes:
+                suspicious_kwargs.setdefault("color", "C1")
+            if "marker" not in suspicious_aes:
+                suspicious_kwargs.setdefault("marker", "C6")
+
+            plot_collection.map(
+                scatter_xy,
+                "suspicious_points",
+                data=dt_ecdf,
+                mask=suspicious_mask,
+                ignore_aes=suspicious_ignore,
+                **suspicious_kwargs,
+            )
+        plot_collection.map(
+            set_ylim,
+            "ylim",
+            limits=(-epsilon, epsilon),
+            store_artist=backend == "none",
+            ignore_aes=plot_collection.aes_set,
+        )
+        # add p-values as annotations
+        p_value_kwargs = get_visual_kwargs(visuals, "p_value_text")
+        if p_value_kwargs is not False:
+            _, _, p_value_ignore = filter_aes(
+                plot_collection, aes_by_visuals, "p_value_text", sample_dims
+            )
+            p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
+            p_value_kwargs.setdefault("x", 0.15)
+            p_value_kwargs.setdefault("y", 0.85 * epsilon)
+
+            plot_collection.map(
+                annotate_xy,
+                "p_value_text",
+                data=p_values,
+                ignore_aes=p_value_ignore,
+                store_artist=backend == "none",
+                **p_value_kwargs,
+            )
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(
