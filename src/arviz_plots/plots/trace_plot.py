@@ -64,6 +64,9 @@ def plot_trace(
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
         If “regex”, interpret var_names as regular expressions on the real variables names.
+    group : str, default "posterior"
+        Group to be plotted.
+    coords : dict, optional
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
@@ -82,7 +85,7 @@ def plot_trace(
         * xlabel -> :func:`~.visuals.labelled_x`
         * ticklabels -> :func:`~.visuals.ticklabel_props`
 
-    pc_kwargs : mapping
+    **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection`
 
     Returns

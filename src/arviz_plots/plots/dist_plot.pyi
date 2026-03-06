@@ -1,6 +1,5 @@
 # File generated with docstub
 
-import warnings
 from collections.abc import Hashable, Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
@@ -10,12 +9,14 @@ import arviz_stats
 import xarray as xr
 from _typeshed import Incomplete
 from arviz_base import rcParams
-from arviz_base.labels import BaseLabeller
 from xarray import DataTree
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
+    _compute_func,
+    compute_dist,
     filter_aes,
+    filter_aes_full,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -44,7 +45,7 @@ def plot_dist(
     group: str = ...,
     coords: dict | None = ...,
     sample_dims: str | Sequence[Hashable] | None = ...,
-    kind: Literal["kde", "hist", "dot", "ecdf"] | None = ...,
+    kind: Literal["auto", "kde", "hist", "dot", "ecdf"] | None = ...,
     point_estimate: Literal["mean", "median", "mode"] | None = ...,
     ci_kind: Literal["eti", "hdi"] | None = ...,
     ci_prob: float | None = ...,

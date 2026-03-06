@@ -28,8 +28,8 @@ def plot_trace(
     *,
     var_names: str | list[str] | None = ...,
     filter_vars: Literal[None, "like", "regex"] | None = ...,
-    group: Incomplete = ...,
-    coords: Incomplete = ...,
+    group: str = ...,
+    coords: dict | None = ...,
     sample_dims: Iterable | None = ...,
     plot_collection: PlotCollection | None = ...,
     backend: Literal["matplotlib", "bokeh"] | None = ...,
@@ -54,5 +54,5 @@ def plot_trace(
         ],
         Mapping[str, Any] | bool,
     ] = ...,
-    **pc_kwargs: Mapping,
+    **pc_kwargs: Incomplete,
 ) -> PlotCollection: ...
