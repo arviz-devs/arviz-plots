@@ -36,6 +36,7 @@ from .rank_plot import plot_rank
 from .ridge_plot import plot_ridge
 from .trace_dist_plot import plot_trace_dist
 from .trace_plot import plot_trace
+from .ts_plot import plot_ts
 from .utils import add_bands, add_lines
 
 __all__ = [
@@ -77,4 +78,5 @@ __all__ = [
     "add_lines",
     "add_bands",
     "plot_lm",
+    "plot_ts",
 ]
