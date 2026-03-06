@@ -32,14 +32,12 @@ ArviZ is available for installation from [PyPI](https://pypi.org/project/arviz/)
 The latest stable version can be installed using pip:
 
 ```
-pip install "arviz-plots"
+pip install "arviz-plots[backend]"
 ```
+Note that `arviz-plots` is a minimal package, which only depends on xarray, numpy, arviz-base and arviz-stats. None of the possible backends: `matplotlib`, `bokeh` or `plotly` are installed by default.
 
-ArviZ is also available through [conda-forge](https://anaconda.org/conda-forge/arviz).
+Consequently, it is not recommended to install arviz-plots but instead to choose which backend to use. For example `arviz-plots[matplotlib]` or `arviz-plots[matplotlib, plotly]`, multiple comma separated values are valid too.
 
-```
-conda install -c conda-forge arviz arviz-plots
-```
 
 ### Development
 The latest development version can be installed from the main branch using pip:
@@ -52,7 +50,7 @@ Another option is to clone the repository and install using git and setuptools:
 
 ```
 git clone https://github.com/arviz-devs/arviz-plots.git
-cd arviz
+cd arviz-plots
 python setup.py install
 ```
 
