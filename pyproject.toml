@@ -64,22 +64,35 @@ doc = [
 ]
 
 
-[tool.black]
+[tool.ruff]
 line-length = 100
-
-[tool.isort]
-profile = "black"
-include_trailing_comma = true
-use_parentheses = true
-multi_line_output = 3
-line_length = 100
-skip = [
-    "src/arviz_plots/__init__.py"
+[tool.ruff.lint]
+select = [
+    "F",  # Pyflakes
+    "E",  # Pycodestyle
+    "W",  # Pycodestyle
+    "D",  # pydocstyle
+    "NPY", # numpy specific rules
+    "UP",  # pyupgrade
+    "I",  # isort
+    "PL",  # Pylint
+    "TID",  # Absolute imports
 ]
-
-[tool.pydocstyle]
+ignore = [
+    "PLR0912",  # too many branches
+    "PLR0913",  # too many arguments
+    "PLR2004",  # magic value comparison
+]
+[tool.ruff.lint.per-file-ignores]
+"docs/source/**/*.ipynb" = ["D", "E", "F", "I", "NPY", "PL", "TID", "UP", "W"]
+"src/arviz_plots/__init__.py*" = ["I", "F401", "E402", "F403"]
+"tests/**/*" = ["D", "PLR2004", "TID252"]
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
-match_dir = "^(?!docs|.tox).*"
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+[tool.ruff.format]
+docstring-code-format = false
 
 [tool.mypy]
 python_version = "3.10"
