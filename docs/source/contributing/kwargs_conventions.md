@@ -1,68 +1,103 @@
 (kwargs_conventions)=
-# Conventions for artist naming and kwargs in the plots module
+# Conventions for `visuals`, `aes_by_visuals`, and `stats`
 
-## Purpose
+This document describes the naming and usage conventions for the `visuals`, `aes_by_visuals`,
+and `stats` parameters in batteries-included plotting functions.
 
-This document summarizes the recommended conventions for `visuals`, `aes_by_visuals`, and `stats` across all plots in `arviz-plots`. Following these guidelines ensures consistency, intuitive usage, and easier maintenance.
+These parameters are used across existing plotting functions and this document describes their current usage patterns. For the full guide on adding a new plot, see {ref}`add_new_plot`.
 
-## General rules
+## Naming conventions
 
-- Full names are preferred over abbreviations or acronyms.
-- Each visual element has a name which is a valid key in `visuals`. This allows users to deactivate or skip any operation the plot does.
-- Keys in `aes_by_visuals` should match keys in `visuals` whenever possible. Some keys may only make sense for `visuals` and can be skipped (e.g., `remove_axis`).
-- There are no strict rules for `stats` yet. Also related to [Allow precomputing #40](https://github.com/arviz-devs/arviz-plots/issues/40).
+- Use **full names** rather than abbreviations or acronyms
+  (e.g., `credible_interval` not `ci`, `point_estimate` not `pe`).
+- Each visual element should have a **descriptive name** that clearly indicates
+  what it represents (e.g., `trunk`, `twig`, `dist`, `rug`, `title`).
 
-### Handling invalid or ignored keys
+## `visuals`
 
-- **Invalid keys**: raise an error.
-- **Valid keys but ignored**: continue execution, optionally print a warning.
-  This allows compound calls like:
+The `visuals` parameter is a mapping of `{str : mapping or bool}`.
+Each key identifies a visual element of the plot, and the value is either:
 
-```python
-plot_dist(..., stats={"kde": {"bw": 4}, "hist": {"bins": 20}})
-```
+- A **dict** of keyword arguments passed to the corresponding drawing function.
+- `False` to **skip** that visual element entirely.
+- `True` or an **empty dict** to use default arguments.
 
-to work and process multiple visualization types without modifying `kind` or other parameters.
+Every visual element has a name which is a valid key in `visuals`.
+This allows users to deactivate any operation the plot performs.
 
-### Open questions
-
-- Should we try to match the keys in `stats` to the key in `visuals` where that data is more prominently encoded?
-
-## Syntactic sugar for multiple keys
-
-Multiple keys can be grouped using a delimiter (e.g., `","`) and internally expanded:
+Use {func}`~arviz_plots.plots.utils.get_visual_kwargs` to retrieve
+the kwargs for a given visual from the `visuals` dict:
 
 ```python
-visuals = {
-    "title,credible_interval": {"color": "red"},
-    "point_estimate,remove_axis": False
-}
-```
+from arviz_plots.plots.utils import get_visual_kwargs
 
-## Recommended helper function
-
-We recommend implementing a helper function to standardize kwargs processing across all plots.
-A future helper could look like:
-
-```python
-def process_kwargs(kwargs_dict: dict, valid_keys: Sequence):
-    """
-    Processes input kwargs dictionary to ensure consistency.
-
-    Steps:
-    - Convert None → empty dict
-    - Copy dict input
-    - Check for invalid keys and raise errors
-    - Expand multiple keys in a single entry
-    """
+density_kwargs = get_visual_kwargs(visuals, "dist")
+if density_kwargs is not False:
+    # proceed to draw the visual
     ...
 ```
 
-This would ensure consistency across all plots and reduce repetitive validation code.
+Some visual elements default to `False` (disabled) and must be explicitly
+enabled by the user (e.g., `rug` and `face` in `plot_dist`).
 
-## Best practices
+The `remove_axis` key is special: it does not correspond to a drawing function
+and can only be set to `False` to skip calling {func}`~arviz_plots.visuals.remove_axis`.
 
-- Keep keys consistent across all plots.
-- Match `aes_by_visuals` keys to `visuals` keys whenever possible.
-- Document any exceptions clearly in developer-facing documentation.
-- Avoid introducing multiple keys for the same concept unless required.
+## `aes_by_visuals`
+
+The `aes_by_visuals` parameter is a mapping of `{str : sequence of str or False}`.
+It controls which aesthetic mappings from the {class}`~arviz_plots.PlotCollection`
+are applied to each visual element.
+
+- Keys in `aes_by_visuals` should **match keys in `visuals`** whenever possible.
+- Some keys may only make sense for `visuals` and can be omitted from `aes_by_visuals`
+  (e.g., `remove_axis`).
+- In rare cases, different visual elements that share the same aesthetic mappings
+  and call the same backend function may share a key. This should be done sparingly.
+
+Defaults for `aes_by_visuals` are set using `setdefault` after checking
+whether a `plot_collection` has been provided:
+
+```python
+if aes_by_visuals is None:
+    aes_by_visuals = {}
+else:
+    aes_by_visuals = aes_by_visuals.copy()
+aes_by_visuals.setdefault("dist", plot_collection.aes_set)
+```
+
+Use {func}`~arviz_plots.plots.utils.filter_aes` to split the aesthetics for a
+specific visual and obtain the dimensions to reduce:
+
+```python
+from arviz_plots.plots.utils import filter_aes
+
+reduce_dims, aes, ignore = filter_aes(
+    plot_collection, aes_by_visuals, "dist", sample_dims
+)
+```
+
+## `stats`
+
+The `stats` parameter is a mapping of `{str : mapping or Dataset}`.
+Each key identifies a computation, and the value is either:
+
+- A **dict** of keyword arguments passed to the corresponding function in `arviz-stats`.
+- A pre-computed {class}`~xarray.Dataset`, interpreted as already-computed values
+  for that statistic.
+
+There are no strict naming rules for `stats` keys yet. In existing plots, the keys
+generally match the name of the visual they feed into
+(e.g., `"dist"`, `"credible_interval"`, `"point_estimate"`,
+`"trunk"`, `"twig"`).
+
+## Summary of conventions
+
+| Aspect | Convention |
+|---|---|
+| Naming | Full names, no abbreviations |
+| `visuals` keys | One per visual element; set to `False` to disable |
+| `aes_by_visuals` keys | Match `visuals` keys where applicable |
+| `stats` keys | Generally match the visual they compute data for |
+| Mutability | Always copy mutable inputs (`visuals.copy()`, etc.) |
+| Defaults | Use `setdefault` for kwargs; check active aesthetics before setting defaults |
