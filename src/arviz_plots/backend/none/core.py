@@ -183,8 +183,12 @@ def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
         Color of the title text.
     size : optional
         Font size of the title.
-    **artist_kws : dict, optional
-        Additional keyword arguments.
+    **artist_kws
+        Passed to the backend title-setting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.figure.Figure.suptitle`
+        * plotly -> :meth:`~plotly.graph_objects.Figure.update_layout` (``title=...``)
+        * bokeh -> :attr:`~bokeh.plotting.figure.Figure.title`
 
     Returns
     -------
@@ -283,7 +287,21 @@ def create_plotting_grid(
 
 
 def _filter_kwargs(kwargs, artist_kws):
-    """Filter a dictionary to remove all keys whose values are ``unset``."""
+    """Filter keyword arguments removing values set to ``unset``.
+
+    Parameters
+    ----------
+    kwargs : dict
+        Dictionary of keyword arguments where some values may be ``unset``.
+        Keys whose values are ``unset`` are removed.
+    artist_kws : dict
+        Additional keyword arguments provided by the user.
+
+    Returns
+    -------
+    dict
+        Dictionary combining ``artist_kws`` with the filtered ``kwargs``.
+    """
     kwargs = {key: value for key, value in kwargs.items() if value is not unset}
     return {**artist_kws, **kwargs}
 
@@ -302,7 +320,34 @@ def hist(
     alpha=unset,
     **artist_kws,
 ):
-    """Interface to matplotlib for a histogram bar plot."""
+    """Interface to a histogram plot.
+
+    Parameters
+    ----------
+    y : array-like of shape (n,)
+        Heights of the histogram bars corresponding to each bin.
+    l_e, r_e : array-like of shape (n,)
+        Left and right edges of the histogram bins.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual`
+        should be added.
+    bottom : float, default 0
+        Baseline from which the bars are drawn.
+    color, facecolor, edgecolor, alpha : any
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.bar`
+        * plotly -> :class:`~plotly.graph_objects.Bar`
+        * bokeh -> :meth:`~bokeh.plotting.figure.quad`
+
+    Returns
+    -------
+    hist_visual : any
+        The backend object representing the generated collection of histogram bars.
+    """
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     if color is not unset:
@@ -362,26 +407,31 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
 def multiple_lines(
     x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
 ):
-    """Interface to multiple lines.
+    """Interface to multiple line plots.
 
     Parameters
     ----------
-    x : (N,) array-like
-        Shared data for the x axis
-    y : (N, M) array-like
-        Data for the y values of the multiple lines
-    target : list[Any]
-    color, alpha, width, linestyle : Any, optional
-        See {ref}`backend_interface_arguments` for their description
+    x : array-like of shape (n,)
+        Shared x-axis data.
+    y : array-like of shape (n, m)
+        Y data defining multiple lines.
+    target : PlotObject
+        The backend object representing a :term:`plot` where these
+        :term:`visual` elements should be added.
+    color, alpha, width, linestyle : any, optional
+        Properties of the generated :term:`visual` elements.
+        If needed, see :ref:`backend_interface_arguments` for more details.
     **artist_kws
-        Extra keyword arguments. For the none backend they are stored as is
-        to allow for rendering of the plot later on.
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.plot`
+        * plotly -> :class:`~plotly.graph_objects.Scatter` with (``mode="lines"``)
+        * bokeh -> :meth:`~bokeh.plotting.figure.line`
 
     Returns
     -------
-    dict
-        dictionary with the provided arguments and a "function" key to identify
-        the backend function.
+    multiple_lines_visual : any
+        The backend object representing the generated collection of lines.
     """
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
@@ -473,7 +523,33 @@ def step(
     step_mode=unset,
     **artist_kws,
 ):
-    """Interface to a step line."""
+    """Interface to a step line plot.
+
+    Parameters
+    ----------
+    x, y : array-like of shape (n,)
+        Data defining the step line.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual`
+        should be added.
+    color, alpha, width, linestyle : any
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    step_mode : any, optional
+        Defines how the step transitions are drawn (e.g. ``pre``, ``post``, ``mid``).
+        Interpretation depends on the plotting backend.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.step`
+        * plotly -> :class:`~plotly.graph_objects.Scatter` (``line_shape="hv"`` or similar)
+        * bokeh -> :meth:`~bokeh.plotting.figure.step`
+
+    Returns
+    -------
+    step_visual : any
+        The backend object representing the generated step line.
+    """
     kwargs = {
         "color": color,
         "alpha": alpha,
@@ -506,7 +582,35 @@ def text(
     horizontal_align=unset,
     **artist_kws,
 ):
-    """Interface to text annotation inside a plot."""
+    """Interface to a text annotation inside a plot.
+
+    Parameters
+    ----------
+    x, y : float or array-like
+        Coordinates where the text should be placed.
+    string : str
+        The text content to display.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual`
+        should be added.
+    size, alpha, color : any, optional
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    vertical_align, horizontal_align : any, optional
+        Alignment properties of the text.
+        Interpretation depends on the plotting backend.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.text`
+        * plotly -> :class:`~plotly.graph_objects.layout.Annotation`
+        * bokeh -> :class:`~bokeh.models.annotations.Label`
+
+    Returns
+    -------
+    text_visual : any
+        The backend object representing the generated text annotation.
+    """
     kwargs = {
         "size": size,
         "alpha": alpha,
@@ -528,7 +632,32 @@ def text(
 
 
 def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **artist_kws):
-    """Fill the region between y_bottom and y_top."""
+    """Fill the region between two y-values.
+
+    Parameters
+    ----------
+    x : array-like of shape (n,)
+        X coordinates of the filled region.
+    y_bottom, y_top : array-like or scalar
+        Lower and upper y-values defining the region to fill.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual`
+        should be added.
+    color, alpha : any, optional
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.fill_between`
+        * plotly -> :class:`~plotly.graph_objects.Scatter`
+        * bokeh -> :meth:`~bokeh.plotting.figure.varea`
+
+    Returns
+    -------
+    fill_between_visual : any
+        The backend object representing the generated filled region.
+    """
     x = np.atleast_1d(x)
     y_bottom = np.atleast_1d(y_bottom)
     if y_bottom.size == 1:
@@ -551,7 +680,30 @@ def fill_between_y(x, y_bottom, y_top, target, *, color=unset, alpha=unset, **ar
 
 
 def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
-    """Interface to a vertical line spanning the whole axes."""
+    """Interface to a vertical reference line.
+
+    Parameters
+    ----------
+    x : float or array-like
+        X position(s) where the vertical line(s) should be drawn.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual`
+        should be added.
+    color, alpha, width, linestyle : any, optional
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.axvline`
+        * plotly -> :class:`~plotly.graph_objects.layout.Shape`
+        * bokeh -> :class:`~bokeh.models.Span`
+
+    Returns
+    -------
+    vline_visual : any
+        The backend object representing the generated vertical line.
+    """
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -565,12 +717,35 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
 
 
 def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
-    """Interface to a horizontal line spanning the whole axes."""
+    """Interface to a horizontal reference line.
+
+    Parameters
+    ----------
+    y : float or array-like
+        Y position(s) where the horizontal line(s) should be drawn.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this :term:`visual`
+        should be added.
+    color, alpha, width, linestyle : any, optional
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.axhline`
+        * plotly -> :class:`~plotly.graph_objects.layout.Shape`
+        * bokeh -> :class:`~bokeh.models.Span`
+
+    Returns
+    -------
+    hline_visual : any
+        The backend object representing the generated horizontal line.
+    """
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
-        "function": "vline",
+        "function": "hline",
         "y": y,
         **_filter_kwargs(kwargs, artist_kws),
     }
@@ -579,10 +754,33 @@ def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
 
 
 def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
-    """Interface to a vertical shaded region spanning the whole axes."""
+    """Interface to a vertical shaded region.
+
+    Parameters
+    ----------
+    xmin, xmax : float
+        The start and end x-values of the shaded region.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this
+        :term:`visual` should be added.
+    color, alpha : any, optional
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.axvspan`
+        * plotly -> :class:`~plotly.graph_objects.layout.Shape`
+        * bokeh -> :meth:`~bokeh.plotting.figure.varea`
+
+    Returns
+    -------
+    vspan_visual : any
+        The backend object representing the generated shaded region.
+    """
     kwargs = {"color": color, "alpha": alpha}
     if not ALLOW_KWARGS and artist_kws:
-        raise ValueError("artist_kws not empty")
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
         "function": "vspan",
         "xmin": xmin,
@@ -594,7 +792,30 @@ def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
 
 
 def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
-    """Interface to a horizontal shaded region spanning the whole axes."""
+    """Interface to a horizontal shaded region.
+
+    Parameters
+    ----------
+    ymin, ymax : float
+        The start and end y-values of the shaded region.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this
+        :term:`visual` should be added.
+    color, alpha : any, optional
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.axhspan`
+        * plotly -> :class:`~plotly.graph_objects.layout.Shape`
+        * bokeh -> :meth:`~bokeh.plotting.figure.harea`
+
+    Returns
+    -------
+    hspan_visual : any
+        The backend object representing the generated shaded region.
+    """
     kwargs = {"color": color, "alpha": alpha}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError("artist_kws not empty")
@@ -620,7 +841,32 @@ def ciliney(
     linestyle=unset,
     **artist_kws,
 ):
-    """Interface to a line from y_bottom to y_top at given value of x."""
+    """Interface to a vertical interval line at a given x position.
+
+    Parameters
+    ----------
+    x : float or array-like
+        X position(s) where the interval line(s) should be drawn.
+    y_bottom, y_top : array-like
+        Lower and upper y-values defining the interval.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this
+        :term:`visual` should be added.
+    color, alpha, width, linestyle : any, optional
+        Properties of the generated :term:`visual`.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.vlines`
+        * plotly -> :class:`~plotly.graph_objects.Scatter`
+        * bokeh -> :meth:`~bokeh.plotting.figure.segment`
+
+    Returns
+    -------
+    ciliney_visual : any
+        The backend object representing the generated interval line.
+    """
     kwargs = {"color": color, "alpha": alpha, "width": width, "linestyle": linestyle}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -637,7 +883,32 @@ def ciliney(
 
 # general plot appearance
 def title(string, target, *, size=unset, color=unset, **artist_kws):
-    """Interface to adding a title to a plot."""
+    """Interface to a title.
+
+    Parameters
+    ----------
+    string : str
+        Text to use as the title.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this
+        :term:`visual` should be added.
+    size : any, optional
+        Size of the title text.
+    color : any, optional
+        Color of the title text.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.set_title`
+        * plotly -> :class:`~plotly.graph_objects.layout.Title`
+        * bokeh -> :class:`~bokeh.models.Title`
+
+    Returns
+    -------
+    title_visual : any
+        The backend object representing the generated title.
+    """
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -647,7 +918,32 @@ def title(string, target, *, size=unset, color=unset, **artist_kws):
 
 
 def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
-    """Interface to adding a label to a plot's y axis."""
+    """Interface to a y-axis label.
+
+    Parameters
+    ----------
+    string : str
+        Text to use as the y-axis label.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this
+        :term:`visual` should be added.
+    size : any, optional
+        Size of the label text.
+    color : any, optional
+        Color of the label text.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.set_ylabel`
+        * plotly -> :class:`~plotly.graph_objects.layout.YAxis`
+        * bokeh -> :class:`~bokeh.models.Axis`
+
+    Returns
+    -------
+    ylabel_visual : any
+        The backend object representing the generated y-axis label.
+    """
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -657,7 +953,32 @@ def ylabel(string, target, *, size=unset, color=unset, **artist_kws):
 
 
 def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
-    """Interface to adding a label to a plot's x axis."""
+    """Interface to an x-axis label.
+
+    Parameters
+    ----------
+    string : str
+        Text to use as the x-axis label.
+    target : PlotObject
+        The backend object representing a :term:`plot` where this
+        :term:`visual` should be added.
+    size : any, optional
+        Size of the label text.
+    color : any, optional
+        Color of the label text.
+        If needed, see :ref:`backend_interface_arguments` for more details.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.set_xlabel`
+        * plotly -> :class:`~plotly.graph_objects.layout.XAxis`
+        * bokeh -> :class:`~bokeh.models.Axis`
+
+    Returns
+    -------
+    xlabel_visual : any
+        The backend object representing the generated x-axis label.
+    """
     kwargs = {"color": color, "size": size}
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
@@ -667,7 +988,29 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
 
 
 def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
-    """Interface to setting ticks and tick labels of the x axis."""
+    """Interface to x-axis ticks.
+
+    Parameters
+    ----------
+    ticks : array-like
+        Positions of the ticks.
+    labels : array-like
+        Labels corresponding to the tick positions.
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    rotation : float or int, optional
+        Rotation angle of the tick labels.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.set_xticks`
+        * plotly -> :class:`~plotly.graph_objects.layout.XAxis`
+        * bokeh -> :class:`~bokeh.models.Axis`
+    Returns
+    -------
+    xticks_visual : any
+        The backend object representing the x-axis ticks.
+    """
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
@@ -682,7 +1025,30 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
 
 
 def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
-    """Interface to setting ticks and tick labels of the y axis."""
+    """Interface to y-axis ticks.
+
+    Parameters
+    ----------
+    ticks : array-like
+        Positions of the ticks.
+    labels : array-like
+        Labels corresponding to the tick positions.
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    rotation : float or int, optional
+        Rotation angle of the tick labels.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.set_yticks`
+        * plotly -> :class:`~plotly.graph_objects.layout.YAxis`
+        * bokeh -> :class:`~bokeh.models.Axis`
+
+    Returns
+    -------
+    yticks_visual : any
+        The backend object representing the y-axis ticks.
+    """
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {
@@ -697,7 +1063,22 @@ def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
 
 
 def set_ticklabel_visibility(target, *, axis="both", visible=True):
-    """Interface to setting visibility of tick labels."""
+    """Interface to setting tick label visibility.
+
+    Parameters
+    ----------
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    axis : {"x", "y", "both"}, optional
+        Axis for which tick label visibility should be modified. Defaults to "both".
+    visible : bool, optional
+        Whether the tick labels should be visible. Defaults to True.
+
+    Returns
+    -------
+    set_ticklabel_visibility_visual : any
+        The backend object representing the tick label visibility setting.
+    """
     artist_element = {
         "function": "set_ticklabel_visibility",
         "axis": axis,
@@ -708,7 +1089,25 @@ def set_ticklabel_visibility(target, *, axis="both", visible=True):
 
 
 def xlim(lims, target, **artist_kws):
-    """Interface to setting limits for the x axis."""
+    """Interface to x-axis limits.
+
+    Parameters
+    ----------
+    lims : tuple of float
+        Lower and upper limits of the x-axis.
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.set_xlim`
+        * plotly -> :class:`~plotly.graph_objects.layout.XAxis`
+        * bokeh -> :class:`~bokeh.models.Range1d`
+    Returns
+    -------
+    xlim_visual : any
+        The backend object representing the x-axis limits.
+    """
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "xlim", "lims": lims, **artist_kws}
@@ -717,7 +1116,26 @@ def xlim(lims, target, **artist_kws):
 
 
 def ylim(lims, target, **artist_kws):
-    """Interface to setting limits for the y axis."""
+    """Interface to y-axis limits.
+
+    Parameters
+    ----------
+    lims : tuple of float
+        Lower and upper limits of the y-axis.
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.set_ylim`
+        * plotly -> :class:`~plotly.graph_objects.layout.YAxis`
+        * bokeh -> :class:`~bokeh.models.Range1d`
+
+    Returns
+    -------
+    ylim_visual : any
+        The backend object representing the y-axis limits.
+    """
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     artist_element = {"function": "ylim", "lims": lims, **artist_kws}
@@ -726,7 +1144,31 @@ def ylim(lims, target, **artist_kws):
 
 
 def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kws):
-    """Interface to setting size of tick labels."""
+    """Interface to tick label properties.
+
+    Parameters
+    ----------
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    axis : {"x", "y", "both"}, optional
+        Axis for which tick label properties should be modified. Defaults to "both".
+    size : any, optional
+        Size of the tick labels.
+    color : any, optional
+        Color of the tick labels.
+    **artist_kws
+        Passed to the backend plotting function of the respective backend:
+
+        * matplotlib -> :meth:`~matplotlib.axes.Axes.tick_params`
+        * plotly -> :class:`~plotly.graph_objects.layout.XAxis` /
+        :class:`~plotly.graph_objects.layout.YAxis`
+        * bokeh -> :class:`~bokeh.models.Axis`
+
+    Returns
+    -------
+    ticklabel_props_visual : any
+        The backend object representing the tick label properties.
+    """
     if not ALLOW_KWARGS and artist_kws:
         raise ValueError(f"artist_kws not empty: {artist_kws}")
     kwargs = {"axis": axis, "size": size, "color": color}
@@ -736,7 +1178,20 @@ def ticklabel_props(target, *, axis="both", size=unset, color=unset, **artist_kw
 
 
 def remove_ticks(target, *, axis="y"):
-    """Interface to removing ticks from a plot."""
+    """Interface to removing ticks from a plot.
+
+    Parameters
+    ----------
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    axis : {"x", "y"}, default "y"
+        Axis from which the ticks should be removed.
+
+    Returns
+    -------
+    remove_ticks_visual : any
+        The backend object representing the removal of ticks.
+    """
     artist_element = {
         "function": "remove_ticks",
         "axis": axis,
@@ -746,7 +1201,20 @@ def remove_ticks(target, *, axis="y"):
 
 
 def remove_axis(target, axis="y"):
-    """Interface to removing axis from a plot."""
+    """Interface to removing an axis from a plot.
+
+    Parameters
+    ----------
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    axis : {"x", "y"}, default "y"
+        Axis that should be removed.
+
+    Returns
+    -------
+    remove_axis_visual : any
+        The backend object representing the removal of the axis.
+    """
     artist_element = {
         "function": "remove_axis",
         "axis": axis,
@@ -756,7 +1224,20 @@ def remove_axis(target, axis="y"):
 
 
 def set_y_scale(target, scale):
-    """Interface to setting the y scale of a plot."""
+    """Interface to setting the y-axis scale of a plot.
+
+    Parameters
+    ----------
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    scale : str
+        Scale to apply to the y-axis (e.g. "linear", "log").
+
+    Returns
+    -------
+    set_y_scale_visual : any
+        The backend object representing the updated y-axis scale.
+    """
     artist_element = {
         "function": "set_y_scale",
         "scale": scale,
@@ -766,7 +1247,22 @@ def set_y_scale(target, scale):
 
 
 def grid(target, axis, color):
-    """Interface to setting a grid in any axis."""
+    """Interface to a grid.
+
+    Parameters
+    ----------
+    target : PlotObject
+        The backend object representing a plot where this visual should be added.
+    axis : {"x", "y", "both"}
+        Axis on which the grid should be applied.
+    color : any
+        Color of the grid lines.
+
+    Returns
+    -------
+    grid_visual : any
+        The backend object representing the grid.
+    """
     artist_element = {
         "function": "grid",
         "axis": axis,
