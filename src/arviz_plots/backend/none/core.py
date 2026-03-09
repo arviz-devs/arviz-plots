@@ -258,7 +258,9 @@ def create_plotting_grid(
     plots = np.empty((rows, cols), dtype=object)
     for i, idx in enumerate(np.ndindex((rows, cols))):
         plots[idx] = None if i + 1 > number else []
-    if squeeze:
+    if squeeze and rows * cols == 1:
+        plots = []
+    elif squeeze:
         plots = plots.squeeze()
     if not ALLOW_KWARGS:
         if subplot_kws:
