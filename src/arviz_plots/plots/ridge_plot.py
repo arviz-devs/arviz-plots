@@ -369,11 +369,7 @@ def plot_ridge(
                 density = distribution.azstats.ecdf(dim=edge_dims, **stats.get("dist", {}))
             elif kind == "dot":
                 density = distribution.azstats.qds(dim=edge_dims, **stats.get("dist", {}))
-            else:
-                raise ValueError(
-                    f"Unsupported kind '{kind}'. "
-                    "Supported kinds are 'kde', 'hist', 'ecdf', 'qds'."
-                )
+
         if kind == "hist":
             density.loc[{"plot_axis": "histogram"}] = (
                 density.sel(plot_axis="histogram")
@@ -391,7 +387,7 @@ def plot_ridge(
         _, face_aes, face_ignore = filter_aes(plot_collection, aes_by_visuals, "face", sample_dims)
         if kind == "hist":
             face_density = density
-        elif kind == "qds":
+        elif kind == "dot":
             qds_face_kwargs = stats.get("dist", {}).copy()
             qds_face_kwargs.setdefault("top_only", True)
             face_density = distribution.azstats.qds(dim=edge_dims, **qds_face_kwargs)
@@ -536,7 +532,7 @@ def plot_ridge(
                 coords={"column": "ridge"},
                 **edge_kwargs,
             )
-        elif kind == "qds":
+        elif kind == "dot":
             plot_collection.map(
                 scatter_xy,
                 "edge",
@@ -560,7 +556,7 @@ def plot_ridge(
             face_kwargs.setdefault("color", "C0")
         if "alpha" not in face_aes:
             face_kwargs.setdefault("alpha", 0.4)
-        if kind in ["hist", "qds"]:
+        if kind == "hist":
             plot_collection.map(
                 hist,
                 "face",
