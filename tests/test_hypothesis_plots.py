@@ -187,6 +187,9 @@ def test_plot_compare(cmp_df, relative_scale, rotated, hide_top_model, visuals):
         visuals=visuals,
     )
     assert "plot" in pc.viz.data_vars
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.data_vars
 
 
 @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
