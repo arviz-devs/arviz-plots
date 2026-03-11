@@ -32,6 +32,7 @@ A complementary introduction and guide to ``plot_...`` functions is available at
    plot_forest
    plot_khat
    plot_loo_pit
+   plot_loo_interval
    plot_lm
    plot_mcse
    plot_pair
