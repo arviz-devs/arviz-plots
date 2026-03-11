@@ -20,6 +20,7 @@ from arviz_plots import (
     plot_ess_evolution,
     plot_forest,
     plot_khat,
+    plot_loo_interval,
     plot_loo_pit,
     plot_mcse,
     plot_pair,
@@ -421,6 +422,15 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" in pc.viz.children
         assert "y" in pc.viz["plot"].data_vars
         assert "ecdf_lines" in pc.viz.children
+
+    def test_plot_loo_interval(self, datatree, backend):
+        pc = plot_loo_interval(datatree, backend=backend)
+        assert isinstance(pc, PlotCollection)
+
+        children_keys = list(pc.viz.children.keys())
+        assert any("observed_markers" in key for key in children_keys)
+        assert any("twig" in key for key in children_keys)
+        assert any("trunk" in key for key in children_keys)
 
     def test_plot_mcse(self, datatree, backend):
         pc = plot_mcse(datatree, backend=backend, rug=True)
