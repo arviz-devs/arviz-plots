@@ -660,6 +660,7 @@ def test_plot_loo_pit(datatree, envelope_prob, coverage, visuals):
             )
 
 
+@pytest.mark.filterwarnings("ignore:Estimated shape parameter of Pareto")
 @given(
     visuals=st.fixed_dictionaries(
         {},
