@@ -179,11 +179,13 @@ def point_y(da, target, x=None, **kwargs):
 
 def ci_bound_y(da, target, **kwargs):
     """Plot a line from y_bottom to y_top at given value of x."""
+    y_lower = da.sel(ci_bound="lower")
+    y_upper = da.sel(ci_bound="upper")
     plot_backend = backend_from_object(target)
     return plot_backend.ciliney(
-        np.arange(len(da)),
-        da.sel(ci_bound="lower"),
-        da.sel(ci_bound="upper"),
+        np.arange(len(y_lower)),
+        y_lower,
+        y_upper,
         target,
         **kwargs,
     )
