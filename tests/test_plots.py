@@ -423,6 +423,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "y" in pc.viz["plot"].data_vars
         assert "ecdf_lines" in pc.viz.children
 
+    @pytest.mark.filterwarnings("ignore:Estimated shape parameter of Pareto")
     def test_plot_loo_interval(self, datatree, backend):
         pc = plot_loo_interval(datatree, backend=backend)
         assert isinstance(pc, PlotCollection)
