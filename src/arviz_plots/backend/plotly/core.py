@@ -840,7 +840,8 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     )
 
 
-def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
+@expand_aesthetic_aliases
+def xticks(ticks, labels, target, *, rotation=unset, color=unset, size=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the x axis."""
     if labels is None:
         labels = [str(label) for label in labels]
@@ -851,11 +852,15 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     }
     if rotation is not unset:
         kwargs["tickangle"] = -rotation
+    font_kwargs = _filter_kwargs({"color": color, "size": size}, {})
+    if font_kwargs:
+        kwargs["tickfont"] = font_kwargs
     target.update_xaxes(_filter_kwargs(kwargs, artist_kws))
     target.update_xaxes(automargin="bottom")
 
 
-def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
+@expand_aesthetic_aliases
+def yticks(ticks, labels, target, *, rotation=unset, color=unset, size=unset, **artist_kws):
     """Interface to plotly for setting ticks and labels of the y axis."""
     if labels is None:
         labels = [str(label) for label in labels]
@@ -867,7 +872,9 @@ def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
     }
     if rotation is not unset:
         kwargs["tickangle"] = -rotation
-
+    font_kwargs = _filter_kwargs({"color": color, "size": size}, {})
+    if font_kwargs:
+        kwargs["tickfont"] = font_kwargs
     target.update_yaxes(_filter_kwargs(kwargs, artist_kws))
 
 

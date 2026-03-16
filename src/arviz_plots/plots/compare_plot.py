@@ -147,21 +147,20 @@ def plot_compare(
     figsize_units = "dots"
 
     figure, target = p_be.create_plotting_grid(
-        1, figsize=figsize, figsize_units=figsize_units, **figure_kwargs
+        1, figsize=figsize, figsize_units=figsize_units, squeeze=False, **figure_kwargs
     )
 
     # Create plot collection
     plot_collection = PlotCollection(
         Dataset({}),
         viz_dt=DataTree.from_dict(
-            {"/": Dataset({"figure": np.array(figure, dtype=object), "plot": target})}
+            {"/": Dataset({"figure": np.array(figure, dtype=object), "plot": target.squeeze()})}
         ),
         backend=backend,
         **pc_kwargs,
     )
 
-    if isinstance(target, np.ndarray):
-        target = target.tolist()
+    target = target.item()
 
     perf_stats = cmp_df[stats].values
     ses = cmp_df["se"].values

@@ -345,7 +345,7 @@ def hist(
     """Interface to matplotlib for a histogram bar plot."""
     artist_kws.setdefault("zorder", 2)
     if np.any(bottom != 0):
-        height = y - bottom
+        height = y + bottom
     else:
         height = y
     if color is not unset:
@@ -353,11 +353,12 @@ def hist(
             facecolor = color
         if edgecolor is unset:
             edgecolor = color
-
+    bottom = np.full_like(height, bottom)
     kwargs = {"color": facecolor, "edgecolor": edgecolor, "alpha": alpha}
     return target.fill_between(
         np.r_[l_e, r_e[-1]],
         np.r_[height, height[-1]],
+        np.r_[bottom, bottom[-1]],
         step="post",
         **_filter_kwargs(kwargs, None, artist_kws),
     )
@@ -558,18 +559,18 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
     return target.set_xlabel(string, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
-def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
+@expand_aesthetic_aliases
+def xticks(ticks, labels, target, *, rotation=unset, color=unset, size=unset, **artist_kws):
     """Interface to matplotlib for adding x ticks and labels to a plot."""
-    if rotation is not unset:
-        artist_kws["rotation"] = rotation
-    return target.set_xticks(ticks, labels, **artist_kws)
+    kwargs = {"rotation": rotation, "color": color, "fontsize": size}
+    return target.set_xticks(ticks, labels, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
-def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
+@expand_aesthetic_aliases
+def yticks(ticks, labels, target, *, rotation=unset, color=unset, size=unset, **artist_kws):
     """Interface to matplotlib for adding y ticks and labels to a plot."""
-    if rotation is not unset:
-        artist_kws["rotation"] = rotation
-    return target.set_yticks(ticks, labels, **artist_kws)
+    kwargs = {"rotation": rotation, "color": color, "fontsize": size}
+    return target.set_yticks(ticks, labels, **_filter_kwargs(kwargs, Text, artist_kws))
 
 
 def set_ticklabel_visibility(target, *, axis="both", visible=True):

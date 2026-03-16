@@ -713,7 +713,8 @@ def xlabel(string, target, *, size=unset, color=unset, **artist_kws):
         setattr(target.xaxis, f"axis_label_{key}", value)
 
 
-def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
+@expand_aesthetic_aliases
+def xticks(ticks, labels, target, *, rotation=unset, color=unset, size=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the x axis."""
     target.xaxis.ticker = ticks
     if labels is not None:
@@ -722,11 +723,17 @@ def xticks(ticks, labels, target, *, rotation=unset, **artist_kws):
         }
     if rotation is not unset:
         rotation = math.radians(rotation)
-    for key, value in _filter_kwargs({"orientation": rotation}, artist_kws).items():
+    kwargs = {
+        "orientation": rotation,
+        "text_color": color,
+        "text_font_size": _float_or_str_size(size),
+    }
+    for key, value in _filter_kwargs(kwargs, artist_kws).items():
         setattr(target.xaxis, f"major_label_{key}", value)
 
 
-def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
+@expand_aesthetic_aliases
+def yticks(ticks, labels, target, *, rotation=unset, color=unset, size=unset, **artist_kws):
     """Interface to bokeh for setting ticks and labels of the y axis."""
     target.yaxis.ticker = ticks
     if labels is not None:
@@ -735,7 +742,12 @@ def yticks(ticks, labels, target, *, rotation=unset, **artist_kws):
         }
     if rotation is not unset:
         rotation = math.radians(rotation)
-    for key, value in _filter_kwargs({"orientation": rotation}, artist_kws).items():
+    kwargs = {
+        "orientation": rotation,
+        "text_color": color,
+        "text_font_size": _float_or_str_size(size),
+    }
+    for key, value in _filter_kwargs(kwargs, artist_kws).items():
         setattr(target.yaxis, f"major_label_{key}", value)
 
 
