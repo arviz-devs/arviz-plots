@@ -1,7 +1,8 @@
 """Posterior predictive check for survival/censored data using Kaplan-Meier curves."""
 
+from collections.abc import Mapping, Sequence
 from importlib import import_module
-from typing import Any, Literal, Mapping, Sequence
+from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller

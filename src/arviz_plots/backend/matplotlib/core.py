@@ -17,9 +17,8 @@ from matplotlib import ticker
 from matplotlib.cbook import normalize_kwargs
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
-from matplotlib.pyplot import rcParams
+from matplotlib.pyplot import rcParams, subplots
 from matplotlib.pyplot import show as _show
-from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
 from ..alias_utils import create_aesthetic_handlers

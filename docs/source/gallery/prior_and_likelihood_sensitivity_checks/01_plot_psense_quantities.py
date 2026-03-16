@@ -11,6 +11,7 @@ how much the perturbed quantities differ from the base quantities.
 API Documentation: {func}`~arviz_plots.plot_psense_quantities`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp

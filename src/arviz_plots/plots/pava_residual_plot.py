@@ -1,4 +1,5 @@
 """Posterior predictive check for residuals using PAV-adjusted calibration."""
+
 import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module

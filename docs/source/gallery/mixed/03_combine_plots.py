@@ -1,5 +1,5 @@
 """
-# Custom diagnostic plots combination 
+# Custom diagnostic plots combination
 
 Arrange three diagnostic plots (ESS evolution plot, rank plot and autocorrelation plot)
 in a custom column layout.
@@ -10,6 +10,7 @@ in a custom column layout.
 API Documentation: {func}`~arviz_plots.combine_plots`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp

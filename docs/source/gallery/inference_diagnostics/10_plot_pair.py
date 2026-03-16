@@ -9,7 +9,7 @@ Plot all variables against each other in the dataset.
 API Documentation: {func}`~arviz_plots.plot_pair`
 :::
 """
-import numpy as np
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
@@ -21,8 +21,8 @@ pc = azp.plot_pair(
     dt,
     var_names=["theta", "tau"],
     coords={"school": ["Lawrenceville", "Mt. Hermon"]},
-    visuals={"divergence":True},
+    visuals={"divergence": True},
     marginal=False,
-    backend="none", # change to preferred backend
+    backend="none",  # change to preferred backend
 )
 pc.show()

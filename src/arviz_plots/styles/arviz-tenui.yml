@@ -18,10 +18,6 @@ attrs:
         text_font_style: 'bold'
     Cycler:
         colors : [
-                "#84d3ee", "#e7b08b", "#f7ea8d", "#b6e4d0", 
+                "#84d3ee", "#e7b08b", "#f7ea8d", "#b6e4d0",
                 "#c88bb8", "#5bb2ed", "#7b9091", "#c7b4c0",
             ]
-
-            
-
-

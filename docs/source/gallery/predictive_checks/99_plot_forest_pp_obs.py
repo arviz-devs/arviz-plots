@@ -9,6 +9,7 @@ Overlay of forest plot for the posterior predictive samples and the actual obser
 API Documentation: {func}`~arviz_plots.plot_forest`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp

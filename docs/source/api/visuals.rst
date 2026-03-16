@@ -27,7 +27,7 @@ Data plotting elements
    trace_rug
    vline
    vspan
-   
+
 
 Data and axis annotating elements
 ---------------------------------

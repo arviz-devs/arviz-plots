@@ -9,6 +9,7 @@ Two column layout with marginal distributions on the left and MCMC traces on the
 API Documentation: {func}`~arviz_plots.plot_trace_dist`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
@@ -18,6 +19,6 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("non_centered_eight")
 pc = azp.plot_trace_dist(
     data,
-    backend="none"  # change to preferred backend
+    backend="none",  # change to preferred backend
 )
 pc.show()

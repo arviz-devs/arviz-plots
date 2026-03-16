@@ -1,11 +1,12 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the matplotlib backend."""
+
 import os
 
 import pytest
 
 if os.environ.get("ARVIZ_REQUIRE_ALL_DEPS", False):
-    import matplotlib  # pylint: disable=unused-import
+    pass  # pylint: disable=unused-import
 else:
     pytest.importorskip("matplotlib")
 

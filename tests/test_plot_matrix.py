@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test PlotMatrix."""
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -184,11 +185,10 @@ def test_plot_matrix_map_triangle(dataset, triangle):
                     assert not any(is_none)
                 else:
                     assert all(is_none)
+            elif triangle in ("both", "upper"):
+                assert not any(is_none)
             else:
-                if triangle in ("both", "upper"):
-                    assert not any(is_none)
-                else:
-                    assert all(is_none)
+                assert all(is_none)
 
 
 @pytest.mark.parametrize("triangle", ("both", "lower", "upper"))
@@ -224,8 +224,7 @@ def test_plot_matrix_map_triangle_scalar_coord(dataset, triangle):
                     assert not any(is_none)
                 else:
                     assert all(is_none)
+            elif triangle in ("both", "upper"):
+                assert not any(is_none)
             else:
-                if triangle in ("both", "upper"):
-                    assert not any(is_none)
-                else:
-                    assert all(is_none)
+                assert all(is_none)

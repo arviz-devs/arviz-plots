@@ -1,5 +1,6 @@
 # pylint: disable=invalid-name
 """Generate images and full gallery pages from python scripts."""
+
 import json
 import os
 import re
@@ -126,7 +127,7 @@ def main(app):
             )
             logger.info(f"Processing gallery example {basename}")
             # first step: run scripts with matplotlib backend and save png files
-            with open(category_dir / f"{fullname}.py", "r", encoding="utf-8") as fp:
+            with open(category_dir / f"{fullname}.py", encoding="utf-8") as fp:
                 text = fp.read()
             _, doc_text, code_text = text.split('"""')
             code_text = code_text.strip("\n")
@@ -237,7 +238,7 @@ def main(app):
             {{download}}`Download Python Source Code: {basename}.py<_scripts/{basename}.py>`
             :::
             """
-            myst_text = "\n".join((line.strip(" ") for line in myst_text.strip("\n").splitlines()))
+            myst_text = "\n".join(line.strip(" ") for line in myst_text.strip("\n").splitlines())
 
             with open(gallery_dir / f"{basename}.md", "w", encoding="utf-8") as fm:
                 fm.write(myst_text)
@@ -285,7 +286,7 @@ class MiniGallery(Directive):
         """Generate mini-gallery from backreference and example files."""
         gallery_dir = Path(self.state.document.settings.env.srcdir).resolve() / "gallery"
         docname = self.state.document.settings.env.docname
-        with open(gallery_dir / "backreferences.json", "r", encoding="utf-8") as f:
+        with open(gallery_dir / "backreferences.json", encoding="utf-8") as f:
             backreferences = json.load(f)
 
         # Parse the argument into the individual object

@@ -4,7 +4,6 @@ from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
 
-import arviz_stats  # pylint: disable=unused-import
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams

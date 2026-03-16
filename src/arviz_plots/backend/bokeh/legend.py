@@ -1,4 +1,5 @@
 """Bokeh manual legend generation."""
+
 import warnings
 
 from bokeh.models import Legend

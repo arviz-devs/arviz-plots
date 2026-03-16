@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines, too-many-public-methods
 """Plot collection class."""
+
 import warnings
 from importlib import import_module
 from pathlib import Path
@@ -1186,16 +1187,15 @@ class PlotCollection:
             aes_ds = self.aes[aes_key]
             if var_name in aes_ds.data_vars:
                 aes_kwargs[aes_key] = subset_ds(aes_ds, var_name, selection)
+            elif all(dim in selection for dim in aes_ds["mapping"].dims):
+                aes_kwargs[aes_key] = subset_ds(aes_ds, "mapping", selection)
+            elif "neutral_element" in aes_ds.data_vars:
+                aes_kwargs[aes_key] = subset_ds(aes_ds, "neutral_element", {})
             else:
-                if all(dim in selection for dim in aes_ds["mapping"].dims):
-                    aes_kwargs[aes_key] = subset_ds(aes_ds, "mapping", selection)
-                elif "neutral_element" in aes_ds.data_vars:
-                    aes_kwargs[aes_key] = subset_ds(aes_ds, "neutral_element", {})
-                else:
-                    raise ValueError(
-                        f"{aes_key} has no neutral element initialized but "
-                        f"{var_name} needs a neutral element."
-                    )
+                raise ValueError(
+                    f"{aes_key} has no neutral element initialized but "
+                    f"{var_name} needs a neutral element."
+                )
         return aes_kwargs
 
     def map(
@@ -1538,7 +1538,7 @@ class PlotCollection:
             self.update_aes_from_dataset(
                 "legendgroup", self.generate_aes_dt({"legendgroup": dim})["legendgroup"].dataset
             )
-        dim_str = ", ".join(("variable" if d == "__variable__" else d for d in dim))
+        dim_str = ", ".join("variable" if d == "__variable__" else d for d in dim)
         if title is None:
             title = dim_str
         aes_mappings = {

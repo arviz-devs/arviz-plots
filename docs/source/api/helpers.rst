@@ -25,5 +25,4 @@ Style
 
    style.available
    style.get
-   style.use 
-
+   style.use

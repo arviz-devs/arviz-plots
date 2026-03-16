@@ -1,7 +1,7 @@
 """
 # Bayes_factor
 
-Compute Bayes factor using Savage–Dickey ratio. 
+Compute Bayes factor using Savage–Dickey ratio.
 
 We can apply this function when the null model is nested within the alternative.
 In other words when the null (``ref_val``) is a particular value of the model we are
@@ -17,6 +17,7 @@ them as functions with ``loo`` in their names.
 API Documentation: {func}`~arviz_plots.plot_bf`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
@@ -28,7 +29,7 @@ data = load_arviz_data("centered_eight")
 pc = azp.plot_bf(
     data,
     backend="none",  # change to preferred backend
-    var_names="mu"
+    var_names="mu",
 )
 
 pc.show()

@@ -1,4 +1,5 @@
 """Plot loo pit."""
+
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal
 
