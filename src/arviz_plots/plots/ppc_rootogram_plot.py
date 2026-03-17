@@ -192,16 +192,14 @@ def plot_ppc_rootogram(
             filter_vars=filter_vars,
             coords=coords,
         )
-        observed_ds = point_unique(dt, observed_dist.data_vars)
+        observed_ds = point_unique(observed_dist)
     else:
         observed_dist = None
 
     warn_if_binary(observed_dist, predictive_dist)
     raise_if_continuous(observed_dist, predictive_dist)
 
-    predictive_ds = point_interval_unique(
-        dt, predictive_dist.data_vars, group, ci_prob, point_estimate
-    )
+    predictive_ds = point_interval_unique(predictive_dist, ci_prob, point_estimate)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
