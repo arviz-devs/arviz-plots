@@ -41,7 +41,7 @@ def get_group(data, group, allow_missing=False):
     if isinstance(data, xr.Dataset):
         return data
     if hasattr(data, "name") and data.name == group:
-        return data.ds
+        return data.dataset
     try:
         data = data[group]
     except KeyError:
@@ -50,7 +50,7 @@ def get_group(data, group, allow_missing=False):
         return None
     if isinstance(data, xr.Dataset):
         return data
-    return data.ds
+    return data.dataset
 
 
 def get_visual_kwargs(visuals, name, default=None):
