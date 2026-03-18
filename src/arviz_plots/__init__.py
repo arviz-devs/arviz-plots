@@ -34,8 +34,12 @@ try:
     import matplotlib as mpl
 
     _arviz_style_path = os.path.join(os.path.dirname(__file__), "styles")
-    mplstyle.core.USER_LIBRARY_PATHS.append(_arviz_style_path)
-    mplstyle.core.reload_library()
+    try:
+        mplstyle.core.USER_LIBRARY_PATHS.append(_arviz_style_path)
+        mplstyle.core.reload_library()
+    except AttributeError:
+        if hasattr(mplstyle, "reload_library"):
+            mplstyle.reload_library()
 
     # adds perceptually uniform grey scale from colorcet
     _linear_grey_10_95_c0 = [
