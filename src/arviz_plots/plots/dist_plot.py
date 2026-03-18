@@ -223,6 +223,7 @@ def plot_dist(
     point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
     ci_kind = validate_or_use_rcparam(ci_kind, "stats.ci_kind")
     ci_prob = validate_ci_prob(ci_prob)
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dist, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_dist, "visuals"))
     stats = validate_dict_argument(stats, (plot_dist, "stats"))
     if kind == "ecdf":
@@ -266,7 +267,6 @@ def plot_dist(
     face_kwargs = get_visual_kwargs(visuals, "face", False)
     density_kwargs = get_visual_kwargs(visuals, "dist")
 
-    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dist, "aes_by_visuals"))
     aes_by_visuals.setdefault("dist", plot_collection.aes_set.difference("y"))
     if face_kwargs is not False:
         aes_by_visuals.setdefault("face", set(aes_by_visuals["dist"]).difference({"linestyle"}))

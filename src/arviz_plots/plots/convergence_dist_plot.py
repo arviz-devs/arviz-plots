@@ -7,6 +7,7 @@ from typing import Any, Literal
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, process_group_variables_coords
@@ -175,30 +176,16 @@ def plot_convergence_dist(
         assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
         https://doi.org/10.1214/20-BA1221. arXiv preprint https://arxiv.org/abs/1903.08008
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-
     ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_line_kwargs is False:
         raise ValueError(
             "visuals['ref_line'] can't be False, use ref_line=False to remove this element"
         )
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    visuals = validate_dict_argument(visuals, (plot_convergence_dist, "visuals"))
+    stats = validate_dict_argument(stats, (plot_convergence_dist, "stats"))
+    aes_by_visuals = validate_dict_argument(
+        aes_by_visuals, (plot_convergence_dist, "aes_by_visuals")
+    )
 
     if diagnostics is None:
         diagnostics = ["ess_bulk", "ess_tail", "rhat"]
@@ -216,6 +203,7 @@ def plot_convergence_dist(
     dt = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=dt)
     distribution = _compute_diagnostics(dt, diagnostics, sample_dims, grouped)
 
     if plot_collection is None:
@@ -257,9 +245,6 @@ def plot_convergence_dist(
         stats=stats,
         **pc_kwargs,
     )
-
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     if ref_line:
         _, ref_aes, ref_ignore = filter_aes(

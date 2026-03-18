@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 import xarray as xr
 from arviz_base import rcParams
+from arviz_base.validate import validate_dict_argument
 from arviz_stats.bayes_factor import bayes_factor
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
@@ -110,14 +111,8 @@ def plot_bf(
 
     .. minigallery:: plot_bf
     """
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    visuals = validate_dict_argument(visuals, (plot_bf, "visuals"))
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_bf, "aes_by_visuals"))
 
     if backend is None:
         if plot_collection is None:

@@ -9,6 +9,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
@@ -169,21 +174,9 @@ def plot_ppc_dist(
 
     .. minigallery:: plot_ppc_dist
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    stats = validate_dict_argument(stats, (plot_ppc_dist, "stats"))
+    visuals = validate_dict_argument(visuals, (plot_ppc_dist, "visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -191,18 +184,15 @@ def plot_ppc_dist(
         else:
             backend = plot_collection.backend
 
-    if kind not in ("kde", "hist", "ecdf", "dot", "auto"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
-
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
     rng = np.random.default_rng(4214)
 
-    pp_dims = [dims for dims in dt[group].dims if dims not in sample_dims]
-
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
+    pp_dims = [dims for dims in dt[group].dims if dims not in sample_dims]
 
     if "observed_data" in dt:
         observed_dist = process_group_variables_coords(
@@ -247,10 +237,7 @@ def plot_ppc_dist(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_dist, "aes_by_visuals"))
     if labeller is None:
         labeller = BaseLabeller()
 
