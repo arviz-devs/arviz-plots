@@ -176,16 +176,16 @@ def plot_convergence_dist(
         assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
         https://doi.org/10.1214/20-BA1221. arXiv preprint https://arxiv.org/abs/1903.08008
     """
-    ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
-    if ref_line_kwargs is False:
-        raise ValueError(
-            "visuals['ref_line'] can't be False, use ref_line=False to remove this element"
-        )
     visuals = validate_dict_argument(visuals, (plot_convergence_dist, "visuals"))
     stats = validate_dict_argument(stats, (plot_convergence_dist, "stats"))
     aes_by_visuals = validate_dict_argument(
         aes_by_visuals, (plot_convergence_dist, "aes_by_visuals")
     )
+    ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
+    if ref_line_kwargs is False:
+        raise ValueError(
+            "visuals['ref_line'] can't be False, use ref_line=False to remove this element"
+        )
 
     if diagnostics is None:
         diagnostics = ["ess_bulk", "ess_tail", "rhat"]
@@ -223,6 +223,8 @@ def plot_convergence_dist(
     visuals.setdefault("credible_interval", False)
     visuals.setdefault("point_estimate", False)
     visuals.setdefault("point_estimate_text", False)
+    visuals.pop("ref_line", None)
+    aes_by_visuals_ref = {"ref_line": aes_by_visuals.pop("ref_line", [])}
 
     plot_collection = plot_dist(
         distribution,
@@ -248,7 +250,7 @@ def plot_convergence_dist(
 
     if ref_line:
         _, ref_aes, ref_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "ref_line", sample_dims
+            plot_collection, aes_by_visuals_ref, "ref_line", sample_dims
         )
         if "color" not in ref_aes:
             ref_line_kwargs.setdefault("color", "B1")

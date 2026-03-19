@@ -7,6 +7,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 from arviz_stats.ecdf_utils import ecdf_pit
 
 from arviz_plots.plot_collection import PlotCollection
@@ -141,24 +146,11 @@ def plot_rank(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
-    if envelope_prob is None:
-        envelope_prob = rcParams["stats.envelope_prob"]
-
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_rank, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_rank, "visuals"))
     visuals.setdefault("remove_axis", True)
+    stats = validate_dict_argument(stats, (plot_rank, "stats"))
 
     if backend is None:
         if plot_collection is None:
@@ -172,6 +164,7 @@ def plot_rank(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
     ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
     ecdf_pit_kwargs.setdefault("n_simulations", 1000)
     ecdf_pit_kwargs.setdefault("n_chains", distribution.sizes["chain"])
@@ -213,10 +206,6 @@ def plot_rank(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("ecdf_lines", plot_collection.aes_set)
 
     ## ecdf_line

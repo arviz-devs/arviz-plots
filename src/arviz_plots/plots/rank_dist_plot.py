@@ -337,7 +337,7 @@ def plot_rank_dist(
         kind=kind,
         plot_collection=plot_collection,
         labeller=labeller,
-        aes_by_visuals={key: value for key, value in aes_by_visuals.items() if key == "dist"},
+        aes_by_visuals={"dist": aes_by_visuals.get("dist", {})},
         visuals=visuals_dist,
         stats={"dist": stats.get("dist", {})},
     )
@@ -347,13 +347,10 @@ def plot_rank_dist(
     rank_kwargs = get_visual_kwargs(visuals, "rank")
     div_kwargs = get_visual_kwargs(visuals, "divergence")
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel_rank")
-    visuals_rank = {"rank": rank_kwargs, "divergence": div_kwargs, "xlabel": xlabel_kwargs}
-    visuals_rank["title"] = False
-    visuals_rank["ticklabels"] = False
+    visuals_rank = {"ecdf_lines": rank_kwargs, "xlabel": xlabel_kwargs, "title": False}
     aes_by_visuals_rank = {
-        key.replace("_rank", ""): value
-        for key, value in visuals.items()
-        if key in {"rank", "divergence", "xlabel_rank"}
+        "ecdf_lines": aes_by_visuals.get("rank", {}),
+        "xlabel": aes_by_visuals.get("xlabel_rank", {}),
     }
     plot_collection.coords = {"column": "rank"}
     plot_rank(

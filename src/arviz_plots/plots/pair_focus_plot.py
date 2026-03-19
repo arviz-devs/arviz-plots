@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -121,21 +122,8 @@ def plot_pair_focus(
     .. minigallery:: plot_pair_focus
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if visuals is None:
-        visuals = {}
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_pair_focus, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_pair_focus, "visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -146,6 +134,7 @@ def plot_pair_focus(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
 
     if isinstance(focus_var, str):
         y = (

@@ -151,16 +151,19 @@ def plot_dgof_dist(
     .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
-    kind = validate_or_use_rcparam(kind, "plot.density_kind")
-    if kind not in ("kde", "hist", "dot"):
-        raise ValueError("For plot_dgof_dist kind must be either 'kde', 'hist', 'dot'")
-    visuals = validate_dict_argument(visuals, (plot_dist, "visuals"))
-    stats = validate_dict_argument(stats, (plot_dist, "stats"))
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dgof_dist, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_dgof_dist, "visuals"))
+    stats = validate_dict_argument(stats, (plot_dgof_dist, "stats"))
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    if kind == "auto":
+        kind = "kde" if all(da.dtype.kind == "f" for da in distribution.values) else "hist"
+    if kind not in ("kde", "hist", "dot"):
+        raise ValueError("For plot_dgof_dist kind must be either 'kde', 'hist', 'dot'")
 
     if backend is None:
         if plot_collection is None:
@@ -183,8 +186,6 @@ def plot_dgof_dist(
             backend=backend,
             **pc_kwargs,
         )
-
-    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dgof_dist, "aes_by_visuals"))
 
     if labeller is None:
         labeller = BaseLabeller()

@@ -241,25 +241,33 @@ def plot_ppc_dist(
     if labeller is None:
         labeller = BaseLabeller()
 
-    # We don't want credible_interval or point_estimate to be mapped to the density representation
-    visuals.setdefault("credible_interval", False)
-    visuals.setdefault("point_estimate", False)
-    visuals.setdefault("point_estimate_text", False)
-    visuals.setdefault("rug_plot", False)
-
     # Plot the predictive density
     pred_density_kwargs = get_visual_kwargs(visuals, "predictive_dist")
     if pred_density_kwargs is not False:
-        visuals.setdefault("dist", pred_density_kwargs)
-        visuals["dist"].setdefault("alpha", 0.3)
+        # We don't want credible_interval or point_estimate for the predictive distribution
+        pred_density_kwargs.setdefault("alpha", 0.3)
+        pred_visuals = {
+            "dist": pred_density_kwargs,
+            "credible_interval": False,
+            "point_estimate": False,
+            "point_estimate_text": False,
+            "title": visuals.get("title", {}),
+            "rug": False,
+            "remove_axis": visuals.get("remove_axis", False),
+        }
+        pred_aes_by_visuals = {
+            k.replace("predictive_", ""): v
+            for k, v in aes_by_visuals.items()
+            if k != "observed_dist"
+        }
 
         plot_collection = plot_dist(
             predictive_dist,
             group=group,
             sample_dims=pp_dims,
             kind=kind,
-            visuals=visuals,
-            aes_by_visuals=aes_by_visuals,
+            visuals=pred_visuals,
+            aes_by_visuals=pred_aes_by_visuals,
             pc_kwargs=pc_kwargs,
             plot_collection=plot_collection,
             stats={"dist": stats.get("predictive_dist", {})},
@@ -279,16 +287,19 @@ def plot_ppc_dist(
             "point_estimate": False,
             "point_estimate_text": False,
             "title": False,
-            "rug_plot": False,
+            "rug": False,
             "remove_axis": False,
         }
+        obs_aes_by_visuals = (
+            {"dist": aes_by_visuals["observed_dist"]} if "observed_dist" in aes_by_visuals else {}
+        )
         plot_collection = plot_dist(
             observed_dist,
             group="observed_data",
             sample_dims=pp_dims,
             kind=kind,
             visuals=observed_visuals,
-            aes_by_visuals=aes_by_visuals,
+            aes_by_visuals=obs_aes_by_visuals,
             plot_collection=plot_collection,
             stats={"dist": stats.get("observed_dist", {})},
         )

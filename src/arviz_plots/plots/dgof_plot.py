@@ -149,12 +149,14 @@ def plot_dgof(
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     visuals = validate_dict_argument(visuals, (plot_dgof, "visuals"))
     stats = validate_dict_argument(stats, (plot_dgof, "stats"))
-    kind = validate_or_use_rcparam(kind, "plot.density_kind")
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    if kind == "auto":
+        kind = "kde" if all(da.dtype.kind == "f" for da in distribution.values) else "hist"
 
     if kind == "hist":
         hist_dt = distribution.azstats.histogram(dim=sample_dims, **stats.get("dist", {}))

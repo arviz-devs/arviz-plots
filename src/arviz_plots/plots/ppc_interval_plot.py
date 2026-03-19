@@ -7,6 +7,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -146,29 +151,14 @@ def plot_ppc_interval(
 
     .. minigallery:: plot_ppc_interval
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"]
-    if ci_kind not in ("hdi", "eti"):
-        raise ValueError(f"ci_kind must be either 'hdi' or 'eti', but {ci_kind} was passed.")
-    if point_estimate is None:
-        point_estimate = rcParams["stats.point_estimate"]
+    point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
+    ci_kind = validate_or_use_rcparam(ci_kind, "stats.ci_kind")
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_interval, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ppc_interval, "visuals"))
+    stats = validate_dict_argument(stats, (plot_ppc_interval, "stats"))
     if ci_probs is None:
         rc_ci_prob = rcParams["stats.ci_prob"]
         ci_probs = (0.5, rc_ci_prob)
-
     ci_probs = np.array(ci_probs)
     if ci_probs.size != 2:
         raise ValueError("ci_probs must have two elements for twig and trunk intervals.")
@@ -192,6 +182,7 @@ def plot_ppc_interval(
     ds_predictive = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=ds_predictive)
 
     # Extract observed data
     if "observed_data" in dt:
@@ -273,9 +264,6 @@ def _plot_interval(
             backend=backend,
             **pc_kwargs,
         )
-
-    visuals = {} if visuals is None else visuals
-    aes_by_visuals = {} if aes_by_visuals is None else aes_by_visuals
 
     ## trunk intervals
     ci_trunk_kwargs = get_visual_kwargs(visuals, "trunk")

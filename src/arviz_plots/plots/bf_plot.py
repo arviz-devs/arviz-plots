@@ -135,6 +135,7 @@ def plot_bf(
         }
     )
 
+    keys_to_keep = ("dist", "title")
     plot_collection = plot_prior_posterior(
         dt,
         var_names=var_names,
@@ -144,7 +145,8 @@ def plot_bf(
         plot_collection=plot_collection,
         backend=backend,
         labeller=labeller,
-        visuals=visuals,
+        aes_by_visuals={k: v for k, v in aes_by_visuals.items() if k in keys_to_keep},
+        visuals={k: v for k, v in visuals.items() if k in keys_to_keep},
         stats=stats,
         **pc_kwargs,
     )

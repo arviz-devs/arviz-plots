@@ -1,10 +1,12 @@
 """Posterior predictive check using PAV-adjusted calibration plot."""
+import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_ci_prob, validate_dict_argument
 from arviz_stats.helper_stats import isotonic_fit
 
 from arviz_plots.plot_collection import PlotCollection
@@ -147,17 +149,15 @@ def plot_ppc_pava(
     .. [2] Dimitriadis et al *Stable reliability diagrams for probabilistic classifiers*.
         PNAS, 118(8) (2021). https://doi.org/10.1073/pnas.2016191118
     """
-    if ci_prob is None:
-        ci_prob = rcParams["stats.ci_prob"]
+    ci_prob = validate_ci_prob(ci_prob)
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_pava, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ppc_pava, "visuals"))
     if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if visuals is None:
-        visuals = {}
+        sample_dims = ["chain", "draw"]
     else:
-        visuals = visuals.copy()
+        warnings.warn(
+            "'sample_dims' is currently not supported in plot_ppc_pava and will be ignored"
+        )
 
     if backend is None:
         if plot_collection is None:
@@ -188,11 +188,6 @@ def plot_ppc_pava(
             backend=backend,
             **pc_kwargs,
         )
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
 
     ## reference line
     reference_ls_kwargs = get_visual_kwargs(visuals, "reference_line")

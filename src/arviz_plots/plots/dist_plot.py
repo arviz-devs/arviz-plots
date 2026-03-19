@@ -57,6 +57,7 @@ def plot_dist(
     aes_by_visuals: Mapping[
         Literal[
             "dist",
+            "face",
             "credible_interval",
             "point_estimate",
             "point_estimate_text",
@@ -68,6 +69,7 @@ def plot_dist(
     visuals: Mapping[
         Literal[
             "dist",
+            "face",
             "credible_interval",
             "point_estimate",
             "point_estimate_text",

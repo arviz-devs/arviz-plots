@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams, xarray_sel_iter
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_matrix import PlotMatrix
 from arviz_plots.plots.dist_plot import plot_dist
@@ -236,19 +237,8 @@ def plot_pair(
     .. minigallery:: plot_pair
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if marginal_kind is None:
-        marginal_kind = rcParams["plot.density_kind"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if visuals is None:
-        visuals = {}
-    if pc_kwargs is None:
-        pc_kwargs = {}
-    else:
-        pc_kwargs = pc_kwargs.copy()
-
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_pair, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_pair, "visuals"))
     if labeller is None:
         labeller = BaseLabeller()
     if backend is None:
@@ -257,12 +247,10 @@ def plot_pair(
         else:
             backend = plot_matrix.backend
 
-    if marginal_kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("marginal_kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
-
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -294,10 +282,6 @@ def plot_pair(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals["scatter"] = {"overlay"}.union(
         aes_by_visuals.get("scatter", plot_matrix.aes_set)
     )

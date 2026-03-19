@@ -9,6 +9,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -247,23 +248,15 @@ def plot_ess_evolution(
         assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
         https://doi.org/10.1214/20-BA1221. arXiv preprint https://arxiv.org/abs/1903.08008
     """
-    # initial defaults
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-
-    # mutable inputs
-    if visuals is None:
-        visuals = {}
-
-    if stats is None:
-        stats = {}
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ess_evolution, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ess_evolution, "visuals"))
+    stats = validate_dict_argument(stats, (plot_ess_evolution, "stats"))
 
     # processing dt/group/coords/filtering
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
 
     if backend is None:
         if plot_collection is None:
@@ -292,10 +285,6 @@ def plot_ess_evolution(
         )
 
     # set plot collection dependent defaults (like aesthetics mappings for each visual)
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("ess_bulk", plot_collection.aes_set)
     aes_by_visuals.setdefault("ess_bulk_line", plot_collection.aes_set)
     aes_by_visuals.setdefault("ess_tail", plot_collection.aes_set)
@@ -618,10 +607,9 @@ def plot_ess_evolution(
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "B1")
 
-        ylabel = "{}"
         ylabel_kwargs.setdefault(
             "text",
-            ylabel.format("Relative ESS") if relative is not False else ylabel.format("ESS"),
+            "Relative ESS" if relative is not False else "ESS",
         )
 
         plot_collection.map(

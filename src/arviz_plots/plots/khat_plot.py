@@ -8,6 +8,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument
 from arviz_stats.base.stats_utils import calculate_khat_bin_edges
 
 from arviz_plots.plot_collection import PlotCollection
@@ -183,8 +184,9 @@ def plot_khat(
     else:
         hline_values = list(hline_values)
 
-    visuals = {} if visuals is None else visuals.copy()
+    visuals = validate_dict_argument(visuals, (plot_khat, "visuals"))
     visuals.setdefault("title", False)
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_khat, "aes_by_visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -194,9 +196,6 @@ def plot_khat(
 
     if labeller is None:
         labeller = BaseLabeller()
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
 
     if not hasattr(elpd_data, "pareto_k") or elpd_data.pareto_k is None:
         raise ValueError(

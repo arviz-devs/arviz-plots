@@ -333,8 +333,8 @@ def plot_trace_dist(
     visuals_trace["title"] = False
     visuals_trace["ticklabels"] = False
     aes_by_visuals_trace = {
-        key.replace("trace", ""): value
-        for key, value in visuals.items()
+        key.replace("_trace", ""): value
+        for key, value in aes_by_visuals.items()
         if key in {"trace", "divergence", "xlabel_trace"}
     }
     plot_collection.coords = {"column": "trace"}

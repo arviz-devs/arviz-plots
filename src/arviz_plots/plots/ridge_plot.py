@@ -9,6 +9,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, process_group_variables_coords
@@ -191,28 +196,21 @@ def plot_ridge(
     .. minigallery:: plot_ridge
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if visuals is None:
-        visuals = {}
-
-    if stats is None:
-        stats = {}
-
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ridge, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ridge, "visuals"))
+    stats = validate_dict_argument(stats, (plot_ridge, "stats"))
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    if kind == "auto":
+        kind = "kde" if all(da.dtype.kind == "f" for da in distribution.values()) else "hist"
     labellable_dims = ["__variable__"] + [
         dim for dim in distribution.dims if (dim not in {"model", "column"}.union(sample_dims))
     ]
     if labels is None:
         labels = labellable_dims
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
     if not combined and "chain" not in distribution.dims:
         combined = True
 
@@ -340,10 +338,6 @@ def plot_ridge(
         y_ds = y_ds.max().to_array().max() - add_factor - y_ds - shift
         plot_collection.update_aes_from_dataset("y", y_ds)
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("edge", plot_collection.aes_set.difference({"alpha"}))
     aes_by_visuals.setdefault("face", plot_collection.aes_set.difference({"alpha"}))
     aes_by_visuals["labels"] = {"overlay"}.union(aes_by_visuals.get("labels", {}))
