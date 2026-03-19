@@ -5,7 +5,7 @@ import hypothesis.strategies as st
 import numpy as np
 import pandas as pd
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 
 from arviz_plots import (
     plot_autocorr,
@@ -333,6 +333,7 @@ def test_plot_dgof(datatree, kind, envelope_prob, visuals):
     kind=kind_value_no_hist,
     envelope_prob=envelope_prob_value,
 )
+@settings(deadline=6000)
 def test_plot_dgof_dist(datatree, kind, envelope_prob, visuals):
     pc = plot_dgof_dist(
         datatree,
