@@ -755,6 +755,16 @@ def remove_axis(target, axis="y"):
     return artist_element
 
 
+def set_x_scale(target, scale):
+    """Interface to setting the x scale of a plot."""
+    artist_element = {
+        "function": "set_x_scale",
+        "scale": scale,
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 def set_y_scale(target, scale):
     """Interface to setting the y scale of a plot."""
     artist_element = {

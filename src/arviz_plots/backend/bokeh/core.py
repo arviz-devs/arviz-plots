@@ -36,70 +36,95 @@ class UnsetDefault:
 unset = UnsetDefault()
 
 
-def set_sqrt_yscale(target):
+def set_sqrt_scale(target, axis):
     """Transform existing plots on a figure to use sqrt(y) scale."""
-    max_y = 0
+    if axis == "y":
+        axis_obj = target.yaxis
+        range_obj = target.y_range
+        main = "y"
+        alt = "y_top"
+        glyph_main = "y"
+        glyph0 = "y0"
+        glyph1 = "y1"
+        orig_main = "original_y"
+        sqrt_main = "y_sqrt"
+        orig0 = "original_y_bottom"
+        sqrt0 = "y_bottom_sqrt"
+        orig1 = "original_y_top"
+        sqrt1 = "y_top_sqrt"
+    elif axis == "x":
+        axis_obj = target.xaxis
+        range_obj = target.x_range
+        main = "x"
+        alt = "x_right"
+        glyph_main = "x"
+        glyph0 = "x0"
+        glyph1 = "x1"
+        orig_main = "original_x"
+        sqrt_main = "x_sqrt"
+        orig0 = "original_x_left"
+        sqrt0 = "x_left_sqrt"
+        orig1 = "original_x_right"
+        sqrt1 = "x_right_sqrt"
+    else:
+        raise ValueError(f"axis must be 'x' or 'y', got {axis}")
+
+    max_val = 0
     for renderer in target.renderers:
         if isinstance(renderer.data_source, ColumnDataSource):
             ds = renderer.data_source
-            if "y" in ds.data:
-                current_max = max(ds.data["y"])
-                max_y = max(max_y, current_max)
+            if main in ds.data:
+                current_max = max(ds.data[main])
+                max_val = max(max_val, current_max)
+            elif alt in ds.data:
+                current_max = max(ds.data[alt])
+                max_val = max(max_val, current_max)
 
-            elif "y_top" in ds.data:
-                current_max = max(ds.data["y_top"])
-                max_y = max(max_y, current_max)
-
-    num_ticks = min(5, math.ceil(max_y / 2))
-    step_size = round(math.ceil(max_y) / num_ticks)
+    num_ticks = min(5, math.ceil(max_val / 2))
+    step_size = round(math.ceil(max_val) / num_ticks)
     end_tick = num_ticks * step_size
     ticks = [i**0.5 for i in range(0, end_tick + 1, step_size)]
 
-    target.yaxis.formatter = CustomJSTickFormatter(
+    axis_obj.formatter = CustomJSTickFormatter(
         code="""
         return (tick ** 2).toFixed(0)
     """
     )
-    target.yaxis.ticker = FixedTicker(ticks=ticks)
-    target.y_range.start = 0
-    target.y_range.end = ticks[len(ticks) - 1]
+    axis_obj.ticker = FixedTicker(ticks=ticks)
+    range_obj.start = 0
+    range_obj.end = ticks[len(ticks) - 1]
 
-    # Transform existing scatter plots
+    # Transform existing scatter/bar plots
     for renderer in target.renderers:
-        if hasattr(renderer.glyph, "y") and isinstance(renderer.data_source, ColumnDataSource):
+        if hasattr(renderer.glyph, glyph_main) and isinstance(
+            renderer.data_source, ColumnDataSource
+        ):
             ds = renderer.data_source
-            y_field = renderer.glyph.y
-
-            if "original_y" in ds.data:
+            field = getattr(renderer.glyph, glyph_main)
+            if orig_main in ds.data:
                 continue
-
-            original_y = ds.data[y_field]
-            ds.data["original_y"] = original_y
-            ds.data["y_sqrt"] = np.sqrt(original_y)
-
-            renderer.glyph.y = "y_sqrt"
+            original = ds.data[field]
+            ds.data[orig_main] = original
+            ds.data[sqrt_main] = np.sqrt(original)
+            setattr(renderer.glyph, glyph_main, sqrt_main)
         elif (
-            hasattr(renderer.glyph, "y0")
-            and hasattr(renderer.glyph, "y1")
+            hasattr(renderer.glyph, glyph0)
+            and hasattr(renderer.glyph, glyph1)
             and isinstance(renderer.data_source, ColumnDataSource)
         ):
             ds = renderer.data_source
-            y_top_field = renderer.glyph.y1
-            y_bottom_field = renderer.glyph.y0
-
-            if "original_y_top" in ds.data and "original_y_bottom" in ds.data:
+            field0 = getattr(renderer.glyph, glyph0)
+            field1 = getattr(renderer.glyph, glyph1)
+            if orig1 in ds.data and orig0 in ds.data:
                 continue
-
-            original_y_top = ds.data[y_top_field]
-            ds.data["original_y_top"] = original_y_top
-            ds.data["y_top_sqrt"] = np.sqrt(original_y_top)
-
-            original_y_bottom = ds.data[y_bottom_field]
-            ds.data["original_y_bottom"] = original_y_bottom
-            ds.data["y_bottom_sqrt"] = np.sqrt(original_y_bottom)
-
-            renderer.glyph.y0 = "y_bottom_sqrt"
-            renderer.glyph.y1 = "y_top_sqrt"
+            orig1_val = ds.data[field1]
+            ds.data[orig1] = orig1_val
+            ds.data[sqrt1] = np.sqrt(orig1_val)
+            orig0_val = ds.data[field0]
+            ds.data[orig0] = orig0_val
+            ds.data[sqrt0] = np.sqrt(orig0_val)
+            setattr(renderer.glyph, glyph0, sqrt0)
+            setattr(renderer.glyph, glyph1, sqrt1)
 
 
 def get_hex_from_color_name(color_name: str) -> str:
@@ -813,10 +838,18 @@ def remove_axis(target, axis="y"):
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
 
 
+def set_x_scale(target, scale):
+    """Interface to bokeh for setting the x scale of a plot."""
+    if scale == "sqrt":
+        set_sqrt_scale(target, axis="x")
+    else:
+        pass
+
+
 def set_y_scale(target, scale):
     """Interface to bokeh for setting the y scale of a plot."""
     if scale == "sqrt":
-        set_sqrt_yscale(target)
+        set_sqrt_scale(target, axis="y")
     else:
         pass
 

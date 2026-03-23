@@ -135,6 +135,7 @@ Plot appearance
    remove_ticks
    remove_axis
    set_ticklabel_visibility
+   set_x_scale
    set_y_scale
    ticklabel_props
    title

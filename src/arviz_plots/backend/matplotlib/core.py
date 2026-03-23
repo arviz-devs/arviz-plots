@@ -639,6 +639,13 @@ def remove_axis(target, axis="y"):
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
 
 
+def set_x_scale(target, scale):
+    """Interface to matplotlib for setting the x scale of a plot."""
+    target.set_xscale(scale)
+    if scale == "sqrt":
+        target.set_xlim(left=0)
+
+
 def set_y_scale(target, scale):
     """Interface to matplotlib for setting the y scale of a plot."""
     target.set_yscale(scale)
