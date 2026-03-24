@@ -22,7 +22,7 @@ from arviz_plots.visuals import (
     labelled_x,
     labelled_y,
     scatter_xy,
-    set_y_scale,
+    set_yscale,
 )
 
 
@@ -353,7 +353,7 @@ def plot_ppc_rootogram(
         )
 
     plot_collection.map(
-        set_y_scale,
+        set_yscale,
         store_artist=backend == "none",
         ignore_aes=plot_collection.aes_set,
         scale=yscale,

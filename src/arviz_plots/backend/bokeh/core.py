@@ -838,7 +838,7 @@ def remove_axis(target, axis="y"):
         raise ValueError(f"axis must be one of 'x', 'y' or 'both', got '{axis}'")
 
 
-def set_x_scale(target, scale):
+def xscale(target, scale):
     """Interface to bokeh for setting the x scale of a plot."""
     if scale == "sqrt":
         set_sqrt_scale(target, axis="x")
@@ -846,7 +846,7 @@ def set_x_scale(target, scale):
         pass
 
 
-def set_y_scale(target, scale):
+def yscale(target, scale):
     """Interface to bokeh for setting the y scale of a plot."""
     if scale == "sqrt":
         set_sqrt_scale(target, axis="y")

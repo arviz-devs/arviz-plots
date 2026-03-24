@@ -905,7 +905,7 @@ def ylim(lims, target, **artist_kws):
     target.update_yaxes(range=lims, **artist_kws)  # pylint: disable=redefined-builtin
 
 
-def set_x_scale(target, scale):
+def xscale(target, scale):
     """Interface to plotly for setting the x scale of a plot."""
     if scale == "sqrt":
         apply_square_root_scale(target, axis="x")
@@ -913,7 +913,7 @@ def set_x_scale(target, scale):
         pass
 
 
-def set_y_scale(target, scale):
+def yscale(target, scale):
     """Interface to plotly for setting the y scale of a plot."""
     if scale == "sqrt":
         apply_square_root_scale(target, axis="y")

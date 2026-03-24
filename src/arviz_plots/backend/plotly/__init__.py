@@ -18,8 +18,6 @@ from .core import (
     scatter,
     set_figure_title,
     set_ticklabel_visibility,
-    set_x_scale,
-    set_y_scale,
     show,
     step,
     text,
@@ -29,9 +27,11 @@ from .core import (
     vspan,
     xlabel,
     xlim,
+    xscale,
     xticks,
     ylabel,
     ylim,
+    yscale,
     yticks,
 )
 from .legend import legend
