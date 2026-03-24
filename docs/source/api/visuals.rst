@@ -56,6 +56,5 @@ Plot customization elements
    set_xticks
    set_ylim
    set_yscale
-   set_yticks
    ticklabel_props
    grid
