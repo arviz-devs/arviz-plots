@@ -20,4 +20,6 @@ pc = azp.plot_ppc_censored(
     backend="none",
 )
 
+pc.facet_map("set_x_scale", scale="sqrt")
+
 pc.show()
