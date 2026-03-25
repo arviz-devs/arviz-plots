@@ -26,31 +26,14 @@ def plot_trace(
     group="posterior",
     coords=None,
     sample_dims=None,
-    plot_collection=None,
-    backend=None,
-    labeller=None,
-    aes_by_visuals: Mapping[
-        Literal[
-            "trace",
-            "divergence",
-            "title",
-            "xlabel",
-            "ticklabels",
-        ],
-        Sequence[str],
-    ] = None,
-    visuals: Mapping[
-        Literal[
-            "trace",
-            "divergence",
-            "title",
-            "xlabel",
-            "ticklabels",
-        ],
-        Mapping[str, Any] | bool,
-    ] = None,
+    # ... keep all other existing arguments ...
+    circ_var_names=None,  # <--- STEP 1: Add this to the function signature
     **pc_kwargs,
 ):
+    # STEP 2: Immediately remove it from pc_kwargs so PlotCollection doesn't see it
+    pc_kwargs.pop("circ_var_names", None) 
+
+    # ... the rest of the function remains the same ...
     """Plot iteration versus sampled values.
 
     Parameters
