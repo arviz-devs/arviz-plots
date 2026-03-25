@@ -20,13 +20,13 @@ data = load_arviz_data("centered_eight")
 rope = [(-1, 1)]
 pc = azp.plot_forest(
     data,
-    backend="none",   # change to preferred backend
+    backend="none",  # change to preferred backend
 )
 pc.coords = {"column": "forest"}
 pc = azp.add_bands(
     pc,
     values=rope,
-    visuals={"ref_band":{"color": "C1"}},
+    visuals={"ref_band": {"color": "C1"}},
 )
 
 pc.show()

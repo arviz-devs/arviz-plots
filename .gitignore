@@ -179,3 +179,4 @@ cython_debug/
 ## TO REMOVE ONCE WE HAVE THE MONOREPO
 pixi.lock
 pixi.toml
+.idea/

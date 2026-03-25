@@ -1,4 +1,5 @@
 """Matplotlib manual legend generation."""
+
 from matplotlib.lines import Line2D
 
 from .core import expand_aesthetic_aliases

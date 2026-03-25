@@ -1,4 +1,5 @@
 """Plotly legend generation."""
+
 from functools import partial
 
 import numpy as np

@@ -42,9 +42,8 @@ def is_shared_x(fig):
                 master_axis = axis.matches
             elif axis.matches is not None and axis.matches != master_axis:
                 return False
-        else:
-            if master_axis is not None and f"xaxis{axis.anchor[1:]}" != master_axis:
-                return False
+        elif master_axis is not None and f"xaxis{axis.anchor[1:]}" != master_axis:
+            return False
     if master_axis is None:
         return False
     return True

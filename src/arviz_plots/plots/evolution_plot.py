@@ -4,7 +4,6 @@ from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
 
-import arviz_stats  # pylint: disable=unused-import
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams
@@ -649,7 +648,7 @@ def compute_ess_dataset(
     first_sample_dim = sample_dims[-1]  # take the last dim of the sample dims
     ess_y_dataset = xr.concat(
         [
-            distribution.isel(({first_sample_dim: slice(None, draw_div)})).azstats.ess(
+            distribution.isel({first_sample_dim: slice(None, draw_div)}).azstats.ess(
                 sample_dims=method_dims,
                 method=method,
                 relative=relative,

@@ -1,4 +1,5 @@
 """Utilities for batteries included plots."""
+
 import warnings
 from copy import copy
 from importlib import import_module

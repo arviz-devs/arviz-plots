@@ -11,6 +11,7 @@ how much the perturbed posteriors differ from the base posterior.
 API Documentation: {func}`~arviz_plots.plot_psense_dist`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp

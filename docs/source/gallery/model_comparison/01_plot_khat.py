@@ -9,6 +9,7 @@ Default Pareto k diagnostic plot from PSIS-LOO-CV to assess importance sampling 
 API Documentation: {func}`~arviz_plots.plot_khat`
 :::
 """
+
 import warnings
 
 from arviz_base import load_arviz_data
@@ -26,7 +27,7 @@ pc = azp.plot_khat(
     elpd_data,
     threshold=0.7,
     visuals={"hlines": True, "bin_text": True},
-    backend="none", # change to preferred backend
+    backend="none",  # change to preferred backend
 )
 
 pc.show()

@@ -1,4 +1,5 @@
 """Plotly templates for ArviZ styles."""
+
 import plotly.graph_objects as go
 
 axis_common = {"showgrid": False, "ticks": "outside", "showline": True, "zeroline": False}

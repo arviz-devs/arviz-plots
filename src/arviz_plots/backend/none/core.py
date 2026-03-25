@@ -7,6 +7,7 @@ backend for actual drawing.
 :term:`plots` are lists which are extended with kwarg dictionaries every time a visual
 would be added to them.
 """
+
 import warnings
 
 import numpy as np

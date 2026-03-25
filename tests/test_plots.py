@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test batteries-included plots."""
+
 import numpy as np
 import pytest
 
@@ -281,9 +282,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
         assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
 
-    def test_plot_ess_evolution_sample(
-        self, datatree_sample, backend
-    ):  # pylint: disable=unused-argument
+    def test_plot_ess_evolution_sample(self, datatree_sample, backend):  # pylint: disable=unused-argument
         pc = plot_ess_evolution(datatree_sample, sample_dims="sample")
         assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
@@ -519,11 +518,10 @@ class TestPlots:  # pylint: disable=too-many-public-methods
                         assert pc.viz.scatter[row_no, col_no].values[0] is not None
                     else:
                         assert pc.viz.scatter[row_no, col_no].values[0] is None
+                elif triangle in ("upper", "both"):
+                    assert pc.viz.scatter[row_no, col_no].values[0] is not None
                 else:
-                    if triangle in ("upper", "both"):
-                        assert pc.viz.scatter[row_no, col_no].values[0] is not None
-                    else:
-                        assert pc.viz.scatter[row_no, col_no].values[0] is None
+                    assert pc.viz.scatter[row_no, col_no].values[0] is None
 
     def test_plot_pair_sample(self, datatree_sample, backend):
         visuals = {"divergence": True}

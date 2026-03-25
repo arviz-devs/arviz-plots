@@ -3,7 +3,6 @@
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal
 
-import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_stats.ecdf_utils import (
