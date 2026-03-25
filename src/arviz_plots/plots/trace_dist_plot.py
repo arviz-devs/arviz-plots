@@ -32,35 +32,36 @@ def plot_trace_dist(
     compact=True,
     combined=False,
     kind=None,
+    circ_var_names=None,  # Added by Ghadyalpatil
     plot_collection=None,
     backend=None,
     labeller=None,
-    aes_by_visuals: Mapping[
-        Literal[
-            "dist",
-            "trace",
-            "divergence",
-            "label",
-            "ticklabels",
-            "xlabel_trace",
-        ],
-        Sequence[str],
-    ] = None,
-    visuals: Mapping[
-        Literal[
-            "dist",
-            "trace",
-            "divergence",
-            "label",
-            "ticklabels",
-            "xlabel_trace",
-            "remove_axis",
-        ],
-        Mapping[str, Any] | bool,
-    ] = None,
-    stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = None,
+    aes_by_visuals=None,
+    visuals=None,
+    stats=None,
     **pc_kwargs,
 ):
+    #the first thing I did was to add a circ-var-names arg to the function as there was no arg that was taking care of the radial coordinates.
+    #Also I made sure to pop this argument from the pc_kwargs before passing it to the plot_collection as it is not an argument that plot_collection should be aware of, but rather one that is specific to this function and that will be used when calling the plot_trace function for the trace part of the plot.
+    pc_kwargs.pop("circ_var_names", None) 
+
+    if plot_collection is None:
+        pc = PlotCollection.wrap(
+            dt,
+            var_names=var_names,
+            filter_vars=filter_vars,
+            group=group,
+            coords=coords,
+            sample_dims=sample_dims,
+            backend=backend,
+            # ... pass other standard args here ...
+            **pc_kwargs, # This is now clean!
+        )
+    else:
+        pc = plot_collection
+
+    # ... rest of the function logic ...
+    return pc
     """Plot 1D marginal distributions and iteration versus sampled values.
 
     Parameters
