@@ -181,12 +181,12 @@ def plot_compare(
     target = target.item()
 
     # Obtain stats value and se 
-    stats = valid_stats[0] 
+    stats = valid_stats[0]
     perf_stats = cmp_df[stats].values
 
     if relative_scale:
         se_key = "dse"
-        label_score = f"{stats.upper()} (relative)"
+        label_score = f"{stats.replace("_diff", "").upper()} (relative)"
     else:
         se_key = "se"
         label_score = f"{stats.upper()}"
