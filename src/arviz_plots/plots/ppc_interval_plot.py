@@ -126,6 +126,7 @@ def plot_ppc_interval(
 
     See Also
     --------
+    plot_loo_interval : Plot LOO posterior predictive intervals and observed data.
     plot_ppc_dist : Plot 1D marginals for the posterior/prior predictive and observed data.
     plot_ppc_rootogram : Plot ppc rootogram for discrete (count) data
     plot_forest : Plot forest plot for posterior/prior groups.
@@ -142,6 +143,8 @@ def plot_ppc_interval(
         >>> azp.style.use("arviz-variat")
         >>> data = load_arviz_data("rugby")
         >>> pc = azp.plot_ppc_interval(data)
+
+    .. minigallery:: plot_ppc_interval
     """
     if sample_dims is None:
         sample_dims = rcParams["data.sample_dims"]
@@ -223,6 +226,40 @@ def plot_ppc_interval(
             f"point_estimate must be 'mean', 'median' or 'mode', but {point_estimate} was passed."
         )
 
+    return _plot_interval(
+        ds_predictive,
+        ci_trunk,
+        ci_twig,
+        point,
+        observed_data,
+        sample_dims,
+        group,
+        plot_collection,
+        backend,
+        pc_kwargs,
+        plot_bknd,
+        visuals,
+        aes_by_visuals,
+        labeller,
+    )
+
+
+def _plot_interval(
+    ds_predictive,
+    ci_trunk,
+    ci_twig,
+    point,
+    observed_data,
+    sample_dims,
+    group,
+    plot_collection,
+    backend,
+    pc_kwargs,
+    plot_bknd,
+    visuals,
+    aes_by_visuals,
+    labeller,
+):
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
