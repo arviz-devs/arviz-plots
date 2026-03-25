@@ -169,7 +169,7 @@ def plot_loo_pit(
 
     visuals.setdefault("ylabel", {})
     visuals.setdefault("remove_axis", False)
-    visuals.setdefault("xlabel", {"text": "LOO-PIT"})
+    visuals.setdefault("xlabel", {"text": "ETI %" if coverage else "LOO-PIT"})
 
     plot_collection = plot_ecdf_pit(
         new_dt,
