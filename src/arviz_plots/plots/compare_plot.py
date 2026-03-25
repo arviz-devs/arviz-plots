@@ -52,11 +52,13 @@ def plot_compare(
     ----------
     comp_df : pandas.DataFrame
         Usually this will be the result of the :func:`arviz_stats.compare` function.
-        It is assumed that the DataFrame has two columns one named `elpd`, `mlpd`, or `gmpd`,
-        the other named `se`, and the index is the model names. Additionally,
-        it is assumed that the first row of the DataFrame is the top model.
+        It is assumed that the DataFrame has at least two columns 
+        When relative_scale is false:
+            one named `elpd`, `mlpd`, or `gmpd`, the other named `se`, and the index is the model names.
+        When relative_scale is true:
+            one named `elpd_diff`, `mlpd_diff`, or `gmpd_diff`, the other named `dse`, and the index is the model names.
     relative_scale : bool, optional.
-        If True, the `stats` values are scaled relative to the best model.
+        If True, the `stats`_diff and dse values are used instead of `stats` and se.
         Defaults to True.
     rotated : bool, optional
         If True, the plot is rotated, with models on the y-axis and ELPD on the x-axis.
