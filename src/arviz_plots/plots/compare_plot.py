@@ -120,15 +120,34 @@ def plot_compare(
     visuals = validate_dict_argument(visuals, (plot_compare, "visuals"))
 
     # Check we have the required columns
-    valid_stats = [col for col in ("elpd", "mlpd", "gmpd") if col in cmp_df.columns]
-    if not valid_stats:
-        raise ValueError(
-            "The DataFrame must contain one of the following columns: 'elpd', 'mlpd', or 'gmpd'."
-        )
-    stats = valid_stats[0]
-    if "se" not in cmp_df.columns:
-        raise ValueError("The DataFrame must contain a 'se' column for standard errors.")
+    if relative_scale == True:
+        valid_stats = [col for col in ("elpd_diff", "mlpd_diff", "gmpd_diff") if col in cmp_df.columns]
+        if not valid_stats:
+            raise ValueError(
+                "When relative_scale is true, " \
+                "the DataFrame must contain one of the following columns: 'elpd_diff', 'mlpd_diff', or 'gmpd_diff'."
+            )
+        
+        if "dse" not in cmp_df.columns:
+            raise ValueError(
+                "When relative_scale is true, " \
+                "the DataFrame must contain a 'dse' column for standard errors."
+            )
+    else:
+        valid_stats = [col for col in ("elpd", "mlpd", "gmpd") if col in cmp_df.columns]
+        if not valid_stats:
+            raise ValueError(
+                "When relative_scale is false, " \
+                "the DataFrame must contain one of the following columns: 'elpd', 'mlpd', or 'gmpd'."
+            )
+        
+        if "se" not in cmp_df.columns:
+            raise ValueError(
+                "When relative_scale is false, " \
+                "the DataFrame must contain a 'se' column for standard errors."
+            )
 
+    
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
 
@@ -161,15 +180,18 @@ def plot_compare(
 
     target = target.item()
 
+    # Obtain stats value and se 
+    stats = valid_stats[0] 
     perf_stats = cmp_df[stats].values
-    ses = cmp_df["se"].values
 
-    # Set scale relative to the best model
     if relative_scale:
-        perf_stats = perf_stats - perf_stats[0]
+        se_key = "dse"
         label_score = f"{stats.upper()} (relative)"
     else:
-        label_score = stats.upper()
+        se_key = "se"
+        label_score = f"{stats.upper()}"
+
+    ses = cmp_df[se_key].values
 
     # Create labels for the models
     label_models = cmp_df.index[hide_top_model:]
