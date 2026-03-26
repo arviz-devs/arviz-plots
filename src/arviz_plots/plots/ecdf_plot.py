@@ -79,13 +79,6 @@ def plot_ecdf_pit(
     It assumes the values in the DataTree have already been transformed to PIT values,
     as in the case of SBC analysis or values from ``arviz_base.loo_pit``.
 
-    The method "envelope" use simultaneous confidence bands computed using the simulation
-    method described in [1]_. This method is fine when there pit values are independent,
-    as in the case of SBC analysis. However, when the pit values are not independent,
-    as in the case of ``arviz_base.loo_pit``, it is better to use the "pot_c" method,
-    which instead of computing an envelope highlights the points that contribute the most
-    to deviations from uniformity [2]_.
-
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
     the observed values. We can obtain the coverage of the central intervals from the PIT by
@@ -162,13 +155,17 @@ def plot_ecdf_pit(
     -----
     The following methods are available for testing the uniformity of the PIT values:
         * pot_c: Good default choice due to its good power against diverse
-        type of local departures from the null. Prefered in almost all cases.
+        type of local departures from the null. Preferred in almost all cases.
         * piet_c: Use when you specifically want to evaluate tail deviations.
         * prit_c: Mostly compatible with PITs computed as normalized ranks.
         Don't use unless you have a specific reason to do so.
         * envelope: Legacy method that uses simultaneous confidence bands. It can be used
-        when you have independent PIT values, as in the case of SBC analysis.
-        But notice that pot_c is also valid in those cases.
+        when you have independent PIT values, as in the case of SBC analysis. The method
+        is described in method described in [1]_. Notice that pot_c is also valid in those cases.
+
+    The methods "pot_c", "piet_c" and "prit_c" compute the points that contribute the most
+    to deviations from uniformity as described in [2]_.
+
 
     Examples
     --------
