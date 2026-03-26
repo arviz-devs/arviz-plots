@@ -50,13 +50,13 @@ def plot_compare(
 
     Parameters
     ----------
-    comp_df : pandas.DataFrame
+    cmp_df : pandas.DataFrame
         Usually this will be the result of the :func:`arviz_stats.compare` function.
         It is assumed that the DataFrame has at least two columns 
-        When relative_scale is false:
-            one named `elpd`, `mlpd`, or `gmpd`, the other named `se`, and the index is the model names.
-        When relative_scale is true:
-            one named `elpd_diff`, `mlpd_diff`, or `gmpd_diff`, the other named `dse`, and the index is the model names.
+        * When ``relative_scale`` is True: one named `elpd_diff`, `mlpd_diff`, 
+          or `gmpd_diff`, the other named `dse`, and the index is the model names.
+        * When ``relative_scale`` is False: one named `elpd`, `mlpd`, or `gmpd`, 
+          the other named `se`, and the index is the model names.
     relative_scale : bool, optional.
         If True, the `stats`_diff and dse values are used instead of `stats` and se.
         Defaults to True.
@@ -64,7 +64,7 @@ def plot_compare(
         If True, the plot is rotated, with models on the y-axis and ELPD on the x-axis.
         Defaults to False.
     hide_top_model : bool, optional
-        If True, the top model (first row of `comp_df`) will not appear as a point with error bars
+        If True, the top model (first row of `cmp_df`) will not appear as a point with error bars
         or in the axis labels. Its performance can still be accessed by the visuals `ref_line`
         and/or `ref_band`. Defaults to False.
     backend : {"bokeh", "matplotlib", "plotly"}
