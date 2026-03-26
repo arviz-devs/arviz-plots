@@ -36,7 +36,7 @@ class UnsetDefault:
 unset = UnsetDefault()
 
 
-def set_sqrt_scale(target, axis):
+def _set_sqrt_scale(target, axis):
     """Transform existing plots on a figure to use sqrt(y) scale."""
     if axis == "y":
         axis_obj = target.yaxis
@@ -841,7 +841,7 @@ def remove_axis(target, axis="y"):
 def xscale(target, scale):
     """Interface to bokeh for setting the x scale of a plot."""
     if scale == "sqrt":
-        set_sqrt_scale(target, axis="x")
+        _set_sqrt_scale(target, axis="x")
     else:
         pass
 
@@ -849,7 +849,7 @@ def xscale(target, scale):
 def yscale(target, scale):
     """Interface to bokeh for setting the y scale of a plot."""
     if scale == "sqrt":
-        set_sqrt_scale(target, axis="y")
+        _set_sqrt_scale(target, axis="y")
     else:
         pass
 
