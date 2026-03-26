@@ -52,11 +52,13 @@ def plot_compare(
     ----------
     cmp_df : pandas.DataFrame
         Usually this will be the result of the :func:`arviz_stats.compare` function.
-        It is assumed that the DataFrame has at least two columns 
+        It is assumed that the DataFrame has at least two columns:
+
         * When ``relative_scale`` is True: one named `elpd_diff`, `mlpd_diff`, 
           or `gmpd_diff`, the other named `dse`, and the index is the model names.
         * When ``relative_scale`` is False: one named `elpd`, `mlpd`, or `gmpd`, 
           the other named `se`, and the index is the model names.
+          
     relative_scale : bool, optional.
         If True, the `stats`_diff and dse values are used instead of `stats` and se.
         Defaults to True.
@@ -127,7 +129,7 @@ def plot_compare(
     if not valid_stats:
         raise ValueError(
             f"When relative_scale is {relative_scale}, "
-            f"the DataFrame must contain one of the following columns: {", ".join(required_stats_columns)}."
+            f"the DataFrame must contain one of the following columns: {', '.join(required_stats_columns)}."
         )
     
     if required_se_column not in cmp_df.columns:
