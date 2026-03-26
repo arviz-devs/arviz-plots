@@ -26,6 +26,7 @@ def plot_dgof_dist(
     coords=None,
     sample_dims=None,
     kind=None,
+    method="envelope",
     envelope_prob=None,
     plot_collection=None,
     backend=None,
@@ -54,7 +55,9 @@ def plot_dgof_dist(
     dot plot). Additionally, a Δ-ECDF-PIT diagnostic is plotted to assess the goodness-of-fit of
     the estimated distributions to the underlying data [1]_. If the estimated distributions are
     accurate, the PIT values should be uniformly distributed on [0, 1], resulting in a Δ-ECDF close
-    to zero. Simultaneous confidence bands are computed using simulation method described in [2]_.
+    to zero.
+    The points that contribute the most to deviations from uniformity are
+    computed as described in [2]_.
 
     Parameters
     ----------
@@ -77,8 +80,12 @@ def plot_dgof_dist(
     kind : {"kde", "hist", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
+    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+        Method to use for the uniformity test. Defaults to "pot_c". Check the documentation of
+        :func:`~arviz_plots.plot_ecdf_pit` for more details.
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
+        If `method` is "envelope", indicates the probability that should be contained within the
+        envelope, otherwise indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -106,8 +113,8 @@ def plot_dgof_dist(
         Valid keys are:
 
         * dist -> passed to kde, ecdf and qds for both dist plot and dgof plot
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulations": 1000}``.
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit` or
+          :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -136,9 +143,7 @@ def plot_dgof_dist(
     .. [1] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
         (2025) arXiv preprint https://arxiv.org/abs/2503.01509
 
-    .. [2] Säilynoja et al. *Graphical test for discrete uniformity and
-       its applications in goodness-of-fit evaluation and multiple sample comparison*.
-       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     if envelope_prob is None:
         envelope_prob = rcParams["stats.envelope_prob"]
@@ -228,6 +233,7 @@ def plot_dgof_dist(
     plot_collection.coords = {"column": "gof"}
     plot_dgof(
         dt,
+        method=method,
         envelope_prob=envelope_prob,
         kind=kind,
         var_names=var_names,

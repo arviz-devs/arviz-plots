@@ -1,4 +1,5 @@
 """Plot loo pit."""
+import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal
 
@@ -17,6 +18,7 @@ def plot_loo_pit(
     group="posterior_predictive",
     coords=None,  # pylint: disable=unused-argument
     sample_dims=None,
+    method="pot_c",
     envelope_prob=None,
     coverage=False,
     plot_collection=None,
@@ -45,7 +47,7 @@ def plot_loo_pit(
     stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
-    r"""LOO-PIT Δ-ECDF values with simultaneous confidence envelope.
+    r"""LOO-PIT Δ-ECDF uniformity test.
 
     For a calibrated model the LOO Probability Integral Transform (PIT) values,
     $p(\tilde{y}_i \le y_i \mid y_{-i})$, should be uniformly distributed.
@@ -56,8 +58,8 @@ def plot_loo_pit(
 
     This plot shows the empirical cumulative distribution function (ECDF) of the LOO-PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between the
-    observed ECDF and the expected CDF. Simultaneous confidence bands are computed using the method
-    described in described in [3]_.
+    observed ECDF and the expected CDF. Color code is used to indicate pointwise deviations from the
+    expected CDF.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -88,6 +90,13 @@ def plot_loo_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    method : {"pot_c", "prit_c", "piet_c"}, optional
+        Method to compute the simultaneous confidence bands for the Δ-ECDF-PIT diagnostic.
+        Defaults to "pot_c". Check the documentation of :func:`~arviz_plots.plot_ecdf_pit` for
+        more details.
+    envelope_prob : float, optional
+        Indicates the probability threshold to highlight points.
+        Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -107,8 +116,8 @@ def plot_loo_pit(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulations": 1000}``.
+        * ecdf_pit -> passed to :func:`~xarray.Dataset.azstats.uniformity_test`. Default is
+          ``{"gamma": 0}``.
 
 
     **pc_kwargs
@@ -150,9 +159,7 @@ def plot_loo_pit(
     .. [2] Vehtari et al. Pareto Smoothed Importance Sampling. Journal of Machine Learning
        Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
 
-    .. [3] Säilynoja et al. *Graphical test for discrete uniformity and
-       its applications in goodness-of-fit evaluation and multiple sample comparison*.
-       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. [3] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     if visuals is None:
         visuals = {}
@@ -163,6 +170,18 @@ def plot_loo_pit(
 
     if group != "posterior_predictive":
         raise ValueError(f"Group {group} not supported. Only 'posterior_predictive' is supported.")
+
+    if method == "envelope":
+        warnings.warn(
+            "Method 'envelope' is not recommended for the LOO-PIT plot."
+            "As it assumes PIT values are independent, which is not the case for LOO-PIT values.",
+            UserWarning,
+        )
+
+    if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
+        raise ValueError(
+            f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
+        )
 
     lpv = loo_pit(dt)
     new_dt = convert_to_datatree(lpv, group="loo_pit")
@@ -178,6 +197,7 @@ def plot_loo_pit(
         group="loo_pit",
         coords=coords,
         sample_dims=lpv.dims,
+        method=method,
         envelope_prob=envelope_prob,
         coverage=coverage,
         plot_collection=plot_collection,
