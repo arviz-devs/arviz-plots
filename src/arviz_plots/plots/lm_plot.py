@@ -314,7 +314,12 @@ def plot_lm(
     if y_obs is None:
         y_obs = y
     observed_y = extract(
-        dt, group="observed_data", var_names=y_obs, combined=False, keep_dataset=True
+        dt,
+        group="observed_data",
+        var_names=y_obs,
+        combined=False,
+        keep_dataset=True,
+        sample_dims=[],
     )
     if all(var_name in observed_y.data_vars for var_name in y_to_x_map):
         observed_y = observed_y.rename_vars(y_to_x_map)
