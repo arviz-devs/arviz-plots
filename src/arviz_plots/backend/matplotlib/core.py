@@ -33,13 +33,10 @@ class UnsetDefault:
 unset = UnsetDefault()
 
 
-class SquareRootScale(mscale.ScaleBase):
+class SquareRootBaseScale(mscale.ScaleBase):
     """ScaleBase class for generating square root scale."""
 
     name = "sqrt"
-
-    def __init__(self, axis, **kwargs):  # pylint: disable=unused-argument
-        mscale.ScaleBase.__init__(self, axis)
 
     def set_default_locators_and_formatters(self, axis):
         """Set the locators and formatters to default."""
@@ -87,7 +84,25 @@ class SquareRootScale(mscale.ScaleBase):
         return self.SquareRootTransform()
 
 
-mscale.register_scale(SquareRootScale)
+class SquareRootScale(SquareRootBaseScale):
+    """ScaleBase class for generating square root scale for matplotlib<3.11."""
+
+    def __init__(self, axis):  # pylint: disable=all
+        super().__init__(axis)
+
+
+class SquareRootScale311(SquareRootBaseScale):
+    """ScaleBase class for generating square root scale for matplotlib>=3.11."""
+
+    def __init__(self):  # pylint: disable=all
+        pass
+
+
+try:
+    mscale.LinearScale()  # noqa
+    mscale.register_scale(SquareRootScale311)
+except TypeError:
+    mscale.register_scale(SquareRootScale)
 
 
 def get_background_color():
@@ -422,7 +437,7 @@ def scatter(
         "s": size,
         "marker": marker,
         "alpha": alpha,
-        "c": facecolor,
+        "color": facecolor,
         "edgecolors": edgecolor,
         "linewidths": width,
     }
