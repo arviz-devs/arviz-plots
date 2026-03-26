@@ -14,6 +14,7 @@ from arviz_base.validate import (
     validate_ci_prob,
     validate_dict_argument,
     validate_or_use_rcparam,
+    validate_prob,
     validate_sample_dims,
 )
 from scipy.interpolate import griddata
@@ -218,7 +219,10 @@ def plot_lm(
     """
     point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
     ci_kind = validate_or_use_rcparam(ci_kind, "stats.ci_kind")
-    ci_prob = validate_ci_prob(ci_prob)
+    if isinstance(ci_prob, (list | tuple | np.ndarray)):
+        ci_prob = [validate_prob(p) for p in ci_prob]
+    else:
+        ci_prob = validate_ci_prob(ci_prob)
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_lm, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_lm, "visuals"))
     stats = validate_dict_argument(stats, (plot_lm, "stats"))
