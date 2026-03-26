@@ -2,6 +2,7 @@
 from importlib import import_module
 
 from arviz_base import rcParams
+from arviz_base.validate import validate_sample_dims
 
 from arviz_plots import PlotCollection
 from arviz_plots.plot_collection import backend_from_object
@@ -107,16 +108,13 @@ def combine_plots(
         plot_names = [
             getattr(elem[0], "__name__") + f"_{idx:02d}" for idx, elem in enumerate(plots)
         ]
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
     if backend is None:
         backend = rcParams["plot.backend"]
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
     facet_dims = ["__variable__"] + (
         []
         if "predictive" in group

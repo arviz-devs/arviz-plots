@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import dataset_to_dataarray, rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -124,12 +125,8 @@ def plot_parallel(
     .. minigallery:: plot_parallel
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if visuals is None:
-        visuals = {}
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_parallel, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_parallel, "visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -148,6 +145,7 @@ def plot_parallel(
         coords=coords,
         allow_dict=False,
     )
+    sample_dims = validate_sample_dims(sample_dims, data=data)
     if len(sample_dims) > 1:
         data = data.stack(sample=sample_dims)
         combined_dim = "sample"
@@ -230,10 +228,6 @@ def plot_parallel(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("line", plot_collection.aes_set)
 
     # plot lines

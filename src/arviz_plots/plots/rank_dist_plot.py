@@ -8,6 +8,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
@@ -198,20 +203,15 @@ def plot_rank_dist(
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if stats is None:
-        stats = {}
-    if visuals is None:
-        visuals = {}
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_rank_dist, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_rank_dist, "visuals"))
+    stats = validate_dict_argument(stats, (plot_rank_dist, "stats"))
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
     if not combined and "chain" not in distribution.dims:
         combined = True
 
@@ -220,9 +220,6 @@ def plot_rank_dist(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
-
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -280,10 +277,6 @@ def plot_rank_dist(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     if combined and "chain" in distribution.dims:
         if compact:
             aes_by_visuals["dist"] = aes_by_visuals.get(
@@ -344,7 +337,7 @@ def plot_rank_dist(
         kind=kind,
         plot_collection=plot_collection,
         labeller=labeller,
-        aes_by_visuals={key: value for key, value in aes_by_visuals.items() if key == "dist"},
+        aes_by_visuals={"dist": aes_by_visuals.get("dist", {})},
         visuals=visuals_dist,
         stats={"dist": stats.get("dist", {})},
     )
@@ -354,13 +347,10 @@ def plot_rank_dist(
     rank_kwargs = get_visual_kwargs(visuals, "rank")
     div_kwargs = get_visual_kwargs(visuals, "divergence")
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel_rank")
-    visuals_rank = {"rank": rank_kwargs, "divergence": div_kwargs, "xlabel": xlabel_kwargs}
-    visuals_rank["title"] = False
-    visuals_rank["ticklabels"] = False
+    visuals_rank = {"ecdf_lines": rank_kwargs, "xlabel": xlabel_kwargs, "title": False}
     aes_by_visuals_rank = {
-        key.replace("_rank", ""): value
-        for key, value in visuals.items()
-        if key in {"rank", "divergence", "xlabel_rank"}
+        "ecdf_lines": aes_by_visuals.get("rank", {}),
+        "xlabel": aes_by_visuals.get("xlabel_rank", {}),
     }
     plot_collection.coords = {"column": "rank"}
     plot_rank(

@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 import xarray as xr
 from arviz_base import convert_to_datatree
+from arviz_base.validate import validate_dict_argument
 from arviz_stats.loo import loo_pit
 
 from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
@@ -41,6 +42,7 @@ def plot_loo_pit(
             "xlabel",
             "ylabel",
             "title",
+            "remove_axis",
         ],
         Mapping[str, Any] | bool,
     ] = None,
@@ -90,6 +92,7 @@ def plot_loo_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+        CURRENTLY NOT SUPPORTED
     method : {"pot_c", "prit_c", "piet_c"}, optional
         Method to compute the simultaneous confidence bands for the Δ-ECDF-PIT diagnostic.
         Defaults to "pot_c". Check the documentation of :func:`~arviz_plots.plot_ecdf_pit` for
@@ -102,7 +105,7 @@ def plot_loo_pit(
     labeller : labeller, optional
     aes_by_visuals : mapping of {str : sequence of str}, optional
         Mapping of visuals to aesthetics that should use their mapping in `plot_collection`
-        when plotted. Valid keys are the same as for `visuals`.
+        when plotted. Valid keys are the same as for `visuals` except for "remove_axis".
 
     visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
@@ -112,6 +115,8 @@ def plot_loo_pit(
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * remove_axis -> not passed anywhere, can only be a boolean to indicate
+          whether to call this function. Defaults to ``False`` for plot_loo_pit
 
     stats : mapping, optional
         Valid keys are:
@@ -161,15 +166,17 @@ def plot_loo_pit(
 
     .. [3] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-
     if group != "posterior_predictive":
         raise ValueError(f"Group {group} not supported. Only 'posterior_predictive' is supported.")
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_loo_pit, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_loo_pit, "visuals"))
+    stats = validate_dict_argument(stats, (plot_loo_pit, "stats"))
+    if sample_dims is None:
+        sample_dims = ["chain", "draw"]
+    else:
+        warnings.warn(
+            "'sample_dims' is currently not supported in plot_loo_pit and will be ignored"
+        )
 
     if method == "envelope":
         warnings.warn(

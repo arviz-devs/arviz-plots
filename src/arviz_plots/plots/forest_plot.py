@@ -8,6 +8,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
 from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, process_group_variables_coords
@@ -186,30 +191,21 @@ def plot_forest(
     .. minigallery:: plot_forest
 
     """
-    if ci_kind not in ("hdi", "eti", None):
-        raise ValueError("ci_kind must be either 'hdi' or 'eti'")
-
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
+    ci_kind = validate_or_use_rcparam(ci_kind, "stats.ci_kind")
+    point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
     if ci_probs is None:
         rc_ci_prob = rcParams["stats.ci_prob"]
         ci_probs = (0.5, rc_ci_prob) if rc_ci_prob > 0.5 else (0.5 * rc_ci_prob, rc_ci_prob)
     if ci_probs[0] > ci_probs[1]:
         raise ValueError("First element of ci_probs must be smaller than the second")
-    if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"]
-    if point_estimate is None:
-        point_estimate = rcParams["stats.point_estimate"]
-    if visuals is None:
-        visuals = {}
-    if stats is None:
-        stats = {}
+    visuals = validate_dict_argument(visuals, (plot_forest, "visuals"))
+    stats = validate_dict_argument(stats, (plot_forest, "stats"))
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_forest, "aes_by_visuals"))
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
     labellable_dims = ["__variable__"] + [
         dim for dim in distribution.dims if (dim not in {"model", "column"}.union(sample_dims))
     ]
@@ -342,10 +338,6 @@ def plot_forest(
         y_ds = y_ds.max().to_array().max() - add_factor - y_ds - shift
         plot_collection.update_aes_from_dataset("y", y_ds)
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("credible_interval", plot_collection.aes_set.difference({"alpha"}))
     aes_by_visuals.setdefault("point_estimate", plot_collection.aes_set.difference({"alpha"}))
     aes_by_visuals["labels"] = {"overlay"}.union(aes_by_visuals.get("labels", {}))

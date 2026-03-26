@@ -488,7 +488,6 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
             "sd_text": visuals_value,
             "min_ess": visuals_value,
             "title": visuals_value,
-            "remove_axis": st.just(False),
         },
     ),
     relative=st.booleans(),

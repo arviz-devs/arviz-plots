@@ -7,6 +7,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 from arviz_stats.ecdf_utils import ecdf_pit
 
 from arviz_plots.plot_collection import PlotCollection
@@ -192,27 +197,14 @@ def plot_ecdf_pit(
 
     .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
-    if envelope_prob is None:
-        envelope_prob = rcParams["stats.envelope_prob"]
+    envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     alpha = 1 - envelope_prob
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    visuals = validate_dict_argument(visuals, (plot_ecdf_pit, "visuals"))
     if method == "envelope":
         visuals.setdefault("remove_axis", True)
     else:
         visuals.setdefault("remove_axis", False)
-
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
+    stats = validate_dict_argument(stats, (plot_ecdf_pit, "stats"))
 
     ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
     if method == "envelope":
@@ -232,7 +224,8 @@ def plot_ecdf_pit(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
-    sample_size = np.prod([len(distribution[dims]) for dims in sample_dims])
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
+    sample_size = np.prod([distribution.sizes[dim] for dim in sample_dims])
 
     if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
         raise ValueError(
@@ -291,10 +284,7 @@ def plot_ecdf_pit(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ecdf_pit, "aes_by_visuals"))
 
     ## reference line
     ref_ls_kwargs = get_visual_kwargs(visuals, "ref_line")

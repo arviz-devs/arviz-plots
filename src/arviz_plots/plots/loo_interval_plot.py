@@ -7,6 +7,11 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 from arviz_stats.loo import loo_expectations
 
 from arviz_plots.plots.ppc_interval_plot import _plot_interval
@@ -137,25 +142,11 @@ def plot_loo_interval(
 
     .. minigallery:: plot_loo_interval
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"]
-    if ci_kind not in ("hdi", "eti"):
-        raise ValueError(f"ci_kind must be either 'hdi' or 'eti', but {ci_kind} was passed.")
-    if point_estimate is None:
-        point_estimate = rcParams["stats.point_estimate"]
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_loo_interval, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_loo_interval, "visuals"))
+    stats = validate_dict_argument(stats, (plot_loo_interval, "stats"))
+    ci_kind = validate_or_use_rcparam(ci_kind, "stats.ci_kind")
+    point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
     if ci_probs is None:
         rc_ci_prob = rcParams["stats.ci_prob"]
         ci_probs = (0.5, rc_ci_prob)
@@ -183,6 +174,7 @@ def plot_loo_interval(
     ds_predictive = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=ds_predictive)
 
     # Extract observed data
     if "observed_data" in dt:

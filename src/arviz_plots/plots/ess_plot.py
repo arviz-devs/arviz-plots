@@ -9,6 +9,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -249,25 +250,15 @@ def plot_ess(
         assessing convergence of MCMC*. Bayesian Analysis. 16(2) (2021)
         https://doi.org/10.1214/20-BA1221. arXiv preprint https://arxiv.org/abs/1903.08008
     """
-    # initial defaults
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-
-    ylabel = "{}"
-
-    # mutable inputs
-    if visuals is None:
-        visuals = {}
-
-    if stats is None:
-        stats = {}
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ess, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ess, "visuals"))
+    stats = validate_dict_argument(stats, (plot_ess, "stats"))
 
     # processing dt/group/coords/filtering
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
 
     # ensuring visuals['rug'] is not False
     rug_kwargs = get_visual_kwargs(visuals, "rug")
@@ -316,11 +307,6 @@ def plot_ess(
             )
         )
 
-    # set plot collection dependent defaults (like aesthetics mappings for each visual)
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault(kind, plot_collection.aes_set.difference({"overlay"}))
     aes_by_visuals.setdefault("rug", {"overlay"})
     if "model" in distribution:
@@ -341,7 +327,6 @@ def plot_ess(
         ess_dims, ess_aes, ess_ignore = filter_aes(
             plot_collection, aes_by_visuals, kind, sample_dims
         )
-        ylabel = "{}"
         if kind == "local":
             probs = np.linspace(0, 1, n_points, endpoint=False)
         elif kind == "quantile":
@@ -602,9 +587,9 @@ def plot_ess(
             ylabel_kwargs.setdefault("color", "B1")
 
         if relative is not False:
-            ylabel_text = ylabel.format("Relative ESS")
+            ylabel_text = "Relative ESS"
         else:
-            ylabel_text = ylabel.format("ESS")
+            ylabel_text = "ESS"
         ylabel_kwargs.setdefault("text", ylabel_text)
 
         plot_collection.map(

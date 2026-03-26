@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
@@ -196,21 +197,9 @@ def plot_ppc_tstat(
         raise TypeError(
             "`group` argument must be either `posterior_predictive` or `prior_predictive`"
         )
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_tstat, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ppc_tstat, "visuals"))
+    stats = validate_dict_argument(stats, (plot_ppc_tstat, "stats"))
 
     if labeller is None:
         labeller = BaseLabeller()
@@ -221,15 +210,7 @@ def plot_ppc_tstat(
         else:
             backend = plot_collection.backend
 
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
-
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
 
     if data_pairs is None:
         data_pairs = (var_names, var_names)
@@ -239,6 +220,7 @@ def plot_ppc_tstat(
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=data_pairs[0], filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
 
     if "observed_data" in dt:
         observed_dist = process_group_variables_coords(
@@ -339,10 +321,10 @@ def plot_ppc_tstat(
         ci_kind=ci_kind,
         ci_prob=ci_prob,
         plot_collection=plot_collection,
-        aes_by_visuals=aes_by_visuals,
+        aes_by_visuals={k: v for k, v in aes_by_visuals.items() if k != "observed_tstat"},
         backend=backend,
         labeller=labeller,
-        visuals=visuals,
+        visuals={k: v for k, v in visuals.items() if k != "observed_tstat"},
         stats=stats,
         **pc_kwargs,
     )

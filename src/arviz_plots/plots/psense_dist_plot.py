@@ -5,6 +5,11 @@ from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 from arviz_stats.psense import power_scale_dataset
 from xarray import Dataset, concat
 
@@ -167,27 +172,14 @@ def plot_psense_dist(
         power-scaling*, Stat Comput 34, 57 (2024), https://doi.org/10.1007/s11222-023-10366-5
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_psense_dist, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_psense_dist, "visuals"))
+    stats = validate_dict_argument(stats, (plot_psense_dist, "stats"))
+    sample_dims = validate_sample_dims(sample_dims)
 
     if alphas is None:
         alphas = (0.8, 1.25)
-
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     # Here we are generating new datasets for the prior and likelihood
     # by resampling the original dataset with the power scale weights
@@ -260,11 +252,6 @@ def plot_psense_dist(
         )
 
     visuals.setdefault("point_estimate_text", False)
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
 
     aes_by_visuals.setdefault("point_estimate", ["color", "y"])
     aes_by_visuals.setdefault("credible_interval", ["color", "y"])

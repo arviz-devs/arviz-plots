@@ -7,6 +7,7 @@ from typing import Any, Literal
 import numpy as np
 import xarray as xr
 from arviz_base import extract, rcParams
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 from xarray import concat
 
 from arviz_plots.plot_collection import PlotCollection
@@ -134,28 +135,9 @@ def plot_prior_posterior(
 
     .. minigallery:: plot_prior_posterior
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if not isinstance(visuals, dict):
-        visuals = {}
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dist, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_dist, "visuals"))
+    stats = validate_dict_argument(stats, (plot_dist, "stats"))
 
     if backend is None:
         if plot_collection is None:
@@ -163,24 +145,41 @@ def plot_prior_posterior(
         else:
             backend = plot_collection.backend
 
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
-
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
-    prior_size = np.prod([dt.prior.sizes[dim] for dim in sample_dims])
+    sample_dims_prior = validate_sample_dims(sample_dims, data=dt.prior)
+    sample_dims = validate_sample_dims(sample_dims, data=dt.posterior)
+    prior_size = np.prod([dt.prior.sizes[dim] for dim in sample_dims_prior])
     posterior_size = np.prod([dt.posterior.sizes[dim] for dim in sample_dims])
     num_samples = min(prior_size, posterior_size)
 
-    ds_prior = (
-        extract(dt, group="prior", num_samples=num_samples, random_seed=0, keep_dataset=True)
-        .drop_vars(sample_dims + ["sample"])
-        .assign_coords(sample=("sample", np.arange(num_samples)))
+    ds_prior = extract(
+        dt,
+        group="prior",
+        sample_dims=sample_dims_prior,
+        combined=True,
+        num_samples=num_samples,
+        random_seed=0,
+        keep_dataset=True,
     )
-    ds_posterior = (
-        extract(dt, group="posterior", num_samples=num_samples, random_seed=0, keep_dataset=True)
-        .drop_vars(sample_dims + ["sample"])
-        .assign_coords(sample=("sample", np.arange(num_samples)))
+    prior_dims_drop = list(set(sample_dims_prior).union(ds_prior.attrs["sample_dims"]))
+    sample_dims_prior = ds_prior.attrs["sample_dims"]
+    ds_prior = ds_prior.drop_vars(prior_dims_drop).assign_coords(
+        {sample_dims_prior[0]: np.arange(num_samples)}
+    )
+    ds_posterior = extract(
+        dt,
+        group="posterior",
+        sample_dims=sample_dims,
+        combined=True,
+        num_samples=num_samples,
+        random_seed=0,
+        keep_dataset=True,
+    )
+    posterior_dims_drop = list(set(sample_dims).union(ds_posterior.attrs["sample_dims"]))
+    sample_dims = ds_posterior.attrs["sample_dims"]
+    ds_posterior = ds_posterior.drop_vars(posterior_dims_drop).assign_coords(
+        {sample_dims[0]: np.arange(num_samples)}
     )
 
     distribution = concat([ds_prior, ds_posterior], dim="group").assign_coords(
@@ -194,10 +193,6 @@ def plot_prior_posterior(
         filter_vars=filter_vars,
         coords=coords,
     )
-
-    if len(sample_dims) > 1:
-        # sample dims will have been stacked and renamed by `extract`
-        sample_dims = ["sample"]
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -222,11 +217,6 @@ def plot_prior_posterior(
     visuals.setdefault("credible_interval", False)
     visuals.setdefault("point_estimate", False)
     visuals.setdefault("point_estimate_text", False)
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
 
     if kind == "hist":
         visuals.setdefault("dist", {})
