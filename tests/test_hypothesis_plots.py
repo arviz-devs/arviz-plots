@@ -98,7 +98,18 @@ def compare_df_strategy(draw):
         )
     )
 
-    return pd.DataFrame({stat_name: perf_values, "se": se_values}, index=model_names)
+    relative_perf_values = [val - perf_values[0] for val in perf_values]
+
+    relative_se_values = draw(
+        st.lists(
+            st.floats(min_value=0.1, max_value=100, allow_nan=False, allow_infinity=False),
+            min_size=n_models,
+            max_size=n_models,
+        )
+    )
+
+    return pd.DataFrame({stat_name: perf_values, "se": se_values, 
+                         f"{stat_name}_diff": relative_perf_values, "dse": relative_se_values}, index=model_names)
 
 
 @given(
