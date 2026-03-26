@@ -83,8 +83,8 @@ def plot_ecdf_pit(
     method described in [1]_. This method is fine when there pit values are independent,
     as in the case of SBC analysis. However, when the pit values are not independent,
     as in the case of ``arviz_base.loo_pit``, it is better to use the "pot_c" method,
-    which instead of computing an envelope it highlights the points that most
-    contribute to deviations from uniformity [2]_.
+    which instead of computing an envelope highlights the points that contribute the most
+    to deviations from uniformity [2]_.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -112,11 +112,11 @@ def plot_ecdf_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    method : {"envelope", "pot_c", "prit_c", "piet_c"}, optional
-        Method to use for the uniformity test. Defaults to "envelope". Valid options are "envelope",
-        "pot_c", "prit_c" and "piet_c".
+    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+        Method to use for the uniformity test. See the "Notes" section for the full description of
+        the different methods available.
     envelope_prob : float, optional
-        If method is "envelope", indicates the probability that should be contained within the
+        If `method` is "envelope", indicates the probability that should be contained within the
         envelope, otherwise indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
@@ -158,6 +158,18 @@ def plot_ecdf_pit(
     -------
     PlotCollection
 
+    Notes
+    -----
+    The following methods are available for testing the uniformity of the PIT values:
+        * pot_c: Good default choice due to its good power against diverse
+        type of local departures from the null. Prefered in almost all cases.
+        * piet_c: Use when you specifically want to evaluate tail deviations.
+        * prit_c: Mostly compatible with PITs computed as normalized ranks.
+        Don't use unless you have a specific reason to do so.
+        * envelope: Legacy method that uses simultaneous confidence bands. It can be used
+        when you have independent PIT values, as in the case of SBC analysis.
+        But notice that pot_c is also valid in those cases.
+
     Examples
     --------
     Rank plot for the crabs hurdle-negative-binomial dataset.
@@ -179,6 +191,7 @@ def plot_ecdf_pit(
     .. [1] Säilynoja et al. *Graphical test for discrete uniformity and
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+
     .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     if envelope_prob is None:

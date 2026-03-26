@@ -92,9 +92,10 @@ def plot_loo_pit(
         Defaults to ``rcParams["data.sample_dims"]``
     method : {"pot_c", "prit_c", "piet_c"}, optional
         Method to compute the simultaneous confidence bands for the Δ-ECDF-PIT diagnostic.
-        Defaults to "pot_c".
+        Defaults to "pot_c". Check the documentation of :func:`~arviz_plots.plot_ecdf_pit` for
+        more details.
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -158,9 +159,7 @@ def plot_loo_pit(
     .. [2] Vehtari et al. Pareto Smoothed Importance Sampling. Journal of Machine Learning
        Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
 
-    .. [3] Säilynoja et al. *Graphical test for discrete uniformity and
-       its applications in goodness-of-fit evaluation and multiple sample comparison*.
-       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. [3] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     if visuals is None:
         visuals = {}
@@ -174,8 +173,9 @@ def plot_loo_pit(
 
     if method == "envelope":
         warnings.warn(
-            "Method 'envelope' is no longer recommended for the LOO-pit plot.",
-            FutureWarning,
+            "Method 'envelope' is not recommended for the LOO-PIT plot."
+            "As it assumes PIT values are independent, which is not the case for LOO-PIT values.",
+            UserWarning,
         )
 
     if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
