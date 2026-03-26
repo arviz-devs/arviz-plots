@@ -120,33 +120,22 @@ def plot_compare(
     visuals = validate_dict_argument(visuals, (plot_compare, "visuals"))
 
     # Check we have the required columns
-    if relative_scale == True:
-        valid_stats = [col for col in ("elpd_diff", "mlpd_diff", "gmpd_diff") if col in cmp_df.columns]
-        if not valid_stats:
-            raise ValueError(
-                "When relative_scale is true, " \
-                "the DataFrame must contain one of the following columns: 'elpd_diff', 'mlpd_diff', or 'gmpd_diff'."
-            )
-        
-        if "dse" not in cmp_df.columns:
-            raise ValueError(
-                "When relative_scale is true, " \
-                "the DataFrame must contain a 'dse' column for standard errors."
-            )
-    else:
-        valid_stats = [col for col in ("elpd", "mlpd", "gmpd") if col in cmp_df.columns]
-        if not valid_stats:
-            raise ValueError(
-                "When relative_scale is false, " \
-                "the DataFrame must contain one of the following columns: 'elpd', 'mlpd', or 'gmpd'."
-            )
-        
-        if "se" not in cmp_df.columns:
-            raise ValueError(
-                "When relative_scale is false, " \
-                "the DataFrame must contain a 'se' column for standard errors."
-            )
-
+    required_stats_columns = {"elpd_diff", "mlpd_diff", "gmpd_diff"} if relative_scale == True else {"elpd", "mlpd", "gmpd"}
+    required_se_column = "dse" if relative_scale == True else "se"
+    
+    valid_stats = [col for col in required_stats_columns if col in cmp_df.columns]
+    if not valid_stats:
+        formatted_columns = ", ".join(map(repr, required_stats_columns))
+        raise ValueError(
+            f"When relative_scale is {relative_scale}, "
+            f"the DataFrame must contain one of the following columns: {formatted_columns}."
+        )
+    
+    if required_se_column not in cmp_df.columns:
+        raise ValueError(
+            f"When relative_scale is {relative_scale}, "
+            f"the DataFrame must contain a {repr(required_se_column)} column for standard errors."
+        )
     
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
@@ -180,10 +169,8 @@ def plot_compare(
 
     target = target.item()
 
-    # Obtain stats value and se 
+    # Obtain stats value and se and setup y axis label
     stats = valid_stats[0]
-    perf_stats = cmp_df[stats].values
-
     if relative_scale:
         se_key = "dse"
         label_score = f"{stats.replace("_diff", "").upper()} (relative)"
@@ -191,6 +178,7 @@ def plot_compare(
         se_key = "se"
         label_score = f"{stats.upper()}"
 
+    perf_stats = cmp_df[stats].values
     ses = cmp_df[se_key].values
 
     # Create labels for the models
