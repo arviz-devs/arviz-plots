@@ -110,7 +110,7 @@ def plot_dgof(
         Valid keys are:
 
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit` or
-        :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
+          :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`

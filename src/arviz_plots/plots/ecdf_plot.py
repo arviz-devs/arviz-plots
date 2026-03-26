@@ -142,7 +142,7 @@ def plot_ecdf_pit(
         Valid keys are:
 
         * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. or
-        :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
+          :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -154,14 +154,15 @@ def plot_ecdf_pit(
     Notes
     -----
     The following methods are available for testing the uniformity of the PIT values:
-        * pot_c: Good default choice due to its good power against diverse
-        type of local departures from the null. Preferred in almost all cases.
-        * piet_c: Use when you specifically want to evaluate tail deviations.
-        * prit_c: Mostly compatible with PITs computed as normalized ranks.
-        Don't use unless you have a specific reason to do so.
-        * envelope: Legacy method that uses simultaneous confidence bands. It can be used
-        when you have independent PIT values, as in the case of SBC analysis. The method
-        is described in method described in [1]_. Notice that pot_c is also valid in those cases.
+
+    * pot_c: Good default choice due to its good power against diverse
+      type of local departures from the null. Preferred in almost all cases.
+    * piet_c: Use when you specifically want to evaluate tail deviations.
+    * prit_c: Mostly compatible with PITs computed as normalized ranks.
+      Don't use unless you have a specific reason to do so.
+    * envelope: Legacy method that uses simultaneous confidence bands. It can be used
+      when you have independent PIT values, as in the case of SBC analysis. The method
+      is described in method described in [1]_. Notice that pot_c is also valid in those cases.
 
     The methods "pot_c", "piet_c" and "prit_c" compute the points that contribute the most
     to deviations from uniformity as described in [2]_.
