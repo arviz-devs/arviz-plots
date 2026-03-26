@@ -120,8 +120,8 @@ def plot_compare(
     visuals = validate_dict_argument(visuals, (plot_compare, "visuals"))
 
     # Check we have the required columns
-    required_stats_columns = {"elpd_diff", "mlpd_diff", "gmpd_diff"} if relative_scale == True else {"elpd", "mlpd", "gmpd"}
-    required_se_column = "dse" if relative_scale == True else "se"
+    required_stats_columns = {"elpd_diff", "mlpd_diff", "gmpd_diff"} if relative_scale else {"elpd", "mlpd", "gmpd"}
+    required_se_column = "dse" if relative_scale else "se"
     
     valid_stats = [col for col in required_stats_columns if col in cmp_df.columns]
     if not valid_stats:
