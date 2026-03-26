@@ -125,16 +125,15 @@ def plot_compare(
     
     valid_stats = [col for col in required_stats_columns if col in cmp_df.columns]
     if not valid_stats:
-        formatted_columns = ", ".join(map(repr, required_stats_columns))
         raise ValueError(
             f"When relative_scale is {relative_scale}, "
-            f"the DataFrame must contain one of the following columns: {formatted_columns}."
+            f"the DataFrame must contain one of the following columns: {", ".join(required_stats_columns)}."
         )
     
     if required_se_column not in cmp_df.columns:
         raise ValueError(
             f"When relative_scale is {relative_scale}, "
-            f"the DataFrame must contain a {repr(required_se_column)} column for standard errors."
+            f"the DataFrame must contain a {required_se_column} column for standard errors."
         )
     
     # Get plotting backend
