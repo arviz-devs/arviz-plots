@@ -36,7 +36,7 @@ try:
     _arviz_style_path = os.path.join(os.path.dirname(__file__), "styles")
     if hasattr(mplstyle, "USER_LIBRARY_PATHS"):
         mplstyle.USER_LIBRARY_PATHS.append(_arviz_style_path)
-    elif hasattr(mplstyle, "core") and hasattr(mplstyle.core, "USER_LIBRARY_PATHS"):
+    else:
         mplstyle.core.USER_LIBRARY_PATHS.append(_arviz_style_path)
     mplstyle.reload_library()
 

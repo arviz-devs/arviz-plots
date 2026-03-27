@@ -39,7 +39,7 @@ class SquareRootScale(mscale.ScaleBase):
     name = "sqrt"
 
     def __init__(self, axis, **kwargs):  # pylint: disable=unused-argument
-        mscale.ScaleBase.__init__(self, axis)
+        mscale.ScaleBase.__init__(axis, self)
 
     def set_default_locators_and_formatters(self, axis):
         """Set the locators and formatters to default."""
