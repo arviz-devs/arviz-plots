@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 import numpy as np
 from arviz_base import rcParams
+from arviz_base.validate import validate_dict_argument
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
@@ -112,12 +113,9 @@ def plot_compare(
     .. [3] Sivula et al. *Uncertainty in Bayesian Leave-One-Out Cross-Validation Based Model
         Comparison*. (2025). https://doi.org/10.48550/arXiv.2008.10296
     """
-    # Set default backend
     if backend is None:
         backend = rcParams["plot.backend"]
-
-    if visuals is None:
-        visuals = {}
+    visuals = validate_dict_argument(visuals, (plot_compare, "visuals"))
 
     # Check we have the required columns
     valid_stats = [col for col in ("elpd", "mlpd", "gmpd") if col in cmp_df.columns]

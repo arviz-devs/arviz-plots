@@ -5,6 +5,12 @@ from typing import Any, Literal
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_ci_prob,
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 from arviz_stats.helper_stats import point_interval_unique, point_unique
 
 from arviz_plots.plot_collection import PlotCollection
@@ -22,7 +28,7 @@ from arviz_plots.visuals import (
     labelled_x,
     labelled_y,
     scatter_xy,
-    set_y_scale,
+    set_yscale,
 )
 
 
@@ -157,19 +163,10 @@ def plot_ppc_rootogram(
     .. [2] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
         (2025) arXiv preprint https://arxiv.org/abs/2503.01509
     """
-    if ci_prob is None:
-        ci_prob = rcParams["stats.ci_prob"]
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if point_estimate is None:
-        point_estimate = rcParams["stats.point_estimate"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    ci_prob = validate_ci_prob(ci_prob)
+    point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_rootogram, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ppc_rootogram, "visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -183,6 +180,7 @@ def plot_ppc_rootogram(
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
 
     if "observed_data" in dt:
         observed_dist = process_group_variables_coords(
@@ -192,16 +190,14 @@ def plot_ppc_rootogram(
             filter_vars=filter_vars,
             coords=coords,
         )
-        observed_ds = point_unique(dt, observed_dist.data_vars)
+        observed_ds = point_unique(observed_dist)
     else:
         observed_dist = None
 
     warn_if_binary(observed_dist, predictive_dist)
     raise_if_continuous(observed_dist, predictive_dist)
 
-    predictive_ds = point_interval_unique(
-        dt, predictive_dist.data_vars, group, ci_prob, point_estimate
-    )
+    predictive_ds = point_interval_unique(predictive_dist, ci_prob, point_estimate)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -218,11 +214,6 @@ def plot_ppc_rootogram(
             backend=backend,
             **pc_kwargs,
         )
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
 
     aes_by_visuals.setdefault("predictive_markers", plot_collection.aes_set)
     aes_by_visuals.setdefault("credible_interval", plot_collection.aes_set)
@@ -355,7 +346,7 @@ def plot_ppc_rootogram(
         )
 
     plot_collection.map(
-        set_y_scale,
+        set_yscale,
         store_artist=backend == "none",
         ignore_aes=plot_collection.aes_set,
         scale=yscale,

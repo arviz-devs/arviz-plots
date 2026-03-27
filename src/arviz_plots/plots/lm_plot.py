@@ -10,6 +10,13 @@ import numpy as np
 import xarray as xr
 from arviz_base import extract, rcParams
 from arviz_base.labels import MapLabeller
+from arviz_base.validate import (
+    validate_ci_prob,
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_prob,
+    validate_sample_dims,
+)
 from scipy.interpolate import griddata
 from scipy.signal import savgol_filter
 
@@ -210,42 +217,21 @@ def plot_lm(
     .. minigallery:: plot_lm
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if visuals is None:
-        visuals = {}
-    if pc_kwargs is None:
-        pc_kwargs = {}
+    point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
+    ci_kind = validate_or_use_rcparam(ci_kind, "stats.ci_kind")
+    if isinstance(ci_prob, (list | tuple | np.ndarray)):
+        ci_prob = [validate_prob(p) for p in ci_prob]
     else:
-        pc_kwargs = pc_kwargs.copy()
+        ci_prob = validate_ci_prob(ci_prob)
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_lm, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_lm, "visuals"))
+    stats = validate_dict_argument(stats, (plot_lm, "stats"))
 
-    if ci_prob is None:
-        ci_prob = rcParams["stats.ci_prob"]
-    if ci_kind is None:
-        ci_kind = rcParams["stats.ci_kind"]
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
-
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-
-    if point_estimate is None:
-        point_estimate = rcParams["stats.point_estimate"]
     if backend is None:
         if plot_collection is None:
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
-
-    if point_estimate not in ("mean", "median", "mode"):
-        raise ValueError("point_estimate must be one of 'mean', 'median', or 'mode'")
 
     obs_data = get_group(dt, "observed_data")
     if y is None:
@@ -300,6 +286,7 @@ def plot_lm(
         filter_vars=filter_vars,
         coords=coords,
     ).rename_vars(y_to_x_map)
+    sample_dims = validate_sample_dims(sample_dims, data=y_pred)
     if plot_dim not in y_pred.dims:
         error_msg = (
             f"Dimension '{plot_dim}' set as `plot_dim` argument is not present in y data. "
@@ -327,7 +314,12 @@ def plot_lm(
     if y_obs is None:
         y_obs = y
     observed_y = extract(
-        dt, group="observed_data", var_names=y_obs, combined=False, keep_dataset=True
+        dt,
+        group="observed_data",
+        var_names=y_obs,
+        combined=False,
+        keep_dataset=True,
+        sample_dims=[],
     )
     if all(var_name in observed_y.data_vars for var_name in y_to_x_map):
         observed_y = observed_y.rename_vars(y_to_x_map)
@@ -362,10 +354,6 @@ def plot_lm(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     aes_by_visuals.setdefault("pe_line", plot_collection.aes_set.difference({"alpha", "color"}))
     if isinstance(ci_prob, (list | tuple | np.ndarray)):
         aes_by_visuals.setdefault("ci_vlines", {"alpha"})

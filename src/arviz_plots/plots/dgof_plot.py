@@ -5,7 +5,11 @@ from typing import Any, Literal
 
 import arviz_stats  # pylint: disable=unused-import
 import xarray as xr
-from arviz_base import rcParams
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 from arviz_stats.ecdf_utils import (
     compute_pit_for_histogram,
     compute_pit_for_kde,
@@ -25,6 +29,7 @@ def plot_dgof(
     coords=None,
     sample_dims=None,
     kind=None,
+    method="envelope",
     envelope_prob=None,
     plot_collection=None,
     backend=None,
@@ -58,7 +63,8 @@ def plot_dgof(
     estimated distributions to the underlying data using the specified `kind` (kde, histogram,
     or quantile dot plot) [1]_. If the estimated distributions are accurate, the PIT values
     should be uniformly distributed on [0, 1], resulting in a Δ-ECDF close to zero.
-    Simultaneous confidence bands are computed using simulation method described in [2]_.
+    The points that contribute the most to deviations from uniformity are
+    computed as described in [2]_.
 
     Parameters
     ----------
@@ -81,8 +87,12 @@ def plot_dgof(
     kind : {"kde", "hist", "dot"}, optional
         Which method to diagnose the distribution fit.
         Defaults to ``rcParams["plot.density_kind"]``
+    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+        Method to use for the uniformity test. Defaults to "pot_c". Check the documentation of
+        :func:`~arviz_plots.plot_ecdf_pit` for more details.
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
+        If method is "envelope", indicates the probability that should be contained within the
+        envelope, otherwise indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -103,8 +113,8 @@ def plot_dgof(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`.
-          Default is ``{"n_simulations": 1000}``.
+        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit` or
+          :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -134,50 +144,46 @@ def plot_dgof(
     .. [1] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
         (2025) arXiv preprint https://arxiv.org/abs/2503.01509
 
-    .. [2] Säilynoja et al. *Graphical test for discrete uniformity and
-       its applications in goodness-of-fit evaluation and multiple sample comparison*.
-       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
-    if envelope_prob is None:
-        envelope_prob = rcParams["stats.envelope_prob"]
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if stats is None:
-        stats = {}
-    else:
-        stats = stats.copy()
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
+    envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
+    visuals = validate_dict_argument(visuals, (plot_dgof, "visuals"))
+    stats = validate_dict_argument(stats, (plot_dgof, "stats"))
 
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
+    kind = validate_or_use_rcparam(kind, "plot.density_kind")
+    if kind == "auto":
+        kind = "kde" if all(da.dtype.kind == "f" for da in distribution.values) else "hist"
 
     if kind == "hist":
-        hist_dt = distribution.azstats.histogram(**stats.get("dist", {}))
-        new_dt = compute_pit_for_histogram(distribution, hist_dt)
+        hist_dt = distribution.azstats.histogram(dim=sample_dims, **stats.get("dist", {}))
+        new_dt = compute_pit_for_histogram(distribution, hist_dt, sample_dims=sample_dims)
     elif kind == "kde":
-        kde_dt = distribution.azstats.kde(**stats.get("dist", {}))
-        new_dt = compute_pit_for_kde(distribution, kde_dt)
+        kde_dt = distribution.azstats.kde(dim=sample_dims, **stats.get("dist", {}))
+        new_dt = compute_pit_for_kde(distribution, kde_dt, sample_dims=sample_dims)
     elif kind == "dot":
-        qd_dt = distribution.azstats.qds(**stats.get("dist", {}))
-        new_dt = compute_pit_for_qds(distribution, qd_dt)
+        qd_dt = distribution.azstats.qds(dim=sample_dims, **stats.get("dist", {}))
+        new_dt = compute_pit_for_qds(distribution, qd_dt, sample_dims=sample_dims)
     else:
-        raise ValueError(f"Kind {kind} not supported. Choose from 'hist', 'kde', or 'dot'.")
+        raise ValueError(
+            f"Kind {kind} not supported in plot_dgof. Choose from 'hist', 'kde', or 'dot'."
+        )
 
     visuals.setdefault("ylabel", {})
     visuals.setdefault("xlabel", {"text": "PIT"})
 
-    stats_ecdf = {"ecdf_pit": stats.get("ecdf_pit", {})}
+    stats_ecdf = {
+        "ecdf_pit": stats.get("ecdf_pit", {}),
+    }
 
     plot_collection = plot_ecdf_pit(
         new_dt,
         coords=coords,
         sample_dims="sample",
+        method=method,
         envelope_prob=envelope_prob,
         plot_collection=plot_collection,
         backend=backend,

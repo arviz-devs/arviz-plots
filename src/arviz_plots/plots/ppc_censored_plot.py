@@ -5,6 +5,7 @@ from typing import Any, Literal, Mapping, Sequence
 
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 from arviz_stats.survival import generate_survival_curves, kaplan_meier
 
 from arviz_plots.plot_collection import PlotCollection
@@ -132,21 +133,8 @@ def plot_ppc_censored(
     .. [1] Kaplan, E. L., & Meier, P. Nonparametric estimation from incomplete observations.
            JASA, 53(282). (1958) https://doi.org/10.1080/01621459.1958.10501452
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_censored, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_ppc_censored, "visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -161,6 +149,7 @@ def plot_ppc_censored(
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
 
     # Get observed data
     if "observed_data" in dt:

@@ -52,7 +52,9 @@ Plot customization elements
    remove_axis
    remove_ticks
    set_xlim
+   set_xscale
    set_xticks
    set_ylim
+   set_yscale
    ticklabel_props
    grid

@@ -7,6 +7,7 @@ from typing import Any, Literal
 import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -106,15 +107,7 @@ def plot_autocorr(
     .. minigallery:: plot_autocorr
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    visuals = validate_dict_argument(visuals, (plot_autocorr, "visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -132,6 +125,7 @@ def plot_autocorr(
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
 
     acf_dataset = distribution.azstats.autocorr(dim=sample_dims).sel(draw=slice(0, max_lag - 1))
     c_i = 1.96 / acf_dataset.sizes["draw"] ** 0.5
@@ -162,10 +156,7 @@ def plot_autocorr(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_autocorr, "aes_by_visuals"))
     aes_by_visuals.setdefault("lines", plot_collection.aes_set)
 
     ## reference line

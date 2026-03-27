@@ -27,6 +27,7 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("sbc")
 pc = azp.plot_ecdf_pit(
     data,
+    method="envelope",
     backend="none"  # change to preferred backend
 )
 pc.show()

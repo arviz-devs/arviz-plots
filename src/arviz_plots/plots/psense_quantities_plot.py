@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 from arviz_base import extract, rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 from arviz_stats.psense import power_scale_dataset
 from xarray import concat
 
@@ -152,15 +153,10 @@ def plot_psense_quantities(
         power-scaling*, Stat Comput 34, 57 (2024), https://doi.org/10.1007/s11222-023-10366-5
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    sample_dims = list(sample_dims)
-    if visuals is None:
-        visuals = {}
-    else:
-        visuals = visuals.copy()
+    aes_by_visuals = validate_dict_argument(
+        aes_by_visuals, (plot_psense_quantities, "aes_by_visuals")
+    )
+    visuals = validate_dict_argument(visuals, (plot_psense_quantities, "visuals"))
 
     if backend is None:
         if plot_collection is None:
@@ -191,6 +187,7 @@ def plot_psense_quantities(
         combined=False,
         keep_dataset=True,
     )
+    sample_dims = validate_sample_dims(sample_dims, data=ds_posterior)
 
     ds_prior = power_scale_dataset(
         dt,
@@ -290,11 +287,6 @@ def plot_psense_quantities(
             backend=backend,
             **pc_kwargs,
         )
-
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
 
     aes_by_visuals.setdefault("quantities_marker", ["color", "marker"])
     aes_by_visuals.setdefault("quantities", ["color"])

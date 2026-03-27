@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
@@ -187,20 +188,13 @@ def plot_trace_dist(
         >>> pc.add_legend("chain")
 
     """
-    if sample_dims is None:
-        sample_dims = rcParams["data.sample_dims"]
-    if isinstance(sample_dims, str):
-        sample_dims = [sample_dims]
-    if kind is None:
-        kind = rcParams["plot.density_kind"]
-    if stats is None:
-        stats = {}
-    if visuals is None:
-        visuals = {}
-
+    aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_trace_dist, "aes_by_visuals"))
+    visuals = validate_dict_argument(visuals, (plot_trace_dist, "visuals"))
+    stats = validate_dict_argument(stats, (plot_trace_dist, "stats"))
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
+    sample_dims = validate_sample_dims(sample_dims, data=distribution)
     if not combined and "chain" not in distribution.dims:
         combined = True
 
@@ -209,9 +203,6 @@ def plot_trace_dist(
             backend = rcParams["plot.backend"]
         else:
             backend = plot_collection.backend
-
-    if kind not in ("kde", "hist", "ecdf", "dot"):
-        raise ValueError("kind must be either 'kde', 'hist', 'ecdf' or 'dot'")
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -270,10 +261,6 @@ def plot_trace_dist(
             **pc_kwargs,
         )
 
-    if aes_by_visuals is None:
-        aes_by_visuals = {}
-    else:
-        aes_by_visuals = aes_by_visuals.copy()
     if combined and "chain" in distribution.dims:
         if compact:
             aes_by_visuals["dist"] = aes_by_visuals.get(
@@ -346,8 +333,8 @@ def plot_trace_dist(
     visuals_trace["title"] = False
     visuals_trace["ticklabels"] = False
     aes_by_visuals_trace = {
-        key.replace("trace", ""): value
-        for key, value in visuals.items()
+        key.replace("_trace", ""): value
+        for key, value in aes_by_visuals.items()
         if key in {"trace", "divergence", "xlabel_trace"}
     }
     plot_collection.coords = {"column": "trace"}

@@ -21,6 +21,7 @@ from arviz_plots import (
     plot_ess_evolution,
     plot_forest,
     plot_khat,
+    plot_loo_interval,
     plot_loo_pit,
     plot_mcse,
     plot_pair,
@@ -487,7 +488,6 @@ def test_plot_ess(datatree, kind, relative, rug, n_points, extra_methods, min_es
             "sd_text": visuals_value,
             "min_ess": visuals_value,
             "title": visuals_value,
-            "remove_axis": st.just(False),
         },
     ),
     relative=st.booleans(),
@@ -629,7 +629,6 @@ def test_plot_khat(datatree_with_loo, threshold, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
@@ -645,6 +644,42 @@ def test_plot_loo_pit(datatree, envelope_prob, coverage, visuals):
         backend="none",
         envelope_prob=envelope_prob,
         coverage=coverage,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree["posterior_predictive"].data_vars
+            )
+
+
+@pytest.mark.filterwarnings("ignore:Estimated shape parameter of Pareto")
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "trunk": visuals_value,
+            "twig": visuals_value,
+            "observed_markers": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+            "title": visuals_value,
+        },
+    ),
+    ci_probs=st.tuples(
+        st.floats(min_value=0.1, max_value=0.9), st.floats(min_value=0.1, max_value=0.9)
+    ),
+)
+def test_plot_loo_interval(datatree, ci_probs, visuals):
+    pc = plot_loo_interval(
+        datatree,
+        backend="none",
+        ci_probs=ci_probs,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children

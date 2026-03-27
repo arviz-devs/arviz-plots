@@ -15,6 +15,7 @@ from .evolution_plot import plot_ess_evolution
 from .forest_plot import plot_forest
 from .khat_plot import plot_khat
 from .lm_plot import plot_lm
+from .loo_interval_plot import plot_loo_interval
 from .loo_pit_plot import plot_loo_pit
 from .mcse_plot import plot_mcse
 from .pair_focus_plot import plot_pair_focus
@@ -48,6 +49,7 @@ __all__ = [
     "plot_dgof_dist",
     "plot_dist",
     "plot_forest",
+    "plot_loo_interval",
     "plot_trace",
     "plot_trace_dist",
     "plot_ecdf_pit",
