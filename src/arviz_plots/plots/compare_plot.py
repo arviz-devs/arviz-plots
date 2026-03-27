@@ -175,7 +175,8 @@ def plot_compare(
     stats = valid_stats[0]
     if relative_scale:
         se_key = "dse"
-        label_score = f"{stats.replace("_diff", "").upper()} (relative)"
+        relative_scale_label = "ratio" if stats == "gmpd_diff" else "difference"
+        label_score = f"{stats.replace("_diff", "").upper()} ({relative_scale_label})"
     else:
         se_key = "se"
         label_score = f"{stats.upper()}"
