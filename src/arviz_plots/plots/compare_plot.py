@@ -61,6 +61,7 @@ def plot_compare(
           
     relative_scale : bool, optional.
         If True, the `stats`_diff and dse values are used instead of `stats` and se.
+        This turns the comparison into a difference from the best model.
         Defaults to True.
     rotated : bool, optional
         If True, the plot is rotated, with models on the y-axis and ELPD on the x-axis.
