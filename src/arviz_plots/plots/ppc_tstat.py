@@ -244,9 +244,9 @@ def plot_ppc_tstat(
     predictive_dist = predictive_dist.stack(sample=sample_dims)
     reduce_dim = [dim for dim in predictive_dist.dims if dim != "sample"]
     if t_stat in ["mean", "median", "std", "var", "min", "max"]:
-        predictive_dist = getattr(predictive_dist, t_stat)(dim=reduce_dim)
+       predictive_dist = getattr(predictive_dist, t_stat)(dim=reduce_dim, skipna=True)
         if observed_tstat_kwargs is not False:
-            observed_dist = getattr(observed_dist, t_stat)()
+        observed_dist = getattr(observed_dist, t_stat)(skipna=True)
         visuals.setdefault("title", {"text": t_stat})
     elif t_stat == "iqr":
 
