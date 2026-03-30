@@ -52,7 +52,8 @@ def plot_compare(
     ----------
     cmp_df : pandas.DataFrame
         Usually this will be the result of the :func:`arviz_stats.compare` function.
-        It is assumed that the DataFrame has at least two columns:
+        It is assumed that the first row of the DataFrame is the top model and
+        the DataFrame has at least two columns:
 
         * When ``relative_scale`` is True: one named `elpd_diff`, `mlpd_diff`, 
           or `gmpd_diff`, the other named `dse`, and the index is the model names.
