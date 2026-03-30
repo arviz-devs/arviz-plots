@@ -55,11 +55,11 @@ def plot_compare(
         It is assumed that the first row of the DataFrame is the top model and
         the DataFrame has at least two columns:
 
-        * When ``relative_scale`` is True: one named `elpd_diff`, `mlpd_diff`, 
+        * When ``relative_scale`` is True: one named `elpd_diff`, `mlpd_diff`,
           or `gmpd_diff`, the other named `dse`, and the index is the model names.
-        * When ``relative_scale`` is False: one named `elpd`, `mlpd`, or `gmpd`, 
+        * When ``relative_scale`` is False: one named `elpd`, `mlpd`, or `gmpd`,
           the other named `se`, and the index is the model names.
-          
+
     relative_scale : bool, optional.
         If True, the `stats`_diff and dse values are used instead of `stats` and se.
         This turns the comparison into a difference from the best model.
@@ -124,22 +124,25 @@ def plot_compare(
     visuals = validate_dict_argument(visuals, (plot_compare, "visuals"))
 
     # Check we have the required columns
-    required_stats_columns = {"elpd_diff", "mlpd_diff", "gmpd_diff"} if relative_scale else {"elpd", "mlpd", "gmpd"}
+    if relative_scale:
+        required_stats_cols = {"elpd_diff", "mlpd_diff", "gmpd_diff"}
+    else:
+        required_stats_cols = {"elpd", "mlpd", "gmpd"}
     required_se_column = "dse" if relative_scale else "se"
-    
-    valid_stats = [col for col in required_stats_columns if col in cmp_df.columns]
+
+    valid_stats = [col for col in required_stats_cols if col in cmp_df.columns]
     if not valid_stats:
         raise ValueError(
-            f"When relative_scale is {relative_scale}, "
-            f"the DataFrame must contain one of the following columns: {', '.join(required_stats_columns)}."
+            f"When relative_scale is {relative_scale}, the DataFrame "
+            f"must contain one of the following columns: {', '.join(required_stats_cols)}."
         )
-    
+
     if required_se_column not in cmp_df.columns:
         raise ValueError(
-            f"When relative_scale is {relative_scale}, "
-            f"the DataFrame must contain a {required_se_column} column for standard errors."
+            f"When relative_scale is {relative_scale}, the DataFrame "
+            f"must contain a {required_se_column} column for standard errors."
         )
-    
+
     # Get plotting backend
     p_be = import_module(f"arviz_plots.backend.{backend}")
 
@@ -177,7 +180,7 @@ def plot_compare(
     if relative_scale:
         se_key = "dse"
         relative_scale_label = "ratio" if stats == "gmpd_diff" else "difference"
-        label_score = f"{stats.replace("_diff", "").upper()} ({relative_scale_label})"
+        label_score = f"{stats.replace('_diff', '').upper()} ({relative_scale_label})"
     else:
         se_key = "se"
         label_score = f"{stats.upper()}"

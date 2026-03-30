@@ -108,8 +108,15 @@ def compare_df_strategy(draw):
         )
     )
 
-    return pd.DataFrame({stat_name: perf_values, "se": se_values, 
-                         f"{stat_name}_diff": relative_perf_values, "dse": relative_se_values}, index=model_names)
+    return pd.DataFrame(
+        {
+            stat_name: perf_values,
+            "se": se_values,
+            f"{stat_name}_diff": relative_perf_values,
+            "dse": relative_se_values,
+        },
+        index=model_names,
+    )
 
 
 @given(
