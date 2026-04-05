@@ -56,7 +56,7 @@ def get_group(data, group, allow_missing=False):
 def get_visual_kwargs(visuals, name, default=None):
     """Get the kwargs for a visual from the visuals dict.
 
-    Parameterss
+    Parameters
     ----------
     visuals : dict
         Dictionary of visuals.
