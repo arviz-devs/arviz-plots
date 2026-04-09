@@ -56,32 +56,22 @@ def apply_square_root_scale(plotly_plot, axis):
     row = plotly_plot.row
     col = plotly_plot.col
 
-    if not hasattr(figure.layout, "grid") or figure.layout.grid is None:
-        raise ValueError("The figure does not have a grid layout required for faceting.")
-
-    figure_grid = figure.layout.grid
-    num_cols = figure_grid.columns if figure_grid.columns is not None else 1
-    index = (row - 1) * num_cols + col
-    axis_ref = axis if index == 1 else f"{axis}{index}"
-    layout_axis = f"{axis}axis" if index == 1 else f"{axis}axis{index}"
-
     transformed_all = []
     original_all = []
 
-    for trace in figure.data:
-        if getattr(trace, f"{axis}axis", None) == axis_ref:
-            if hasattr(trace, axis) and getattr(trace, axis) is not None:
-                data = np.array(getattr(trace, axis), dtype=float)
-                data = np.maximum(data, 0.0)
-                transformed = np.sqrt(data)
-                trace.customdata = data.tolist()
-                setattr(trace, axis, transformed.tolist())
-                if axis == "y":
-                    trace.hovertemplate = "x: %{x:.2~g}<br>y: %{customdata:.2~g}<extra></extra>"
-                else:
-                    trace.hovertemplate = "x: %{customdata:.2~g}<br>y: %{y:.2~g}<extra></extra>"
-                transformed_all.extend(transformed)
-                original_all.extend(data)
+    for trace in figure.select_traces(row=row, col=col):
+        if hasattr(trace, axis) and getattr(trace, axis) is not None:
+            data = np.array(getattr(trace, axis), dtype=float)
+            data = np.maximum(data, 0.0)
+            transformed = np.sqrt(data)
+            trace.customdata = data.tolist()
+            setattr(trace, axis, transformed.tolist())
+            if axis == "y":
+                trace.hovertemplate = "x: %{x:.2~g}<br>y: %{customdata:.2~g}<extra></extra>"
+            else:
+                trace.hovertemplate = "x: %{customdata:.2~g}<br>y: %{y:.2~g}<extra></extra>"
+            transformed_all.extend(transformed)
+            original_all.extend(data)
 
     if not transformed_all:
         return
@@ -103,12 +93,15 @@ def apply_square_root_scale(plotly_plot, axis):
 
     ticktext_original = [f"{round(tv**2)}" for tv in tickvals_transformed]
 
-    figure.layout[layout_axis].update(
-        tickvals=tickvals_transformed,
-        ticktext=ticktext_original,
-        range=[min_val, max_val + 0.5],
-        title=figure.layout[layout_axis].title,
-    )
+    axis_kwargs = {
+        "tickvals": tickvals_transformed,
+        "ticktext": ticktext_original,
+        "range": [min_val, max_val + 0.5],
+    }
+    if axis == "y":
+        plotly_plot.update_yaxes(**axis_kwargs)
+    else:
+        plotly_plot.update_xaxes(**axis_kwargs)
 
 
 def str_to_plotly_html(string):

@@ -125,7 +125,6 @@ def compare_df_strategy(draw):
         optional={
             "lines": visuals_value,
             "ref_line": visuals_value,
-            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "title": visuals_value,
         },
@@ -309,7 +308,6 @@ def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "credible_interval": visuals_value,
             "title": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
@@ -343,7 +341,6 @@ def test_plot_dgof(datatree, kind, envelope_prob, visuals):
         optional={
             "dist": visuals_value,
             "ecdf_lines": visuals_value,
-            "credible_interval": visuals_value,
             "title": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
@@ -409,7 +406,6 @@ def test_plot_energy(datatree, kind, visuals, show_bfmi):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
@@ -1036,7 +1032,6 @@ def test_plot_ppc_rootogram(datatree3, ci_prob, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "title": visuals_value,
@@ -1071,7 +1066,6 @@ def test_plot_ppc_pit(datatree, coverage, envelope_prob, visuals):
         optional={
             "dist": visuals_value_no_false,
             "observed_tstat": visuals_value,
-            "credible_interval": visuals_value,
             "point_estimate": visuals_value,
             "point_estimate_text": visuals_value,
             "title": visuals_value,

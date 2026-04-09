@@ -31,7 +31,7 @@ def plot_dgof_dist(
     coords=None,
     sample_dims=None,
     kind=None,
-    method="envelope",
+    method="pot_c",
     envelope_prob=None,
     plot_collection=None,
     backend=None,
