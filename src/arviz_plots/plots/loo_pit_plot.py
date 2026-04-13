@@ -191,7 +191,8 @@ def plot_loo_pit(
             f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
         )
 
-    lpv = loo_pit(dt)
+    pareto_pit = method in ["pot_c", "piet_c"]
+    lpv = loo_pit(dt, pareto_pit=pareto_pit)
     new_dt = convert_to_datatree(lpv, group="loo_pit")
 
     visuals.setdefault("ylabel", {})
