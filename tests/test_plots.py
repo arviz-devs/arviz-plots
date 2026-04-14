@@ -7,6 +7,7 @@ from arviz_plots import (
     PlotCollection,
     add_bands,
     add_lines,
+    combine_plots,
     plot_autocorr,
     plot_bf,
     plot_compare,
@@ -93,6 +94,50 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             backend=backend,
         )
         assert "plot" in pc.viz.data_vars
+
+    def test_combine_plots(self, datatree, backend):
+        pc = combine_plots(
+            datatree,
+            plots=[
+                (plot_dist, {}),
+                (plot_autocorr, {}),
+            ],
+            var_names=["mu"],
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+
+    def test_combine_plots_expand_row(self, datatree, backend):
+        pc = combine_plots(
+            datatree,
+            plots=[
+                (plot_dist, {}),
+                (plot_autocorr, {}),
+            ],
+            expand="row",
+            var_names=["mu"],
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+
+    def test_combine_plots_plot_names(self, datatree, backend):
+        pc = combine_plots(
+            datatree,
+            plots=[
+                (plot_dist, {}),
+                (plot_autocorr, {}),
+            ],
+            plot_names=["distribution", "autocorrelation"],
+            var_names=["mu"],
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "column" in pc.viz.dims
+        assert list(pc.viz.coords["column"].values) == ["distribution", "autocorrelation"]
+
+    def test_combine_plots_invalid_expand(self, datatree, backend):
+        with pytest.raises(ValueError, match="must be 'row' or 'column'"):
+            combine_plots(datatree, plots=[(plot_dist, {})], backend=backend, expand="diagonal")
 
     def test_plot_convergence_dist(self, datatree, backend):
         pc = plot_convergence_dist(datatree, backend=backend)
