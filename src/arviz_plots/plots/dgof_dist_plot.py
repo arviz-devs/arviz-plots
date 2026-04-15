@@ -128,6 +128,11 @@ def plot_dgof_dist(
     -------
     PlotCollection
 
+    See Also
+    --------
+    plot_dgof : Δ-ECDF-PIT diagnostic for 1D density estimation (kde, histogram, or quantile)
+    plot_dist : Plot 1D marginal distributions.
+
     Examples
     --------
     Default plot with quantile dot marginals and Δ-ECDF-PIT diagnostic:

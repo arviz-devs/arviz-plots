@@ -133,6 +133,11 @@ def plot_loo_pit(
     -------
     PlotCollection
 
+    See Also
+    --------
+    plot_ppc_pit : Predictive check using PIT Δ-ECDF uniformity test.
+    plot_loo_interval : Predictive intervals and observed data.
+
     Examples
     --------
     Plot the ecdf-PIT for the crabs hurdle-negative-binomial dataset.

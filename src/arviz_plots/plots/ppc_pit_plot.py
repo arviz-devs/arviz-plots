@@ -143,6 +143,13 @@ def plot_ppc_pit(
     -------
     PlotCollection
 
+    See Also
+    --------
+    plot_loo_pit : Predictive check using LOO-PIT Δ-ECDF uniformity test.
+    plot_ppc_dist :  Predictive check using 1D marginals for predictive (and observed data).
+    plot_ppc_pava : Predictive check ideal for binary, ordinal or categorical data.
+    plot_ppc_rootogram : Predictive check ideal for discrete (count) data.
+
     Examples
     --------
     Plot the ecdf-PIT for the crabs hurdle-negative-binomial dataset.
@@ -247,14 +254,13 @@ def _ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, pareto_pit):
     for var in observed_dist.data_vars:
         if pareto_pit:
             pred_stacked = predictive_dist[var].stack(__sample__=sample_dims)
-
             vals = xr.apply_ufunc(
-                array_stats._pareto_pit,  # pylint: disable=protected-access
+                array_stats._pareto_pit_vec,  # pylint: disable=protected-access
                 pred_stacked,
                 observed_dist[var],
                 input_core_dims=[["__sample__"], []],
                 output_core_dims=[[]],
-                vectorize=True,
+                vectorize=False,
                 kwargs={"rng": rng},
             )
         else:
