@@ -1037,7 +1037,10 @@ class PlotCollection:
                     dims,
                     col_id[row_slice, col_slice].flatten().reshape(plots_raw_shape),
                 )
-            viz_dict = {key: xr.Dataset(value, coords=coords) for key, value in viz_dict.items()}
+            viz_dict = {
+                key: value if isinstance(value, xr.Dataset) else xr.Dataset(value, coords=coords)
+                for key, value in viz_dict.items()
+            }
         viz_dt = xr.DataTree.from_dict(viz_dict)
         return cls(data, viz_dt, backend=backend, **kwargs)
 
