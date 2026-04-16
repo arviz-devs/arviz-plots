@@ -735,7 +735,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" not in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert "quantities" in pc.viz["plot"]["mu"].dims
-        assert "mean" in pc.viz["quantities"]
+        assert "mean" in pc.viz["plot"]["quantities"]
 
     def test_plot_rank(self, datatree, backend):
         pc = plot_rank(datatree, backend=backend)
