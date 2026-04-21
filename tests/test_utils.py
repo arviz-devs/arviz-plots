@@ -8,6 +8,7 @@ import arviz_plots.backend.none as none_backend
 from arviz_plots import PlotCollection
 from arviz_plots.plots.utils import (
     annotate_bin_text,
+    compute_dist,
     filter_aes,
     format_coords_as_labels,
     get_group,
@@ -240,3 +241,32 @@ class TestUtils:
         )
 
         assert result["string"] == "0 (0.0%)"
+
+    def test_compute_dist_handles_mixed_variable_dims(self):
+        """Test compute_dist handles mixed variable dimensions."""
+        sample = 30
+        obs = 4
+        ds = xr.Dataset(
+            {
+                "y_obs": xr.DataArray(
+                    np.random.default_rng(0).normal(size=(sample, obs)),
+                    dims=("sample", "obs"),
+                ),
+                "y_scalar": xr.DataArray(
+                    np.random.default_rng(1).normal(size=sample),
+                    dims=("sample",),
+                ),
+            }
+        )
+
+        density = compute_dist(
+            ds,
+            reduce_dims=["sample", "obs"],
+            active_dims=[],
+            kind="kde",
+            stats={},
+        )
+
+        assert set(density.data_vars) == {"y_obs", "y_scalar"}
+        assert density["y_obs"].attrs["kind"] == "kde"
+        assert density["y_scalar"].attrs["kind"] == "kde"

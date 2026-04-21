@@ -1067,9 +1067,7 @@ class PlotCollection:
             artist_dims = {}
         if dim_to_idx is None:
             dim_to_idx = {}
-        artist_dt = xr.DataTree()
-        if ignore_aes:
-            artist_dt.attrs = {"ignore_aes": ignore_aes}
+        artist_das = []
         for var_name, da in data.items():
             inherited_dims = [
                 dim_to_idx.get(dim, dim)
@@ -1082,8 +1080,7 @@ class PlotCollection:
             ] + list(artist_dims.values())
             all_artist_dims = inherited_dims + list(artist_dims.keys())
 
-            # TODO: once DataTree has a .loc attribute, this should work on .viz instead
-            artist_dt[var_name] = xr.DataArray(
+            out_da = xr.DataArray(
                 np.full(artist_shape, None, dtype=object),
                 dims=all_artist_dims,
                 coords={
@@ -1091,6 +1088,15 @@ class PlotCollection:
                     for dim in inherited_dims
                 },
             )
+            out_da.name = var_name
+            artist_das.append(out_da)
+
+        artist_ds = (
+            xr.merge(artist_das, compat="override", join="outer") if artist_das else xr.Dataset()
+        )
+        artist_dt = xr.DataTree(artist_ds)
+        if ignore_aes:
+            artist_dt.attrs = {"ignore_aes": ignore_aes}
         if func_label in self._viz_dt.children:
             for var_name, da in artist_dt.items():
                 self._viz_dt[func_label][var_name] = da
