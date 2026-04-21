@@ -166,7 +166,7 @@ def plot_dgof_dist(
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
     kind = validate_or_use_rcparam(kind, "plot.density_kind")
     if kind == "auto":
-        kind = "kde" if all(da.dtype.kind == "f" for da in distribution.values) else "hist"
+        kind = "kde" if all(da.dtype.kind == "f" for da in distribution.values()) else "hist"
     if kind not in ("kde", "hist", "dot"):
         raise ValueError("For plot_dgof_dist kind must be either 'kde', 'hist', 'dot'")
 
