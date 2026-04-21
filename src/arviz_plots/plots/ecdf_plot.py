@@ -226,8 +226,10 @@ def plot_ecdf_pit(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
-    sample_size = np.prod([distribution.sizes[dim] for dim in sample_dims])
-
+    sample_size = max(
+        int(np.prod([distribution[var].sizes.get(dim, 1) for dim in sample_dims]))
+        for var in distribution.data_vars
+    )
     if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
         raise ValueError(
             f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
