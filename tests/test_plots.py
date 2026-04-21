@@ -105,7 +105,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_dgof(datatree, backend=backend, kind=kind)
         assert not pc.aes
         assert "mu" in pc.viz["ecdf_lines"].data_vars
-        visuals = ("plot", "credible_interval", "ecdf_lines")
+        visuals = ("plot", "ecdf_lines")
         assert "ecdf_lines" in pc.viz.children
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
@@ -115,7 +115,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_dgof_dist(datatree, backend=backend, kind=kind)
         assert not pc.aes
         assert "mu" in pc.viz["dist"].data_vars
-        visuals = ("plot", "dist", "credible_interval", "ecdf_lines")
+        visuals = ("plot", "dist", "ecdf_lines")
         assert "dist" in pc.viz.children
         assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)

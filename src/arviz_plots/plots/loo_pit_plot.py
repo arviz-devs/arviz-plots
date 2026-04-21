@@ -60,8 +60,9 @@ def plot_loo_pit(
 
     This plot shows the empirical cumulative distribution function (ECDF) of the LOO-PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between the
-    observed ECDF and the expected CDF. Color code is used to indicate pointwise deviations from the
-    expected CDF.
+    observed ECDF and the expected CDF.
+    The points that contribute the most to deviations from uniformity are
+    computed as described in [3]_ and highlighted in the plot.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -94,8 +95,8 @@ def plot_loo_pit(
         Defaults to ``rcParams["data.sample_dims"]``
         CURRENTLY NOT SUPPORTED
     method : {"pot_c", "prit_c", "piet_c"}, optional
-        Method to compute the simultaneous confidence bands for the Δ-ECDF-PIT diagnostic.
-        Defaults to "pot_c". Check the documentation of :func:`~arviz_plots.plot_ecdf_pit` for
+        Method to use for the uniformity test. Defaults to "pot_c".
+        Check the documentation of :func:`~arviz_plots.plot_ecdf_pit` for
         more details.
     envelope_prob : float, optional
         Indicates the probability threshold to highlight points.
@@ -131,6 +132,11 @@ def plot_loo_pit(
     Returns
     -------
     PlotCollection
+
+    See Also
+    --------
+    plot_ppc_pit : Predictive check using PIT Δ-ECDF uniformity test.
+    plot_loo_interval : Predictive intervals and observed data.
 
     Examples
     --------
@@ -190,7 +196,8 @@ def plot_loo_pit(
             f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
         )
 
-    lpv = loo_pit(dt)
+    pareto_pit = method in ["pot_c", "piet_c"]
+    lpv = loo_pit(dt, pareto_pit=pareto_pit)
     new_dt = convert_to_datatree(lpv, group="loo_pit")
 
     visuals.setdefault("ylabel", {})

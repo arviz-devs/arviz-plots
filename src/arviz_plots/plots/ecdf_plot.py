@@ -1,4 +1,5 @@
 """Plot PIT Δ-ECDF."""
+import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
@@ -44,7 +45,7 @@ def plot_ecdf_pit(
     group="prior_sbc",
     coords=None,
     sample_dims=None,
-    method="envelope",
+    method="pot_c",
     envelope_prob=None,
     coverage=False,
     plot_collection=None,
@@ -184,7 +185,7 @@ def plot_ecdf_pit(
         >>> style.use("arviz-variat")
         >>> from arviz_base import load_arviz_data
         >>> dt = load_arviz_data('sbc')
-        >>> plot_ecdf_pit(dt, method="envelope")
+        >>> plot_ecdf_pit(dt)
 
 
     .. minigallery:: plot_ecdf_pit
@@ -230,6 +231,12 @@ def plot_ecdf_pit(
     if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
         raise ValueError(
             f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
+        )
+    if method == "envelope":
+        warnings.warn(
+            "Method 'envelope' will be deprecated. As it assumes PIT values are independent.\n"
+            "Use 'pot_c' instead, which is valid for both independent and dependent PIT values.",
+            FutureWarning,
         )
 
     # ensure we have PIT values between 0 and 1.

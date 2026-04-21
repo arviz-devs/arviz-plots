@@ -31,7 +31,7 @@ def plot_dgof_dist(
     coords=None,
     sample_dims=None,
     kind=None,
-    method="envelope",
+    method="pot_c",
     envelope_prob=None,
     plot_collection=None,
     backend=None,
@@ -127,6 +127,11 @@ def plot_dgof_dist(
     Returns
     -------
     PlotCollection
+
+    See Also
+    --------
+    plot_dgof : Δ-ECDF-PIT diagnostic for 1D density estimation (kde, histogram, or quantile)
+    plot_dist : Plot 1D marginal distributions.
 
     Examples
     --------

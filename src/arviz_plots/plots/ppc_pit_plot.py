@@ -1,34 +1,19 @@
 """Plot ppc pit."""
 from collections.abc import Mapping, Sequence
-from importlib import import_module
 from typing import Any, Literal
 
+import numpy as np
 import xarray as xr
-from arviz_base import rcParams
-from arviz_base.labels import BaseLabeller
 from arviz_base.validate import (
     validate_dict_argument,
     validate_or_use_rcparam,
     validate_sample_dims,
 )
-from arviz_stats.ecdf_utils import difference_ecdf_pit
+from arviz_stats.base.array import array_stats
 
-from arviz_plots.plot_collection import PlotCollection
-from arviz_plots.plots.utils import (
-    filter_aes,
-    get_visual_kwargs,
-    process_group_variables_coords,
-    set_wrap_layout,
-)
+from arviz_plots.plots import plot_ecdf_pit
+from arviz_plots.plots.utils import process_group_variables_coords
 from arviz_plots.plots.utils_plot_types import warn_if_binary, warn_if_prior_predictive
-from arviz_plots.visuals import (
-    ecdf_line,
-    fill_between_y,
-    labelled_title,
-    labelled_x,
-    labelled_y,
-    set_xticks,
-)
 
 
 def plot_ppc_pit(
@@ -39,6 +24,7 @@ def plot_ppc_pit(
     group="posterior_predictive",
     coords=None,
     sample_dims=None,
+    method="pot_c",
     envelope_prob=None,
     coverage=False,
     plot_collection=None,
@@ -48,8 +34,10 @@ def plot_ppc_pit(
         Literal[
             "ecdf_lines",
             "credible_interval",
+            "suspicious_points",
+            "p_value_text",
             "xlabel",
-            "xlabel",
+            "ylabel",
             "title",
         ],
         Sequence[str],
@@ -58,9 +46,12 @@ def plot_ppc_pit(
         Literal[
             "ecdf_lines",
             "credible_interval",
+            "suspicious_points",
+            "p_value_text",
             "xlabel",
             "ylabel",
             "title",
+            "remove_axis",
         ],
         Mapping[str, Any] | bool,
     ] = None,
@@ -76,8 +67,9 @@ def plot_ppc_pit(
 
     This plot shows the empirical cumulative distribution function (ECDF) of the PIT values.
     To make the plot easier to interpret, we plot the Δ-ECDF, that is, the difference between
-    the observed ECDF and the expected CDF. Simultaneous confidence bands are computed using
-    the method described in described in [1]_.
+    the observed ECDF and the expected CDF.
+    The points that contribute the most to deviations from uniformity are
+    computed as described in [1]_ and highlighted in the plot.
 
     Alternatively, we can visualize the coverage of the central posterior credible intervals by
     setting ``coverage=True``. This allows us to assess whether the credible intervals includes
@@ -106,6 +98,10 @@ def plot_ppc_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+        Method to use for the uniformity test. Defaults to "pot_c".
+        Check the documentation of :func:`~arviz_plots.plot_ecdf_pit` for
+        more details.
     envelope_prob : float, optional
         Indicates the probability that should be contained within the envelope.
         Defaults to ``rcParams["stats.envelope_prob"]``.
@@ -122,10 +118,16 @@ def plot_ppc_pit(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
+        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`,
+          only when method is "envelope"
+        * ref_line -> passed to :func:`~arviz_plots.visuals.line_xy`
+        * suspicious_points -> passed to :func:`~arviz_plots.visuals.scatter_xy`
+        * p_value_text -> passed to :func:`~arviz_plots.visuals.annotate_xy`
+          only when method is not "envelope"
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
+        * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats : mapping, optional
         Valid keys are:
@@ -140,6 +142,13 @@ def plot_ppc_pit(
     Returns
     -------
     PlotCollection
+
+    See Also
+    --------
+    plot_loo_pit : Predictive check using LOO-PIT Δ-ECDF uniformity test.
+    plot_ppc_dist :  Predictive check using 1D marginals for predictive (and observed data).
+    plot_ppc_pava : Predictive check ideal for binary, ordinal or categorical data.
+    plot_ppc_rootogram : Predictive check ideal for discrete (count) data.
 
     Examples
     --------
@@ -166,26 +175,12 @@ def plot_ppc_pit(
 
     References
     ----------
-    .. [1] Säilynoja et al. *Graphical test for discrete uniformity and
-       its applications in goodness-of-fit evaluation and multiple sample comparison*.
-       Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
+    .. [1] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_pit, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_ppc_pit, "visuals"))
     stats = validate_dict_argument(stats, (plot_ppc_pit, "stats"))
-
-    ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
-    ecdf_pit_kwargs.setdefault("n_simulations", 1000)
-
-    if backend is None:
-        if plot_collection is None:
-            backend = rcParams["plot.backend"]
-        else:
-            backend = plot_collection.backend
-
-    if labeller is None:
-        labeller = BaseLabeller()
 
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -198,122 +193,85 @@ def plot_ppc_pit(
     warn_if_binary(observed_dist, predictive_dist)
     warn_if_prior_predictive(group)
 
-    ds_ecdf = difference_ecdf_pit(
-        predictive_dist, observed_dist, envelope_prob, coverage, **ecdf_pit_kwargs
+    if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
+        raise ValueError(
+            f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
+        )
+
+    pareto_pit = method in ["pot_c", "piet_c"]
+
+    new_dt = _ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, pareto_pit)
+
+    visuals.setdefault("ylabel", {})
+    visuals.setdefault("remove_axis", False)
+    visuals.setdefault("xlabel", {"text": "ETI %" if coverage else "PIT"})
+
+    plot_collection = plot_ecdf_pit(
+        new_dt,
+        var_names=var_names,
+        filter_vars=filter_vars,
+        group="ecdf_pit",
+        coords=coords,
+        sample_dims=new_dt.ecdf_pit.dims,
+        method=method,
+        envelope_prob=envelope_prob,
+        coverage=coverage,
+        plot_collection=plot_collection,
+        backend=backend,
+        labeller=labeller,
+        aes_by_visuals=aes_by_visuals,
+        visuals=visuals,
+        stats=stats,
+        **pc_kwargs,
     )
-
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-
-    if plot_collection is None:
-        pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
-        pc_kwargs["figure_kwargs"].setdefault("sharex", True)
-        pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs.setdefault("cols", "__variable__")
-
-        pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, ds_ecdf)
-
-        plot_collection = PlotCollection.wrap(
-            ds_ecdf,
-            backend=backend,
-            **pc_kwargs,
-        )
-
-    ## ecdf_line
-    ecdf_ls_kwargs = get_visual_kwargs(visuals, "ecdf_lines")
-
-    if ecdf_ls_kwargs is not False:
-        _, _, ecdf_ls_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "ecdf_lines", sample_dims
-        )
-        ecdf_ls_kwargs.setdefault("color", "C0")
-
-        plot_collection.map(
-            ecdf_line,
-            "ecdf_lines",
-            data=ds_ecdf,
-            ignore_aes=ecdf_ls_ignore,
-            **ecdf_ls_kwargs,
-        )
-
-    if coverage:
-        plot_collection.map(
-            set_xticks,
-            "ecdf_xticks",
-            values=[0, 0.25, 0.5, 0.75, 1],
-            labels=["0", "25", "50", "75", "100"],
-            store_artist=backend == "none",
-        )
-
-    ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
-    if ci_kwargs is not False:
-        ci_kwargs.setdefault("color", "B1")
-        ci_kwargs.setdefault("alpha", 0.1)
-
-        plot_collection.map(
-            fill_between_y,
-            "credible_interval",
-            data=ds_ecdf,
-            x=ds_ecdf.sel(plot_axis="x"),
-            y_bottom=ds_ecdf.sel(plot_axis="y_bottom"),
-            y_top=ds_ecdf.sel(plot_axis="y_top"),
-            ignore_aes=ci_ignore,
-            **ci_kwargs,
-        )
-
-    # set xlabel
-    _, xlabels_aes, xlabels_ignore = filter_aes(
-        plot_collection, aes_by_visuals, "xlabel", sample_dims
-    )
-    xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
-    if xlabel_kwargs is not False:
-        if "color" not in xlabels_aes:
-            xlabel_kwargs.setdefault("color", "B1")
-
-        if coverage:
-            xlabel_kwargs.setdefault("text", "ETI %")
-        else:
-            xlabel_kwargs.setdefault("text", "PIT")
-
-        plot_collection.map(
-            labelled_x,
-            "xlabel",
-            ignore_aes=xlabels_ignore,
-            subset_info=True,
-            **xlabel_kwargs,
-        )
-
-    # set ylabel
-    _, ylabels_aes, ylabels_ignore = filter_aes(
-        plot_collection, aes_by_visuals, "ylabel", sample_dims
-    )
-    ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
-    if ylabel_kwargs is not False:
-        if "color" not in ylabels_aes:
-            ylabel_kwargs.setdefault("color", "B1")
-
-        ylabel_kwargs.setdefault("text", "Δ ECDF")
-
-        plot_collection.map(
-            labelled_y,
-            "ylabel",
-            ignore_aes=ylabels_ignore,
-            subset_info=True,
-            **ylabel_kwargs,
-        )
-
-    # title
-    title_kwargs = get_visual_kwargs(visuals, "title")
-    _, _, title_ignore = filter_aes(plot_collection, aes_by_visuals, "title", sample_dims)
-
-    if title_kwargs is not False:
-        plot_collection.map(
-            labelled_title,
-            "title",
-            ignore_aes=title_ignore,
-            subset_info=True,
-            labeller=labeller,
-            **title_kwargs,
-        )
 
     return plot_collection
+
+
+def _ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, pareto_pit):
+    """Compute Pareto-smoothed PIT ECDF values.
+
+    The probability of the posterior predictive being less than or equal to the observed data
+    should be uniformly distributed. This function computes the PIT values with
+    Generalized Pareto Distribution tail refinement.
+
+    Parameters
+    ----------
+    predictive_dist : xarray.Dataset
+        The posterior predictive distribution.
+    observed_dist : xarray.Dataset
+        The observed data.
+    sample_dims : str or sequence of hashable, optional
+        Dimensions to reduce.
+    coverage : bool
+        Whether to compute the coverage.
+    pareto_pit : bool
+        Whether to use Pareto-smoothed PIT values.
+    """
+    rng = np.random.default_rng(214)
+
+    dictio = {}
+    for var in observed_dist.data_vars:
+        if pareto_pit:
+            pred_stacked = predictive_dist[var].stack(__sample__=sample_dims)
+            vals = xr.apply_ufunc(
+                array_stats._pareto_pit_vec,  # pylint: disable=protected-access
+                pred_stacked,
+                observed_dist[var],
+                input_core_dims=[["__sample__"], []],
+                output_core_dims=[[]],
+                vectorize=False,
+                kwargs={"rng": rng},
+            )
+        else:
+            vals_less = (predictive_dist[var] < observed_dist[var]).mean(sample_dims)
+            vals_eq = (predictive_dist[var] == observed_dist[var]).mean(sample_dims)
+            urvs = rng.uniform(size=vals_less.values.shape)
+            vals = vals_less + urvs * vals_eq
+
+        if coverage:
+            vals = 2 * np.abs(vals - 0.5)
+
+        dictio[var] = vals
+
+    return xr.DataTree.from_dict({"ecdf_pit": xr.Dataset(dictio)})

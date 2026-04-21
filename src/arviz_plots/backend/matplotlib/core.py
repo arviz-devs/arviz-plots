@@ -470,6 +470,13 @@ def text(
     **artist_kws,
 ):
     """Interface to matplotlib for adding text to a plot."""
+    x = np.asarray(x)
+    if x.size == 1:
+        x = x.item()
+    y = np.asarray(y)
+    if y.size == 1:
+        y = y.item()
+
     kwargs = {
         "fontsize": size,
         "alpha": alpha,
