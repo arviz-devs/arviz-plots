@@ -314,9 +314,11 @@ def plot_ecdf_pit(
     ecdf_ls_kwargs = get_visual_kwargs(visuals, "ecdf_lines")
 
     if ecdf_ls_kwargs is not False:
-        _, _, ecdf_ls_ignore = filter_aes(
+        _, ecdf_ls_aes, ecdf_ls_ignore = filter_aes(
             plot_collection, aes_by_visuals, "ecdf_lines", sample_dims
         )
+        if "color" not in ecdf_ls_aes:
+            ecdf_ls_kwargs.setdefault("color", "C0")
 
         plot_collection.map(
             ecdf_line,
@@ -388,8 +390,9 @@ def plot_ecdf_pit(
                 plot_collection, aes_by_visuals, "p_value_text", sample_dims
             )
             p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
-            p_value_kwargs.setdefault("x", 0.15)
+            p_value_kwargs.setdefault("x", 0)
             p_value_kwargs.setdefault("y", 0.85 * epsilon)
+            p_value_kwargs.setdefault("horizontal_align", "left")
 
             plot_collection.map(
                 annotate_xy,
