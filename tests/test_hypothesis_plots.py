@@ -233,9 +233,9 @@ def test_combine_plots(datatree, expand, random_plots):
         var_names=["mu"],
     )
     assert "figure" in pc.viz.data_vars
-    assert expand in pc.viz.dims
-    assert len(pc.viz.coords[expand]) == len(random_plots)
-    assert list(pc.viz.coords[expand].values) == plot_names
+    assert expand in pc.viz["plot"].dims
+    assert len(pc.viz["plot"].coords[expand]) == len(random_plots)
+    assert list(pc.viz["plot"].coords[expand].values) == plot_names
     assert all(
         any(child_name.endswith(f"_{plot_name}") for child_name in pc.viz.children)
         for plot_name in plot_names

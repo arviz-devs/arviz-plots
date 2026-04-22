@@ -132,8 +132,11 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             backend=backend,
         )
         assert "figure" in pc.viz.data_vars
-        assert "column" in pc.viz.dims
-        assert list(pc.viz.coords["column"].values) == ["distribution", "autocorrelation"]
+        assert "column" in pc.viz["plot"].dims
+        assert list(pc.viz["plot"].coords["column"].values) == [
+            "distribution",
+            "autocorrelation",
+        ]
 
     def test_combine_plots_invalid_expand(self, datatree, backend):
         with pytest.raises(ValueError, match="must be 'row' or 'column'"):
