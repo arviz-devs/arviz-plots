@@ -8,6 +8,7 @@ import pytest
 from hypothesis import given
 
 from arviz_plots import (
+    combine_plots,
     plot_autocorr,
     plot_bf,
     plot_compare,
@@ -208,6 +209,37 @@ def test_plot_compare(cmp_df, relative_scale, rotated, hide_top_model, visuals):
     for visual, value in visuals.items():
         if value is False:
             assert visual not in pc.viz.data_vars
+
+
+plot_options = st.sampled_from(
+    [
+        (plot_dist, {}),
+        (plot_autocorr, {}),
+    ]
+)
+
+
+@given(
+    expand=st.sampled_from(("column", "row")),
+    random_plots=st.lists(plot_options, min_size=1, max_size=3),
+)
+def test_combine_plots(datatree, expand, random_plots):
+    plot_names = [f"{plot.__name__}_{idx:02d}" for idx, (plot, _) in enumerate(random_plots)]
+    pc = combine_plots(
+        datatree,
+        plots=random_plots,
+        backend="none",
+        expand=expand,
+        var_names=["mu"],
+    )
+    assert "figure" in pc.viz.data_vars
+    assert expand in pc.viz["plot"].dims
+    assert len(pc.viz["plot"].coords[expand]) == len(random_plots)
+    assert list(pc.viz["plot"].coords[expand].values) == plot_names
+    assert all(
+        any(child_name.endswith(f"_{plot_name}") for child_name in pc.viz.children)
+        for plot_name in plot_names
+    )
 
 
 @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
