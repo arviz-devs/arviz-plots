@@ -1,3 +1,52 @@
+<a id="v1.1.0"></a>
+# [v1.1.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.1.0) - 2026-04-23
+
+## What's Changed
+
+### New Features
+* Adding new plotting functionality to plot_ridge by [@NeerjaKasture](https://github.com/NeerjaKasture) in [#420](https://github.com/arviz-devs/arviz-plots/pull/420)
+* Add plot_loo_interval by [@aloctavodia](https://github.com/aloctavodia) in [#459](https://github.com/arviz-devs/arviz-plots/pull/459)
+* Add set_x_scale by [@aloctavodia](https://github.com/aloctavodia) in [#470](https://github.com/arviz-devs/arviz-plots/pull/470)
+* Add new uniformity test by [@aloctavodia](https://github.com/aloctavodia) in [#452](https://github.com/arviz-devs/arviz-plots/pull/452)
+* plot_compare: Default to plot ELPD differences by [@aloctavodia](https://github.com/aloctavodia) in [#483](https://github.com/arviz-devs/arviz-plots/pull/483)
+
+
+### Maintenance and bug fixes
+* Move ess evolution helper by [@OriolAbril](https://github.com/OriolAbril) in [#456](https://github.com/arviz-devs/arviz-plots/pull/456)
+* Special handling of single plot figure in none backend by [@OriolAbril](https://github.com/OriolAbril) in [#449](https://github.com/arviz-devs/arviz-plots/pull/449)
+* Add hypothesis test for plot_compare by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#435](https://github.com/arviz-devs/arviz-plots/pull/435)
+* Fix [tool.pytest] -> [tool.pytest.ini_options] in pyproject.toml by [@mahidhiman12](https://github.com/mahidhiman12) in [#462](https://github.com/arviz-devs/arviz-plots/pull/462)
+* Fix rootogram coords issue by [@OriolAbril](https://github.com/OriolAbril) in [#464](https://github.com/arviz-devs/arviz-plots/pull/464)
+* Fix xlabel plot_loo_pit when coverage True by [@aloctavodia](https://github.com/aloctavodia) in [#471](https://github.com/arviz-devs/arviz-plots/pull/471)
+* Use new validators by [@OriolAbril](https://github.com/OriolAbril) in [#442](https://github.com/arviz-devs/arviz-plots/pull/442)
+* Fix plot_compare when relative_scale is true by [@Cab14bacc](https://github.com/Cab14bacc) in [#472](https://github.com/arviz-devs/arviz-plots/pull/472)
+* Update dataset construction by [@aloctavodia](https://github.com/aloctavodia) in [#489](https://github.com/arviz-devs/arviz-plots/pull/489)
+* Refactor plot_ppc_pit by [@aloctavodia](https://github.com/aloctavodia) in [#487](https://github.com/arviz-devs/arviz-plots/pull/487)
+* ecdf_pit: fix colors and p_value_text by [@aloctavodia](https://github.com/aloctavodia) in [#491](https://github.com/arviz-devs/arviz-plots/pull/491)
+* Handle mixed dims and MultiIndex warnings by [@aloctavodia](https://github.com/aloctavodia) in [#490](https://github.com/arviz-devs/arviz-plots/pull/490)
+* misc bugs by [@aloctavodia](https://github.com/aloctavodia) in [#492](https://github.com/arviz-devs/arviz-plots/pull/492)
+* Add tests for combine_plots by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#488](https://github.com/arviz-devs/arviz-plots/pull/488)
+
+
+### Documentation
+* Format bare URL in README by [@sjiang83](https://github.com/sjiang83) in [#430](https://github.com/arviz-devs/arviz-plots/pull/430)
+* Sort glossary alphabetically by [@HusseinElhaddad](https://github.com/HusseinElhaddad) in [#443](https://github.com/arviz-devs/arviz-plots/pull/443)
+* Configure docstub and add type hints for forest_plot by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#429](https://github.com/arviz-devs/arviz-plots/pull/429)
+* Use negative elpd_diff in gallery example by [@aloctavodia](https://github.com/aloctavodia) in [#480](https://github.com/arviz-devs/arviz-plots/pull/480)
+* Add tutorial for accessing matplotlib axes from PlotCollection by [@ellatso](https://github.com/ellatso) in [#433](https://github.com/arviz-devs/arviz-plots/pull/433)
+
+
+## New Contributors
+* [@HusseinElhaddad](https://github.com/HusseinElhaddad) made their first contribution in [#443](https://github.com/arviz-devs/arviz-plots/pull/443)
+* [@mahidhiman12](https://github.com/mahidhiman12) made their first contribution in [#462](https://github.com/arviz-devs/arviz-plots/pull/462)
+* [@Cab14bacc](https://github.com/Cab14bacc) made their first contribution in [#472](https://github.com/arviz-devs/arviz-plots/pull/472)
+* [@ellatso](https://github.com/ellatso) made their first contribution in [#433](https://github.com/arviz-devs/arviz-plots/pull/433)
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v1.0.0...v1.1.0
+
+[Changes][v1.1.0]
+
+
 <a id="v1.0.0"></a>
 # [v1.0.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.0.0) - 2026-03-02
 
@@ -337,6 +386,7 @@
 [Changes][v0.4.0]
 
 
+[v1.1.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.8.0...v1.0.0
 [v0.8.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.7.0...v0.8.0
 [v0.7.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.6.0...v0.7.0
