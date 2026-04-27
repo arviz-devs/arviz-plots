@@ -253,6 +253,7 @@ def plot_ppc_dist(
             "point_estimate_text": False,
             "title": visuals.get("title", {}),
             "rug": False,
+            "remove_axis": visuals.get("remove_axis", {}),
         }
         pred_aes_by_visuals = {
             k.replace("predictive_", ""): v
