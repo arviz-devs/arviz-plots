@@ -1,19 +1,19 @@
 """Plot ppc pit."""
+
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal
 
-import numpy as np
 import xarray as xr
 from arviz_base.validate import (
     validate_dict_argument,
     validate_or_use_rcparam,
     validate_sample_dims,
 )
-from arviz_stats.base.array import array_stats
 
-from arviz_plots.plots import plot_ecdf_pit
+from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 from arviz_plots.plots.utils import process_group_variables_coords
 from arviz_plots.plots.utils_plot_types import warn_if_binary, warn_if_prior_predictive
+from arviz_plots.plots.utils_ppc import get_ppc_pit
 
 
 def plot_ppc_pit(
@@ -200,7 +200,7 @@ def plot_ppc_pit(
 
     pareto_pit = method in ["pot_c", "piet_c"]
 
-    new_dt = _ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, pareto_pit)
+    new_dt = get_ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, pareto_pit)
 
     visuals.setdefault("ylabel", {})
     visuals.setdefault("remove_axis", False)
@@ -226,52 +226,3 @@ def plot_ppc_pit(
     )
 
     return plot_collection
-
-
-def _ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, pareto_pit):
-    """Compute Pareto-smoothed PIT ECDF values.
-
-    The probability of the posterior predictive being less than or equal to the observed data
-    should be uniformly distributed. This function computes the PIT values with
-    Generalized Pareto Distribution tail refinement.
-
-    Parameters
-    ----------
-    predictive_dist : xarray.Dataset
-        The posterior predictive distribution.
-    observed_dist : xarray.Dataset
-        The observed data.
-    sample_dims : str or sequence of hashable, optional
-        Dimensions to reduce.
-    coverage : bool
-        Whether to compute the coverage.
-    pareto_pit : bool
-        Whether to use Pareto-smoothed PIT values.
-    """
-    rng = np.random.default_rng(214)
-
-    dictio = {}
-    for var in observed_dist.data_vars:
-        if pareto_pit:
-            pred_stacked = predictive_dist[var].stack(__sample__=sample_dims)
-            vals = xr.apply_ufunc(
-                array_stats._pareto_pit_vec,  # pylint: disable=protected-access
-                pred_stacked,
-                observed_dist[var],
-                input_core_dims=[["__sample__"], []],
-                output_core_dims=[[]],
-                vectorize=False,
-                kwargs={"rng": rng},
-            )
-        else:
-            vals_less = (predictive_dist[var] < observed_dist[var]).mean(sample_dims)
-            vals_eq = (predictive_dist[var] == observed_dist[var]).mean(sample_dims)
-            urvs = rng.uniform(size=vals_less.values.shape)
-            vals = vals_less + urvs * vals_eq
-
-        if coverage:
-            vals = 2 * np.abs(vals - 0.5)
-
-        dictio[var] = vals
-
-    return xr.DataTree.from_dict({"ecdf_pit": xr.Dataset(dictio)})
