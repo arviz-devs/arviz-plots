@@ -192,7 +192,7 @@ def plot_ppc_dist(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
-    pp_dims = [dims for dims in dt[group].dims if dims not in sample_dims]
+    pp_dims = [dim for dim in predictive_dist.dims if dim not in sample_dims]
 
     if "observed_data" in dt:
         observed_dist = process_group_variables_coords(
@@ -253,7 +253,7 @@ def plot_ppc_dist(
             "point_estimate_text": False,
             "title": visuals.get("title", {}),
             "rug": False,
-            "remove_axis": visuals.get("remove_axis", False),
+            "remove_axis": visuals.get("remove_axis", {}),
         }
         pred_aes_by_visuals = {
             k.replace("predictive_", ""): v
