@@ -1,4 +1,5 @@
 """Plot PIT Δ-ECDF."""
+
 import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
@@ -259,10 +260,9 @@ def plot_ecdf_pit(
         upper_ci = upper_ci - x_ci
 
     else:
-        p_values, shapley_vals = distribution.azstats.uniformity_test(
+        p_values, shapley_vals, _ = distribution.azstats.uniformity_test(
             dim=sample_dims, method=method
         )
-
         gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
         highlight = (shapley_vals > gamma) & (p_values < alpha)
         suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})

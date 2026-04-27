@@ -1,28 +1,16 @@
 """Predictive check using densities."""
 
-import warnings
 from collections.abc import Mapping, Sequence
-from importlib import import_module
 from typing import Any, Literal
 
-import numpy as np
 import xarray as xr
-from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
-from arviz_base.validate import (
-    validate_dict_argument,
-    validate_or_use_rcparam,
-    validate_sample_dims,
-)
+from arviz_base.validate import validate_dict_argument
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
-from arviz_plots.plots.utils import (
-    get_visual_kwargs,
-    process_group_variables_coords,
-    set_wrap_layout,
-)
-from arviz_plots.plots.utils_plot_types import warn_if_binary, warn_if_discrete
+from arviz_plots.plots.utils import get_visual_kwargs, set_wrap_layout
+from arviz_plots.plots.utils_ppc import prepare_ppc_dist_data
 
 
 def plot_ppc_dist(
@@ -174,53 +162,23 @@ def plot_ppc_dist(
 
     .. minigallery:: plot_ppc_dist
     """
-    kind = validate_or_use_rcparam(kind, "plot.density_kind")
     stats = validate_dict_argument(stats, (plot_ppc_dist, "stats"))
     visuals = validate_dict_argument(visuals, (plot_ppc_dist, "visuals"))
 
-    if backend is None:
-        if plot_collection is None:
-            backend = rcParams["plot.backend"]
-        else:
-            backend = plot_collection.backend
-
-    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-
-    rng = np.random.default_rng(4214)
-
-    predictive_dist = process_group_variables_coords(
-        dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
+    plot_bknd, pp_dims, sample_dims, _, predictive_dist, observed_dist = prepare_ppc_dist_data(
+        dt,
+        var_names=var_names,
+        filter_vars=filter_vars,
+        group=group,
+        coords=coords,
+        sample_dims=sample_dims,
+        kind=kind,
+        num_samples=num_samples,
+        plot_collection=plot_collection,
+        backend=backend,
+        stats=stats,
+        warn_discrete_dist=True,
     )
-    sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
-    pp_dims = [dim for dim in predictive_dist.dims if dim not in sample_dims]
-
-    if "observed_data" in dt:
-        observed_dist = process_group_variables_coords(
-            dt,
-            group="observed_data",
-            var_names=var_names,
-            filter_vars=filter_vars,
-            coords=coords,
-        )
-    else:
-        observed_dist = None
-
-    warn_if_binary(observed_dist, predictive_dist)
-    warn_if_discrete(observed_dist, predictive_dist, kind)
-
-    # Select a random subset of samples
-    n_pp_samples = np.prod(
-        [predictive_dist.sizes[dim] for dim in sample_dims if dim in predictive_dist.dims]
-    )
-    if num_samples > n_pp_samples:
-        num_samples = n_pp_samples
-        warnings.warn("num_samples is larger than the number of predictive samples.")
-
-    if kind == "dot":
-        stats.setdefault("predictive_dist", {"top_only": True})
-
-    pp_sample_ix = rng.choice(n_pp_samples, size=num_samples, replace=False)
-    predictive_dist = predictive_dist.stack(sample=sample_dims).isel(sample=pp_sample_ix)
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -272,7 +230,8 @@ def plot_ppc_dist(
             plot_collection=plot_collection,
             stats={"dist": stats.get("predictive_dist", {})},
         )
-        plot_collection.rename_visuals(dist="predictive_dist")
+        if plot_collection.coords is None:
+            plot_collection.rename_visuals(dist="predictive_dist")
 
     # Plot the observed density
     observed_density_kwargs = get_visual_kwargs(
@@ -303,6 +262,7 @@ def plot_ppc_dist(
             plot_collection=plot_collection,
             stats={"dist": stats.get("observed_dist", {})},
         )
-        plot_collection.rename_visuals(dist="observed_dist")
+        if plot_collection.coords is None:
+            plot_collection.rename_visuals(dist="observed_dist")
 
     return plot_collection
