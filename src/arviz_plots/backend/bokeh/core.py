@@ -1,4 +1,5 @@
 """Bokeh interface layer."""
+
 # pylint: disable=protected-access
 
 import math

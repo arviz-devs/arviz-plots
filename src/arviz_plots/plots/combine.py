@@ -1,4 +1,5 @@
 """Elements to combine multiple batteries-included plots into a single figure."""
+
 from importlib import import_module
 
 from arviz_base import rcParams

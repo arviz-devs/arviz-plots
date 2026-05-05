@@ -1,4 +1,5 @@
 """Forest plot code."""
+
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
