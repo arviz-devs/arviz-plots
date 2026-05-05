@@ -29,6 +29,7 @@ from arviz_plots import (
     plot_parallel,
     plot_ppc_censored,
     plot_ppc_dist,
+    plot_ppc_dist_pit,
     plot_ppc_interval,
     plot_ppc_pava,
     plot_ppc_pava_residuals,
@@ -695,6 +696,15 @@ class TestPlots:  # pylint: disable=too-many-public-methods
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "/overlay_ppc" in pc.aes.groups
+        assert "y" in pc.viz["predictive_dist"]
+        assert "y" in pc.viz["observed_dist"]
+
+    @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
+    @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
+    def test_plot_ppc_dist_pit(self, datatree, kind, backend):
+        pc = plot_ppc_dist_pit(datatree, kind=kind, backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "/overlay_ppc" in pc.aes.groups
         assert "y" in pc.viz["predictive_dist"]

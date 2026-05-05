@@ -1,4 +1,5 @@
 """Style/templating helpers."""
+
 from pathlib import Path
 
 from arviz_base import rcParams

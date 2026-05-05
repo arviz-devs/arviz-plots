@@ -1,4 +1,5 @@
 """Convergence diagnostic distribution plot code."""
+
 import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module

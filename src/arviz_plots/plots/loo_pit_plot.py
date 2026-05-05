@@ -1,4 +1,5 @@
 """Plot loo pit."""
+
 import warnings
 from collections.abc import Mapping, Sequence
 from typing import Any, Literal

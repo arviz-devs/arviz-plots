@@ -1,4 +1,5 @@
 """Utility functions to check data types for plotting functions."""
+
 import warnings
 
 import numpy as np

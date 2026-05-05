@@ -30,6 +30,7 @@ from arviz_plots import (
     plot_parallel,
     plot_ppc_censored,
     plot_ppc_dist,
+    plot_ppc_dist_pit,
     plot_ppc_interval,
     plot_ppc_pava,
     plot_ppc_pava_residuals,
@@ -899,6 +900,39 @@ def test_plot_parallel(datatree, visuals, norm_method):
 )
 def test_plot_ppc_dist(datatree, kind, visuals):
     pc = plot_ppc_dist(
+        datatree,
+        backend="none",
+        kind=kind,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
+            assert all(
+                var_name in pc.viz[visual].data_vars
+                for var_name in datatree["posterior_predictive"].data_vars
+            )
+
+
+@pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "predictive_dist": visuals_value_no_false,
+            "observed_dist": visuals_value,
+            "suspicious_points": visuals_value,
+            "title": visuals_value,
+            "remove_axis": st.just(False),
+        },
+    ),
+    kind=kind_value,
+)
+def test_plot_ppc_dist_pit(datatree, kind, visuals):
+    pc = plot_ppc_dist_pit(
         datatree,
         backend="none",
         kind=kind,
