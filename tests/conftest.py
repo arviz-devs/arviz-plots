@@ -11,6 +11,7 @@ from arviz_base.testing import datatree3 as _datatree3
 from arviz_base.testing import datatree_4d as _datatree_4d
 from arviz_base.testing import datatree_binary as _datatree_binary
 from arviz_base.testing import datatree_censored as _datatree_censored
+from arviz_base.testing import datatree_regression as _datatree_regression
 from arviz_base.testing import datatree_sample as _datatree_sample
 from hypothesis import settings
 
@@ -152,6 +153,12 @@ def datatree_sample():
 def cmp():
     """Fixture for the cmp function."""
     return _cmp()
+
+
+@pytest.fixture(scope="session")
+def datatree_regression():
+    """Fixture for a DataTree with regression data."""
+    return _datatree_regression()
 
 
 @pytest.fixture(scope="session")
