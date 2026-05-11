@@ -1,4 +1,4 @@
-# pylint: disable=no-self-use, redefined-outer-name
+# pylint: disable=no-self-use, redefined-outer-name, too-many-lines
 """Test batteries-included plots."""
 import numpy as np
 import pytest
@@ -21,6 +21,7 @@ from arviz_plots import (
     plot_ess_evolution,
     plot_forest,
     plot_khat,
+    plot_lm,
     plot_loo_interval,
     plot_loo_pit,
     plot_mcse,
@@ -463,6 +464,21 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             visuals={"hover": True},
         )
         assert "figure" in pc.viz.data_vars
+
+    def test_plot_lm(self, datatree_regression, backend):
+        pc = plot_lm(datatree_regression, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "ci_band" in pc.viz.children
+        assert "pe_line" in pc.viz.children
+        assert "observed_scatter" in pc.viz.children
+        assert "x" in pc.viz["pe_line"]
+
+    def test_plot_lm_group_posterior(self, datatree_regression, backend):
+        pc = plot_lm(datatree_regression, group="posterior", y="mu", y_obs="y", backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "ci_band" in pc.viz.children
+        assert "pe_line" in pc.viz.children
+        assert "x" in pc.viz["pe_line"]
 
     @pytest.mark.parametrize("coverage", (True, False))
     def test_plot_loo_pit(self, datatree, coverage, backend):

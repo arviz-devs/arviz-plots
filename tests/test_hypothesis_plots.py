@@ -22,6 +22,7 @@ from arviz_plots import (
     plot_ess_evolution,
     plot_forest,
     plot_khat,
+    plot_lm,
     plot_loo_interval,
     plot_loo_pit,
     plot_mcse,
@@ -739,6 +740,49 @@ def test_plot_loo_interval(datatree, ci_probs, visuals):
                 var_name in pc.viz[visual].data_vars
                 for var_name in datatree["posterior_predictive"].data_vars
             )
+
+
+@given(
+    visuals=st.fixed_dictionaries(
+        {},
+        optional={
+            "pe_line": visuals_value,
+            "ci_bounds": visuals_value,
+            "ci_vlines": visuals_value,
+            "ci_band": visuals_value,
+            "observed_scatter": visuals_value,
+            "xlabel": visuals_value,
+            "ylabel": visuals_value,
+        },
+    ),
+    ci_kind=ci_kind_value,
+    ci_prob=ci_prob_value,
+    point_estimate=point_estimate_value,
+    smooth=st.booleans(),
+)
+def test_plot_lm(datatree_regression, ci_kind, ci_prob, point_estimate, smooth, visuals):
+    pc = plot_lm(
+        datatree_regression,
+        backend="none",
+        ci_kind=ci_kind,
+        ci_prob=ci_prob,
+        point_estimate=point_estimate,
+        smooth=smooth,
+        visuals=visuals,
+    )
+    assert "plot" in pc.viz.children
+    for visual, value in visuals.items():
+        if visual == "ci_bounds":
+            if value is False:
+                assert "ci_bounds_upper" not in pc.viz.children
+                assert "ci_bounds_lower" not in pc.viz.children
+            else:
+                assert "ci_bounds_upper" in pc.viz.children
+                assert "ci_bounds_lower" in pc.viz.children
+        elif value is False:
+            assert visual not in pc.viz.children
+        else:
+            assert visual in pc.viz.children
 
 
 @given(

@@ -312,7 +312,13 @@ def plot_lm(
     )
 
     if y_obs is None:
-        y_obs = y
+        obs_vars = list(obs_data.data_vars)
+        if all(v in obs_vars for v in y):
+            y_obs = y
+        else:
+            y_obs = obs_vars[: len(y)]
+    elif isinstance(y_obs, str):
+        y_obs = [y_obs]
     observed_y = extract(
         dt,
         group="observed_data",
@@ -321,8 +327,9 @@ def plot_lm(
         keep_dataset=True,
         sample_dims=[],
     )
-    if all(var_name in observed_y.data_vars for var_name in y_to_x_map):
-        observed_y = observed_y.rename_vars(y_to_x_map)
+    obs_to_x_map = dict(zip(y_obs, x))
+    if all(var_name in observed_y.data_vars for var_name in obs_to_x_map):
+        observed_y = observed_y.rename_vars(obs_to_x_map)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
