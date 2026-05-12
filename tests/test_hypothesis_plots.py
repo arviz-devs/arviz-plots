@@ -838,6 +838,8 @@ def test_plot_mcse(datatree, rug, n_points, extra_methods, visuals):
         optional={
             "scatter": visuals_value_no_false,
             "divergence": visuals_value,
+            "contour": visuals_value,
+            "contourf": visuals_value,
             "xlabel": visuals_value,
             "ylabel": visuals_value,
             "credible_interval": visuals_value,

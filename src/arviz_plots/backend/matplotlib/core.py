@@ -679,3 +679,21 @@ def yscale(target, scale):
 def grid(target, axis, color):
     """Interface to matplotlib for setting a grid in any axis."""
     target.grid(axis=axis, color=color)
+
+
+@expand_aesthetic_aliases
+def contour(x, y, density, target, *, levels=None, color=unset, alpha=unset, **artist_kws):
+    """Interface to matplotlib for a contour plot."""
+    kwargs = {"colors": color, "alpha": alpha}
+    return target.contour(
+        x, y, density.T, levels=levels, **_filter_kwargs(kwargs, None, artist_kws)
+    )
+
+
+@expand_aesthetic_aliases
+def contourf(x, y, density, target, *, levels=None, color=unset, alpha=unset, **artist_kws):
+    """Interface to matplotlib for a filled contour plot."""
+    kwargs = {"colors": color, "alpha": alpha}
+    return target.contourf(
+        x, y, density.T, levels=levels, **_filter_kwargs(kwargs, None, artist_kws)
+    )
