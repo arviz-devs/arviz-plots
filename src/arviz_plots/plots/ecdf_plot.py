@@ -293,6 +293,7 @@ def plot_ecdf_pit(
             **pc_kwargs,
         )
 
+    print(pc_kwargs["figure_kwargs"])
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ecdf_pit, "aes_by_visuals"))
 
     ## reference line
