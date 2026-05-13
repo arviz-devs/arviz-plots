@@ -784,3 +784,81 @@ def grid(target, axis, color):
     }
     target.append(artist_element)
     return artist_element
+
+
+def contour(x, y, density, target, *, levels=None, color=unset, alpha=unset, **artist_kws):
+    """Interface for a contour plot.
+
+    Parameters
+    ----------
+    x : array_like of shape (nx,)
+        Grid values along the x axis.
+    y : array_like of shape (ny,)
+        Grid values along the y axis.
+    density : array_like of shape (nx, ny)
+        Density values on the grid.
+    target : list
+        The :term:`plot` to draw on.
+    levels : array_like, optional
+        Density values at which to draw contour lines.
+    color, alpha : any, optional
+        See :ref:`backend_interface_arguments` for details.
+    **artist_kws
+        Extra keyword arguments.
+
+    Returns
+    -------
+    dict
+    """
+    kwargs = {"color": color, "alpha": alpha, "levels": levels}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    artist_element = {
+        "function": "contour",
+        "x": x,
+        "y": y,
+        "density": density,
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def contourf(
+    x, y, density, target, *, levels=None, color=unset, alpha=unset, cmap=None, **artist_kws
+):
+    """Interface for a filled contour plot.
+
+    Parameters
+    ----------
+    x : array_like of shape (nx,)
+        Grid values along the x axis.
+    y : array_like of shape (ny,)
+        Grid values along the y axis.
+    density : array_like of shape (nx, ny)
+        Density values on the grid.
+    target : list
+        The :term:`plot` to draw on.
+    levels : array_like, optional
+        Density values bounding filled regions.
+    color, alpha : any, optional
+        See :ref:`backend_interface_arguments` for details.
+    **artist_kws
+        Extra keyword arguments.
+
+    Returns
+    -------
+    dict
+    """
+    kwargs = {"color": color, "alpha": alpha, "levels": levels, "cmap": cmap}
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    artist_element = {
+        "function": "contourf",
+        "x": x,
+        "y": y,
+        "density": density,
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element

@@ -2,6 +2,8 @@
 
 from .core import (
     ciliney,
+    contour,
+    contourf,
     create_plotting_grid,
     fill_between_y,
     get_background_color,

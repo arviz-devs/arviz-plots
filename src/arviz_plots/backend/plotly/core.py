@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 """Plotly interface layer.
 
 Notes
@@ -953,3 +954,115 @@ def grid(target, axis="both", color=unset, **artist_kws):
         target.update_yaxes(_filter_kwargs(kwargs, artist_kws))
     if axis in ["x", "both"]:
         target.update_xaxes(_filter_kwargs(kwargs, artist_kws))
+
+
+@expand_aesthetic_aliases
+def contour(x, y, density, target, *, levels=None, color=unset, alpha=unset, **artist_kws):
+    """Interface to plotly for a contour plot.
+
+    Parameters
+    ----------
+    x : array_like of shape (nx,)
+        Grid values along the x axis.
+    y : array_like of shape (ny,)
+        Grid values along the y axis.
+    density : array_like of shape (nx, ny)
+        Density values on the grid.
+    target : PlotlyPlot
+        The :term:`plot` to draw on.
+    levels : array_like, optional
+        Density values at which to draw contour lines.
+    color, alpha : any, optional
+        See :ref:`backend_interface_arguments` for details.
+    **artist_kws
+        Passed to :class:`~plotly.graph_objects.Contour`.
+
+    Returns
+    -------
+    list of go.Contour
+    """
+    d_range = float(np.nanmax(density) - np.nanmin(density))
+    eps = d_range * 1e-6 if d_range > 0 else 1e-10
+    line_kwargs = {"color": color}
+    traces = []
+    for level in np.atleast_1d(levels):
+        lv = float(level)
+        trace = go.Contour(
+            x=np.asarray(x),
+            y=np.asarray(y),
+            z=np.asarray(density).T,
+            autocontour=False,
+            contours={
+                "coloring": "none",
+                "showlines": True,
+                "start": lv - eps,
+                "end": lv + eps,
+                "size": 2 * eps,
+            },
+            line=_filter_kwargs(line_kwargs, {}),
+            showscale=False,
+            **_filter_kwargs({"opacity": alpha, "showlegend": False}, artist_kws),
+        )
+        target.add_trace(trace)
+        traces.append(trace)
+    return traces
+
+
+@expand_aesthetic_aliases
+def contourf(
+    x, y, density, target, *, levels=None, color=unset, alpha=unset, cmap=None, **artist_kws
+):
+    """Interface to plotly for a filled contour plot.
+
+    Parameters
+    ----------
+    x : array_like of shape (nx,)
+        Grid values along the x axis.
+    y : array_like of shape (ny,)
+        Grid values along the y axis.
+    density : array_like of shape (nx, ny)
+        Density values on the grid.
+    target : PlotlyPlot
+        The :term:`plot` to draw on.
+    levels : array_like, optional
+        Density values bounding filled regions.
+    color, alpha : any, optional
+        See :ref:`backend_interface_arguments` for details.
+    cmap : str, optional
+        Plotly colorscale name. Overrides `color` when set.
+    **artist_kws
+        Passed to :class:`~plotly.graph_objects.Contour`.
+
+    Returns
+    -------
+    go.Contour
+    """
+    levels = np.asarray(levels)
+    density = np.asarray(density)
+    density_masked = np.where(density < levels[0], np.nan, density)
+
+    if cmap is not None:
+        colorscale = cmap
+    elif color is not unset:
+        colorscale = [[0, color], [1, color]]
+
+    n_bands = len(levels) - 1
+    trace = go.Contour(
+        x=np.asarray(x),
+        y=np.asarray(y),
+        z=density_masked.T,
+        colorscale=colorscale,
+        zmin=float(levels[0]),
+        zmax=float(levels[-1]),
+        autocontour=False,
+        contours={
+            "showlines": False,
+            "start": float(levels[0]),
+            "end": float(levels[-1]),
+            "size": float(levels[-1] - levels[0]) / n_bands,
+        },
+        showscale=False,
+        **_filter_kwargs({"opacity": alpha, "showlegend": False}, artist_kws),
+    )
+    target.add_trace(trace)
+    return trace
