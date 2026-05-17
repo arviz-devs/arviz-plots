@@ -503,6 +503,7 @@ def plot_ridge(
             subset_info=True,
             coords={"column": "labels"},
             ignore_aes=lab_ignore,
+            labeller=labeller,
             **lab_kwargs,
         )
         x += 1
