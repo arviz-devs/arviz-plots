@@ -391,6 +391,32 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             assert 0 in pc.aes["alpha"]["mapping"].values
             assert pseudo_dim in pc.viz["shade"].dims
 
+    def test_plot_forest_forwards_labeller(self, datatree, backend):
+        def _get_label_text(artist, backend):
+            if backend == "matplotlib":
+                return artist.get_text()
+            if backend == "plotly":
+                return artist.text[0]
+            if backend == "none":
+                return artist["string"]
+            if backend == "bokeh":
+                return artist.data_source.data["text"][0]
+            raise ValueError(f"Unknown backend: {backend}")
+
+        labeller = MapLabeller(var_name_map={"mu": "MY_MU"})
+        pc = plot_forest(
+            datatree,
+            var_names=["mu"],
+            labels=["__variable__"],
+            labeller=labeller,
+            backend=backend,
+        )
+
+        label_artist = pc.viz["variable_label"]["mu"].item()
+        assert "variable_label" in pc.viz.children
+        assert "mu" in pc.viz["variable_label"]
+        assert _get_label_text(label_artist, backend) == "MY_MU"
+
     @pytest.mark.parametrize(
         "visuals,expected_children,unexpected_children",
         [
