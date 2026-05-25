@@ -50,7 +50,7 @@ def prepare_ppc_dist_data(
     sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
     pp_dims = [dim for dim in predictive_dist.dims if dim not in sample_dims]
 
-    if require_observed or "observed_data" in dt:
+    try:
         observed_dist = process_group_variables_coords(
             dt,
             group="observed_data",
@@ -58,7 +58,9 @@ def prepare_ppc_dist_data(
             filter_vars=filter_vars,
             coords=coords,
         )
-    else:
+    except KeyError as err:
+        if require_observed:
+            raise err
         observed_dist = None
 
     warn_if_binary(observed_dist, predictive_dist)
