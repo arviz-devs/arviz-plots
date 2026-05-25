@@ -437,7 +437,7 @@ def scatter(
         "s": size,
         "marker": marker,
         "alpha": alpha,
-        "c": facecolor,
+        "color": facecolor,
         "edgecolors": edgecolor,
         "linewidths": width,
     }
