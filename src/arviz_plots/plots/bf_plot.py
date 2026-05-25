@@ -10,6 +10,7 @@ from arviz_stats.bayes_factor import bayes_factor
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
 from arviz_plots.plots.utils import add_lines, filter_aes, get_visual_kwargs
+from arviz_plots.visuals import annotate_xy
 
 
 def plot_bf(
@@ -19,6 +20,7 @@ def plot_bf(
     sample_dims=None,
     ref_val=0,
     kind=None,
+    bf_type="BF10",
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -26,6 +28,7 @@ def plot_bf(
         Literal[
             "dist",
             "ref_line",
+            "ref_value_text",
             "title",
         ],
         Sequence[str],
@@ -34,8 +37,8 @@ def plot_bf(
         Literal[
             "dist",
             "ref_line",
+            "ref_value_text",
             "title",
-            "legend",
         ],
         Mapping[str, Any] | bool,
     ] = None,
@@ -45,26 +48,30 @@ def plot_bf(
     r"""Bayes Factor for comparing hypothesis of two nested models.
 
     The Bayes factor is estimated by comparing a model (H1) against a model
-    in which the parameter of interest has been restricted to be a point-null (H0)
-    This computation assumes H0 is a special case of H1. For more details see here
+    in which the parameter of interest has been restricted to be a point-null (H0).
+    This computation assumes H0 is a special case of H1. For more details see
     https://arviz-devs.github.io/EABM/Chapters/Model_comparison.html#savagedickey-ratio
 
     Parameters
     ----------
-    dt : DataTree or dict of {str : DataTree}
-        Input data. In case of dictionary input, the keys are taken to be model names.
-        In such cases, a dimension "model" is generated and can be used to map to aesthetics.
+    dt : DataTree
+        Input data.
     var_names : str, optional
-        Variables for which the bayes factor will be computed and the prior and
+        Variables for which the Bayes factor will be computed and the prior and
         posterior will be plotted.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    ref_val : int or float, default 0
+    ref_val : int, float, or dict, default 0
         Reference (point-null) value for Bayes factor estimation.
+        Can be a single value applied to all variables, or a dict mapping
+        variable names to values, e.g. ``{"mu": 0, "tau": 0.5}``.
     kind : {"kde", "hist", "dot", "ecdf"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
+    bf_type : {"BF10", "BF01"}, optional
+        Whether to annotate the Bayes factor in favor of the alternative (BF10) or the null (BF01).
+        Defaults to "BF10".
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -81,8 +88,8 @@ def plot_bf(
           * "hist" -> passed to :func: `~arviz_plots.visuals.hist`
 
         * ref_line -> passed to :func: `~arviz_plots.visuals.vline`
+        * ref_value_text -> passed to :func:`~arviz_plots.visuals.annotate_xy`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
-        * legend -> passed to :class:`arviz_plots.PlotCollection.add_legend`
 
     stats : mapping, optional
         Valid keys are:
@@ -120,20 +127,20 @@ def plot_bf(
         else:
             backend = plot_collection.backend
 
-    bf, _ = bayes_factor(dt, var_names, ref_val, return_ref_vals=True)
+    if sample_dims is None:
+        sample_dims = rcParams["data.sample_dims"]
 
     if isinstance(var_names, str):
         var_names = [var_names]
-    bf_aes_ds = xr.Dataset(
-        {
-            var: xr.DataArray(
-                None,
-                coords={"BF_type": [f"BF01:{bf[var]['BF01']:.2f}"]},
-                dims=["BF_type"],
-            )
-            for var in var_names
-        }
-    )
+
+    if isinstance(ref_val, dict):
+        ref_vals_list = [ref_val.get(var, 0) for var in var_names]
+    else:
+        ref_vals_list = [ref_val] * len(var_names)
+
+    bf, ref_densities = bayes_factor(dt, var_names, ref_vals_list, return_ref_vals=True)
+
+    ref_val_ds = xr.Dataset({var: xr.DataArray(rv) for var, rv in zip(var_names, ref_vals_list)})
 
     keys_to_keep = ("dist", "title")
     plot_collection = plot_prior_posterior(
@@ -150,8 +157,6 @@ def plot_bf(
         stats=stats,
         **pc_kwargs,
     )
-
-    plot_collection.update_aes_from_dataset("bf_aes", bf_aes_ds)
 
     ref_line_kwargs = get_visual_kwargs(visuals, "ref_line")
     if ref_line_kwargs is False:
@@ -172,16 +177,22 @@ def plot_bf(
             visuals={"ref_line": ref_line_kwargs},
         )
 
-    # legend
+    ref_value_text_kwargs = get_visual_kwargs(visuals, "ref_value_text")
+    if ref_value_text_kwargs is not False:
+        _, _, ref_value_text_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "ref_value_text", sample_dims
+        )
+        ref_value_text_kwargs.setdefault("text", lambda bf10: f"BF10={bf10:.2f}")
+        ref_value_text_kwargs.setdefault("x", ref_val_ds)
+        ref_value_text_kwargs.setdefault("y", ref_densities.min("density_type") * 0.5)
+        ref_value_text_kwargs.setdefault("horizontal_align", "left")
 
-    if backend == "matplotlib":  ## remove this when we have a better way to handle legends
-        legend_kwargs = get_visual_kwargs(visuals, "legend")
-        if legend_kwargs is not False:
-            legend_kwargs.setdefault("dim", ["__variable__", "BF_type"])
-            legend_kwargs.setdefault("loc", "upper left")
-            legend_kwargs.setdefault("fontsize", 10)
-            legend_kwargs.setdefault("text_only", True)
-
-            plot_collection.add_legend(**legend_kwargs)
+        plot_collection.map(
+            annotate_xy,
+            "ref_value_text",
+            data=bf.sel(bf_type=bf_type),
+            ignore_aes=ref_value_text_ignore,
+            **ref_value_text_kwargs,
+        )
 
     return plot_collection

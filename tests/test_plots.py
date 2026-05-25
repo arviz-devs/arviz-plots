@@ -78,7 +78,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "figure" in pc.viz.data_vars
         assert "group" in pc.viz["dist"].coords
         assert "/color" in pc.aes.groups
-        assert "BF_type" in pc.aes["bf_aes"].coords
+        assert "ref_value_text" in pc.viz.children
 
     def test_plot_compare(self, cmp, backend):
         pc = plot_compare(cmp, backend=backend)
