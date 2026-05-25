@@ -192,7 +192,6 @@ def plot_bf(
             "ref_value_text",
             data=bf.sel(bf_type=bf_type),
             ignore_aes=ref_value_text_ignore,
-            store_artist=backend == "none",
             **ref_value_text_kwargs,
         )
 
