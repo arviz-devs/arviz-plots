@@ -948,6 +948,42 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "mu" in pc.viz["variable_label"]
         assert _get_label_text(label_artist, backend) == "MY_MU"
 
+    def test_plot_ridge_ticklabels_use_dim_map(self, datatree, backend):
+        labeller = MapLabeller(dim_map={"hierarchy": "MyHierarchy"})
+
+        pc = plot_ridge(
+            datatree,
+            labels=["__variable__", "hierarchy"],
+            labeller=labeller,
+            backend=backend,
+        )
+
+        label_plot = pc.viz["plot"].sel(column="labels").item()
+
+        def _get_ticklabel_texts(plot, backend):
+            if backend == "matplotlib":
+                return [tick.get_text() for tick in plot.get_xticklabels()]
+            if backend == "bokeh":
+                return list(plot.xaxis[0].major_label_overrides.values())
+            if backend == "plotly":
+                return list(plot.layout.xaxis.ticktext)
+            if backend == "none":
+                return next(item["labels"] for item in plot if item.get("function") == "xticks")
+            raise ValueError(f"Unknown backend: {backend}")
+
+        ticklabels = _get_ticklabel_texts(label_plot, backend)
+
+        assert ticklabels == ["variable", "MyHierarchy"]
+
+    def test_plot_ridge_ticklabels_default_labeller(self, datatree, backend):
+        pc = plot_ridge(
+            datatree,
+            labels=["__variable__", "hierarchy"],
+            backend=backend,
+        )
+
+        assert "plot" in pc.viz.data_vars
+
     def test_plot_trace(self, datatree, backend):
         pc = plot_trace(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
