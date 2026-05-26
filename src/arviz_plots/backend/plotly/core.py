@@ -12,6 +12,7 @@ import re
 import warnings
 
 import numpy as np
+import plotly.colors as pc
 import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
@@ -1016,14 +1017,12 @@ def contourf(
 
     Parameters
     ----------
-    x : array_like of shape (nx,)
-        Grid values along the x axis.
-    y : array_like of shape (ny,)
-        Grid values along the y axis.
+    x, y : array_like
+        Grid values along each axis.
     density : array_like of shape (nx, ny)
         Density values on the grid.
     target : PlotlyPlot
-        The :term:`plot` to draw on.
+        The plot to draw on.
     levels : array_like, optional
         Density values bounding filled regions.
     color, alpha : any, optional
@@ -1038,29 +1037,33 @@ def contourf(
     go.Contour
     """
     levels = np.asarray(levels)
-    density = np.asarray(density)
-    density_masked = np.where(density < levels[0], np.nan, density)
+    density_masked = np.where(density < levels[0], np.nan, np.asarray(density))
+
+    l_0, l_n = float(levels[0]), float(levels[-1])
+    n_bands = len(levels) - 1
 
     if cmap is not None:
-        colorscale = cmap
-    elif color is not unset:
-        colorscale = [[0, color], [1, color]]
+        band_colors = pc.sample_colorscale(
+            cmap, [(2 * i + 1) / (2 * n_bands) for i in range(n_bands)]
+        )
+    else:
+        band_colors = [color] * n_bands
 
-    n_bands = len(levels) - 1
+    boundaries = (levels[1:-1] - l_0) / (l_n - l_0)
+    colorscale = [[0.0, band_colors[0]]]
+    for p, c0, c1 in zip(boundaries, band_colors, band_colors[1:]):
+        colorscale += [[p - 1e-9, c0], [p, c1]]
+    colorscale.append([1.0, band_colors[-1]])
+
     trace = go.Contour(
         x=np.asarray(x),
         y=np.asarray(y),
         z=density_masked.T,
         colorscale=colorscale,
-        zmin=float(levels[0]),
-        zmax=float(levels[-1]),
+        zmin=l_0,
+        zmax=l_n,
         autocontour=False,
-        contours={
-            "showlines": False,
-            "start": float(levels[0]),
-            "end": float(levels[-1]),
-            "size": float(levels[-1] - levels[0]) / n_bands,
-        },
+        line={"width": 0},
         showscale=False,
         **_filter_kwargs({"opacity": alpha, "showlegend": False}, artist_kws),
     )

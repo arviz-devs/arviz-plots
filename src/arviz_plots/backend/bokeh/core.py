@@ -935,7 +935,9 @@ def contourf(
     n_bands = len(levels) - 1
 
     if cmap is not None:
-        band_colors = list(getattr(bp, cmap)(n_bands))
+        full_palette = getattr(bp, cmap)(256)
+        positions = [(2 * i + 1) / (2 * n_bands) for i in range(n_bands)]
+        band_colors = [full_palette[round(p * 255)] for p in positions]
     elif color is not unset:
         band_colors = [color] * n_bands
 

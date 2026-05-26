@@ -359,26 +359,6 @@ def plot_pair(
             **scatter_kwargs,
         )
 
-    contour_kwargs = get_visual_kwargs(visuals, "contour", False)
-    if contour_kwargs is not False:
-        _, contour_aes, contour_ignore = filter_aes(
-            plot_matrix, aes_by_visuals, "contour", sample_dims
-        )
-
-        if "color" not in contour_aes:
-            contour_kwargs.setdefault("color", "C0")
-
-        plot_matrix.map_triangle(
-            _kde_couple,
-            "contour",
-            triangle=triangle,
-            data=distribution,
-            ignore_aes=contour_ignore,
-            levels=levels,
-            sample_dims=sample_dims,
-            **contour_kwargs,
-        )
-
     contourf_kwargs = get_visual_kwargs(visuals, "contourf", False)
     if contourf_kwargs is not False:
         _, contourf_aes, contourf_ignore = filter_aes(
@@ -400,6 +380,26 @@ def plot_pair(
             levels=levels,
             sample_dims=sample_dims,
             **contourf_kwargs,
+        )
+
+    contour_kwargs = get_visual_kwargs(visuals, "contour", False)
+    if contour_kwargs is not False:
+        _, contour_aes, contour_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "contour", sample_dims
+        )
+
+        if "color" not in contour_aes:
+            contour_kwargs.setdefault("color", "C0")
+
+        plot_matrix.map_triangle(
+            _kde_couple,
+            "contour",
+            triangle=triangle,
+            data=distribution,
+            ignore_aes=contour_ignore,
+            levels=levels,
+            sample_dims=sample_dims,
+            **contour_kwargs,
         )
     # marginal
     if marginal is not False:
