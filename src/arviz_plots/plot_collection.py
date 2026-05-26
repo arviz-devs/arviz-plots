@@ -614,8 +614,8 @@ class PlotCollection:
                 neutral_element_needed = not all(aes_dims_in_var.values())
                 aes_vals = get_default_aes(aes_key, total_aes_vals + neutral_element_needed, kwargs)
                 if neutral_element_needed:
+                    ds_dict[aes_key]["neutral_element"] = xr.DataArray(aes_vals[[0]]).squeeze()
                     neutral_element = aes_vals[0]
-                    ds_dict[aes_key]["neutral_element"] = neutral_element
                     aes_vals_no_neutral = [val for val in aes_vals if val != neutral_element]
                     if aes_vals_no_neutral[0] in aes_vals_no_neutral[1:]:
                         cycle_repeat_index = aes_vals_no_neutral[1:].index(aes_vals_no_neutral[0])

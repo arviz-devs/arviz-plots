@@ -79,9 +79,11 @@ def get_default_aes(aes_key, n, kwargs=None):
         return np.array([f"C{i}" for i in range(n)])
     aes_vals = kwargs[aes_key]
     n_aes_vals = len(aes_vals)
+    aes_ary = np.empty(n_aes_vals, dtype=object)
+    aes_ary[:] = aes_vals
     if n_aes_vals >= n:
-        return aes_vals[:n]
-    return np.tile(aes_vals, (n // n_aes_vals) + 1)[:n]
+        return aes_ary[:n]
+    return np.tile(aes_ary, (n // n_aes_vals) + 1)[:n]
 
 
 def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
