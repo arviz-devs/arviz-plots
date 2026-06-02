@@ -104,8 +104,9 @@ def plot_lm(
     y_obs : str or DataArray, optional
         Observed response variable. If None, use `y`.
     plot_dim : str, optional
-        Dimension to be represented as the x axis. Defaults to the first dimension
-        in the data for `x`. It should be present in the data for `y` too.
+        Dimension to be represented as the x axis. Defaults to the last dimension
+        in the data for `x` not in ``sample_dims``. It should be present in the
+        data for `y` too.
     filter_vars: {None, “like”, “regex”}, default None
         If None (default), interpret var_names as the real variables names.
         If “like”, interpret var_names as substrings of the real variables names.
@@ -271,9 +272,13 @@ def plot_lm(
             filter_vars=filter_vars,
             coords=coords,
         )
-    if plot_dim is None:
-        plot_dim = list(x_pred.dims)[0]
-    elif plot_dim not in x_pred.dims:
+    else:
+        raise ValueError(
+            f"Group '{group}' not recognized. Valid options are 'posterior', 'prior', "
+            "'posterior_predictive', 'prior_predictive' and 'predictions'."
+        )
+
+    if plot_dim is not None and plot_dim not in x_pred.dims:
         raise ValueError(
             f"Dimension '{plot_dim}' given as `plot_dim` argument is not present in x data. "
             f"Present dimensions are {tuple(x_pred.dims)}."
@@ -286,7 +291,13 @@ def plot_lm(
         filter_vars=filter_vars,
         coords=coords,
     ).rename_vars(y_to_x_map)
+
     sample_dims = validate_sample_dims(sample_dims, data=y_pred)
+
+    if plot_dim is None:
+        non_sample_dims = [d for d in x_pred.dims if d not in sample_dims]
+        plot_dim = non_sample_dims[-1]
+
     if plot_dim not in y_pred.dims:
         error_msg = (
             f"Dimension '{plot_dim}' set as `plot_dim` argument is not present in y data. "
@@ -333,7 +344,11 @@ def plot_lm(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
     if plot_collection is None:
-        pc_kwargs.setdefault("cols", "__variable__")
+        pc_kwargs.setdefault(
+            "cols",
+            ["__variable__"]
+            + [dim for dim in x_pred.dims if dim != plot_dim and dim not in sample_dims],
+        )
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
         if isinstance(ci_prob, (list | tuple | np.ndarray)):
