@@ -227,9 +227,11 @@ def plot_ecdf_pit(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
-    sample_size = max(
-        int(np.prod([distribution[var].sizes.get(dim, 1) for dim in sample_dims]))
-        for var in distribution.data_vars
+    sample_size_ds = xr.Dataset(
+        {
+            var: int(np.prod([da.sizes.get(dim, 1) for dim in sample_dims]))
+            for var, da in distribution.items()
+        }
     )
     if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
         raise ValueError(
@@ -250,11 +252,20 @@ def plot_ecdf_pit(
     if coverage:
         distribution = 2 * np.abs(distribution - 0.5)
 
-    dt_ecdf = distribution.azstats.ecdf(dim=sample_dims, pit=True, npoints=sample_size)
+    dt_ecdf = xr.Dataset(
+        {
+            var: da.azstats.ecdf(
+                dim=[dim for dim in sample_dims if dim in da.dims],
+                pit=True,
+                npoints=sample_size_ds[var].item(),
+            )
+            for var, da in distribution.items()
+        }
+    )
     x_ci = lower_ci = upper_ci = None
 
     if method == "envelope":
-        dummy_vals = np.linspace(0, 1, sample_size)
+        dummy_vals = np.linspace(0, 1, sample_size_ds.to_array().max())
         x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
         lower_ci = lower_ci - x_ci
         upper_ci = upper_ci - x_ci
@@ -265,13 +276,15 @@ def plot_ecdf_pit(
         )
         gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
         highlight = (shapley_vals > gamma) & (p_values < alpha)
-        suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
+        suspicious_mask = highlight.rename(
+            {dim: dim.replace("pit_dim", "ecdf_dim") for dim in highlight.dims if "pit_dim" in dim}
+        )
         # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
         # to get the default y-limits for the plot.
-        expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size)) * 1.3
+        expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size_ds)) * 1.3
 
-        actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y").to_array())).item()
-        epsilon = max(expected_max, actual_max)
+        actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y")))
+        epsilon = xr.where(expected_max > actual_max, expected_max, actual_max)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -378,10 +391,15 @@ def plot_ecdf_pit(
                 ignore_aes=suspicious_ignore,
                 **suspicious_kwargs,
             )
+        limits_ds = xr.Dataset()
+        for var, da in epsilon.items():
+            ary = np.empty(1, dtype=object)
+            ary[0] = (-da.item(), da.item())
+            limits_ds[var] = ary
         plot_collection.map(
             set_ylim,
             "ylim",
-            limits=(-epsilon, epsilon),
+            limits=limits_ds.squeeze().reset_coords(),
             store_artist=False,
             ignore_aes="all",
         )
