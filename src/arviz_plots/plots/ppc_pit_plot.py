@@ -206,10 +206,10 @@ def plot_ppc_pit(
 
     plot_collection = plot_ecdf_pit(
         new_dt,
-        var_names=var_names,
-        filter_vars=filter_vars,
+        var_names=None,
+        filter_vars=None,
         group="ecdf_pit",
-        coords=coords,
+        coords=None,
         sample_dims=new_dt.ecdf_pit.dims,
         method=method,
         envelope_prob=envelope_prob,

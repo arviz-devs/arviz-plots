@@ -96,7 +96,9 @@ def get_suspicious_mask_ds(observed_dist, pit_dt, alpha, gamma, method):
     highlight = (shapley_vals > gamma) & (p_values < alpha)
     return xr.Dataset(
         {
-            var: highlight[var].rename({"pit_dim": next(iter(pit_ds[var].dims))})
+            var: highlight[var].rename(
+                {dim: next(iter(pit_ds[var].dims)) for dim in highlight.dims if "pit_dim" in dim}
+            )
             for var in highlight.data_vars
         }
     )

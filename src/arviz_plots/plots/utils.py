@@ -231,7 +231,7 @@ def _compute_func_da(func, da, active_dims, reduce_dims, kwargs=None):
     groupby_dims = [
         dim
         for dim in active_dims
-        if dim in da.dims and (len(np.unique(da.coords[dim])) != da.sizes[dim])
+        if (dim in da.coords) and (len(np.unique(da.coords[dim])) != len(da.coords[dim]))
     ]
     if groupby_dims and func.__name__ == "histogram":
         raise ValueError(
@@ -299,6 +299,12 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
         kind = rcParams["plot.density_kind"]
     if set(reduce_dims).intersection(active_dims):
         raise ValueError("'reduce_dims' and 'active_dims' can't share elements")
+    fake_reduce_dims = [
+        data.coords[dim].dims[0]
+        for dim in active_dims
+        if (dim in data.coords) and (data.coords[dim].dims[0] in reduce_dims)
+    ]
+    reduce_dims = set(reduce_dims).difference(fake_reduce_dims)
     if kind == "auto":
         out_das = []
         for da in data.values():
