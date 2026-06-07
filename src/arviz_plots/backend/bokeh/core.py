@@ -131,7 +131,7 @@ def _set_sqrt_scale(target, axis):
 def get_hex_from_color_name(color_name: str) -> str:
     """Convert a standard CSS color name into its HEX code using Bokeh."""
     if isinstance(color_name, str) and color_name.startswith("#"):
-        return color_name  # already a hex color, return unchanged
+        return color_name
     try:
         color_obj: Color = getattr(named_colors, color_name.lower())
         return color_obj.to_hex()
