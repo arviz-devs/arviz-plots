@@ -64,9 +64,7 @@ def test_style_registered_all_backends(style_name):
     available = style.available()
     for backend in BACKENDS:
         if backend in available:
-            assert style_name in available[backend], (
-                f"{style_name} missing for {backend}"
-            )
+            assert style_name in available[backend], f"{style_name} missing for {backend}"
     if "common" in available:
         assert style_name in available["common"]
 
