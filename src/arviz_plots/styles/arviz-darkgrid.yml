@@ -1,0 +1,24 @@
+attrs:
+    Plot:
+        background_fill_color: '#eeeeee'
+        border_fill_color: white
+        outline_line_width: 0
+        outline_line_color: null
+    Axis:
+        axis_line_color: white
+        major_tick_line_color: null
+        minor_tick_line_color: null
+        major_label_text_color: '#262626'
+        axis_label_text_color: '#262626'
+    Grid:
+        grid_line_color: white
+    Title:
+        text_color: '#262626'
+        align: 'center'
+    Text:
+        text_color: '#262626'
+    Cycler:
+        colors: [
+                "#2a2eec", "#fa7c17", "#328c06", "#c10c90", "#933708",
+                "#65e5f3", "#e6e135", "#1ccd6a", "#bd8ad5", "#b16b57",
+            ]

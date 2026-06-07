@@ -92,6 +92,37 @@ arviz_vibrant_template.layout.colorway = [
 ]
 
 
+axis_darkgrid = {
+    "showgrid": True,
+    "gridcolor": "white",
+    "zeroline": False,
+    "showline": False,
+    "ticks": "",
+}
+arviz_darkgrid_template = go.layout.Template()
+arviz_darkgrid_template.data.scatter = h_template
+arviz_darkgrid_template.data.bar = h_template
+arviz_darkgrid_template.layout.paper_bgcolor = "white"
+arviz_darkgrid_template.layout.plot_bgcolor = "#eeeeee"
+arviz_darkgrid_template.layout.polar.bgcolor = "#eeeeee"
+arviz_darkgrid_template.layout.ternary.bgcolor = "#eeeeee"
+arviz_darkgrid_template.layout.margin = {"l": 50, "r": 10, "t": 40, "b": 45}
+arviz_darkgrid_template.layout.xaxis = axis_darkgrid
+arviz_darkgrid_template.layout.yaxis = axis_darkgrid
+arviz_darkgrid_template.layout.colorway = [
+    "#2a2eec",
+    "#fa7c17",
+    "#328c06",
+    "#c10c90",
+    "#933708",
+    "#65e5f3",
+    "#e6e135",
+    "#1ccd6a",
+    "#bd8ad5",
+    "#b16b57",
+]
+
+
 axis_tumma = axis_common | {
     "linecolor": "#D9D9D9",
     "tickcolor": "#D9D9D9",
