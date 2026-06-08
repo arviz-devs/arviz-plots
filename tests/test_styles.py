@@ -17,46 +17,22 @@ BACKENDS = ["matplotlib", "bokeh", "plotly"]
 
 @pytest.fixture
 def restore_style():
-    """Snapshot global style state per backend and restore it after the test.
+    """Revert global style state to the library defaults after each test.
 
-    Applying a style mutates global state (matplotlib rcParams, the default plotly
-    template and the bokeh document theme), so it must be restored to avoid leaking
-    into other tests.
+    ``style.use`` sets the default style/template on *every* installed backend (not just
+    the one under test), so all three are reverted to their library defaults here. No setup
+    is needed; the test matrix always installs all three backends, so the imports succeed.
     """
-    saved = {}
-    try:
-        import matplotlib as mpl
-
-        saved["mpl"] = mpl.rcParams.copy()
-    except ImportError:
-        pass
-    try:
-        import plotly.io as pio
-
-        saved["plotly"] = pio.templates.default
-    except ImportError:
-        pass
-    try:
-        from bokeh.io import curdoc
-
-        saved["bokeh"] = curdoc().theme
-    except ImportError:
-        pass
-
     yield
 
-    if "mpl" in saved:
-        import matplotlib as mpl
+    import matplotlib
+    import plotly.io as pio
+    from bokeh.io import curdoc
+    from bokeh.themes import default as default_bokeh_theme
 
-        mpl.rcParams.update(saved["mpl"])
-    if "plotly" in saved:
-        import plotly.io as pio
-
-        pio.templates.default = saved["plotly"]
-    if "bokeh" in saved:
-        from bokeh.io import curdoc
-
-        curdoc().theme = saved["bokeh"]
+    matplotlib.rcdefaults()
+    pio.templates.default = "plotly"
+    curdoc().theme = default_bokeh_theme
 
 
 @pytest.mark.parametrize("style_name", ARVIZ_STYLES)
