@@ -73,7 +73,6 @@ def test_style_registered_all_backends(style_name):
 @pytest.mark.parametrize("style_name", ARVIZ_STYLES)
 @pytest.mark.usefixtures("restore_style", "clean_plots", "check_skips")
 def test_style_renders(datatree, style_name, backend):
-    pytest.importorskip(backend)
     style.use(style_name)
     pc = plot_dist(datatree, backend=backend)
     assert "figure" in pc.viz.data_vars
