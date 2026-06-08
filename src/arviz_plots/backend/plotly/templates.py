@@ -118,8 +118,6 @@ arviz_darkgrid_template.layout.colorway = [
     "#65e5f3",
     "#e6e135",
     "#1ccd6a",
-    "#bd8ad5",
-    "#b16b57",
 ]
 
 
