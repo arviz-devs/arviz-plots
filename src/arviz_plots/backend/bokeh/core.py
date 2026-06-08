@@ -130,8 +130,6 @@ def _set_sqrt_scale(target, axis):
 
 def get_hex_from_color_name(color_name: str) -> str:
     """Convert a standard CSS color name into its HEX code using Bokeh."""
-    if isinstance(color_name, str) and color_name.startswith("#"):
-        return color_name
     try:
         color_obj: Color = getattr(named_colors, color_name.lower())
         return color_obj.to_hex()
@@ -146,8 +144,9 @@ def get_background_color():
         from bokeh.io import curdoc
 
         bg_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
-        hex_bg_color = get_hex_from_color_name(bg_color)
-        return hex_bg_color
+        if isinstance(bg_color, str) and bg_color.startswith("#"):
+            return bg_color
+        return get_hex_from_color_name(bg_color)
     except (ImportError, KeyError):
         return "#ffffff"
 
@@ -507,21 +506,49 @@ def hist(
         if edgecolor is unset:
             edgecolor = color
 
-    kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
+    kwargs = {
+        "bottom": bottom,
+        "fill_color": facecolor,
+        "line_color": edgecolor,
+        "alpha": alpha,
+    }
 
     return target.quad(top=y, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws))
 
 
 @expand_aesthetic_aliases
-def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
+def line(
+    x,
+    y,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    **artist_kws,
+):
     """Interface to bokeh for a line plot."""
-    kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
+    kwargs = {
+        "color": color,
+        "alpha": alpha,
+        "line_width": width,
+        "line_dash": linestyle,
+    }
     return target.line(np.atleast_1d(x), np.atleast_1d(y), **_filter_kwargs(kwargs, artist_kws))
 
 
 @expand_aesthetic_aliases
 def multiple_lines(
-    x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws
+    x,
+    y,
+    target,
+    *,
+    color=unset,
+    alpha=unset,
+    width=unset,
+    linestyle=unset,
+    **artist_kws,
 ):
     """Interface to bokeh for multiple lines."""
     y = y.T
@@ -530,7 +557,12 @@ def multiple_lines(
     if len(x) != len(y):
         raise ValueError("x and y must have the same length")
     source = ColumnDataSource(data={"x": x, "y": y})
-    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
+    kwargs = {
+        "line_color": color,
+        "line_alpha": alpha,
+        "line_width": width,
+        "line_dash": linestyle,
+    }
     return target.multi_line(xs="x", ys="y", source=source, **_filter_kwargs(kwargs, artist_kws))
 
 
@@ -646,7 +678,12 @@ def fill_between_y(x, y_bottom, y_top, target, **artist_kws):
 @expand_aesthetic_aliases
 def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to bokeh for a vertical line spanning the whole axes."""
-    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
+    kwargs = {
+        "line_color": color,
+        "line_alpha": alpha,
+        "line_width": width,
+        "line_dash": linestyle,
+    }
     span_element = Span(location=x, dimension="height", **_filter_kwargs(kwargs, artist_kws))
     target.add_layout(span_element)
     return span_element
@@ -655,7 +692,12 @@ def vline(x, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, 
 @expand_aesthetic_aliases
 def hline(y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to bokeh for a horizontal line spanning the whole axes."""
-    kwargs = {"line_color": color, "line_alpha": alpha, "line_width": width, "line_dash": linestyle}
+    kwargs = {
+        "line_color": color,
+        "line_alpha": alpha,
+        "line_width": width,
+        "line_dash": linestyle,
+    }
     span_element = Span(location=y, dimension="width", **_filter_kwargs(kwargs, artist_kws))
     target.add_layout(span_element)
     return span_element
@@ -693,7 +735,12 @@ def ciliney(
     **artist_kws,
 ):
     """Interface to bokeh for a line from y_bottom to y_top at given value of x."""
-    kwargs = {"color": color, "alpha": alpha, "line_width": width, "line_dash": linestyle}
+    kwargs = {
+        "color": color,
+        "alpha": alpha,
+        "line_width": width,
+        "line_dash": linestyle,
+    }
     x = np.atleast_1d(x)
     y_bottom = np.atleast_1d(y_bottom)
     y_top = np.atleast_1d(y_top)
