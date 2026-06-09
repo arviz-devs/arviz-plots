@@ -16,23 +16,30 @@ BACKENDS = ["matplotlib", "bokeh", "plotly"]
 
 
 @pytest.fixture
-def restore_style():
+def restore_style(request):
     """Revert global style state to the library defaults after each test.
 
     ``style.use`` sets the default style/template on *every* installed backend (not just
-    the one under test), so all three are reverted to their library defaults here. No setup
-    is needed; the test matrix always installs all three backends, so the imports succeed.
+    the one under test), so all three are reverted to their library defaults here. Each
+    reset is gated on the matching ``--skip-<backend>`` flag (like ``check_skips``) so a
+    backend whose tests are skipped -- e.g. because it is not installed -- is never imported.
+    No setup is needed.
     """
     yield
 
-    import matplotlib
-    import plotly.io as pio
-    from bokeh.io import curdoc
-    from bokeh.themes import default as default_bokeh_theme
+    if not request.config.getoption("--skip-mpl"):
+        import matplotlib
 
-    matplotlib.rcdefaults()
-    pio.templates.default = "plotly"
-    curdoc().theme = default_bokeh_theme
+        matplotlib.rcdefaults()
+    if not request.config.getoption("--skip-plotly"):
+        import plotly.io as pio
+
+        pio.templates.default = "plotly"
+    if not request.config.getoption("--skip-bokeh"):
+        from bokeh.io import curdoc
+        from bokeh.themes import default as default_bokeh_theme
+
+        curdoc().theme = default_bokeh_theme
 
 
 @pytest.mark.parametrize("style_name", ARVIZ_STYLES)
