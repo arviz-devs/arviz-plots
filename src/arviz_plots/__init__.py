@@ -325,6 +325,7 @@ try:
         arviz_variat_template,
         arviz_vibrant_template,
         arviz_tumma_template,
+        arviz_darkgrid_template,
     )
 
     pio.templates["arviz-cetrino"] = arviz_cetrino_template
@@ -332,6 +333,7 @@ try:
     pio.templates["arviz-variat"] = arviz_variat_template
     pio.templates["arviz-vibrant"] = arviz_vibrant_template
     pio.templates["arviz-tumma"] = arviz_tumma_template
+    pio.templates["arviz-darkgrid"] = arviz_darkgrid_template
 
 
 except ImportError:

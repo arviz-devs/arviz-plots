@@ -144,7 +144,7 @@ def get_background_color():
         from bokeh.io import curdoc
 
         bg_color = curdoc().theme._json["attrs"]["Plot"]["background_fill_color"]
-        hex_bg_color = get_hex_from_color_name(bg_color)
+        hex_bg_color = bg_color if bg_color.startswith("#") else get_hex_from_color_name(bg_color)
         return hex_bg_color
     except (ImportError, KeyError):
         return "#ffffff"
