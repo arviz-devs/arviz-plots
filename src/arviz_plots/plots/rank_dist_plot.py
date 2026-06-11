@@ -409,13 +409,15 @@ def plot_rank_dist(
         if "color" not in labels_aes:
             label_kwargs.setdefault("color", "B1")
 
+        if "text" not in label_kwargs:
+            label_kwargs["labeller"] = labeller
+
         plot_collection.map(
             labelled_x,
             "xlabel_dist",
             ignore_aes=labels_ignore,
             coords={"column": "dist"},
             subset_info=True,
-            labeller=labeller,
             store_artist=backend == "none",
             **label_kwargs,
         )
@@ -426,7 +428,6 @@ def plot_rank_dist(
             ignore_aes=labels_ignore,
             coords={"column": "rank"},
             subset_info=True,
-            labeller=labeller,
             store_artist=backend == "none",
             **label_kwargs,
         )

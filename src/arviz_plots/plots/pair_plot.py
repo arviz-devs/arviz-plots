@@ -420,13 +420,14 @@ def plot_pair(
         xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
         if xlabel_kwargs is not False:
             _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)
+            if "text" not in xlabel_kwargs:
+                xlabel_kwargs["labeller"] = labeller
             plot_matrix.map_row(
                 labelled_x,
                 "xlabel",
                 index=-1,
                 data=distribution,
                 ignore_aes=xlabel_ignore,
-                labeller=labeller,
                 subset_info=True,
                 **xlabel_kwargs,
             )
@@ -434,13 +435,14 @@ def plot_pair(
         ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
         if ylabel_kwargs is not False:
             _, _, ylabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "ylabel", sample_dims)
+            if "text" not in ylabel_kwargs:
+                ylabel_kwargs["labeller"] = labeller
             plot_matrix.map_col(
                 labelled_y,
                 "ylabel",
                 index=0,
                 data=distribution,
                 ignore_aes=ylabel_ignore,
-                labeller=labeller,
                 subset_info=True,
                 **ylabel_kwargs,
             )
@@ -449,12 +451,13 @@ def plot_pair(
 
         if xlabel_kwargs is not False:
             _, _, xlabel_ignore = filter_aes(plot_matrix, aes_by_visuals, "xlabel", sample_dims)
+            if "text" not in xlabel_kwargs:
+                xlabel_kwargs["labeller"] = labeller
             plot_matrix.map(
                 labelled_x,
                 "xlabel",
                 subset_info=True,
                 ignore_aes=xlabel_ignore,
-                labeller=labeller,
                 **xlabel_kwargs,
             )
 

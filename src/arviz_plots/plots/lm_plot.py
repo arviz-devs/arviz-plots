@@ -525,10 +525,11 @@ def plot_lm(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         _, _, xlabel_ignore = filter_aes(plot_collection, aes_by_visuals, "xlabel", sample_dims)
+        if "text" not in xlabel_kwargs:
+            xlabel_kwargs["labeller"] = xlabeller
         plot_collection.facet_map(
             labelled_x,
             "xlabel",
-            labeller=xlabeller,
             subset_info=True,
             ignore_aes=xlabel_ignore,
             **xlabel_kwargs,
@@ -538,10 +539,11 @@ def plot_lm(
     ylabel_kwargs = get_visual_kwargs(visuals, "ylabel")
     if ylabel_kwargs is not False:
         _, _, ylabel_ignore = filter_aes(plot_collection, aes_by_visuals, "ylabel", sample_dims)
+        if "text" not in ylabel_kwargs:
+            ylabel_kwargs["labeller"] = ylabeller
         plot_collection.facet_map(
             labelled_y,
             "ylabel",
-            labeller=ylabeller,
             subset_info=True,
             ignore_aes=ylabel_ignore,
             **ylabel_kwargs,

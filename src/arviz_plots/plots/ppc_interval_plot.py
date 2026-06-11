@@ -375,12 +375,14 @@ def _plot_interval(
         if "color" not in ylabels_aes:
             ylabel_kwargs.setdefault("color", "B1")
 
+        if "text" not in ylabel_kwargs:
+            ylabel_kwargs["labeller"] = labeller
+
         plot_collection.map(
             labelled_y,
             "ylabel",
             ignore_aes=ylabels_ignore,
             subset_info=True,
-            labeller=labeller,
             **ylabel_kwargs,
         )
 

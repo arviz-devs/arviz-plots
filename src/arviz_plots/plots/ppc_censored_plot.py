@@ -233,12 +233,13 @@ def plot_ppc_censored(
     xlabel_kwargs = get_visual_kwargs(visuals, "xlabel")
     if xlabel_kwargs is not False:
         xlabel_kwargs.setdefault("color", "B1")
+        if "text" not in xlabel_kwargs:
+            xlabel_kwargs["labeller"] = labeller
         plot_collection.map(
             labelled_x,
             "xlabel",
             data=km_ds,
             subset_info=True,
-            labeller=labeller,
             ignore_aes=plot_collection.aes_set,
             **xlabel_kwargs,
         )

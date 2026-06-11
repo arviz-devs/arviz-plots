@@ -236,12 +236,13 @@ def plot_pair_focus(
 
     if xlabel_kwargs is not False:
         _, _, xlabel_ignore = filter_aes(plot_collection, aes_by_visuals, "xlabel", sample_dims)
+        if "text" not in xlabel_kwargs:
+            xlabel_kwargs["labeller"] = labeller
         plot_collection.map(
             labelled_x,
             "xlabel",
             subset_info=True,
             ignore_aes=xlabel_ignore,
-            labeller=labeller,
             **xlabel_kwargs,
         )
 
