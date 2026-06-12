@@ -1,3 +1,27 @@
+<a id="v1.2.0"></a>
+# [v1.2.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.2.0) - 2026-06-12
+
+## What's Changed
+* Pass varnames to loo_pit by [@aloctavodia](https://github.com/aloctavodia) in [#496](https://github.com/arviz-devs/arviz-plots/pull/496)
+* Polish plot_ppc_dist by [@aloctavodia](https://github.com/aloctavodia) in [#497](https://github.com/arviz-devs/arviz-plots/pull/497)
+* Add ppc_dist_pit and refactor by [@aloctavodia](https://github.com/aloctavodia) in [#498](https://github.com/arviz-devs/arviz-plots/pull/498)
+* Add tests to plot_lm, fix bug with observations by [@aloctavodia](https://github.com/aloctavodia) in [#501](https://github.com/arviz-devs/arviz-plots/pull/501)
+* Forward labeller in plot_ridge labels by [@chrberrig](https://github.com/chrberrig) in [#504](https://github.com/arviz-devs/arviz-plots/pull/504)
+* Forward labeller in plot_forest labels by [@chrberrig](https://github.com/chrberrig) in [#506](https://github.com/arviz-devs/arviz-plots/pull/506)
+* Generalize and refactor bf by [@aloctavodia](https://github.com/aloctavodia) in [#502](https://github.com/arviz-devs/arviz-plots/pull/502)
+* Add nightlies to tox and fix Hypothesis test deadline Extended issue by [@Sakshee-D](https://github.com/Sakshee-D) in [#466](https://github.com/arviz-devs/arviz-plots/pull/466)
+* plot_lm: support extra dimensions by [@aloctavodia](https://github.com/aloctavodia) in [#508](https://github.com/arviz-devs/arviz-plots/pull/508)
+* Bring arviz-darkgrid style back   by [@juanitorduz](https://github.com/juanitorduz) in [#511](https://github.com/arviz-devs/arviz-plots/pull/511)
+* prepare release by [@OriolAbril](https://github.com/OriolAbril) in [#515](https://github.com/arviz-devs/arviz-plots/pull/515)
+
+## New Contributors
+* [@chrberrig](https://github.com/chrberrig) made their first contribution in [#504](https://github.com/arviz-devs/arviz-plots/pull/504)
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v1.1.0...v1.2.0
+
+[Changes][v1.2.0]
+
+
 <a id="v1.1.0"></a>
 # [v1.1.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.1.0) - 2026-04-23
 
@@ -386,6 +410,7 @@
 [Changes][v0.4.0]
 
 
+[v1.2.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.1.0...v1.2.0
 [v1.1.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.8.0...v1.0.0
 [v0.8.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.7.0...v0.8.0
