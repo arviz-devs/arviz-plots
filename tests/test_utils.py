@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test utility functions for plotting."""
+
 import numpy as np
 import pytest
 import xarray as xr

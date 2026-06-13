@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the matplotlib backend."""
+
 import os
 
 import pytest

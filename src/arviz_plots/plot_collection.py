@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines, too-many-public-methods
 """Plot collection class."""
+
 import warnings
 from importlib import import_module
 from pathlib import Path

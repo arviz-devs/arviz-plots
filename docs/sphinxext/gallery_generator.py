@@ -1,5 +1,6 @@
 # pylint: disable=invalid-name
 """Generate images and full gallery pages from python scripts."""
+
 import json
 import os
 import re

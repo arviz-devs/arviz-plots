@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines, too-many-public-methods
 """Plot matrix class."""
+
 from importlib import import_module
 
 import numpy as np

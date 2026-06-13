@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name, too-many-lines
 """Test batteries-included plots."""
+
 import numpy as np
 import pytest
 from arviz_base.labels import MapLabeller
@@ -332,9 +333,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
         assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
 
-    def test_plot_ess_evolution_sample(
-        self, datatree_sample, backend
-    ):  # pylint: disable=unused-argument
+    def test_plot_ess_evolution_sample(self, datatree_sample, backend):  # pylint: disable=unused-argument
         pc = plot_ess_evolution(datatree_sample, sample_dims="sample")
         assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars

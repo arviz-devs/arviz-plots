@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test PlotCollection."""
+
 import numpy as np
 import pytest
 import xarray.testing as xrt

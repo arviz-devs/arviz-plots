@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name, wrong-import-position
 """Tests specific to the plotly backend."""
+
 import os
 
 import numpy as np
