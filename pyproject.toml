@@ -64,22 +64,25 @@ doc = [
 ]
 
 
-[tool.black]
+[tool.ruff]
 line-length = 100
 
-[tool.isort]
-profile = "black"
-include_trailing_comma = true
-use_parentheses = true
-multi_line_output = 3
-line_length = 100
-skip = [
-    "src/arviz_plots/__init__.py"
+[tool.ruff.lint]
+select = [
+    "I",  # isort
+    "D",  # pydocstyle
 ]
 
-[tool.pydocstyle]
+[tool.ruff.lint.per-file-ignores]
+"src/arviz_plots/__init__.py" = ["I"]
+"tests/**/*" = ["D"]
+"docs/**/*" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
-match_dir = "^(?!docs|.tox).*"
+
+[tool.ruff.format]
+docstring-code-format = false
 
 [tool.mypy]
 python_version = "3.10"
