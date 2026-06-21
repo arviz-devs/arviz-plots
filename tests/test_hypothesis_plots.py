@@ -1,7 +1,7 @@
 # pylint: disable=no-self-use, redefined-outer-name , too-many-lines
 """Test batteries-included plots using the none backend."""
 
-import arviz_stats  # pylint: disable=unused-import
+import arviz_stats  # noqa: F401  # pylint: disable=unused-import
 import hypothesis.strategies as st
 import numpy as np
 import pandas as pd
@@ -258,7 +258,6 @@ def test_combine_plots(datatree, expand, random_plots):
     ),
     diagnostics=st.sampled_from(
         [
-            # fmt: off
             None,
             "rhat",
             "rhat_rank",
@@ -277,7 +276,6 @@ def test_combine_plots(datatree, expand, random_plots):
             "ess_z_scale",
             "ess_folded",
             "ess_identity",
-            # fmt: on
         ]
     ),
     kind=kind_value,

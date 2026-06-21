@@ -69,14 +69,19 @@ line-length = 100
 
 [tool.ruff.lint]
 select = [
-    "I",  # isort
+    "F",  # Pyflakes
+    "E",  # Pycodestyle
+    "W",  # Pycodestyle
     "D",  # pydocstyle
+    "NPY", # numpy specific rules
+    "UP",  # pyupgrade
+    "I",  # isort
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"src/arviz_plots/__init__.py" = ["I"]
-"tests/**/*" = ["D"]
-"docs/**/*" = ["D"]
+"src/arviz_plots/**/__init__.py" = ["I", "F401", "F403", "E402"]
+"tests/**/*" = ["D", "NPY002"]
+"docs/**/*" = ["D", "E", "F", "I", "NPY", "UP", "W"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

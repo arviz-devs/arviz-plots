@@ -6,7 +6,7 @@ import os
 import pytest
 
 if os.environ.get("ARVIZ_REQUIRE_ALL_DEPS", False):
-    import matplotlib  # pylint: disable=unused-import
+    import matplotlib  # noqa: F401  # pylint: disable=unused-import
 else:
     pytest.importorskip("matplotlib")
 

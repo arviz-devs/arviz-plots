@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 if os.environ.get("ARVIZ_REQUIRE_ALL_DEPS", False):
-    import plotly  # pylint: disable=unused-import
+    import plotly  # noqa: F401  # pylint: disable=unused-import
 else:
     pytest.importorskip("plotly")
 
