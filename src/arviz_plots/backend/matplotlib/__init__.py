@@ -1,6 +1,6 @@
 """Matplotlib interface layer."""
 
-from .core import (
+from arviz_plots.backend.matplotlib.core import (
     ciliney,
     create_plotting_grid,
     fill_between_y,
@@ -35,4 +35,4 @@ from .core import (
     yscale,
     yticks,
 )
-from .legend import legend
+from arviz_plots.backend.matplotlib.legend import legend
