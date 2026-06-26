@@ -83,7 +83,7 @@ extend-safe-fixes = ["TID252"]
 [tool.ruff.lint.per-file-ignores]
 "src/arviz_plots/**/__init__.py" = ["I", "F401", "F403", "E402"]
 "src/arviz_plots/**/*.pyi" = ["TID252"]
-"tests/**/*" = ["D", "NPY002", "TID252"]
+"tests/**/*" = ["D"]
 "docs/**/*" = ["D", "E", "F", "I", "NPY", "TID", "UP", "W"]
 
 [tool.ruff.lint.pydocstyle]

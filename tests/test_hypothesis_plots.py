@@ -245,6 +245,7 @@ def test_combine_plots(datatree, expand, random_plots):
     )
 
 
+# fmt: off
 @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
 @given(
     visuals=st.fixed_dictionaries(
@@ -258,29 +259,16 @@ def test_combine_plots(datatree, expand, random_plots):
     ),
     diagnostics=st.sampled_from(
         [
-            None,
-            "rhat",
-            "rhat_rank",
-            "rhat_folded",
-            "rhat_z_scale",
-            "rhat_split",
-            "rhat_identity",
-            "ess_bulk",
-            "ess_tail",
-            "ess_mean",
-            "ess_sd",
-            "ess_quantile(0.9)",
-            "ess_local(0.1, 0.9)",
-            "ess_median",
-            "ess_mad",
-            "ess_z_scale",
-            "ess_folded",
-            "ess_identity",
+            None, "rhat", "rhat_rank", "rhat_folded", "rhat_z_scale", "rhat_split",
+            "rhat_identity", "ess_bulk", "ess_tail", "ess_mean", "ess_sd",
+            "ess_quantile(0.9)", "ess_local(0.1, 0.9)", "ess_median", "ess_mad",
+            "ess_z_scale", "ess_folded", "ess_identity",
         ]
     ),
     kind=kind_value,
     ref_line=st.booleans(),
 )
+# fmt: on
 def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
     pc = plot_convergence_dist(
         datatree,
