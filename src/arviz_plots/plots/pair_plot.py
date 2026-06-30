@@ -389,7 +389,7 @@ def plot_pair(
         )
 
         if "color" not in contour_aes:
-            contour_kwargs.setdefault("color", "C0")
+            contour_kwargs.setdefault("color", "B1")
 
         plot_matrix.map_triangle(
             _kde_couple,
