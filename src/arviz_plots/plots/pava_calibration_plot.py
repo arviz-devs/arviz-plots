@@ -126,6 +126,10 @@ def plot_ppc_pava(
     -------
     PlotCollection
 
+    See Also
+    --------
+    plot_loo_pava : PAV-adjusted calibration plot using leave-one-out cross-validation
+
     Examples
     --------
     Plot the PAVA calibration plot for the rugby dataset.

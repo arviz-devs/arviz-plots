@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name, too-many-lines
 """Test batteries-included plots."""
+
 import numpy as np
 import pytest
 from arviz_base.labels import MapLabeller
@@ -24,6 +25,7 @@ from arviz_plots import (
     plot_khat,
     plot_lm,
     plot_loo_interval,
+    plot_loo_pava,
     plot_loo_pit,
     plot_mcse,
     plot_pair,
@@ -801,6 +803,12 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         pc = plot_ppc_pava_residuals(datatree_binary, x_var=np.linspace(0, 1, 100), backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "markers" in pc.viz.children
+        assert "y" in pc.viz["plot"]
+
+    def test_plot_loo_pava(self, datatree_binary, backend):
+        pc = plot_loo_pava(datatree_binary, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "lines" in pc.viz.children
         assert "y" in pc.viz["plot"]
 
     @pytest.mark.parametrize("coverage", [False, True])
