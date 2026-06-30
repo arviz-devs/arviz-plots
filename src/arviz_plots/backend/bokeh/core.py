@@ -862,3 +862,91 @@ def grid(target, axis, color):
         target.ygrid.grid_line_color = color
     if axis in ["x", "both"]:
         target.xgrid.grid_line_color = color
+
+
+@expand_aesthetic_aliases
+def contour(x, y, density, target, *, levels=None, color=unset, alpha=unset, **artist_kws):
+    """Interface to bokeh for a contour plot.
+
+    Parameters
+    ----------
+    x : array_like of shape (nx,)
+        Grid values along the x axis.
+    y : array_like of shape (ny,)
+        Grid values along the y axis.
+    density : array_like of shape (nx, ny)
+        Density values on the grid.
+    target : bokeh Figure
+        The :term:`plot` to draw on.
+    levels : array_like, optional
+        Density values at which to draw contour lines.
+    color, alpha : any, optional
+        See :ref:`backend_interface_arguments` for details.
+    **artist_kws
+        Passed to :meth:`~bokeh.plotting.figure.multi_line`.
+
+    Returns
+    -------
+    GlyphRenderer
+    """
+    kwargs = {"line_color": color, "line_alpha": alpha}
+    return target.contour(
+        x=np.asarray(x),
+        y=np.asarray(y),
+        z=np.asarray(density).T,
+        levels=levels,
+        fill_color=None,
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+
+
+@expand_aesthetic_aliases
+def contourf(
+    x, y, density, target, *, levels=None, color=unset, alpha=unset, cmap=None, **artist_kws
+):
+    """Interface to bokeh for a filled contour plot.
+
+    Parameters
+    ----------
+    x : array_like of shape (nx,)
+        Grid values along the x axis.
+    y : array_like of shape (ny,)
+        Grid values along the y axis.
+    density : array_like of shape (nx, ny)
+        Density values on the grid.
+    target : bokeh Figure
+        The :term:`plot` to draw on.
+    levels : array_like, optional
+        Density values bounding filled regions.
+    color, alpha : any, optional
+        See :ref:`backend_interface_arguments` for details.
+    cmap : str, optional
+        Bokeh palette function name (e.g. ``"viridis"``, ``"magma"``). Overrides `color` when set.
+    **artist_kws
+        Passed to :meth:`~bokeh.plotting.figure.patches`.
+
+    Returns
+    -------
+    GlyphRenderer
+    """
+    from bokeh import palettes as bp
+
+    levels = np.asarray(levels)
+    n_bands = len(levels) - 1
+
+    if cmap is not None:
+        full_palette = getattr(bp, cmap)(256)
+        positions = [(2 * i + 1) / (2 * n_bands) for i in range(n_bands)]
+        band_colors = [full_palette[round(p * 255)] for p in positions]
+    elif color is not unset:
+        band_colors = [color] * n_bands
+
+    return target.contour(
+        x=np.asarray(x),
+        y=np.asarray(y),
+        z=np.asarray(density).T,
+        levels=[float(lv) for lv in levels],
+        fill_color=band_colors,
+        line_color=None,
+        **_filter_kwargs({"fill_alpha": alpha}, artist_kws),
+    )
