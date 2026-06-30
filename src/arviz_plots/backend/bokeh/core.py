@@ -26,8 +26,8 @@ from bokeh.plotting import figure as _figure
 from bokeh.plotting import output_file, save
 from bokeh.plotting import show as _show
 
-from ..alias_utils import create_aesthetic_handlers
-from ..none import get_default_aes as get_agnostic_default_aes
+from arviz_plots.backend.alias_utils import create_aesthetic_handlers
+from arviz_plots.backend.none import get_default_aes as get_agnostic_default_aes
 
 
 class UnsetDefault:

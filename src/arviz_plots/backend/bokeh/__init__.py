@@ -1,6 +1,6 @@
 """Bokeh interface layer."""
 
-from .core import (
+from arviz_plots.backend.bokeh.core import (
     ciliney,
     contour,
     contourf,
@@ -37,4 +37,4 @@ from .core import (
     yscale,
     yticks,
 )
-from .legend import legend
+from arviz_plots.backend.bokeh.legend import legend

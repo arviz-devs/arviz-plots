@@ -18,8 +18,8 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 from webcolors import hex_to_rgb, name_to_hex, name_to_rgb
 
-from ..alias_utils import create_aesthetic_handlers
-from ..none import get_default_aes as get_agnostic_default_aes
+from arviz_plots.backend.alias_utils import create_aesthetic_handlers
+from arviz_plots.backend.none import get_default_aes as get_agnostic_default_aes
 
 
 class UnsetDefault:

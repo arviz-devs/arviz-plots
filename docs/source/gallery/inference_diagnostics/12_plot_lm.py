@@ -11,6 +11,7 @@ API Documentation: {func}`~arviz_plots.plot_lm`
 
 :::
 """
+
 import numpy as np
 from arviz_base import from_dict
 

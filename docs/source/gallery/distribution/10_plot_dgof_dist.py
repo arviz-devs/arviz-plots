@@ -13,6 +13,7 @@ API Documentation: {func}`~arviz_plots.plot_dgof_dist`
 EABM chapter on [Visualization of Random Variables with ArviZ](https://arviz-devs.github.io/EABM/Chapters/Distributions.html)
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
@@ -20,9 +21,10 @@ import arviz_plots as azp
 azp.style.use("arviz-variat")
 
 dt = load_arviz_data("radon")
-pc = azp.plot_dgof_dist(dt,
+pc = azp.plot_dgof_dist(
+    dt,
     var_names="g",
     kind="kde",
-    backend="none"  # change to preferred backend
+    backend="none",  # change to preferred backend
 )
 pc.show()

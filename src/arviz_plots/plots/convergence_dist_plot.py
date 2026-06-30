@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
 
-import arviz_stats  # pylint: disable=unused-import
+import arviz_stats  # noqa: F401  # pylint: disable=unused-import
 import xarray as xr
 from arviz_base import rcParams
 from arviz_base.validate import validate_dict_argument, validate_sample_dims

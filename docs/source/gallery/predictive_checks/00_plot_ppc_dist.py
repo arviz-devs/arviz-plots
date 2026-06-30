@@ -11,6 +11,7 @@ API Documentation: {func}`~arviz_plots.plot_ppc_dist`
 EABM chapter on [Posterior predictive checks](https://arviz-devs.github.io/EABM/Chapters/Prior_posterior_predictive_checks.html#posterior-predictive-checks)
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp

@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test backend interfacing functions."""
+
 from importlib import import_module
 
 import pytest

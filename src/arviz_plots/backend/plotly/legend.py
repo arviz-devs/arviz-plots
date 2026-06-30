@@ -7,7 +7,7 @@ import xarray as xr
 from arviz_base import xarray_sel_iter
 from plotly.graph_objects import Bar, Scatter
 
-from .core import expand_aesthetic_aliases
+from arviz_plots.backend.plotly.core import expand_aesthetic_aliases
 
 
 @expand_aesthetic_aliases

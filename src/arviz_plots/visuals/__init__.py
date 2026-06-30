@@ -6,6 +6,7 @@ That is, the functions in this module take a set of arguments,
 take care of backend-agnostic processing of those arguments
 and eventually they call the requested plotting backend.
 """
+
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams

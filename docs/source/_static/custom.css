@@ -113,4 +113,3 @@ html[data-theme="dark"] {
 .example-gallery a.sd-stretched-link.reference {
   z-index: 999;  /* Countermeasure where z-index = 998 */
 }
-
