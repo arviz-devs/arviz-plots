@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name, too-many-lines
 """Test batteries-included plots."""
+
 import numpy as np
 import pytest
 from arviz_base.labels import MapLabeller
@@ -332,10 +333,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" not in child["mu"].dims for child in pc.viz.children.values())
         assert all("hierarchy" in child["theta"].dims for child in pc.viz.children.values())
 
-    def test_plot_ess_evolution_sample(
-        self, datatree_sample, backend
-    ):  # pylint: disable=unused-argument
-        pc = plot_ess_evolution(datatree_sample, sample_dims="sample")
+    def test_plot_ess_evolution_sample(self, datatree_sample, backend):
+        pc = plot_ess_evolution(datatree_sample, sample_dims="sample", backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "plot" not in pc.viz.data_vars
         assert "mu" in pc.viz["ess_bulk"]
@@ -616,6 +615,35 @@ class TestPlots:  # pylint: disable=too-many-public-methods
                         assert pc.viz.scatter[row_no, col_no].values[0] is not None
                     else:
                         assert pc.viz.scatter[row_no, col_no].values[0] is None
+
+    @pytest.mark.parametrize("levels", (10, [0.1, 0.5, 0.9]))
+    def test_plot_pair_levels(self, datatree, levels, backend):
+        visuals = {"contour": True, "contourf": True}
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau", "theta"],
+            coords={"hierarchy": 0},
+            marginal=True,
+            marginal_kind="kde",
+            triangle="both",
+            levels=levels,
+            visuals=visuals,
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "contour" in pc.viz.data_vars
+        assert "contourf" in pc.viz.data_vars
+        assert "scatter" in pc.viz.data_vars
+        assert "xlabel" in pc.viz.data_vars
+        assert "ylabel" in pc.viz.data_vars
+        assert "chain" in pc.viz["scatter"].dims
+        assert "chain" not in pc.viz["xlabel"].dims
+        assert "chain" not in pc.viz["ylabel"].dims
+        assert "col_index" in pc.viz["xlabel"].dims
+        assert "row_index" in pc.viz["ylabel"].dims
+        assert pc.viz["contour"].dims == ("row_index", "col_index")
+        assert pc.viz["contourf"].dims == ("row_index", "col_index")
+        assert pc.viz["scatter"].dims == ("row_index", "col_index", "chain")
 
     def test_plot_pair_sample(self, datatree_sample, backend):
         visuals = {"divergence": True}

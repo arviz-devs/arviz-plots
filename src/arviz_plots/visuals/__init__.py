@@ -6,6 +6,7 @@ That is, the functions in this module take a set of arguments,
 take care of backend-agnostic processing of those arguments
 and eventually they call the requested plotting backend.
 """
+
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams
@@ -212,6 +213,18 @@ def scatter_couple(da_x, da_y, target, mask=None, **kwargs):
         da_y = da_y[mask]
 
     return plot_backend.scatter(da_x.values, da_y.values, target, **kwargs)
+
+
+def contour(x_coords, y_coords, density, target, *, levels=None, **kwargs):
+    """Plot 2D KDE contours for a pairplot couple."""
+    plot_backend = backend_from_object(target)
+    plot_backend.contour(x_coords, y_coords, density, target, levels=levels, **kwargs)
+
+
+def contourf(x_coords, y_coords, density, target, *, levels=None, cmap=None, **kwargs):
+    """Plot 2D KDE filled contours for a pairplot couple."""
+    plot_backend = backend_from_object(target)
+    plot_backend.contourf(x_coords, y_coords, density, target, levels=levels, cmap=cmap, **kwargs)
 
 
 def ecdf_line(values, target, **kwargs):

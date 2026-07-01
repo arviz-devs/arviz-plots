@@ -9,6 +9,7 @@ import xarray as xr
 from arviz_base import rcParams, xarray_sel_iter
 from arviz_base.labels import BaseLabeller
 from arviz_base.validate import validate_dict_argument, validate_sample_dims
+from arviz_stats import kde2d
 
 from arviz_plots.plot_matrix import PlotMatrix
 from arviz_plots.plots.dist_plot import plot_dist
@@ -20,6 +21,8 @@ from arviz_plots.plots.utils import (
     set_grid_layout,
 )
 from arviz_plots.visuals import (
+    contour,
+    contourf,
     label_plot,
     labelled_x,
     labelled_y,
@@ -37,6 +40,7 @@ def plot_pair(
     group="posterior",
     coords=None,
     sample_dims=None,
+    levels=None,
     marginal=True,
     marginal_kind=None,
     triangle="lower",
@@ -46,6 +50,8 @@ def plot_pair(
     aes_by_visuals: Mapping[
         Literal[
             "scatter",
+            "contour",
+            "contourf",
             "divergence",
             "dist",
             "credible_interval",
@@ -60,6 +66,8 @@ def plot_pair(
     visuals: Mapping[
         Literal[
             "scatter",
+            "contour",
+            "contourf",
             "divergence",
             "dist",
             "credible_interval",
@@ -102,6 +110,10 @@ def plot_pair(
     sample_dims : iterable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    levels : int or list of float, optional
+        If int, number of contour levels to show (it must be a positive integer).
+        If list of float, the probability mass to be contained for each contour level.
+        Defaults to [0.25, 0.5, 0.9]. Ignored if `visuals["contour"]` is False.
     marginal : bool, default True
         Whether to plot marginal distributions on the diagonal.
     marginal_kind : {"kde", "hist", "ecdf", "dot"}, optional
@@ -121,6 +133,7 @@ def plot_pair(
         Valid keys are:
 
         * scatter -> passed to :func:`~.visuals.scatter_couple`
+        * contour -> passed to :func:`~.visuals.contour`. Defaults to False.
         * divergence -> passed to :func:`~.visuals.scatter_couple`. Defaults to False.
         * dist -> depending on the value of `marginal_kind` passed to:
 
@@ -200,6 +213,20 @@ def plot_pair(
         >>>     triangle="upper",
         >>> )
 
+    Same as previous example, but with ``contourf`` enabled and ``scatter`` disabled.
+
+    .. plot::
+        :context: close-figs
+
+        >>> plot_pair(
+        >>>     dt,
+        >>>     var_names=["mu", "tau"],
+        >>>     visuals={"divergence": True, "contourf": True, "scatter": False},
+        >>>     marginal=True,
+        >>>     marginal_kind="ecdf",
+        >>>     triangle="upper",
+        >>> )
+
     plot_pair with `triangle` set to "both", so in this case the ``xlabels`` are mapped to the
     bottom-most plots and ``ylabels`` are mapped to the left-most plots. In this example we set
     ``color`` as "red" for ``credible_interval`` and ``point_estimate``, which enables
@@ -248,6 +275,19 @@ def plot_pair(
         else:
             backend = plot_matrix.backend
 
+    if levels is None:
+        levels = [0.25, 0.5, 0.9]
+    if isinstance(levels, int):
+        if levels <= 0:
+            raise ValueError("If levels is an integer, it must be a positive integer.")
+    elif isinstance(levels, Sequence):
+        if not all(0 < level < 1 for level in levels):
+            raise ValueError("If levels is a sequence, all values must be between 0 and 1.")
+    else:
+        raise ValueError(
+            "Levels must be either an integer or a sequence of floats between 0 and 1."
+        )
+
     distribution = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
@@ -286,6 +326,8 @@ def plot_pair(
     aes_by_visuals["scatter"] = {"overlay"}.union(
         aes_by_visuals.get("scatter", plot_matrix.aes_set)
     )
+    aes_by_visuals["contour"] = aes_by_visuals.get("contour", {})
+    aes_by_visuals["contourf"] = aes_by_visuals.get("contourf", {})
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
     aes_by_visuals["dist"] = aes_by_visuals.get("dist", plot_matrix.aes_set.difference({"overlay"}))
     aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
@@ -317,6 +359,48 @@ def plot_pair(
             **scatter_kwargs,
         )
 
+    contourf_kwargs = get_visual_kwargs(visuals, "contourf", False)
+    if contourf_kwargs is not False:
+        _, contourf_aes, contourf_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "contourf", sample_dims
+        )
+
+        if "color" not in contourf_aes:
+            contourf_kwargs.setdefault("cmap", "viridis")
+        else:
+            contourf_kwargs.setdefault("cmap", None)
+
+        plot_matrix.map_triangle(
+            _kde_couple,
+            "contourf",
+            triangle=triangle,
+            data=distribution,
+            ignore_aes=contourf_ignore,
+            filled=True,
+            levels=levels,
+            sample_dims=sample_dims,
+            **contourf_kwargs,
+        )
+
+    contour_kwargs = get_visual_kwargs(visuals, "contour", False)
+    if contour_kwargs is not False:
+        _, contour_aes, contour_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "contour", sample_dims
+        )
+
+        if "color" not in contour_aes:
+            contour_kwargs.setdefault("color", "B1")
+
+        plot_matrix.map_triangle(
+            _kde_couple,
+            "contour",
+            triangle=triangle,
+            data=distribution,
+            ignore_aes=contour_ignore,
+            levels=levels,
+            sample_dims=sample_dims,
+            **contour_kwargs,
+        )
     # marginal
     if marginal is not False:
         if stats is None:
@@ -508,3 +592,44 @@ def plot_pair(
                 ignore_aes=remove_axis_ignore,
             )
     return plot_matrix
+
+
+def _kde_couple(da_x, da_y, target, filled=False, levels=None, sample_dims=None, **kw):
+    if isinstance(levels, int):
+        n_levels = levels
+        hdi_probs = None
+    else:
+        hdi_probs = np.sort(levels)[::-1]
+        n_levels = None
+
+    result = kde2d(da_x, da_y, dim=sample_dims, hdi_probs=hdi_probs)
+
+    if n_levels is not None and "contours" not in result:
+        density_vals = result["density"].values
+        contour_levels = np.linspace(
+            np.nanmin(density_vals), np.nanmax(density_vals), n_levels + 2
+        )[1:-1]
+        result = result.assign({"contours": xr.DataArray(contour_levels, dims=["level"])})
+
+    if filled:
+        max_density = float(np.nanmax(result["density"].values))
+        new_values = np.append(result["contours"].values, max_density)
+        result = result.drop_vars("contours").assign(
+            {"contours": xr.DataArray(new_values, dims=["level"])}
+        )
+        return contourf(
+            result["x_coords"],
+            result["y_coords"],
+            result["density"],
+            target,
+            levels=result["contours"],
+            **kw,
+        )
+    return contour(
+        result["x_coords"],
+        result["y_coords"],
+        result["density"],
+        target,
+        levels=result["contours"],
+        **kw,
+    )

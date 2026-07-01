@@ -26,7 +26,7 @@ And last but not least, they should all return a {class}`~arviz_plots.PlotCollec
 :::{dropdown} Function signature and docstring template
 :name: new_plot/common_signature
 
-Here is a template of the function signature with common default values as well as their signature. 
+Here is a template of the function signature with common default values as well as their signature.
 
 There are multiple parts within the template that require extra imput that is plot dependent.
 These placeholders are indicated with `[[description on what to fill here]]`
@@ -51,7 +51,7 @@ def plot_xyz(
     stats=None,
     **pc_kwargs,
 ):
-    
+
     """Plot description in 1 line.
 
     Extended description.

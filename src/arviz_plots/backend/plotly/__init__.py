@@ -1,7 +1,9 @@
 """Plotly interface layer."""
 
-from .core import (
+from arviz_plots.backend.plotly.core import (
     ciliney,
+    contour,
+    contourf,
     create_plotting_grid,
     fill_between_y,
     get_background_color,
@@ -35,4 +37,4 @@ from .core import (
     yscale,
     yticks,
 )
-from .legend import legend
+from arviz_plots.backend.plotly.legend import legend

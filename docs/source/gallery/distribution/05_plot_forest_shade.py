@@ -9,6 +9,7 @@ Forest plot marginal summaries with row shading to enhance reading
 API Documentation: {func}`~arviz_plots.plot_forest`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp

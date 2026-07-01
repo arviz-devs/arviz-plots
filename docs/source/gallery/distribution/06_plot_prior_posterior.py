@@ -9,6 +9,7 @@ Plot prior and posterior marginal distributions.
 API Documentation: {func}`~arviz_plots.plot_prior_posterior`
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
@@ -20,6 +21,6 @@ pc = azp.plot_prior_posterior(
     data,
     var_names="mu",
     kind="hist",
-    backend="none"  # change to preferred backend
+    backend="none",  # change to preferred backend
 )
 pc.show()

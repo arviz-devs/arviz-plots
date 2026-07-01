@@ -17,13 +17,12 @@ from matplotlib import ticker
 from matplotlib.cbook import normalize_kwargs
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
-from matplotlib.pyplot import rcParams
+from matplotlib.pyplot import rcParams, subplots
 from matplotlib.pyplot import show as _show
-from matplotlib.pyplot import subplots
 from matplotlib.text import Text
 
-from ..alias_utils import create_aesthetic_handlers
-from ..none import get_default_aes as get_agnostic_default_aes
+from arviz_plots.backend.alias_utils import create_aesthetic_handlers
+from arviz_plots.backend.none import get_default_aes as get_agnostic_default_aes
 
 
 class UnsetDefault:
@@ -679,3 +678,21 @@ def yscale(target, scale):
 def grid(target, axis, color):
     """Interface to matplotlib for setting a grid in any axis."""
     target.grid(axis=axis, color=color)
+
+
+@expand_aesthetic_aliases
+def contour(x, y, density, target, *, levels=None, color=unset, alpha=unset, **artist_kws):
+    """Interface to matplotlib for a contour plot."""
+    kwargs = {"colors": color, "alpha": alpha}
+    return target.contour(
+        x, y, density.T, levels=levels, **_filter_kwargs(kwargs, None, artist_kws)
+    )
+
+
+@expand_aesthetic_aliases
+def contourf(x, y, density, target, *, levels=None, color=unset, alpha=unset, **artist_kws):
+    """Interface to matplotlib for a filled contour plot."""
+    kwargs = {"colors": color, "alpha": alpha}
+    return target.contourf(
+        x, y, density.T, levels=levels, **_filter_kwargs(kwargs, None, artist_kws)
+    )
