@@ -10,15 +10,14 @@ Tox creates an independent env where all testing dependencies are installed
 and then runs pytest to execute all tests on the `/test`:
 
 ```console
-tox -e py311
+tox -e test
 ```
 
-The `-e` flag stands for "execute" we want to execute a previously defined job that
-takes care of the steps above. The job name is "py" followed by your local python
-version without decimal point.
+The `-e` flag selects a previously defined tox job that takes care of the steps above.
+The `test` job runs the test suite using the Python version you currently have active.
 
 :::{note}
-It is also possible to run `pytest tests/` directly instead of `tox -e py311`,
+It is also possible to run `pytest tests/` directly instead of `tox -e test`,
 and all commands covered in this page work either way. However, it is recommended
 to use tox to isolate the testing environment and have local testing be as similar
 as possible as testing in CI jobs.
@@ -29,7 +28,7 @@ We can also pass arguments through tox to pytest. With this we can for example
 select specific subsets of tests to be executed with the `-k` flag:
 
 ```console
-tox -e py311 -- -k plot_trace_dist
+tox -e test -- -k plot_trace_dist
 ```
 
 Would run all tests whose name contains `plot_trace_dist`.
@@ -55,9 +54,9 @@ By default, testing works under the assumption that all backends are installed,
 but backend specific tests can be skipped when running the test suite:
 
 ```console
-tox -e py311 -- --skip-bokeh
-tox -e py311 -- --skip-mpl
-tox -e py311 -- --skip-plotly
+tox -e test -- --skip-bokeh
+tox -e test -- --skip-mpl
+tox -e test -- --skip-plotly
 ```
 
 :::{note} It is also possible to use both flags, in which case, only tests
@@ -77,7 +76,7 @@ the images will be saved, otherwise it defaults to `test_images` in the project
 home folder.
 
 ```console
-tox -e py311 -- --save
+tox -e test -- --save
 ```
 
 Generates basically the same output as any test job:
@@ -85,7 +84,7 @@ Generates basically the same output as any test job:
 ```
 build: _optional_hooks> python ...
 [...]
-  py311: OK (42.26=setup[1.79]+cmd[40.47] seconds)
+  test: OK (42.26=setup[1.79]+cmd[40.47] seconds)
   congratulations :) (42.31 seconds)
 ```
 
