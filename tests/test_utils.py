@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use, redefined-outer-name
 """Test utility functions for plotting."""
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -199,7 +200,7 @@ class TestUtils:
     def test_format_coords_as_labels(self):
         """Test format_coords_as_labels generates correct labels."""
         data = xr.DataArray(
-            np.random.randn(2, 3),
+            np.random.default_rng().standard_normal((2, 3)),
             coords={"chain": [0, 1], "draw": [0, 1, 2]},
             dims=("chain", "draw"),
         )
@@ -210,7 +211,7 @@ class TestUtils:
     def test_format_coords_as_labels_skip_dims(self):
         """Test format_coords_as_labels respects skip_dims argument."""
         data = xr.DataArray(
-            np.random.randn(2, 3),
+            np.random.default_rng().standard_normal((2, 3)),
             coords={"chain": [0, 1], "draw": [0, 1, 2]},
             dims=("chain", "draw"),
         )

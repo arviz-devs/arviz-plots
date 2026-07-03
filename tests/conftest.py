@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 """Configuration for test suite."""
+
 import logging
 import os
 

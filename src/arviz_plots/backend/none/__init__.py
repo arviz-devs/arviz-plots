@@ -1,6 +1,6 @@
 """None plotting backend."""
 
-from .core import (
+from arviz_plots.backend.none.core import (
     ciliney,
     contour,
     contourf,
@@ -37,4 +37,4 @@ from .core import (
     yscale,
     yticks,
 )
-from .legend import legend
+from arviz_plots.backend.none.legend import legend

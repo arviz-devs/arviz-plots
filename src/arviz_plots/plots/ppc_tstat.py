@@ -264,7 +264,7 @@ def plot_ppc_tstat(
 
         def mad(data, dim):
             median = data.median(dim=dim)
-            return np.abs((data - median)).median(dim=dim)
+            return np.abs(data - median).median(dim=dim)
 
         predictive_dist = mad(predictive_dist, dim=reduce_dim)
         if observed_tstat_kwargs is not False:

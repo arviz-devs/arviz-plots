@@ -4,7 +4,7 @@ import warnings
 
 from bokeh.models import Legend
 
-from .core import expand_aesthetic_aliases
+from arviz_plots.backend.bokeh.core import expand_aesthetic_aliases
 
 
 @expand_aesthetic_aliases

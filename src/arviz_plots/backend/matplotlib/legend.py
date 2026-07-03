@@ -2,7 +2,7 @@
 
 from matplotlib.lines import Line2D
 
-from .core import expand_aesthetic_aliases
+from arviz_plots.backend.matplotlib.core import expand_aesthetic_aliases
 
 
 @expand_aesthetic_aliases

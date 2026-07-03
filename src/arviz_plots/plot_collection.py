@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines, too-many-public-methods
 """Plot collection class."""
+
 import warnings
 from importlib import import_module
 from pathlib import Path
@@ -1547,7 +1548,7 @@ class PlotCollection:
             self.update_aes_from_dataset(
                 "legendgroup", self.generate_aes_dt({"legendgroup": dim})["legendgroup"].dataset
             )
-        dim_str = ", ".join(("variable" if d == "__variable__" else d for d in dim))
+        dim_str = ", ".join("variable" if d == "__variable__" else d for d in dim)
         if title is None:
             title = dim_str
         aes_mappings = {

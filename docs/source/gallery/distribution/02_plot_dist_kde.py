@@ -11,6 +11,7 @@ API Documentation: {func}`~arviz_plots.plot_dist`
 EABM chapter on [Visualization of Random Variables with ArviZ](https://arviz-devs.github.io/EABM/Chapters/Distributions.html#distributions-in-arviz)
 :::
 """
+
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp
@@ -23,7 +24,7 @@ pc = azp.plot_dist(
     kind="kde",
     var_names=["mu"],
     sample_dims=["draw"],
-    backend="none"  # change to preferred backend
+    backend="none",  # change to preferred backend
 )
 pc.add_title("KDE of μ by Chain (Centered Eight)")
 pc.show()
