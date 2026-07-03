@@ -16,6 +16,7 @@ from arviz_plots.plots.forest_plot import plot_forest
 from arviz_plots.plots.khat_plot import plot_khat
 from arviz_plots.plots.lm_plot import plot_lm
 from arviz_plots.plots.loo_interval_plot import plot_loo_interval
+from arviz_plots.plots.loo_pava_plot import plot_loo_pava
 from arviz_plots.plots.loo_pit_plot import plot_loo_pit
 from arviz_plots.plots.mcse_plot import plot_mcse
 from arviz_plots.plots.pair_focus_plot import plot_pair_focus
@@ -51,6 +52,7 @@ __all__ = [
     "plot_dist",
     "plot_forest",
     "plot_loo_interval",
+    "plot_loo_pava",
     "plot_trace",
     "plot_trace_dist",
     "plot_ecdf_pit",
