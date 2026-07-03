@@ -178,7 +178,7 @@ def plot_ppc_dist(
         backend=backend,
         stats=stats,
         warn_discrete_dist=True,
-        warn_if_prior_predictive=False,
+        warn_prior_predictive=False,
     )
 
     if plot_collection is None:
