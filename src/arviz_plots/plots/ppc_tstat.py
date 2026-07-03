@@ -272,9 +272,21 @@ def plot_ppc_tstat(
         visuals.setdefault("title", {"text": "MAD"})
 
     elif hasattr(t_stat, "__call__"):
-        predictive_dist = predictive_dist.map(t_stat)
+        predictive_dist = xr.apply_ufunc(
+            t_stat,
+            predictive_dist,
+            input_core_dims=[reduce_dim],
+            output_core_dims=[[]],
+            vectorize=True,
+        )
         if observed_tstat_kwargs is not False:
-            observed_dist = observed_dist.map(t_stat)
+            observed_dist = xr.apply_ufunc(
+                t_stat,
+                observed_dist,
+                input_core_dims=[list(observed_dist.dims)],
+                output_core_dims=[[]],
+                vectorize=True,
+            )
         visuals.setdefault("title", {"text": t_stat.__name__})
     else:
         try:
