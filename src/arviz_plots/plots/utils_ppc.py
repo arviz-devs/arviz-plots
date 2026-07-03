@@ -32,6 +32,7 @@ def prepare_ppc_dist_data(
     stats,
     require_observed=False,
     warn_discrete_dist=False,
+    warn_prior_predictive=True,
 ):
     """Prepare data for PPC distribution and PIT plots."""
     kind = validate_or_use_rcparam(kind, "plot.density_kind")
@@ -65,7 +66,8 @@ def prepare_ppc_dist_data(
     if warn_discrete_dist:
         warn_if_discrete(observed_dist, predictive_dist, kind)
 
-    warn_if_prior_predictive(group)
+    if warn_prior_predictive:
+        warn_if_prior_predictive(group)
 
     n_pp_samples = int(
         np.prod([predictive_dist.sizes[dim] for dim in sample_dims if dim in predictive_dist.dims])
