@@ -150,7 +150,7 @@ def plot_pair_focus(
             f"focus_var should be a string or DataArray, got {type(focus_var)} instead."
         )
 
-    dims_y = [dim for dim in y.dims if dim not in sample_dims]
+    dims_y = [dim for dim in y.dims if dim not in distribution.dims]
     if len(dims_y) > 0:
         raise ValueError(f"focus variable has unexpected dimensions: {dims_y}.")
 
