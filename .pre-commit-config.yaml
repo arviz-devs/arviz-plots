@@ -21,6 +21,11 @@ repos:
       types: [ python ]
       exclude: ^docs/source/gallery/
 
+- repo: https://github.com/MarcoGorelli/madforhooks
+  rev: 0.4.1
+  hooks:
+    - id: no-print-statements
+
 - repo: local
   hooks:
     - id: pylint
