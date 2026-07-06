@@ -1368,6 +1368,7 @@ def test_plot_rank(datatree, envelope_prob, visuals):
     pc = plot_rank(
         datatree,
         backend="none",
+        method="envelope",
         envelope_prob=envelope_prob,
         visuals=visuals,
     )
