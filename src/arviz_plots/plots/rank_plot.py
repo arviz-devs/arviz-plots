@@ -82,8 +82,8 @@ def plot_rank(
     uniformly in [0, 1]. Additionally, we plot the Δ-ECDF, that is, the difference between the
     expected CDF from the observed ECDF.
 
-    The points that contribute the most to deviations from uniformity are
-    computed as described in [1]_.
+    The points that contribute the most to deviations from uniformity are computed as described
+    in [1]_.
 
     Parameters
     ----------
@@ -110,8 +110,8 @@ def plot_rank(
         Method to use for the rank plot. If "mtc_c", the multi-chain test is performed and
         suspicious points are highlighted. If "envelope", the envelope is computed and plotted.
     thin : bool, default None
-        Whether to thin the data before plotting, it is set to True if "method" is "envelope" and
-        false otherwise.
+        Whether to thin the data before plotting. Defaults to None, which means that it is set
+        to True if "method" is "envelope" and False otherwise.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -226,8 +226,7 @@ def plot_rank(
         )
 
         highlight = ((b_shapley_vals > gamma) * (w_shapley_vals > gamma)) & (p_values < alpha)
-        highlight_renamed = highlight.rename({"partition": "ecdf_dim"})
-        suspicious_mask = highlight_renamed.transpose(*highlight_renamed.dims)
+        suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
         # Filter out suspicious points too close to the reference line.
         # The threshold is 0.1* standard error of the ECDF
         y_diff = dt_ecdf.sel(plot_axis="y")
