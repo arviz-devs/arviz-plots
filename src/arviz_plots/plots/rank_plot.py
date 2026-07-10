@@ -18,6 +18,7 @@ from arviz_stats.ecdf_utils import ecdf_pit
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
     filter_aes,
+    filter_aes_full,
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
@@ -330,22 +331,25 @@ def plot_rank(
         # add p-values as annotations
         p_value_kwargs = get_visual_kwargs(visuals, "p_value_text")
         if p_value_kwargs is not False:
-            _, _, p_value_ignore = filter_aes(
+            _, p_value_loop_dims, _, p_value_ignore = filter_aes_full(
                 plot_collection, aes_by_visuals, "p_value_text", sample_dims
             )
-            p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
-            p_value_kwargs.setdefault("x", 0)
-            p_value_kwargs.setdefault("y", 0.85 * epsilon)
-            p_value_kwargs.setdefault("horizontal_align", "left")
+            # Only annotate variables whose p-value is scalar per subplot
+            annot_vars = [v for v, da in p_values.items() if set(da.dims) <= p_value_loop_dims]
+            if annot_vars:
+                p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
+                p_value_kwargs.setdefault("x", 0)
+                p_value_kwargs.setdefault("y", 0.85 * epsilon)
+                p_value_kwargs.setdefault("horizontal_align", "left")
 
-            plot_collection.map(
-                annotate_xy,
-                "p_value_text",
-                data=p_values,
-                ignore_aes=p_value_ignore,
-                store_artist=backend == "none",
-                **p_value_kwargs,
-            )
+                plot_collection.map(
+                    annotate_xy,
+                    "p_value_text",
+                    data=p_values[annot_vars],
+                    ignore_aes=p_value_ignore,
+                    store_artist=backend == "none",
+                    **p_value_kwargs,
+                )
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(
