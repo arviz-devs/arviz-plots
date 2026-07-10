@@ -308,7 +308,7 @@ def plot_rank(
         )
         if suspicious_kwargs is not False:
             if "color" not in suspicious_aes:
-                suspicious_kwargs.setdefault("color", "k")
+                suspicious_kwargs.setdefault("color", "B1")
             if "marker" not in suspicious_aes:
                 suspicious_kwargs.setdefault("marker", "C6")
 
