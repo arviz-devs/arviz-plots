@@ -146,8 +146,8 @@ def plot_rank(
     Notes
     -----
     The preferred method is `mtc_c` as it takes into account the autocorrelation in the rank values
-    as described in [2]_. The "envelope" method is provided for legacy reasons and it is not
-    recommended for use. It will likely be removed in the near future.
+    as described in [2]_. The "envelope" method is not longer recommended and it will likely be
+    removed in a future release.
 
     Examples
     --------
@@ -221,11 +221,11 @@ def plot_rank(
         gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
         dt_ranks_rel = distribution.azstats.compute_ranks(dim=sample_dims, relative=True)
         mtc_c_kwargs = stats.get("mtc_c", {}).copy()
-        p_values, b_shapley_vals, w_shapley_vals = dt_ranks_rel.azstats.mchain_uniformity_test(
+        p_values, b_shapley, w_shapley = dt_ranks_rel.azstats.mchain_uniformity_test(
             dim=sample_dims, **mtc_c_kwargs
         )
 
-        highlight = ((b_shapley_vals > gamma) * (w_shapley_vals > gamma)) & (p_values < alpha)
+        highlight = ((b_shapley > gamma) * (w_shapley > gamma)) & (p_values < alpha)
         suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
         # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
         # to get the default y-limits for the plot.
