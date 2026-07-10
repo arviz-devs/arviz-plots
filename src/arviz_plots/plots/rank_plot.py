@@ -227,12 +227,6 @@ def plot_rank(
 
         highlight = ((b_shapley_vals > gamma) * (w_shapley_vals > gamma)) & (p_values < alpha)
         suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
-        # Filter out suspicious points too close to the reference line.
-        # The threshold is 0.1* standard error of the ECDF
-        y_diff = dt_ecdf.sel(plot_axis="y")
-        x_vals = dt_ecdf.sel(plot_axis="x")
-        se = np.sqrt(x_vals * (1 - x_vals) / sample_size)
-        suspicious_mask = suspicious_mask & (abs(y_diff) > 0.1 * se)
         # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
         # to get the default y-limits for the plot.
         expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size)) * 1.3
