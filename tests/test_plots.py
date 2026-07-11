@@ -245,6 +245,39 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             set(pc.viz[visual]["theta"]["hierarchy"].values) == set(coords) for visual in visuals
         )
 
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist_rope(self, datatree, backend, kind):
+        pc = plot_dist(datatree, backend=backend, kind=kind, rope=(-0.5, 0.91))
+        assert not pc.aes
+        assert "mu" in pc.viz["dist"].data_vars
+        visuals = ("plot", "dist", "credible_interval", "point_estimate", "rope", "rope_text")
+        assert "dist" in pc.viz.children
+        assert "rope" in pc.viz.children
+        assert "rope_text" in pc.viz.children
+        assert all("hierarchy" not in pc.viz[visual]["mu"].dims for visual in visuals)
+        assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
+
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist_rope_dict(self, datatree, backend, kind):
+        rope = {"mu": (-0.5, 0.91), "theta": (2.5, 3)}
+        pc = plot_dist(datatree, backend=backend, kind=kind, rope=rope)
+        assert not pc.aes
+        assert "rope" in pc.viz.children
+        assert "rope_text" in pc.viz.children
+        assert "mu" in pc.viz["rope"].data_vars
+        assert "theta" in pc.viz["rope"].data_vars
+        assert "mu" in pc.viz["rope_text"].data_vars
+        assert "theta" in pc.viz["rope_text"].data_vars
+        assert "tau" not in pc.viz["rope"].data_vars
+        assert "tau" not in pc.viz["rope_text"].data_vars
+
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist_rope_disabled(self, datatree, backend, kind):
+        visuals = {"rope": False, "rope_text": False}
+        pc = plot_dist(datatree, backend=backend, kind=kind, rope=(-0.5, 0.91), visuals=visuals)
+        assert "rope" not in pc.viz.children
+        assert "rope_text" not in pc.viz.children
+
     def test_plot_ecdf_pit(self, datatree, backend):
         pc = plot_ecdf_pit(datatree, backend=backend, group="prior")
         assert "figure" in pc.viz.data_vars

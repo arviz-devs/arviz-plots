@@ -6,13 +6,14 @@ from typing import Any, Literal
 
 import arviz_stats
 import xarray as xr
-from arviz_base import rcParams
+from arviz_base import rcParams, references_to_dataset
 from arviz_base.validate import (
     validate_ci_prob,
     validate_dict_argument,
     validate_or_use_rcparam,
     validate_sample_dims,
 )
+from arviz_stats import ci_in_rope
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -25,6 +26,7 @@ from arviz_plots.plots.utils import (
     set_wrap_layout,
 )
 from arviz_plots.visuals import (
+    annotate_xy,
     ecdf_line,
     fill_between_y,
     hist,
@@ -36,6 +38,7 @@ from arviz_plots.visuals import (
     scatter_x,
     scatter_xy,
     step_hist,
+    vspan,
 )
 
 
@@ -49,6 +52,7 @@ def plot_dist(
     sample_dims=None,
     kind=None,
     point_estimate=None,
+    rope=None,
     ci_kind=None,
     ci_prob=None,
     plot_collection=None,
@@ -61,6 +65,8 @@ def plot_dist(
             "credible_interval",
             "point_estimate",
             "point_estimate_text",
+            "rope",
+            "rope_text",
             "title",
             "rug",
         ],
@@ -73,14 +79,17 @@ def plot_dist(
             "credible_interval",
             "point_estimate",
             "point_estimate_text",
-            "title",
+            "rope",
+            "rope_text",
             "rug",
             "remove_axis",
+            "title",
         ],
         Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
-        Literal["dist", "credible_interval", "point_estimate"], Mapping[str, Any] | xr.Dataset
+        Literal["dist", "credible_interval", "point_estimate", "rope"],
+        Mapping[str, Any] | xr.Dataset,
     ] = None,
     **pc_kwargs,
 ):
@@ -112,6 +121,11 @@ def plot_dist(
         Defaults to ``rcParams["plot.density_kind"]``
     point_estimate : {"mean", "median", "mode"}, optional
         Which point estimate to plot. Defaults to rcParam :data:`stats.point_estimate`
+    rope : tuple of float, or dict of {str : tuple of float}, optional
+        If provided, a region of practical equivalence (ROPE) is plotted as a shaded area.
+        The annotation shows the % of the credible interval that falls within the ROPE.
+        For the % of the full posterior that falls within the ROPE pass
+        ``stats={"rope": {"ci_prob": 1}},`
     ci_kind : {"eti", "hdi"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
     ci_prob : float, optional
@@ -158,6 +172,8 @@ def plot_dist(
         * point_estimate_text -> passed to :func:`~arviz_plots.visuals.point_estimate_text`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * rug -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
+        * rope -> passed to :func:`~arviz_plots.visuals.vspan`. Defaults to True.
+        * rope_text -> passed to :func:`~arviz_plots.visuals.annotate_xy`. Defaults to True.
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats : mapping of {str : mapping or Dataset}, optional
@@ -168,6 +184,7 @@ def plot_dist(
         * credible_interval -> passed to :func:`~arviz_stats.eti` or :func:`arviz_stats.hdi`
         * point_estimate -> passed to mean, median or mode. Defaults to
           round the result according to ``rcParams["stats.round_to"]``.
+        * rope -> passed to :func:`~arviz_stats.ci_in_rope`
 
         In case a :class:`~xarray.Dataset` is provided, it will be interpreted
         as pre-computed values for that statistic.
@@ -213,6 +230,18 @@ def plot_dist(
         >>> repeated_coords = ["a", "a", "a", "b", "b", "b", "b", "c"]
         >>> pc = plot_dist(post.assign_coords(school=repeated_coords))
 
+    Add a region of practical equivalence (ROPE) and show the percentage of
+    the credible interval that falls within it:
+
+    .. plot::
+        :context: close-figs
+
+        >>> pc = plot_dist(
+        >>>     non_centered,
+        >>>     var_names=["mu", "tau"],
+        >>>     rope={"mu": (-0.5, 0.91), "tau": (0.2, 9.3)},
+        >>> )
+
     .. minigallery:: plot_dist
 
     References
@@ -242,6 +271,15 @@ def plot_dist(
             backend = plot_collection.backend
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+
+    if rope:
+        rope_dataset = references_to_dataset(
+            rope, distribution, sample_dims=sample_dims, ref_dim="band_dim"
+        )
+        ci_in_rope_kwargs = stats.get("rope", {}).copy()
+        ci_in_rope_kwargs.setdefault("ci_prob", ci_prob)
+        ci_in_rope_kwargs.setdefault("ci_kind", ci_kind)
+        rope_pct = ci_in_rope(distribution, rope=rope, **ci_in_rope_kwargs)
 
     if plot_collection is None:
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
@@ -516,6 +554,60 @@ def plot_dist(
             ignore_aes=pet_ignore,
             **pet_kwargs,
         )
+
+    # rope
+    if rope:
+        # rope band
+        rope_kwargs = get_visual_kwargs(visuals, "rope", True)
+        if rope_kwargs is not False:
+            _, rope_aes, rope_ignore = filter_aes(
+                plot_collection, aes_by_visuals, "rope", sample_dims
+            )
+            if "color" not in rope_aes:
+                rope_kwargs.setdefault("color", "B1")
+            if "alpha" not in rope_aes:
+                rope_kwargs.setdefault("alpha", 0.2)
+            plot_collection.map(
+                vspan,
+                "rope",
+                data=rope_dataset,
+                ignore_aes=rope_ignore,
+                **rope_kwargs,
+            )
+
+        # rope text annotation
+        rope_text_kwargs = get_visual_kwargs(visuals, "rope_text", True)
+        if rope_text_kwargs is not False:
+            rope_mid = rope_dataset.mean("band_dim")
+            if density_kwargs is False and face_kwargs is False:
+                rope_y = xr.full_like(rope_mid, 0.02)
+            else:
+                density_ys = density.sel(
+                    plot_axis=[
+                        coord
+                        for coord in density["plot_axis"].values
+                        if coord in ("y", "histogram")
+                    ]
+                )
+                rope_y = 0.35 * density_ys.max(
+                    [dim for dim in density_ys.dims if dim not in rope_mid.dims]
+                )
+            _, rope_text_aes, rope_text_ignore = filter_aes(
+                plot_collection, aes_by_visuals, "rope_text", sample_dims
+            )
+            if "color" not in rope_text_aes:
+                rope_text_kwargs.setdefault("color", "B1")
+            rope_text_kwargs.setdefault("horizontal_align", "center")
+            plot_collection.map(
+                annotate_xy,
+                "rope_text",
+                data=rope_pct,
+                ignore_aes=rope_text_ignore,
+                x=rope_mid,
+                y=rope_y,
+                text=lambda pct: f"{pct:.0f}% in ROPE",
+                **rope_text_kwargs,
+            )
 
     # aesthetics
     title_kwargs = get_visual_kwargs(visuals, "title")
