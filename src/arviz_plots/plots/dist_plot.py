@@ -125,7 +125,7 @@ def plot_dist(
         If provided, a region of practical equivalence (ROPE) is plotted as a shaded area.
         The annotation shows the % of the credible interval that falls within the ROPE.
         For the % of the full posterior that falls within the ROPE pass
-        ``stats={"rope": {"ci_prob": 1}},`
+        ``stats={"rope": {"ci_prob": 1}},``
     ci_kind : {"eti", "hdi"}, optional
         Which credible interval to use. Defaults to ``rcParams["stats.ci_kind"]``
     ci_prob : float, optional
@@ -174,6 +174,7 @@ def plot_dist(
         * rug -> passed to :func:`~arviz_plots.visuals.scatter_x`. Defaults to False.
         * rope -> passed to :func:`~arviz_plots.visuals.vspan`. Defaults to True.
         * rope_text -> passed to :func:`~arviz_plots.visuals.annotate_xy`. Defaults to True.
+          Both rope and rope_text are ignored if the main rope argument is None.
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
 
     stats : mapping of {str : mapping or Dataset}, optional
@@ -605,7 +606,7 @@ def plot_dist(
                 ignore_aes=rope_text_ignore,
                 x=rope_mid,
                 y=rope_y,
-                text=lambda pct: f"{pct:.0f}% in ROPE",
+                text=lambda pct: f"{pct:.1f}% in ROPE",
                 **rope_text_kwargs,
             )
 

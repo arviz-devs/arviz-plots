@@ -245,7 +245,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             set(pc.viz[visual]["theta"]["hierarchy"].values) == set(coords) for visual in visuals
         )
 
-    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf", "dot"])
     def test_plot_dist_rope(self, datatree, backend, kind):
         pc = plot_dist(datatree, backend=backend, kind=kind, rope=(-0.5, 0.91))
         assert not pc.aes

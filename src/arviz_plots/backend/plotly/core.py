@@ -676,6 +676,7 @@ def text(
         mode="text",
         textfont=_filter_kwargs(text_kwargs, textfont_artist_kws),
         textposition=f"{vertical_align} {horizontal_align}",
+        cliponaxis=False,
         **_filter_kwargs(kwargs, artist_kws),
     )
     target.add_trace(text_object)
