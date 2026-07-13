@@ -52,6 +52,14 @@ def test_style_registered_all_backends(style_name):
         assert style_name in available["common"]
 
 
+@pytest.mark.parametrize("style_name", ARVIZ_STYLES)
+@pytest.mark.matplotlib
+@pytest.mark.usefixtures("restore_style", "check_skips")
+def test_style_uses_default_dpi(style_name):
+    mpl_style = style.get(style_name, backend="matplotlib")
+    assert mpl_style["figure.dpi"] == 100
+
+
 @pytest.mark.parametrize("backend", BACKENDS)
 @pytest.mark.parametrize("style_name", ARVIZ_STYLES)
 @pytest.mark.usefixtures("restore_style", "clean_plots", "check_skips")
