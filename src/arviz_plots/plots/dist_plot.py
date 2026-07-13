@@ -240,7 +240,7 @@ def plot_dist(
         >>> pc = plot_dist(
         >>>     non_centered,
         >>>     var_names=["mu", "tau"],
-        >>>     rope={"mu": (-0.5, 0.91), "tau": (0.2, 9.3)},
+        >>>     rope={"mu": (-0.5, 0.9), "tau": (0.2, 9.4)},
         >>> )
 
     .. minigallery:: plot_dist
