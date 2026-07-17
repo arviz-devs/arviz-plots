@@ -61,6 +61,7 @@ ci_prob_value = st.floats(min_value=0.1, max_value=0.99, allow_nan=False, allow_
 envelope_prob_value = st.floats(
     min_value=0.1, max_value=0.99, allow_nan=False, allow_infinity=False
 )
+rope_value = st.sampled_from((None, (-0.5, 0.91), {"mu": (-0.5, 0.91), "theta": (2.5, 3)}))
 point_estimate_value = st.sampled_from(("mean", "median"))
 visuals_value = st.sampled_from(({}, False, True, {"color": "red"}))
 visuals_value_no_false = st.sampled_from(({}, {"color": "red"}))
@@ -310,6 +311,8 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
             "credible_interval": visuals_value,
             "point_estimate": visuals_value,
             "point_estimate_text": visuals_value,
+            "rope": visuals_value,
+            "rope_text": visuals_value,
             "title": visuals_value,
             "rug": visuals_value,
             "remove_axis": st.just(False),
@@ -318,20 +321,34 @@ def test_plot_convergence_dist(datatree, diagnostics, kind, ref_line, visuals):
     kind=kind_value,
     ci_kind=ci_kind_value,
     point_estimate=point_estimate_value,
+    rope_value=rope_value,
 )
-def test_plot_dist(datatree, kind, ci_kind, point_estimate, visuals):
+def test_plot_dist(datatree, kind, ci_kind, point_estimate, rope_value, visuals):
     pc = plot_dist(
         datatree,
         backend="none",
         kind=kind,
         ci_kind=ci_kind,
         point_estimate=point_estimate,
+        rope=rope_value,
         visuals=visuals,
     )
     assert "plot" in pc.viz.children
     for visual, value in visuals.items():
         if value is False:
             assert visual not in pc.viz.children
+        elif visual in ("rope", "rope_text"):
+            if rope_value is None:
+                assert visual not in pc.viz.children
+            else:
+                assert visual in pc.viz.children
+                if isinstance(rope_value, dict):
+                    expected_vars = rope_value.keys()
+                else:
+                    expected_vars = datatree["posterior"].data_vars
+                assert all(
+                    var_name in pc.viz[visual].data_vars for var_name in expected_vars
+                )
         else:
             assert visual in pc.viz.children
             assert all(
