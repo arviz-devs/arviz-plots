@@ -143,6 +143,16 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             "autocorrelation",
         ]
 
+    def test_combine_plots_dict_input(self, datatree, datatree2, backend):
+        """combine_plots should work with dict-of-DataTree input (issue #523)."""
+        pc = combine_plots(
+            {"a": datatree, "b": datatree2},
+            plots=[(plot_dist, {})],
+            var_names=["mu"],
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+
     def test_combine_plots_invalid_expand(self, datatree, backend):
         with pytest.raises(ValueError, match="must be 'row' or 'column'"):
             combine_plots(datatree, plots=[(plot_dist, {})], backend=backend, expand="diagonal")
