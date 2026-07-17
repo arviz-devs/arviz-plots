@@ -600,8 +600,8 @@ def scatter(
     if marker == "|":
         scatter_kwargs["symbol"] = "line-ns-open"
     scatter_object = go.Scatter(
-        x=np.atleast_1d(x),
-        y=np.atleast_1d(y),
+        x=x,
+        y=y,
         mode="markers",
         marker=_filter_kwargs(scatter_kwargs, marker_artist_kws),
         **artist_kws,

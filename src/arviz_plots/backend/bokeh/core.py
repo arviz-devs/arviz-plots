@@ -570,7 +570,7 @@ def scatter(
         kwargs["marker"] = "dash"
         kwargs["angle"] = np.pi / 2
 
-    source = ColumnDataSource(data={"x": np.atleast_1d(x), "y": np.atleast_1d(y)})
+    source = ColumnDataSource(data={"x": x, "y": y})
     return target.scatter(x="x", y="y", source=source, **kwargs)
 
 
