@@ -454,8 +454,7 @@ def plot_dist(
         and ("model" in distribution)
         and (plot_collection.coords is None)
     ):
-        y_ds = plot_collection.get_aes_as_dataset("y")["mapping"]
-        y_ds = 0.15 * y_ds * plot_y_max
+        y_ds = plot_collection.get_aes_as_dataset("y")["mapping"] * plot_y_max * 0.15
         plot_collection.update_aes_from_dataset("y", y_ds)
 
     # credible interval
