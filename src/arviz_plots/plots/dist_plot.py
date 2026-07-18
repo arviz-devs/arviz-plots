@@ -438,7 +438,6 @@ def plot_dist(
             **rug_kwargs,
         )
 
-    # Compute density y-max once, reused for model y offsets and point estimate text placement
     plot_y_max = None
     if density_kwargs is not False or face_kwargs is not False:
         density_ys = density.sel(
