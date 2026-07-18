@@ -438,21 +438,23 @@ def plot_dist(
             **rug_kwargs,
         )
 
-    if (
-        (density_kwargs is not False or face_kwargs is not False)
-        and ("model" in distribution)
-        and (plot_collection.coords is None)
-    ):
-        y_ds = plot_collection.get_aes_as_dataset("y")["mapping"]
+    plot_y_max = None
+    if density_kwargs is not False or face_kwargs is not False:
         density_ys = density.sel(
             plot_axis=[
                 coord for coord in density["plot_axis"].values if coord in ("y", "histogram")
             ]
         )
-        density_ys_max = density_ys.max(
+        plot_y_max = density_ys.max(
             [dim for dim in density_ys.dims if dim not in plot_collection.facet_dims]
         )
-        y_ds = 0.15 * y_ds * density_ys_max
+
+    if (
+        (density_kwargs is not False or face_kwargs is not False)
+        and ("model" in distribution)
+        and (plot_collection.coords is None)
+    ):
+        y_ds = plot_collection.get_aes_as_dataset("y")["mapping"] * plot_y_max * 0.15
         plot_collection.update_aes_from_dataset("y", y_ds)
 
     # credible interval
@@ -527,17 +529,10 @@ def plot_dist(
 
     # point estimate text
     if pet_kwargs is not False:
-        if density_kwargs is False and face_kwargs is False:
+        if plot_y_max is None:
             point_y = xr.full_like(point, 0.05)
         else:
-            density_ys = density.sel(
-                plot_axis=[
-                    coord for coord in density["plot_axis"].values if coord in ("y", "histogram")
-                ]
-            )
-            point_y = 0.1 * density_ys.max(
-                [dim for dim in density_ys.dims if dim not in point.dims]
-            )
+            point_y = 0.1 * plot_y_max
 
         point = xr.concat((point, point_y), dim="plot_axis").assign_coords(plot_axis=["x", "y"])
         _, pet_aes, pet_ignore = filter_aes(
@@ -580,19 +575,10 @@ def plot_dist(
         rope_text_kwargs = get_visual_kwargs(visuals, "rope_text", True)
         if rope_text_kwargs is not False:
             rope_mid = rope_dataset.mean("band_dim")
-            if density_kwargs is False and face_kwargs is False:
+            if plot_y_max is None:
                 rope_y = xr.full_like(rope_mid, 0.02)
             else:
-                density_ys = density.sel(
-                    plot_axis=[
-                        coord
-                        for coord in density["plot_axis"].values
-                        if coord in ("y", "histogram")
-                    ]
-                )
-                rope_y = 0.35 * density_ys.max(
-                    [dim for dim in density_ys.dims if dim not in rope_mid.dims]
-                )
+                rope_y = 0.35 * plot_y_max
             _, rope_text_aes, rope_text_ignore = filter_aes(
                 plot_collection, aes_by_visuals, "rope_text", sample_dims
             )
