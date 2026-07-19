@@ -167,9 +167,7 @@ def combine_plots(
             # (e.g. title, remove_axis) lack it. Expand them so pc.map iterates
             # over model and each sub-plot gets the correct target.
             if "model" in distribution.dims and "model" not in viz_data.dims:
-                viz_data = viz_data.expand_dims(
-                    model=distribution.coords["model"]
-                ).copy()
+                viz_data = viz_data.expand_dims(model=distribution.coords["model"]).copy()
             pc.map(
                 render,
                 f"{viz_group}_{name}",
