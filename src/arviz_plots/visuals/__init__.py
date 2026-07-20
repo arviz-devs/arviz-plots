@@ -339,8 +339,9 @@ def _process_da_x_y(da, x, y, mask=None):
     elif y is None:
         y = da
     if mask is not None:
-        x = x[mask]
-        y = y[mask]
+        x, mask = xr.broadcast(x, mask)
+        x = x.values[mask.values]
+        y = y.values[mask.values]
     return np.broadcast_arrays(x, y)
 
 

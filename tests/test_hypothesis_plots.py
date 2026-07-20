@@ -1373,7 +1373,6 @@ def test_plot_psense_quantities(datatree, quantities, mcse, visuals):
         {},
         optional={
             "ecdf_lines": visuals_value,
-            "credible_interval": visuals_value,
             "xlabel": visuals_value,
             "title": visuals_value,
             "remove_axis": st.just(False),
@@ -1385,6 +1384,7 @@ def test_plot_rank(datatree, envelope_prob, visuals):
     pc = plot_rank(
         datatree,
         backend="none",
+        method="mtc_c",
         envelope_prob=envelope_prob,
         visuals=visuals,
     )
