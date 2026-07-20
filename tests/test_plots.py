@@ -824,11 +824,16 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
     def test_plot_ppc_dist_pit(self, datatree, kind, backend):
+        datatree = datatree.map_over_datasets(
+            lambda ds: ds.assign(y2=ds["y"]) if "y" in ds.data_vars else ds
+        )
         pc = plot_ppc_dist_pit(datatree, kind=kind, backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "/overlay_ppc" in pc.aes.groups
         assert "y" in pc.viz["predictive_dist"]
         assert "y" in pc.viz["observed_dist"]
+        assert "y2" in pc.viz["predictive_dist"]
+        assert "y2" in pc.viz["observed_dist"]
 
     def test_plot_ppc_interval(self, datatree, backend):
         pc = plot_ppc_interval(datatree, backend=backend)
