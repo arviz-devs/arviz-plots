@@ -43,7 +43,7 @@ Consequently, it is not recommended to install arviz-plots but instead to choose
 The latest development version can be installed from the main branch using pip:
 
 ```
-pip install git+git://github.com/arviz-devs/arviz-plots.git
+pip install git+https://github.com/arviz-devs/arviz-plots.git
 ```
 
 Another option is to clone the repository and install using git and setuptools:
