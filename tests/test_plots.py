@@ -153,6 +153,35 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         )
         assert "figure" in pc.viz.data_vars
 
+    def test_combine_plots_dict_input_visuals_precedence(self, datatree, datatree2, backend):
+        """With dict input, explicit visuals color should override the model aes.
+
+        Uses the none backend and checks the ``color`` stored on each ``dist``
+        element in ``.viz`` to confirm kwargs precedence (per review feedback).
+        """
+        # default aes: one color per model (C0, C1)
+        pc_aes = combine_plots(
+            {"a": datatree, "b": datatree2},
+            plots=[(plot_dist, {})],
+            var_names=["mu"],
+            backend="none",
+        )
+        dist_aes = pc_aes.viz["dist_plot_dist_00"].dataset["mu"].values
+        aes_colors = [d.get("color") for d in dist_aes]
+        # aes assigns a distinct color per model
+        assert aes_colors == ["C0", "C1"]
+
+        # explicit visuals color overrides aes for every model
+        pc_visuals = combine_plots(
+            {"a": datatree, "b": datatree2},
+            plots=[(plot_dist, {"visuals": {"dist": {"color": "red"}}})],
+            var_names=["mu"],
+            backend="none",
+        )
+        dist_visuals = pc_visuals.viz["dist_plot_dist_00"].dataset["mu"].values
+        visuals_colors = [d.get("color") for d in dist_visuals]
+        assert visuals_colors == ["red", "red"]
+
     def test_combine_plots_invalid_expand(self, datatree, backend):
         with pytest.raises(ValueError, match="must be 'row' or 'column'"):
             combine_plots(datatree, plots=[(plot_dist, {})], backend=backend, expand="diagonal")
