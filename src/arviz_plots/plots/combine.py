@@ -16,7 +16,7 @@ def render(da, target, **kwargs):
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     visuals = da.item().copy()
     plot_fun_name = visuals.pop("function")
-    return getattr(plot_backend, plot_fun_name)(target=target, **{**visuals, **kwargs})
+    return getattr(plot_backend, plot_fun_name)(target=target, **{**kwargs, **visuals})
 
 
 def combine_plots(
@@ -164,10 +164,16 @@ def combine_plots(
             if viz_group in {"plot", "row_index", "col_index"}:
                 continue
             attrs = ds.attrs
+            viz_data = ds.dataset
+            # When dict input generates a "model" dimension, some viz groups
+            # (e.g. title, remove_axis) lack it. Expand them so pc.map iterates
+            # over model and each sub-plot gets the correct target.
+            if "model" in distribution.dims and "model" not in viz_data.dims:
+                viz_data = viz_data.expand_dims(model=distribution.coords["model"]).copy()
             pc.map(
                 render,
                 f"{viz_group}_{name}",
-                data=ds.dataset,
+                data=viz_data,
                 ignore_aes=attrs.get("ignore_aes", frozenset()),
             )
     pc.coords = None
