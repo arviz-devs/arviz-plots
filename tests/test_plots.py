@@ -153,7 +153,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         )
         assert "figure" in pc.viz.data_vars
 
-    def test_combine_plots_dict_input_visuals_precedence(self, datatree, datatree2, backend):
+    def test_combine_plots_dict_input_visuals_precedence(self, datatree, datatree2, backend):  # pylint: disable=unused-argument
         """With dict input, explicit visuals color should override the model aes.
 
         Uses the none backend and checks the ``color`` stored on each ``dist``
