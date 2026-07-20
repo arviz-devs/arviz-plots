@@ -268,6 +268,8 @@ def set_xlim(da, target, limits, **kwargs):
 
 def set_ylim(da, target, limits, **kwargs):
     """Set y-axis limits."""
+    if isinstance(limits, xr.DataArray):
+        limits = limits.item()
     plot_backend = backend_from_object(target)
     plot_backend.ylim(limits, target, **kwargs)
     return target

@@ -51,7 +51,7 @@ def prepare_ppc_dist_data(
     sample_dims = validate_sample_dims(sample_dims, data=predictive_dist)
     pp_dims = [dim for dim in predictive_dist.dims if dim not in sample_dims]
 
-    if require_observed or "observed_data" in dt:
+    try:
         observed_dist = process_group_variables_coords(
             dt,
             group="observed_data",
@@ -59,7 +59,9 @@ def prepare_ppc_dist_data(
             filter_vars=filter_vars,
             coords=coords,
         )
-    else:
+    except KeyError as err:
+        if require_observed:
+            raise err
         observed_dist = None
 
     warn_if_binary(observed_dist, predictive_dist)
@@ -94,8 +96,10 @@ def get_suspicious_mask_ds(observed_dist, pit_dt, alpha, gamma, method):
     highlight = (shapley_vals > gamma) & (p_values < alpha)
     return xr.Dataset(
         {
-            var: highlight[var].rename({"pit_dim": next(iter(pit_ds[var].dims))})
-            for var in highlight.data_vars
+            var: highlight[var].rename(
+                {dim: next(iter(pit_ds[var].dims)) for dim in da.dims if "pit_dim" in dim}
+            )
+            for var, da in highlight.items()
         }
     )
 

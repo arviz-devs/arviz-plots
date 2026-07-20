@@ -797,7 +797,6 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "time" in pc.viz["predictive"]
         assert "time" in pc.viz["observed_km"]
 
-    @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
     def test_plot_ppc_dist(self, datatree, kind, backend):
         pc = plot_ppc_dist(datatree, kind=kind, backend=backend)
@@ -806,14 +805,35 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "y" in pc.viz["predictive_dist"]
         assert "y" in pc.viz["observed_dist"]
 
-    @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
+    @pytest.mark.parametrize("kind", ["kde", "ecdf"])
+    def test_plot_ppc_dist_groupby(self, datatree, kind, backend):
+        rng = np.random.default_rng(3)
+        datatree = datatree.map_over_datasets(
+            lambda ds: (
+                ds.assign_coords(region=(["obs_dim"], rng.choice(["a", "b"], size=29)))
+                if "obs_dim" in ds.dims
+                else ds
+            )
+        )
+        pc = plot_ppc_dist(datatree, kind=kind, backend=backend, cols=["region"])
+        assert "figure" in pc.viz.data_vars
+        assert "/overlay_ppc" in pc.aes.groups
+        assert "y" in pc.viz["predictive_dist"]
+        assert "y" in pc.viz["observed_dist"]
+        assert len(pc.get_viz("plot")) == 2
+
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
     def test_plot_ppc_dist_pit(self, datatree, kind, backend):
+        datatree = datatree.map_over_datasets(
+            lambda ds: ds.assign(y2=ds["y"]) if "y" in ds.data_vars else ds
+        )
         pc = plot_ppc_dist_pit(datatree, kind=kind, backend=backend)
         assert "figure" in pc.viz.data_vars
         assert "/overlay_ppc" in pc.aes.groups
         assert "y" in pc.viz["predictive_dist"]
         assert "y" in pc.viz["observed_dist"]
+        assert "y2" in pc.viz["predictive_dist"]
+        assert "y2" in pc.viz["observed_dist"]
 
     def test_plot_ppc_interval(self, datatree, backend):
         pc = plot_ppc_interval(datatree, backend=backend)
@@ -848,6 +868,17 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "figure" in pc.viz.data_vars
         assert "plot" in pc.viz.children
         assert "y" in pc.viz["plot"]
+        assert "ecdf_lines" in pc.viz.children
+
+    def test_plot_ppc_pit_multiple_vars(self, datatree, backend):
+        datatree = datatree.map_over_datasets(
+            lambda ds: ds.assign(y2=ds["y"]) if "y" in ds.data_vars else ds
+        )
+        pc = plot_ppc_pit(datatree, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.children
+        assert "y" in pc.viz["plot"].data_vars
+        assert "y2" in pc.viz["plot"].data_vars
         assert "ecdf_lines" in pc.viz.children
 
     def test_plot_ppc_rootogram(self, datatree3, backend):

@@ -122,6 +122,7 @@ def combine_plots(
         else [dim for dim in distribution.dims if dim not in sample_dims]
     )
 
+    original_pc_kwargs = pc_kwargs.copy()
     pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
     if expand == "column":
         pc_kwargs.setdefault("cols", ["column"])
@@ -145,15 +146,16 @@ def combine_plots(
     )
 
     for name, (plot, kwargs) in zip(plot_names, plots):
+        kwargs_i = original_pc_kwargs | kwargs
+        kwargs_i.setdefault("group", group)
+        kwargs_i.setdefault("var_names", var_names)
+        kwargs_i.setdefault("filter_vars", filter_vars)
+        kwargs_i.setdefault("coords", coords)
+        kwargs_i.setdefault("sample_dims", sample_dims)
         pc_i = plot(
             dt,
             backend="none",
-            group=group,
-            var_names=var_names,
-            filter_vars=filter_vars,
-            coords=coords,
-            sample_dims=sample_dims,
-            **kwargs,
+            **kwargs_i,
         )
         pc.coords = None
         pc.aes = pc_i.aes

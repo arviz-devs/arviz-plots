@@ -163,6 +163,15 @@ def plot_ppc_pava(
         warnings.warn(
             "'sample_dims' is currently not supported in plot_ppc_pava and will be ignored"
         )
+    if coords is not None:
+        warnings.warn(
+            "'coords' is currently not supported in plot_ppc_pava and will be ignored. "
+            "Use dt.sel(coords) instead before passing the data to plot_ppc_pava."
+        )
+    if filter_vars is not None:
+        warnings.warn(
+            "'filter_vars' is currently not supported in plot_ppc_pava and will be ignored"
+        )
 
     if backend is None:
         if plot_collection is None:

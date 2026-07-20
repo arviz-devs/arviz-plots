@@ -451,6 +451,7 @@ def plot_dist(
 
     if (
         (density_kwargs is not False or face_kwargs is not False)
+        and ("y" in plot_collection.aes_set)
         and ("model" in distribution)
         and (plot_collection.coords is None)
     ):
