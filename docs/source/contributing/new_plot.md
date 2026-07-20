@@ -279,3 +279,32 @@ than arviz-plots. So at this point there aren't many recommendations on the func
 Functions should reduce the dimensions returned by `filter_aes` (`artist_dims` above).
 Moreover, in order for the result to be valid `data` argument when calling `.map` it must
 be a `Dataset` with the same variables in `var_names` (or all variables in input data if not given).
+
+
+(kwargs_conventions)=
+## Conventions for `visuals`, `aes_by_visuals`, and `stats`
+
+- Use **full names** rather than abbreviations or acronyms
+  (e.g., `credible_interval` not `ci`, `point_estimate` not `pe`).
+- Each visual element should have a **descriptive name** that clearly indicates
+  what it represents (e.g., `trunk`, `twig`, `dist`, `rug`, `title`).
+- Some visual elements default to `False` (disabled) and must be explicitly
+  enabled by the user (e.g., `rug` and `face` in `plot_dist`).
+- The `remove_axis` key is special: it does not correspond to a drawing function
+  and can only be set to `False` to skip calling {func}`~arviz_plots.visuals.remove_axis`.
+- Keys in `aes_by_visuals` should **match keys in `visuals`** whenever possible.
+  Keys that only make sense for `visuals` can be omitted from `aes_by_visuals`
+  (e.g., `remove_axis`).
+- `stats` values can also be a pre-computed {class}`~xarray.Dataset`,
+  interpreted as already-computed values for that statistic.
+- `stats` keys generally match the name of the visual they feed into
+  (e.g., `"dist"`, `"credible_interval"`, `"point_estimate"`).
+
+| Aspect | Convention |
+|---|---|
+| Naming | Full names, no abbreviations |
+| `visuals` keys | One per visual element; set to `False` to disable |
+| `aes_by_visuals` keys | Match `visuals` keys where applicable |
+| `stats` keys | Generally match the visual they compute data for |
+| Mutability | Always copy mutable inputs (`visuals.copy()`, etc.) |
+| Defaults | Use `setdefault` for kwargs; check active aesthetics before setting defaults |
