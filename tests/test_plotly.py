@@ -14,7 +14,7 @@ else:
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from arviz_plots.backend.plotly import fill_between_y, line, multiple_lines
+from arviz_plots.backend.plotly import fill_between_y, line, multiple_lines, scatter
 from arviz_plots.backend.plotly.core import PlotlyPlot
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.plotly]
@@ -74,6 +74,13 @@ def test_multiple_lines_args(figure):
         assert visual.line["color"] == "rgba(255, 0, 0, 0.500)"
         assert "width" in visual.line
         assert visual.line["width"] == 2
+
+
+def test_vertical_marker_has_visible_line(figure):
+    scatter_obj = scatter([0, 1], [0, 0], figure, marker="|", color="black")
+
+    assert scatter_obj.marker.symbol == "line-ns-open"
+    assert scatter_obj.marker.line.width == 1
 
 
 def test_fill_between_y(figure):

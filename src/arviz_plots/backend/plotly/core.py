@@ -599,6 +599,8 @@ def scatter(
     }
     if marker == "|":
         scatter_kwargs["symbol"] = "line-ns-open"
+        line_kwargs.setdefault("width", 1)
+        scatter_kwargs["line"] = line_kwargs
     scatter_object = go.Scatter(
         x=np.atleast_1d(x),
         y=np.atleast_1d(y),

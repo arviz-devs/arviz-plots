@@ -162,12 +162,15 @@ def trace_rug(da, target, mask, xname=None, y=None, **kwargs):
 
 def scatter_x(da, target, y=None, **kwargs):
     """Plot a dot/rug/scatter along the x axis (y constant)."""
+    x = np.asarray(da).ravel()
     if y is None:
-        y = np.zeros_like(da)
-    if np.asarray(y).size == 1:
-        y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
+        y = np.zeros_like(x)
+    elif np.asarray(y).size == 1:
+        y = np.zeros_like(x) + (y.item() if hasattr(y, "item") else y)
+    else:
+        y = np.asarray(y).ravel()
     plot_backend = backend_from_object(target)
-    return plot_backend.scatter(da, y, target, **kwargs)
+    return plot_backend.scatter(x, y, target, **kwargs)
 
 
 def point_y(da, target, x=None, **kwargs):

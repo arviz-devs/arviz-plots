@@ -569,6 +569,8 @@ def scatter(
     if marker == "|":
         kwargs["marker"] = "dash"
         kwargs["angle"] = np.pi / 2
+        if "size" in kwargs:
+            kwargs["size"] = np.sqrt(kwargs["size"])
 
     source = ColumnDataSource(data={"x": np.atleast_1d(x), "y": np.atleast_1d(y)})
     return target.scatter(x="x", y="y", source=source, **kwargs)
