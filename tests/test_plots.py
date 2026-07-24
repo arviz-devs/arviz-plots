@@ -66,6 +66,14 @@ def test_plot_dist_kind_auto(datatree):
     assert pc.get_viz("dist", "tau")["function"] == "line"
 
 
+def test_plot_dist_rug_flattens_sample_dims(datatree):
+    pc = plot_dist(datatree, backend="none", var_names="mu", visuals={"rug": True})
+    rug = pc.get_viz("rug", "mu")
+
+    assert rug["x"].shape == (datatree.posterior["mu"].size,)
+    assert rug["y"].shape == rug["x"].shape
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
 class TestPlots:  # pylint: disable=too-many-public-methods
     def test_autocorr(self, datatree, backend):
