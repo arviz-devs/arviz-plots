@@ -322,21 +322,7 @@ def plot_lm(
         coords=coords,
     )
 
-    if y_obs is None:
-        obs_vars = list(obs_data.data_vars)
-        if all(v in obs_vars for v in y):
-            y_obs = y
-        else:
-            y_obs = obs_vars[: len(y)]
-        observed_y = extract(
-            dt,
-            group="observed_data",
-            var_names=y_obs,
-            combined=False,
-            keep_dataset=True,
-            sample_dims=[],
-        )
-    elif isinstance(y_obs, xr.DataArray):
+    if isinstance(y_obs, xr.DataArray):
         name = y_obs.name if y_obs.name is not None else "y_obs"
         observed_y = xr.Dataset({name: y_obs})
         y_obs = [name]
@@ -344,8 +330,15 @@ def plot_lm(
         observed_y = y_obs
         y_obs = list(observed_y.data_vars)
     else:
-        if isinstance(y_obs, str):
+        if y_obs is None:
+            obs_vars = list(obs_data.data_vars)
+            if all(v in obs_vars for v in y):
+                y_obs = y
+            else:
+                y_obs = obs_vars[: len(y)]
+        elif isinstance(y_obs, str):
             y_obs = [y_obs]
+
         observed_y = extract(
             dt,
             group="observed_data",
