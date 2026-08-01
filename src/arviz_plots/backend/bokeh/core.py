@@ -557,7 +557,7 @@ def scatter(
         elif edgecolor is unset:
             edgecolor = color
     kwargs = {
-        "size": size,
+        "size": size if size is unset else size**0.5,
         "marker": marker,
         "line_alpha": alpha,
         "fill_alpha": alpha,
