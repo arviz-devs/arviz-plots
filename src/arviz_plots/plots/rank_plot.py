@@ -147,7 +147,7 @@ def plot_rank(
     Notes
     -----
     The preferred method is `mtc_c` as it takes into account the autocorrelation in the rank values
-    as described in [2]_. The "envelope" method is not longer recommended and it will likely be
+    as described in [1]_. The "envelope" method is not longer recommended and it will likely be
     removed in a future release.
 
     Examples
