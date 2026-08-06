@@ -410,7 +410,7 @@ class PlotCollection:
 
         Parameters
         ----------
-        filename : str or `~pathlib.Path`
+        filename : str or pathlib.Path
         **kwargs
             Passed as is to the respective backend function
         """
@@ -1242,7 +1242,7 @@ class PlotCollection:
             Dictionary of {coordinate names : coordinate values} that should
             be used to subset the aes, data and viz objects before any faceting
             or aesthetics mapping is applied.
-        ignore_aes : set or "all", optional
+        ignore_aes : set or {"all"}, optional
             Set of aesthetics present in ``aes`` that should be ignore for this
             ``map`` call. The string "all" is also valid to indicate all aesthetics
             should be ignored, thus taking only facetting into account.
@@ -1344,9 +1344,9 @@ class PlotCollection:
         ----------
         text : str
             The title text.
-        color : optional
+        color : Any, optional
             Color of the title text. Defaults to "B1" which is a high contrast color.
-        size : optional
+        size : Any, optional
             Font size of the title.
         **kwargs : mapping, optional
             Additional keyword arguments passed to :func:`~.backend.set_figure_title`.
@@ -1524,9 +1524,9 @@ class PlotCollection:
             Legend title. Defaults to `dim`.
         text_only : bool, optional
             If True, creates a text-only legend without graphical markers.
-        labeller : labeller instance, optional
+        labeller : labeller, optional
             Labeller to generate the legend entries
-        position : (int, int), default (0, -1)
+        position : tuple of (int, int), default (0, -1)
         **kwargs : mapping, optional
             Keyword arguments passed to the backend function that generates the legend.
 
