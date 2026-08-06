@@ -156,7 +156,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
     Parameters
     ----------
-    figsize : (float, float) or None
+    figsize : tuple of (float, float) or None
         Size of figure in `figsize_units`
     rows : int
         Number of rows
@@ -167,7 +167,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
     Returns
     -------
-    figsize : (float, float) or None
+    figsize : tuple of (float, float) or None
         Size of figure in dots
     labelsize : float
         fontsize for labels
@@ -204,7 +204,7 @@ def savefig(figure, path, **kwargs):
 
     Parameters
     ----------
-    figure : `~matplotlib.figure.Figure`
+    figure : matplotlib.figure.Figure
         The figure to save.
     path : pathlib.Path
         Path to the file where the figure will be saved.
@@ -220,22 +220,22 @@ def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
 
     Parameters
     ----------
-    figure : `~matplotlib.figure.Figure`
+    figure : matplotlib.figure.Figure
         The figure to add the title to.
     string : str
         The title text.
-    color : optional
+    color : Any, optional
         Color of the title text.
-    size : optional
+    size : Any, optional
         Font size of the title.
     **artist_kws : dict, optional
         Additional keyword arguments passed to :func:`~matplotlib.figure.Figure.suptitle`.
 
     Returns
     -------
-    `~matplotlib.figure.Figure`
+    matplotlib.figure.Figure
         The figure object (unchanged).
-    `~matplotlib.text.Text`
+    matplotlib.text.Text
         The title text object.
     """
     kwargs = {"color": color, "fontsize": size}
@@ -273,7 +273,7 @@ def create_plotting_grid(
         Number of axes required
     rows, cols : int, default 1
         Number of rows and columns.
-    figsize : (float, float), optional
+    figsize : tuple of (float, float), optional
         Size of the figure in `figsize_units`.
     figsize_units : {"inches", "dots"}, default "inches"
         Units in which `figsize` is given.
@@ -290,8 +290,8 @@ def create_plotting_grid(
 
     Returns
     -------
-    `~matplotlib.figure.Figure`
-    `~matplotlib.axes.Axes` or ndarray of `~matplotlib.axes.Axes`
+    matplotlib.figure.Figure
+    matplotlib.axes.Axes or ndarray of matplotlib.axes.Axes
     """
     if subplot_kws is None:
         subplot_kws = {}

@@ -202,7 +202,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
     Returns
     -------
-    figsize : (float, float) or None
+    figsize : tuple of (float, float) or None
         Size of figure in dots
     labelsize : float
         fontsize for labels
@@ -241,7 +241,7 @@ def savefig(figure, path, **kwargs):
 
     Parameters
     ----------
-    figure : bokeh.plotting.Figure
+    figure : bokeh.models.Plot
         The figure to save.
     path : pathlib.Path
         The path to the file where the figure will be saved.
@@ -268,22 +268,22 @@ def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
 
     Parameters
     ----------
-    figure : bokeh layout or None
+    figure : bokeh.models.LayoutDOM or None
         The figure/layout to add the title to.
     string : str
         The title text.
-    color : optional
+    color : Any, optional
         Color of the title text.
-    size : optional
+    size : Any, optional
         Font size of the title.
     **artist_kws : dict, optional
         Additional keyword arguments passed to :class:`~bokeh.models.Div`.
 
     Returns
     -------
-    bokeh layout
+    bokeh.models.LayoutDOM
         The new layout with title added (column of title_div and original figure).
-    `~bokeh.models.Div`
+    bokeh.models.Div
         The title Div element.
     """
     styles = artist_kws.pop("styles", {})
@@ -364,9 +364,9 @@ def create_plotting_grid(
 
     Returns
     -------
-    figure : `~bokeh.layouts.gridplot` or None
+    figure : bokeh.models.LayoutDOM or None
         Bokeh object representing the generated :term:`figure`
-    plots : `~bokeh.plotting.figure` or ndarray of `~bokeh.plotting.figure`
+    plots : bokeh.models.Plot or ndarray of bokeh.models.Plot
         Object representing the generated :term:`plots`
     """
     if subplot_kws is None:
@@ -876,7 +876,7 @@ def contour(x, y, density, target, *, levels=None, color=unset, alpha=unset, **a
         Grid values along the y axis.
     density : array_like of shape (nx, ny)
         Density values on the grid.
-    target : bokeh Figure
+    target : bokeh.models.Plot
         The :term:`plot` to draw on.
     levels : array_like, optional
         Density values at which to draw contour lines.
@@ -887,7 +887,7 @@ def contour(x, y, density, target, *, levels=None, color=unset, alpha=unset, **a
 
     Returns
     -------
-    GlyphRenderer
+    bokeh.models.GlyphRenderer
     """
     kwargs = {"line_color": color, "line_alpha": alpha}
     return target.contour(
@@ -914,7 +914,7 @@ def contourf(
         Grid values along the y axis.
     density : array_like of shape (nx, ny)
         Density values on the grid.
-    target : bokeh Figure
+    target : bokeh.models.Plot
         The :term:`plot` to draw on.
     levels : array_like, optional
         Density values bounding filled regions.
@@ -927,7 +927,7 @@ def contourf(
 
     Returns
     -------
-    GlyphRenderer
+    bokeh.models.GlyphRenderer
     """
     from bokeh import palettes as bp
 

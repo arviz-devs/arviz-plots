@@ -50,7 +50,7 @@ def legend(
     update_visuals : bool, optional
         If relevant for the backend, update objects representing :term:`visual` elements
         of the plot to improve or allow interactivity for the legend.
-    legend_target : (int, int), default (0, -1)
+    legend_target : tuple of (int, int), default (0, -1)
         Row and colum indicators of the :term:`plot` where the legend will be placed.
         Bokeh does not support :term:`figure` level legend.
     side : str, optional

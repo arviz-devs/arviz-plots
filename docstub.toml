@@ -5,6 +5,9 @@ pandas = "pandas"
 types = "types"
 arviz_base = "arviz_base"
 arviz_plots = "arviz_plots"
+matplotlib = "matplotlib"
+bokeh = "bokeh"
+plotly = "plotly"
 
 # Specify human-friendly aliases that can be used instead of Python-parsable
 # annotations.
@@ -26,3 +29,6 @@ DataArray = "xarray.DataArray"
 scalar = "numbers.Number"
 any = "Any"
 PlotCollection = "arviz_plots.plot_collection.PlotCollection"
+figure_type = "Any"
+plot_object = "Any"
+legend_object = "Any"
