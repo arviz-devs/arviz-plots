@@ -616,7 +616,7 @@ def format_coords_as_labels(data, skip_dims=None, labeller=None):
     ----------
     data : xr.DataArray
         DataArray whose coordinates will be converted to labels.
-    skip_dims : str or list_like, optional
+    skip_dims : str or sequence of str, optional
         Dimensions whose values should not be included in the labels.
     labeller : BaseLabeller, optional
         Labeller instance to use for formatting. If None, defaults to BaseLabeller().
@@ -666,7 +666,7 @@ def annotate_bin_text(da, target, x, y, count_da, n_da, bin_format, **kwargs):
     ----------
     da : xr.DataArray
         Data array to annotate
-    target : Axes
+    target : matplotlib.axes.Axes
         Target axes for annotation
     x : float
         X-position for annotation
@@ -683,7 +683,7 @@ def annotate_bin_text(da, target, x, y, count_da, n_da, bin_format, **kwargs):
 
     Returns
     -------
-    Artist
+    matplotlib.artist.Artist
         The annotation artist
     """
     if hasattr(count_da, "values"):
@@ -801,15 +801,15 @@ def hover(
 
     Parameters
     ----------
-    event : MouseEvent
+    event : matplotlib.backend_bases.MouseEvent
         Matplotlib mouse event containing cursor position.
-    annot : Annotation
+    annot : matplotlib.text.Annotation
         Matplotlib annotation object to show/hide and update.
-    ax : Axes
+    ax : matplotlib.axes.Axes
         Matplotlib axes containing the scatter plot.
-    scatter : PathCollection
+    scatter : matplotlib.collections.PathCollection
         Scatter plot artist whose points are being tracked.
-    fig : Figure
+    fig : matplotlib.figure.Figure
         Matplotlib figure containing the plot.
     offsets : ndarray
         Array of (x, y) coordinates for all scatter plot points.
@@ -860,11 +860,11 @@ def hover_labels(fig, ax, scatter, labels, hover_format, colors, values):
 
     Parameters
     ----------
-    fig : Figure
+    fig : matplotlib.figure.Figure
         Matplotlib figure to attach the hover event handler.
-    ax : Axes
+    ax : matplotlib.axes.Axes
         Matplotlib axes containing the scatter plot.
-    scatter : PathCollection
+    scatter : matplotlib.collections.PathCollection
         Scatter plot artist whose data points trigger hover annotations.
     labels : array_like
         Array of string labels for each data point.
