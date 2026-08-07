@@ -215,6 +215,13 @@ def plot_rank(
     dt_ecdf_ranks = distribution.azstats.compute_ranks(dim=sample_dims)
     # Compute ECDF
     dt_ecdf = dt_ecdf_ranks.azstats.ecdf(dim=ecdf_dims, pit=True, npoints=sample_size)
+    dt_ecdf = dt_ecdf.rename(
+        {
+            dim: "ecdf_dim"
+            for dim in dt_ecdf.dims
+            if dim not in dt_ecdf_ranks.dims and dim != "plot_axis"
+        }
+    )
 
     # Compute multi-chain test p-values
     if method == "mtc_c":
