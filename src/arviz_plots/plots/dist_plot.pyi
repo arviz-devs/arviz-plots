@@ -8,7 +8,14 @@ import arviz_base
 import arviz_stats
 import xarray as xr
 from _typeshed import Incomplete
-from arviz_base import rcParams
+from arviz_base import rcParams, references_to_dataset
+from arviz_base.validate import (
+    validate_ci_prob,
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
+from arviz_stats import ci_in_rope
 from xarray import DataTree
 
 from arviz_plots.plot_collection import PlotCollection
@@ -22,6 +29,7 @@ from arviz_plots.plots.utils import (
     set_wrap_layout,
 )
 from arviz_plots.visuals import (
+    annotate_xy,
     ecdf_line,
     fill_between_y,
     hist,
@@ -33,6 +41,7 @@ from arviz_plots.visuals import (
     scatter_x,
     scatter_xy,
     step_hist,
+    vspan,
 )
 
 from .plot_collection import PlotCollection
@@ -47,6 +56,7 @@ def plot_dist(
     sample_dims: str | Sequence[Hashable] | None = ...,
     kind: Literal["auto", "kde", "hist", "dot", "ecdf"] | None = ...,
     point_estimate: Literal["mean", "median", "mode"] | None = ...,
+    rope: tuple[float] | None = ...,
     ci_kind: Literal["eti", "hdi"] | None = ...,
     ci_prob: float | None = ...,
     plot_collection: PlotCollection | None = ...,
@@ -55,9 +65,12 @@ def plot_dist(
     aes_by_visuals: Mapping[
         Literal[
             "dist",
+            "face",
             "credible_interval",
             "point_estimate",
             "point_estimate_text",
+            "rope",
+            "rope_text",
             "title",
             "rug",
         ],
@@ -66,17 +79,20 @@ def plot_dist(
     visuals: Mapping[
         Literal[
             "dist",
+            "face",
             "credible_interval",
             "point_estimate",
             "point_estimate_text",
-            "title",
+            "rope",
+            "rope_text",
             "rug",
             "remove_axis",
+            "title",
         ],
         Mapping[str, Any] | bool,
     ] = ...,
     stats: Mapping[
-        Literal["dist", "credible_interval", "point_estimate"],
+        Literal["dist", "credible_interval", "point_estimate", "rope"],
         Mapping[str, Any] | xr.Dataset,
     ] = ...,
     **pc_kwargs: Incomplete,

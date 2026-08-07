@@ -84,7 +84,7 @@ def plot_ppc_dist_pit(
     var_names : str or list of str, optional
         Variables to plot.
     filter_vars : {None, "like", "regex"}, optional
-    group : str,
+    group : str, default "posterior_predictive"
         Group to be plotted. Defaults to "posterior_predictive".
         It could also be "prior_predictive".
     coords : dict, optional
