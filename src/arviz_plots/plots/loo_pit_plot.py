@@ -171,7 +171,7 @@ def plot_loo_pit(
     .. [2] Vehtari et al. Pareto Smoothed Importance Sampling. Journal of Machine Learning
        Research, 25(72) (2024) https://jmlr.org/papers/v25/19-556.html
 
-    .. [3] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
+    .. [3] Tesso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     if group != "posterior_predictive":
         raise ValueError(f"Group {group} not supported. Only 'posterior_predictive' is supported.")

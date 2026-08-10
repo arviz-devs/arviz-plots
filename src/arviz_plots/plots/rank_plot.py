@@ -168,7 +168,7 @@ def plot_rank(
 
     References
     ----------
-    .. [1] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
+    .. [1] Tesso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     .. [2] Säilynoja et al. *Graphical test for discrete uniformity and
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6

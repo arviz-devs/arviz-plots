@@ -197,7 +197,7 @@ def plot_ecdf_pit(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
 
-    .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
+    .. [2] Tesso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     alpha = 1 - envelope_prob
