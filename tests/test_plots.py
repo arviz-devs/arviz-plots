@@ -66,6 +66,16 @@ def test_plot_dist_kind_auto(datatree):
     assert pc.get_viz("dist", "tau")["function"] == "line"
 
 
+def test_plot_rank_multc(datatree):
+    pc = plot_rank(datatree, backend="none", method="mtc_c")
+    assert "figure" in pc.viz.data_vars
+    assert "plot" not in pc.viz.data_vars
+    assert "plot" in pc.viz.children
+    assert "title" in pc.viz.children
+    assert "credible_interval" not in pc.viz.children
+    assert "suspicious_points" in pc.viz.children
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
 class TestPlots:  # pylint: disable=too-many-public-methods
     def test_autocorr(self, datatree, backend):
