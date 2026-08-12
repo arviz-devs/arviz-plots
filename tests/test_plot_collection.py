@@ -22,6 +22,17 @@ def dataset(seed=31):
         dims={"theta": ["hierarchy"], "eta": ["group", "hierarchy"]},
     )
 
+@pytest.fixture(scope="module")
+def dataset_grouped(seed=31):
+    """Dataset with a grouping coordinate on the ``hierarchy`` dimension.
+
+    ``group_of`` maps the 6 hierarchy coords to 3 groups, 2 each.
+    """
+    rng = np.random.default_rng(seed)
+    theta = rng.normal(size=(3, 10, 6))
+    ds = dict_to_dataset({"theta": theta}, dims={"theta": ["hierarchy"]})
+    return ds.assign_coords(group_of=("hierarchy", np.repeat(["g0", "g1", "g2"], 2)))
+
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly"])
 @pytest.mark.usefixtures("clean_plots")
@@ -268,6 +279,12 @@ class TestAesthetics:
         assert aes_dt["y"]["eta"].min() == (3 + 3 * 7)
         assert aes_dt["y"]["eta"].max() == (3 + 3 * 7 + 3 * 7 * 4 - 1)
 
+    def test_aes_from_nondim_coord(self, dataset_grouped):
+        pc = PlotCollection(dataset_grouped, DataTree())
+        aes_dt = pc.generate_aes_dt(aes={"color": ["group_of"]}, color=["c0", "c1", "c2"])
+        assert "/color" in aes_dt.groups
+        assert aes_dt["color"]["mapping"].dims == ("group_of",)
+        assert aes_dt["color"]["mapping"].size == 3
 
 class TestSaveFigures:
     @pytest.mark.parametrize(
@@ -518,6 +535,25 @@ class TestMap:
             assert "school" not in kwargs["ds"].dims
             assert "school" not in kwargs["da_hierarchy"].dims
 
+    @pytest.mark.xfail(
+        reason="aes mapped to a non-dimension coordinate collapses iteration "
+        "granularity, breaking target resolution. See arviz-plots#551"
+    )
+    def test_map_nondim_coord_aes(self, dataset_grouped):
+        pc = PlotCollection.wrap(
+            dataset_grouped,
+            cols=["hierarchy"],
+            backend="none",
+            aes={"color": ["group_of"]},
+            color=["c0", "c1", "c2"],
+        )
+        target_list = []
+        kwarg_list = []
+        pc.map(map_auxiliar, "mean", target_list=target_list, kwarg_list=kwarg_list)
+        assert len(target_list) == 6
+        assert [kwargs["color"] for kwargs in kwarg_list] == [
+            "c0", "c0", "c1", "c1", "c2", "c2"
+        ]
 
 class TestFacetMap:
     def test_string_function(self, dataset):
