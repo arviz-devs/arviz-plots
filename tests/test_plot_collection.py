@@ -535,10 +535,6 @@ class TestMap:
             assert "school" not in kwargs["ds"].dims
             assert "school" not in kwargs["da_hierarchy"].dims
 
-    @pytest.mark.xfail(
-        reason="aes mapped to a non-dimension coordinate collapses iteration "
-        "granularity, breaking target resolution. See arviz-plots#551"
-    )
     def test_map_nondim_coord_aes(self, dataset_grouped):
         pc = PlotCollection.wrap(
             dataset_grouped,
