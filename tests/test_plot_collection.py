@@ -22,6 +22,7 @@ def dataset(seed=31):
         dims={"theta": ["hierarchy"], "eta": ["group", "hierarchy"]},
     )
 
+
 @pytest.fixture(scope="module")
 def dataset_grouped(seed=31):
     """Dataset with a grouping coordinate on the ``hierarchy`` dimension.
@@ -286,6 +287,7 @@ class TestAesthetics:
         assert aes_dt["color"]["mapping"].dims == ("group_of",)
         assert aes_dt["color"]["mapping"].size == 3
 
+
 class TestSaveFigures:
     @pytest.mark.parametrize(
         "backend",
@@ -547,9 +549,8 @@ class TestMap:
         kwarg_list = []
         pc.map(map_auxiliar, "mean", target_list=target_list, kwarg_list=kwarg_list)
         assert len(target_list) == 6
-        assert [kwargs["color"] for kwargs in kwarg_list] == [
-            "c0", "c0", "c1", "c1", "c2", "c2"
-        ]
+        assert [kwargs["color"] for kwargs in kwarg_list] == ["c0", "c0", "c1", "c1", "c2", "c2"]
+
 
 class TestFacetMap:
     def test_string_function(self, dataset):

@@ -1355,7 +1355,7 @@ class PlotCollection:
         dim_to_idx = {
             data[idx].dims[0]: idx
             for idx in data.coords
-            if (idx in all_loop_dims) 
+            if (idx in all_loop_dims)
             and (idx not in data.dims)
             and (data[idx].dims[0] not in self.facet_dims)
             and (data[idx].dims[0] not in other_aes_dims)
