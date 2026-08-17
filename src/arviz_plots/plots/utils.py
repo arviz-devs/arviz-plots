@@ -319,11 +319,23 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
                 )
             if reduced_size < 100:
                 out_das.append(
-                    _compute_func_da(ecdf, da, active_dims=active_dims, reduce_dims=reduce_dims)
+                    _compute_func_da(
+                        ecdf,
+                        da,
+                        active_dims=active_dims,
+                        reduce_dims=reduce_dims,
+                        kwargs=stats_dist_value,
+                    )
                 )
             elif da.dtype.kind == "f":
                 out_das.append(
-                    _compute_func_da(kde, da, active_dims=active_dims, reduce_dims=reduce_dims)
+                    _compute_func_da(
+                        kde,
+                        da,
+                        active_dims=active_dims,
+                        reduce_dims=reduce_dims,
+                        kwargs=stats_dist_value,
+                    )
                 )
             else:
                 out_das.append(
@@ -332,7 +344,7 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
                         da,
                         active_dims=active_dims,
                         reduce_dims=reduce_dims,
-                        kwargs={"density": True},
+                        kwargs={"density": True, **stats_dist_value},
                     )
                 )
         return xr.merge(
