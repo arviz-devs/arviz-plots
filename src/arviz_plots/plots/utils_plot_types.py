@@ -10,7 +10,11 @@ def warn_if_binary(observed_dist, predictive_dist):
     for dist, name in zip([observed_dist, predictive_dist], ["observed", "predictive"]):
         if dist is None:
             continue
-        if any(set(np.unique(dist[var].values)).issubset({0, 1}) for var in dist.data_vars):
+
+        if any(
+            (np.isclose(dist[var].values, 0) | np.isclose(dist[var].values, 1)).all()
+            for var in dist.data_vars
+        ):
             warnings.warn(
                 f"The {name} data looks binary. For binary outcomes, "
                 "plot_ppc_pava may be more appropriate.",
