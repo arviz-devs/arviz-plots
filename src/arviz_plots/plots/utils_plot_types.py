@@ -11,13 +11,15 @@ def warn_if_binary(observed_dist, predictive_dist):
         if dist is None:
             continue
 
-        if any(
-            (np.isclose(dist[var].values, 0) | np.isclose(dist[var].values, 1)).all()
-            for var in dist.data_vars
-        ):
+        binary_vars = []
+        for var in dist.data_vars:
+            if np.isclose(dist[var].values, 0).all() or np.isclose(dist[var].values, 1).all():
+                binary_vars.append(var)
+
+        if binary_vars:
             warnings.warn(
-                f"The {name} data looks binary. For binary outcomes, "
-                "plot_ppc_pava may be more appropriate.",
+                f"Variables {', '.join(binary_vars)} in '{name}' look binary. "
+                "For binary outcomes, plot_ppc_pava may be more appropriate.",
                 stacklevel=2,
             )
 
