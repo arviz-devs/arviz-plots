@@ -7,12 +7,11 @@ import numpy as np
 
 def warn_if_binary(observed_dist, predictive_dist):
     """Warn if data is binary."""
-    for dist, name in zip([observed_dist, predictive_dist], ["observed", "predictive"]):
+    for dist, name in zip([observed_dist, predictive_dist], ["observed_data", "predictive"]):
         if dist is None:
             continue
         binary_vars = [
-            var for var, da in dist.items()
-            if (np.isclose(da, 0).all() | np.isclose(da, 1)).all()
+            var for var, da in dist.items() if (np.isclose(da, 0) | np.isclose(da, 1)).all()
         ]
         if binary_vars:
             warnings.warn(
