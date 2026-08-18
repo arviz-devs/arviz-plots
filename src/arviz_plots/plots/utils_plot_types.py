@@ -10,10 +10,10 @@ def warn_if_binary(observed_dist, predictive_dist):
     for dist, name in zip([observed_dist, predictive_dist], ["observed", "predictive"]):
         if dist is None:
             continue
-        binary_vars = []
-        for var in dist.data_vars:
-            if np.isclose(dist[var].values, 0).all() or np.isclose(dist[var].values, 1).all():
-                binary_vars.append(var)
+        binary_vars = [
+            var for var, da in dist.items()
+            if np.isclose(da, 0).all() or np.isclose(da, 1).all()
+        ]
         if binary_vars:
             warnings.warn(
                 f"Variables {', '.join(binary_vars)} in '{name}' look binary. "
