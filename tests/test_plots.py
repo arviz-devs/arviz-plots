@@ -898,7 +898,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "y" in pc.viz["plot"]
 
     def test_plot_ppc_rootogram_continuous_error(self, datatree, backend):
-        with pytest.raises(ValueError, match="Detected at least one continuous variable"):
+        with pytest.raises(ValueError, match="This function only works for discrete data"):
             plot_ppc_rootogram(datatree, backend=backend)
 
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])
