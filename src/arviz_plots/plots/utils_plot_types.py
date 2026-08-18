@@ -12,7 +12,7 @@ def warn_if_binary(observed_dist, predictive_dist):
             continue
         binary_vars = [
             var for var, da in dist.items()
-            if np.isclose(da, 0).all() or np.isclose(da, 1).all()
+            if (np.isclose(da, 0).all() | np.isclose(da, 1)).all()
         ]
         if binary_vars:
             warnings.warn(
