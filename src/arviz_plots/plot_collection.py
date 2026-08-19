@@ -683,7 +683,13 @@ class PlotCollection:
         When adding specific visuals, we might need to loop over more dimensions than these ones
         due to the defined aesthetic mappings.
         """
-        return set(self.viz["plot"].dims)
+        plot = self._viz_dt["plot"]
+        if isinstance(plot, xr.DataTree):
+            plot = plot.dataset
+        subset = sel_subset(self.coords or {}, plot)
+        if subset:
+            plot = plot.sel(subset)
+        return set(plot.dims)
 
     def get_viz(self, artist_name, var_name=None, sel=None, **sel_kwargs):
         """Get element from ``.viz`` that corresponds to the provided subset.
@@ -700,14 +706,14 @@ class PlotCollection:
         if sel is None:
             sel = {}
         sel = sel | sel_kwargs
-        out = self.viz[artist_name]
+        out = self._viz_dt[artist_name]
         if isinstance(out, xr.DataTree):
             out = out.dataset
             if var_name is not None:
                 out = out[var_name]
             elif len(out.data_vars) == 1:
                 out = out[list(out.data_vars)[0]]
-        subset = sel_subset(sel, out)
+        subset = sel_subset({**sel, **(self.coords or {})}, out)
         if subset:
             out = out.sel(subset)
         if isinstance(out, xr.DataArray) and out.size == 1:
@@ -1049,8 +1055,14 @@ class PlotCollection:
         """Update list of aesthetics after indicating ignores and extra subsets."""
         if coords is None:
             coords = {}
-        aes = [aes_key for aes_key in self.aes_set if aes_key not in ignore_aes]
-        aes_dims = [dim for aes_key in aes for dim in self.aes[aes_key].dims]
+        aes = [aes_key for aes_key in self._aes_dt.children if aes_key not in ignore_aes]
+        aes_dims = []
+        for aes_key in aes:
+            aes_ds = self._aes_dt[aes_key].dataset
+            subset = sel_subset(self.coords or {}, aes_ds)
+            if subset:
+                aes_ds = aes_ds.sel(subset)
+            aes_dims.extend(aes_ds.dims)
         all_loop_dims = self.facet_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
 
@@ -1190,10 +1202,11 @@ class PlotCollection:
         .PlotCollection.generate_aes_dt
         """
         aes_kwargs = {}
+        selection = {**selection, **(self.coords or {})}
         for aes_key in aes:
             if aes_key.startswith("overlay"):
                 continue
-            aes_ds = self.aes[aes_key]
+            aes_ds = self._aes_dt[aes_key]
             if var_name in aes_ds.data_vars:
                 aes_kwargs[aes_key] = subset_ds(aes_ds, var_name, selection)
             else:
@@ -1335,7 +1348,9 @@ class PlotCollection:
 
     def store_in_artist_da(self, aux_artist, func_label, var_name, sel):
         """Store the visual object of `var_name`+`sel` combination in `func_label` variable."""
-        self.viz[func_label][var_name].loc[sel] = aux_artist
+        artist_da = self._viz_dt[func_label][var_name]
+        subset = sel_subset({**sel, **(self.coords or {})}, artist_da)
+        artist_da.loc[subset] = aux_artist
 
     def add_title(self, text, *, color="B1", size=None, **kwargs):
         """Add a title to the :term:`figure`.
