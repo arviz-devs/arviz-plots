@@ -680,6 +680,7 @@ class PlotCollection:
         """
         self._aes_dt[aes_key] = dataset
         self._aes_data_vars = None
+        self._aes_dims = None
 
     @property
     def facet_dims(self):
@@ -688,7 +689,13 @@ class PlotCollection:
         When adding specific visuals, we might need to loop over more dimensions than these ones
         due to the defined aesthetic mappings.
         """
-        return set(self.get_viz("plot").dims)
+        plot = self._viz_dt["plot"]
+        if isinstance(plot, xr.DataTree):
+            plot = plot.dataset
+        subset = sel_subset(self.coords or {}, plot)
+        if subset:
+            plot = plot.sel(subset)
+        return set(plot.dims)
 
     def get_viz(self, artist_name, var_name=None, sel=None, **sel_kwargs):
         """Get element from ``.viz`` that corresponds to the provided subset.
