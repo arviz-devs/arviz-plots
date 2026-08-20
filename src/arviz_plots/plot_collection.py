@@ -3,7 +3,6 @@
 
 import warnings
 from collections.abc import Hashable
-from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
 
@@ -1197,7 +1196,13 @@ class PlotCollection:
             }
         return self._aes_dims
 
-    @lru_cache(maxsize=1500)
+    # TODO: Using an lru_cache will speed up calls to `.map`, especially in objects with a lot of
+    # aes especially, but we with this being a method instead of a function we need to understand
+    # the memory usage implications of this given the decoration happens at the class level
+    # instead of the instance level. Potentially useful references
+    # - FAQ on Python docs: https://docs.python.org/3/faq/programming.html#faq-cache-method-calls
+    # - Memray tutorial on lru_cache https://bloomberg.github.io/memray/tutorials/3.html
+    # @lru_cache(maxsize=500)
     def _get_aes_kwargs_var_name(
         self, aes_key: Hashable, var_name: Hashable, selection: tuple[tuple[Hashable, Hashable]]
     ):
