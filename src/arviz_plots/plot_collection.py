@@ -1148,8 +1148,8 @@ class PlotCollection:
         using sel/isel selection on to retrieve the plot objects.
         """
         if "plot" in self._viz_dt.data_vars:
-            row_da = self.get_viz("row_index")
-            col_da = self.get_viz("col_index")
+            row_da = self.viz["row_index"]
+            col_da = self.viz["col_index"]
             if row_index < 0:
                 row_index = int(row_da.max() + 1 + row_index)
             if col_index < 0:
@@ -1160,9 +1160,9 @@ class PlotCollection:
                     f"Mo match found for provided indexes (row: {row_index}, column: {col_index}). "
                     "Check indexes are within the grid size and don't represent an empty plot"
                 )
-            return self.get_viz("plot").isel(condition.argmax(...)).item()
-        row_ds = self.get_viz("row_index")
-        col_ds = self.get_viz("col_index")
+            return self.viz["plot"].isel(condition.argmax(...)).item()
+        row_ds = self.viz["row_index"].dataset
+        col_ds = self.viz["col_index"].dataset
         if row_index < 0:
             row_index = int(row_ds.max().to_array().max() + 1 + row_index)
         if col_index < 0:
@@ -1175,7 +1175,7 @@ class PlotCollection:
                 "Check indexes are within the grid size and don't represent an empty plot"
             )
         target_var = var_condition.coords["variable"][var_condition.argmax("variable")].item()
-        return self.get_viz("plot", target_var).isel(condition[target_var].argmax(...)).item()
+        return self.viz["plot"][target_var].isel(condition[target_var].argmax(...)).item()
 
     @property
     def aes_data_vars(self):
