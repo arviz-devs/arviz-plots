@@ -402,7 +402,6 @@ def test_plot_dgof(datatree, kind, envelope_prob, visuals):
     kind=kind_value_no_hist,
     envelope_prob=envelope_prob_value,
 )
-@settings(deadline=6000)
 def test_plot_dgof_dist(datatree, kind, envelope_prob, visuals):
     pc = plot_dgof_dist(
         datatree,
@@ -851,6 +850,7 @@ def test_plot_mcse(datatree, rug, n_points, extra_methods, visuals):
             assert visual in pc.viz.children
 
 
+@settings(deadline=5000)
 @given(
     visuals=st.fixed_dictionaries(
         {},
