@@ -552,6 +552,11 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "figure" in pc.viz.data_vars
         assert "observed_scatter" in pc.viz.children
 
+    def test_plot_lm_y_obs_fallback(self, datatree_regression, backend):
+        pc = plot_lm(datatree_regression, group="posterior", y="mu", backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "observed_scatter" in pc.viz.children
+
     @pytest.mark.parametrize("coverage", (True, False))
     def test_plot_loo_pit(self, datatree, coverage, backend):
         pc = plot_loo_pit(datatree, coverage=coverage, backend=backend)
