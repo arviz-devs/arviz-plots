@@ -107,10 +107,10 @@ def plot_lm(
         Dimension to be represented as the x axis. Defaults to the last dimension
         in the data for `x` not in ``sample_dims``. It should be present in the
         data for `y` too.
-    filter_vars: {None, “like”, “regex”}, default None
+    filter_vars : {None, "like", "regex"}, default None
         If None (default), interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
+        If "like", interpret var_names as substrings of the real variables names.
+        If "regex", interpret var_names as regular expressions on the real variables names.
         It is used for any of y, x, y_pred, and x_pred if they are strings or lists of strings.
     group : str, default "posterior_predictive"
         Group to use for plotting.

@@ -84,7 +84,7 @@ def plot_khat(
 
     Parameters
     ----------
-    elpd_data : ELPDData
+    elpd_data : arviz_stats.ELPDData
         ELPD data object returned by :func:`arviz_stats.loo` containing Pareto k diagnostics.
     threshold : float, optional
         Highlight khat values above this threshold with annotations. If None, no points
@@ -94,10 +94,10 @@ def plot_khat(
     legend : bool, optional
         Whether to display a legend when color aesthetics are active. If None, a legend is shown
         when a color mapping is available.
-    color : color spec or str, optional
+    color : Any, optional
         Color for scatter points when no aesthetic mapping supplies one. If the value matches a
         dimension name, that dimension is mapped to the color aesthetic.
-    marker : marker spec or str, optional
+    marker : Any, optional
         Marker style for scatter points when no aesthetic mapping supplies one. If the value
         matches a dimension name, that dimension is mapped to the marker aesthetic.
     hline_values : sequence of float, optional

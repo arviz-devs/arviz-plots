@@ -36,23 +36,23 @@ def combine_plots(
 
     Parameters
     ----------
-    dt : DataTree of dict of {str : DataTree}
+    dt : DataTree or dict of {str : DataTree}
         Input data. In case of dictionary input, the keys are taken to be model names.
         In such cases, a dimension "model" is generated and can be used to map to aesthetics.
 
         Note that not all batteries included functions accept dictionary input, so it will
         only work when all plotting functions requested in `plots` are compatible with it.
-    plots : list of tuple of (callable, mapping)
+    plots : list of (tuple of (callable, mapping))
         List of all the plotting functions to be combined. Each element in this list
         is a tuple with two elements. The first is the function to be called, the second
         is a dictionary with any keyword arguments that should be used when calling that function.
     var_names : str or sequence of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, default None
+    filter_vars : {None, "like", "regex"}, default None
         If None, interpret `var_names` as the real variables names.
-        If “like”, interpret `var_names` as substrings of the real variables names.
-        If “regex”, interpret `var_names` as regular expressions on the real variables names.
+        If "like", interpret `var_names` as substrings of the real variables names.
+        If "regex", interpret `var_names` as regular expressions on the real variables names.
     group : str, default "posterior"
         Group to be plotted.
     coords : dict, optional

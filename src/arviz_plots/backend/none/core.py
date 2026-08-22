@@ -182,9 +182,9 @@ def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
         The figure element dict.
     string : str
         The title text.
-    color : optional
+    color : Any, optional
         Color of the title text.
-    size : optional
+    size : Any, optional
         Font size of the title.
     **artist_kws : dict, optional
         Additional keyword arguments.
@@ -256,7 +256,8 @@ def create_plotting_grid(
     Returns
     -------
     figure : False
-    plots : [] or ndarray of []
+    plots : list or ndarray of dtype object
+        Empty list, or an object-dtype ndarray filled with empty lists.
     """
     plots = np.empty((rows, cols), dtype=object)
     for i, idx in enumerate(np.ndindex((rows, cols))):
@@ -332,7 +333,7 @@ def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset
     ----------
     x, y : array-like of shape (n,)
         The x and y data to be plotted as a line
-    target : PlotObject
+    target : plot_object
         The backend object representing a :term:`plot` where this :term:`visual` should be added.
     color, alpha, width, linestyle
         Properties of the generated :term:`visual`.
@@ -369,9 +370,9 @@ def multiple_lines(
 
     Parameters
     ----------
-    x : (N,) array-like
+    x : array-like of shape (N,)
         Shared data for the x axis
-    y : (N, M) array-like
+    y : array-like of shape (N, M)
         Data for the y values of the multiple lines
     target : list[Any]
     color, alpha, width, linestyle : Any, optional
@@ -419,7 +420,7 @@ def scatter(
     ----------
     x, y : array_like of shape (n,)
         Data for the points to plot
-    target : PlotObject
+    target : plot_object
         The backend object representing a :term:`plot` where this :term:`visual` should be added.
     size, marker, alpha, color, facecolor, edgecolor, width : any
         Properties of the generated :term:`visual`.
