@@ -1346,10 +1346,19 @@ class PlotCollection:
             raise TypeError("data argument must be an xarray.Dataset")
 
         aes, all_loop_dims = self.update_aes(ignore_aes, coords)
+        other_aes_dims = {
+            dim
+            for aes_key in self.aes_set
+            if aes_key not in ignore_aes
+            for dim in self.aes[aes_key].dims
+        }
         dim_to_idx = {
             data[idx].dims[0]: idx
             for idx in data.coords
-            if (idx in all_loop_dims) and (idx not in data.dims)
+            if (idx in all_loop_dims)
+            and (idx not in data.dims)
+            and (data[idx].dims[0] not in self.facet_dims)
+            and (data[idx].dims[0] not in other_aes_dims)
         }
         for idx in dim_to_idx.values():
             if idx not in data.xindexes:
@@ -1376,6 +1385,11 @@ class PlotCollection:
             except TypeError:
                 pass
             sel_plus = {**sel, **coords}
+            for _idx in data.coords:
+                if _idx in all_loop_dims and _idx not in data.dims and _idx not in sel_plus:
+                    _dim = data[_idx].dims[0]
+                    if _dim in sel:
+                        sel_plus[_idx] = data[_idx].sel({_dim: sel[_dim]}).item()
             target = self.get_target(var_name, sel_plus)
 
             aes_kwargs = self.get_aes_kwargs(aes, var_name, sel_plus)
