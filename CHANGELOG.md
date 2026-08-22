@@ -1,3 +1,61 @@
+<a id="v1.3.1"></a>
+# [v1.3.1](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.3.1) - 2026-08-21
+
+## What's Changed
+
+### Documentation
+* Update and expand overview and intro to plots by [@aloctavodia](https://github.com/aloctavodia) in [#552](https://github.com/arviz-devs/arviz-plots/pull/552)
+
+### Maintenance and bug fixes
+* Update warning/error functions in `src/arviz_plots/plots/utils_plot_types.py` by [@tomicapretto](https://github.com/tomicapretto) in [#556](https://github.com/arviz-devs/arviz-plots/pull/556)
+* Replace some usages of `viz` and `aes` in `PlotCollection` with queries to internal objects by [@tomicapretto](https://github.com/tomicapretto) in [#557](https://github.com/arviz-devs/arviz-plots/pull/557)
+
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v1.3.0...v1.3.1
+
+[Changes][v1.3.1]
+
+
+<a id="v1.3.0"></a>
+# [v1.3.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.3.0) - 2026-08-11
+
+## What's Changed
+
+### New Features
+* Add KDE2D to plot_pair by [@aloctavodia](https://github.com/aloctavodia) in [#503](https://github.com/arviz-devs/arviz-plots/pull/503)
+* Add plot_loo_pava by [@aloctavodia](https://github.com/aloctavodia) in [#525](https://github.com/arviz-devs/arviz-plots/pull/525)
+* Set default style DPI to 100 by [@Silvren](https://github.com/Silvren) in [#536](https://github.com/arviz-devs/arviz-plots/pull/536)
+* Add ROPE to plot_dist by [@aloctavodia](https://github.com/aloctavodia) in [#533](https://github.com/arviz-devs/arviz-plots/pull/533)
+* Add multiple chains test to rank plot by [@aloctavodia](https://github.com/aloctavodia) in [#530](https://github.com/arviz-devs/arviz-plots/pull/530)
+
+
+### Documentation
+* Update Code of Conduct by [@OriolAbril](https://github.com/OriolAbril) in [#521](https://github.com/arviz-devs/arviz-plots/pull/521)
+* Fix typo in author name by [@aloctavodia](https://github.com/aloctavodia) in [#547](https://github.com/arviz-devs/arviz-plots/pull/547)
+
+### Maintenance and bug fixes
+* Replace isort, black and pydocstyle with ruff and add missing pre-commit hooks by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#519](https://github.com/arviz-devs/arviz-plots/pull/519)
+* Use a single tox -e test env instead of per-version envs by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#526](https://github.com/arviz-devs/arviz-plots/pull/526)
+* Keep sample dim name for custom t_stat callable by [@aloctavodia](https://github.com/aloctavodia) in [#527](https://github.com/arviz-devs/arviz-plots/pull/527)
+* Remove warning from plot_ppc_dist when using group prior_predictive by [@aloctavodia](https://github.com/aloctavodia) in [#528](https://github.com/arviz-devs/arviz-plots/pull/528)
+* Two small pre-commit setup changes: by [@PiyushPanwarFST](https://github.com/PiyushPanwarFST) in [#529](https://github.com/arviz-devs/arviz-plots/pull/529)
+* Compute plot_y_max once in plot_dist, reuse for point estimate text by [@AndrianBalanescu](https://github.com/AndrianBalanescu) in [#539](https://github.com/arviz-devs/arviz-plots/pull/539)
+* Pydata inspired fixes by [@OriolAbril](https://github.com/OriolAbril) in [#517](https://github.com/arviz-devs/arviz-plots/pull/517)
+* Update deprecated git protocol to https in README by [@b25cs1051-KUSH](https://github.com/b25cs1051-KUSH) in [#541](https://github.com/arviz-devs/arviz-plots/pull/541)
+* Update mypy python_version to 3.12 by [@yogadityag](https://github.com/yogadityag) in [#485](https://github.com/arviz-devs/arviz-plots/pull/485)
+
+
+## New Contributors
+* [@Silvren](https://github.com/Silvren) made their first contribution in [#536](https://github.com/arviz-devs/arviz-plots/pull/536)
+* [@AndrianBalanescu](https://github.com/AndrianBalanescu) made their first contribution in [#539](https://github.com/arviz-devs/arviz-plots/pull/539)
+* [@b25cs1051-KUSH](https://github.com/b25cs1051-KUSH) made their first contribution in [#541](https://github.com/arviz-devs/arviz-plots/pull/541)
+* [@yogadityag](https://github.com/yogadityag) made their first contribution in [#485](https://github.com/arviz-devs/arviz-plots/pull/485)
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v1.2.0...v1.3.0
+
+[Changes][v1.3.0]
+
+
 <a id="v1.2.0"></a>
 # [v1.2.0](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.2.0) - 2026-06-12
 
@@ -410,6 +468,8 @@
 [Changes][v0.4.0]
 
 
+[v1.3.1]: https://github.com/arviz-devs/arviz-plots/compare/v1.3.0...v1.3.1
+[v1.3.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.1.0...v1.2.0
 [v1.1.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/arviz-devs/arviz-plots/compare/v0.8.0...v1.0.0

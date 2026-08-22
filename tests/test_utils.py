@@ -18,6 +18,7 @@ from arviz_plots.plots.utils import (
     set_grid_layout,
     set_wrap_layout,
 )
+from arviz_plots.plots.utils_plot_types import warn_if_binary
 
 
 class TestUtils:
@@ -271,3 +272,8 @@ class TestUtils:
         assert set(density.data_vars) == {"y_obs", "y_scalar"}
         assert density["y_obs"].attrs["kind"] == "kde"
         assert density["y_scalar"].attrs["kind"] == "kde"
+
+
+def test_warn_if_binary(datatree_binary):
+    with pytest.warns(UserWarning, match="Variables y in 'observed_data' look binary"):
+        warn_if_binary(datatree_binary["observed_data"].dataset, None)
