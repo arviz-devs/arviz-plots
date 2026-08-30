@@ -74,6 +74,16 @@ def test_plot_dist_rug_flattens_sample_dims(datatree):
     assert rug["y"].shape == rug["x"].shape
 
 
+def test_plot_rank_multc(datatree):
+    pc = plot_rank(datatree, backend="none", method="mtc_c")
+    assert "figure" in pc.viz.data_vars
+    assert "plot" not in pc.viz.data_vars
+    assert "plot" in pc.viz.children
+    assert "title" in pc.viz.children
+    assert "credible_interval" not in pc.viz.children
+    assert "suspicious_points" in pc.viz.children
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
 class TestPlots:  # pylint: disable=too-many-public-methods
     def test_autocorr(self, datatree, backend):
@@ -896,7 +906,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "y" in pc.viz["plot"]
 
     def test_plot_ppc_rootogram_continuous_error(self, datatree, backend):
-        with pytest.raises(ValueError, match="Detected at least one continuous variable"):
+        with pytest.raises(ValueError, match="This function only works for discrete data"):
             plot_ppc_rootogram(datatree, backend=backend)
 
     @pytest.mark.parametrize("kind", ["kde", "ecdf", "hist", "dot"])

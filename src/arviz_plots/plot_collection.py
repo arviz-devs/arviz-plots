@@ -2,6 +2,7 @@
 """Plot collection class."""
 
 import warnings
+from collections.abc import Hashable
 from importlib import import_module
 from pathlib import Path
 
@@ -261,7 +262,7 @@ class PlotCollection:
         if backend is not None:
             self.backend = backend
         elif "figure" in viz_dt:
-            self.backend = backend_from_object(self.viz_dt["figure"].item(), return_module=False)
+            self.backend = backend_from_object(viz_dt["figure"].item(), return_module=False)
 
         if aes_dt is None:
             if aes is None:
@@ -269,22 +270,24 @@ class PlotCollection:
             self._aes_dt = self.generate_aes_dt(aes, data, **kwargs)
         else:
             self._aes_dt = aes_dt
+        self._aes_data_vars = None
+        self._aes_dims = None
 
     def _repr_html_(self):
-        if "figure" not in self.viz:
+        if "figure" not in self._viz_dt:
             return None
 
-        fig = self.viz["figure"].item()
+        fig = self.get_viz("figure")
         if fig is None:
             return None
 
         return fig._repr_html_()  # pylint: disable=protected-access
 
     def _display_(self):
-        if "figure" not in self.viz:
+        if "figure" not in self._viz_dt:
             return self
 
-        fig = self.viz["figure"].item()
+        fig = self.get_viz("figure")
         if fig is None:
             return self
 
@@ -392,18 +395,18 @@ class PlotCollection:
     @property
     def aes_set(self):
         """Return all aesthetics with a mapping defined as a set."""
-        return set(self.aes.children)
+        return set(self._aes_dt.children)
 
     def show(self):
         """Call the backend function to show this :term:`figure`."""
-        if "figure" not in self.viz:
+        if "figure" not in self._viz_dt:
             raise ValueError("No plot found to be shown")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        figure = self.viz["figure"].item()
+        figure = self.get_viz("figure")
         if figure is not None:
             plot_bknd.show(figure)
         else:
-            self.viz["plot"].item()
+            self.get_viz("plot")
 
     def savefig(self, filename, **kwargs):
         """Call the backend function to save this :term:`figure`.
@@ -414,10 +417,10 @@ class PlotCollection:
         **kwargs
             Passed as is to the respective backend function
         """
-        if "figure" not in self.viz:
+        if "figure" not in self._viz_dt:
             raise ValueError("No plot found to be saved")
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        plot_bknd.savefig(self.viz["figure"].item(), Path(filename), **kwargs)
+        plot_bknd.savefig(self.get_viz("figure"), Path(filename), **kwargs)
 
     def generate_aes_dt(self, aes, data=None, **kwargs):
         """Generate the aesthetic mappings.
@@ -675,6 +678,8 @@ class PlotCollection:
         arviz_plots.PlotCollection.get_aes_as_dataset
         """
         self._aes_dt[aes_key] = dataset
+        self._aes_data_vars = None
+        self._aes_dims = None
 
     @property
     def facet_dims(self):
@@ -683,7 +688,13 @@ class PlotCollection:
         When adding specific visuals, we might need to loop over more dimensions than these ones
         due to the defined aesthetic mappings.
         """
-        return set(self.viz["plot"].dims)
+        plot = self._viz_dt["plot"]
+        if isinstance(plot, xr.DataTree):
+            plot = plot.dataset
+        subset = sel_subset(self.coords or {}, plot)
+        if subset:
+            plot = plot.sel(subset)
+        return set(plot.dims)
 
     def get_viz(self, artist_name, var_name=None, sel=None, **sel_kwargs):
         """Get element from ``.viz`` that corresponds to the provided subset.
@@ -700,14 +711,14 @@ class PlotCollection:
         if sel is None:
             sel = {}
         sel = sel | sel_kwargs
-        out = self.viz[artist_name]
+        out = self._viz_dt[artist_name]
         if isinstance(out, xr.DataTree):
             out = out.dataset
             if var_name is not None:
                 out = out[var_name]
             elif len(out.data_vars) == 1:
                 out = out[list(out.data_vars)[0]]
-        subset = sel_subset(sel, out)
+        subset = sel_subset({**sel, **(self.coords or {})}, out)
         if subset:
             out = out.sel(subset)
         if isinstance(out, xr.DataArray) and out.size == 1:
@@ -1049,8 +1060,14 @@ class PlotCollection:
         """Update list of aesthetics after indicating ignores and extra subsets."""
         if coords is None:
             coords = {}
-        aes = [aes_key for aes_key in self.aes_set if aes_key not in ignore_aes]
-        aes_dims = [dim for aes_key in aes for dim in self.aes[aes_key].dims]
+        aes = [aes_key for aes_key in self._aes_dt.children if aes_key not in ignore_aes]
+        aes_dims = []
+        for aes_key in aes:
+            aes_ds = self._aes_dt[aes_key].dataset
+            subset = sel_subset(self.coords or {}, aes_ds)
+            if subset:
+                aes_ds = aes_ds.sel(subset)
+            aes_dims.extend(aes_ds.dims)
         all_loop_dims = self.facet_dims.union(aes_dims).difference(coords.keys())
         return aes, all_loop_dims
 
@@ -1129,7 +1146,7 @@ class PlotCollection:
         have integer dtype and extracts the variable and indexes from there. This allows
         using sel/isel selection on to retrieve the plot objects.
         """
-        if "plot" in self.viz.data_vars:
+        if "plot" in self._viz_dt.data_vars:
             row_da = self.viz["row_index"]
             col_da = self.viz["col_index"]
             if row_index < 0:
@@ -1158,6 +1175,38 @@ class PlotCollection:
             )
         target_var = var_condition.coords["variable"][var_condition.argmax("variable")].item()
         return self.viz["plot"][target_var].isel(condition[target_var].argmax(...)).item()
+
+    @property
+    def aes_data_vars(self):
+        """Helper property storing aes -> data vars mapping."""
+        if self._aes_data_vars is None:
+            self._aes_data_vars = {
+                aes_key: tuple(ds.data_vars) for aes_key, ds in self._aes_dt.children.items()
+            }
+        return self._aes_data_vars
+
+    @property
+    def aes_dims(self):
+        """Helper property storing (aes, var_name) -> dimensions mapping."""
+        if self._aes_dims is None:
+            self._aes_dims = {
+                (aes_key, var_name): tuple(self._aes_dt[aes_key][var_name].dims)
+                for aes_key, var_names in self.aes_data_vars.items()
+                for var_name in var_names
+            }
+        return self._aes_dims
+
+    # TODO: Using an lru_cache will speed up calls to `.map`, especially in objects with a lot of
+    # aes especially, but we with this being a method instead of a function we need to understand
+    # the memory usage implications of this given the decoration happens at the class level
+    # instead of the instance level. Potentially useful references
+    # - FAQ on Python docs: https://docs.python.org/3/faq/programming.html#faq-cache-method-calls
+    # - Memray tutorial on lru_cache https://bloomberg.github.io/memray/tutorials/3.html
+    # @lru_cache(maxsize=500)
+    def _get_aes_kwargs_var_name(
+        self, aes_key: Hashable, var_name: Hashable, selection: tuple[tuple[Hashable, Hashable]]
+    ):
+        return subset_ds(self._aes_dt[aes_key], var_name, dict(selection))
 
     def get_aes_kwargs(self, aes, var_name, selection):
         """Get the aesthetic mappings for the given variable and selection as a dictionary.
@@ -1190,17 +1239,31 @@ class PlotCollection:
         .PlotCollection.generate_aes_dt
         """
         aes_kwargs = {}
+        selection = {**selection, **(self.coords or {})}
         for aes_key in aes:
             if aes_key.startswith("overlay"):
                 continue
-            aes_ds = self.aes[aes_key]
-            if var_name in aes_ds.data_vars:
-                aes_kwargs[aes_key] = subset_ds(aes_ds, var_name, selection)
+            if var_name in self.aes_data_vars[aes_key]:
+                sel_i = {
+                    k: v for k, v in selection.items() if k in self.aes_dims[(aes_key, var_name)]
+                }
+                aes_kwargs[aes_key] = self._get_aes_kwargs_var_name(
+                    aes_key, var_name, tuple(sel_i.items())
+                )
             else:
-                if all(dim in selection for dim in aes_ds["mapping"].dims):
-                    aes_kwargs[aes_key] = subset_ds(aes_ds, "mapping", selection)
-                elif "neutral_element" in aes_ds.data_vars:
-                    aes_kwargs[aes_key] = subset_ds(aes_ds, "neutral_element", {})
+                if all(dim in selection for dim in self.aes_dims[(aes_key, "mapping")]):
+                    sel_i = {
+                        k: v
+                        for k, v in selection.items()
+                        if k in self.aes_dims[(aes_key, "mapping")]
+                    }
+                    aes_kwargs[aes_key] = self._get_aes_kwargs_var_name(
+                        aes_key, "mapping", tuple(sel_i.items())
+                    )
+                elif "neutral_element" in self.aes_data_vars[aes_key]:
+                    aes_kwargs[aes_key] = self._get_aes_kwargs_var_name(
+                        aes_key, "neutral_element", tuple()
+                    )
                 else:
                     raise ValueError(
                         f"{aes_key} has no neutral element initialized but "
@@ -1335,7 +1398,9 @@ class PlotCollection:
 
     def store_in_artist_da(self, aux_artist, func_label, var_name, sel):
         """Store the visual object of `var_name`+`sel` combination in `func_label` variable."""
-        self.viz[func_label][var_name].loc[sel] = aux_artist
+        artist_da = self._viz_dt[func_label][var_name]
+        subset = sel_subset({**sel, **(self.coords or {})}, artist_da)
+        artist_da.loc[subset] = aux_artist
 
     def add_title(self, text, *, color="B1", size=None, **kwargs):
         """Add a title to the :term:`figure`.
@@ -1371,11 +1436,11 @@ class PlotCollection:
             pc = azp.plot_trace(data, var_names=["mu"])
             pc.add_title("MCMC Trace", color="darkblue", size=16)
         """
-        if "figure" not in self.viz.data_vars:
+        if "figure" not in self._viz_dt.data_vars:
             raise ValueError("No figure found to add title to")
 
         plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        fig = self.viz["figure"].item()
+        fig = self.get_viz("figure")
 
         title_kwargs = {"color": color}
         if size is not None:
@@ -1385,9 +1450,9 @@ class PlotCollection:
 
         # bokeh returns a new column layout, so we need to update the stored figure
         if new_fig is not fig:
-            self.viz["figure"] = xr.DataArray(new_fig)
+            self._viz_dt["figure"] = xr.DataArray(new_fig)
 
-        self.viz["figure_title"] = xr.DataArray(title_obj)
+        self._viz_dt["figure_title"] = xr.DataArray(title_obj)
 
     def facet_map(
         self, func, func_label=None, *, var_names=None, filter_vars=None, coords=None, **kwargs

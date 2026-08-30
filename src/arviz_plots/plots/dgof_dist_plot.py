@@ -154,7 +154,7 @@ def plot_dgof_dist(
     .. [1] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
         (2025) arXiv preprint https://arxiv.org/abs/2503.01509
 
-    .. [2] Tasso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
+    .. [2] Tesso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dgof_dist, "aes_by_visuals"))
