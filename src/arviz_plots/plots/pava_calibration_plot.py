@@ -76,10 +76,10 @@ def plot_ppc_pava(
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, optional, default=None
+    filter_vars : {None, "like", "regex"}, optional, default=None
         If None (default), interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
+        If "like", interpret var_names as substrings of the real variables names.
+        If "regex", interpret var_names as regular expressions on the real variables names.
     group : str, optional
         The group from which to get the unique values. Defaults to "posterior_predictive".
         It could also be "prior_predictive". Notice that this plots always use the "observed_data"

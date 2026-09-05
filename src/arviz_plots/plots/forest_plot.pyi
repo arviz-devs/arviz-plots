@@ -11,12 +11,27 @@ import xarray as xr
 from _typeshed import Incomplete
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
+from arviz_base.validate import (
+    validate_dict_argument,
+    validate_or_use_rcparam,
+    validate_sample_dims,
+)
 from numpy.typing import ArrayLike
 from xarray import DataTree
 
 from arviz_plots.plot_collection import PlotCollection, process_facet_dims
-from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, process_group_variables_coords
-from arviz_plots.visuals import annotate_label, fill_between_y, line_x, remove_axis, scatter_x
+from arviz_plots.plots.utils import (
+    filter_aes,
+    get_visual_kwargs,
+    process_group_variables_coords,
+)
+from arviz_plots.visuals import (
+    annotate_label,
+    fill_between_y,
+    line_x,
+    remove_axis,
+    scatter_x,
+)
 
 from .plot_collection import PlotCollection
 

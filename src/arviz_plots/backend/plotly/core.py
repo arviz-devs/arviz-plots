@@ -175,7 +175,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
     Parameters
     ----------
-    figsize : (float, float) or None
+    figsize : tuple of (float, float) or None
         Size of figure in `figsize_units`
     rows : int
         Number of rows
@@ -186,7 +186,7 @@ def scale_fig_size(figsize, rows=1, cols=1, figsize_units=None):
 
     Returns
     -------
-    figsize : (float, float) or None
+    figsize : tuple of (float, float) or None
         Size of figure in dots
     labelsize : float
         fontsize for labels
@@ -294,7 +294,7 @@ def savefig(figure, path, **kwargs):
 
     Parameters
     ----------
-    figure : `~plotly.graph_objects.Figure`
+    figure : plotly.graph_objects.Figure
         Plotly figure to save.
     path : pathlib.Path
         Path to save the figure to.
@@ -314,20 +314,20 @@ def set_figure_title(figure, string, *, color=unset, size=unset, **artist_kws):
 
     Parameters
     ----------
-    figure : `~plotly.graph_objects.Figure`
+    figure : plotly.graph_objects.Figure
         The figure to add the title to.
     string : str
         The title text.
-    color : optional
+    color : Any, optional
         Color of the title text.
-    size : optional
+    size : Any, optional
         Font size of the title.
     **artist_kws : dict, optional
         Additional keyword arguments passed to :meth:`~plotly.graph_objects.Figure.update_layout`.
 
     Returns
     -------
-    `~plotly.graph_objects.Figure`
+    plotly.graph_objects.Figure
         The figure object (unchanged).
     plotly title object
         The title layout object from the figure.
@@ -365,7 +365,7 @@ def create_plotting_grid(
         Number of axes required
     rows, cols : int, default 1
         Number of rows and columns.
-    figsize : (float, float), optional
+    figsize : tuple of (float, float), optional
         Size of the figure in `figsize_units`. It overwrites the values for "width" and "height"
         in `subplot_kws` if any.
     figsize_units : {"inches", "dots"}, default "inches"
@@ -383,8 +383,8 @@ def create_plotting_grid(
 
     Returns
     -------
-    `~plotly.graph_object.Figure` or None
-    `~arviz_plots.backend.plotly.PlotlyPlot` or ndarray of `~arviz_plots.backend.plotly.PlotlyPlot`
+    plotly.graph_objects.Figure or None
+    arviz_plots.backend.plotly.PlotlyPlot or ndarray of arviz_plots.backend.plotly.PlotlyPlot
     """
     plots = np.empty((rows, cols), dtype=object)
     layout_kwargs = {}  # {"legend": {"visible": False}}
@@ -507,9 +507,9 @@ def multiple_lines(
 
     Parameters
     ----------
-    x : (N,) array-like
+    x : array-like of shape (N,)
         Shared x-axis values for all lines.
-    y : (N, M) array-like
+    y : array-like of shape (N, M)
         Each of the `m` columns represents the y-values for one line.
     target : PlotlyPlot
         The target :term:`plot` to draw on.
@@ -520,7 +520,7 @@ def multiple_lines(
 
     Returns
     -------
-    plotly.graph_object.Scatter
+    plotly.graph_objects.Scatter
         Plotly trace representing all lines.
 
     Notes

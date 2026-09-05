@@ -1,0 +1,9 @@
+# File generated with docstub
+
+from pathlib import Path
+
+from arviz_base import rcParams
+
+def use(name: str) -> None: ...
+def available() -> dict: ...
+def get(name: str, backend: str | None = ...) -> None: ...

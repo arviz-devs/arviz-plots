@@ -7,21 +7,24 @@ import arviz_base
 import xarray as xr
 from _typeshed import Incomplete
 from arviz_base import rcParams
+from arviz_base.validate import validate_dict_argument
 from arviz_stats.bayes_factor import bayes_factor
 from xarray import DataTree
 
 from arviz_plots.plots.prior_posterior_plot import plot_prior_posterior
 from arviz_plots.plots.utils import add_lines, filter_aes, get_visual_kwargs
+from arviz_plots.visuals import annotate_xy
 
 from .plot_collection import PlotCollection
 
 def plot_bf(
-    dt: DataTree | dict[str, DataTree],
+    dt: DataTree,
     var_names: str,
     *,
     sample_dims: str | Sequence[Hashable] | None = ...,
-    ref_val: int | float = ...,
+    ref_val: int = ...,
     kind: Literal["kde", "hist", "dot", "ecdf"] | None = ...,
+    bf_type: Literal["BF10", "BF01"] = ...,
     plot_collection: PlotCollection | None = ...,
     backend: Literal["matplotlib", "bokeh", "plotly"] | None = ...,
     labeller: arviz_base.labels.Labeller | None = ...,
@@ -29,6 +32,7 @@ def plot_bf(
         Literal[
             "dist",
             "ref_line",
+            "ref_value_text",
             "title",
         ],
         Sequence[str],
@@ -37,8 +41,8 @@ def plot_bf(
         Literal[
             "dist",
             "ref_line",
+            "ref_value_text",
             "title",
-            "legend",
         ],
         Mapping[str, Any] | bool,
     ] = ...,
