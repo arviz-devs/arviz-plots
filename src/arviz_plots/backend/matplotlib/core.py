@@ -533,11 +533,11 @@ def vspan(xmin, xmax, target, *, color=unset, alpha=unset, **artist_kws):
 
 
 @expand_aesthetic_aliases
-def hspan(ymin, y_max, target, *, color=unset, alpha=unset, **artist_kws):
+def hspan(ymin, ymax, target, *, color=unset, alpha=unset, **artist_kws):
     """Interface to matplotlib for a horizontal shaded region spanning the whole axes."""
     artist_kws.setdefault("zorder", 0)
     kwargs = {"color": color, "alpha": alpha}
-    return target.axhspan(ymin, y_max, **_filter_kwargs(kwargs, None, artist_kws))
+    return target.axhspan(ymin, ymax, **_filter_kwargs(kwargs, None, artist_kws))
 
 
 @expand_aesthetic_aliases
