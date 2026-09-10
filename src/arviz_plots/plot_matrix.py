@@ -178,12 +178,12 @@ class PlotMatrix(PlotCollection):
         var_name : hashable
             Variable name corresponding to the x dimension.
         selection : mapping
-            Mapping with with coordinate subset along the x dimension.
+            Mapping with coordinate subset along the x dimension.
         var_name_y : hashable, optional
             Variable name corresponding to the y dimension.
             If not provided it will be assumed as being `var_name`
         selection_y : mapping, optional
-            Mapping with with coordinate subset along the y dimension.
+            Mapping with coordinate subset along the y dimension.
             If not provided it will be assumed as being `selection`
         """
         if self._orientation == "row":
@@ -238,19 +238,19 @@ class PlotMatrix(PlotCollection):
         aux_artist
             The plotting backend class representing a visual to be stored or
             an array-like of such objects.
-        fun_label : hashable
+        func_label : hashable
             The identifier of the visual within the ``PlotMatrix``.
             It should be one of the values for which
             :meth:`~arviz_plots.PlotMatrix.allocate_artist` has already been called.
         var_name : hashable
             Variable name corresponding to the x dimension.
         sel : mapping
-            Mapping with with coordinate subset along the x dimension.
+            Mapping with coordinate subset along the x dimension.
         var_name_y : hashable, optional
             Variable name corresponding to the y dimension.
             If not provided it will be assumed as being `var_name`
         sel_y : mapping, optional
-            Mapping with with coordinate subset along the y dimension.
+            Mapping with coordinate subset along the y dimension.
             If not provided it will be assumed as being `sel`
         """
         plot_da = subset_matrix_da(
