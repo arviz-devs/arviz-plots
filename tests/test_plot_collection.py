@@ -520,6 +520,11 @@ class TestMap:
 
 
 class TestFacetMap:
+    def test_returns_self(self, dataset):
+        """`facet_map` documents returning self to allow method chaining."""
+        pc = PlotCollection.wrap(dataset, cols=["__variable__"], backend="none")
+        assert pc.facet_map("set_xlim", limits=(-10, 10)) is pc
+
     def test_string_function(self, dataset):
         pc = PlotCollection.wrap(dataset, cols=["__variable__"], backend="none")
         pc.facet_map("set_xlim", limits=(-10, 10))
