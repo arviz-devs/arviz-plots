@@ -38,6 +38,34 @@ from arviz_plots.visuals import (
 )
 
 
+def _sorted_pit_delta_coords(distribution, sample_dims):
+    """Compute the coordinates of each PIT value on the Δ-ECDF curve.
+
+    The i-th sorted PIT value ``u`` is located at ``x = u`` and
+    ``y = ECDF(u) - u = i / n - u``.
+    """
+
+    def sorted_delta(ary):
+        ary = np.sort(ary, axis=-1)
+        n = ary.shape[-1]
+        return ary, np.arange(1, n + 1) / n - ary
+
+    coords = {}
+    for var, da in distribution.items():
+        dims = [dim for dim in sample_dims if dim in da.dims]
+        stacked = (
+            da.rename({dims[0]: "__sample__"}) if len(dims) == 1 else da.stack(__sample__=dims)
+        )
+        x, y = xr.apply_ufunc(
+            sorted_delta,
+            stacked,
+            input_core_dims=[["__sample__"]],
+            output_core_dims=[[f"pit_dim_{var}"], [f"pit_dim_{var}"]],
+        )
+        coords[var] = xr.concat((x, y), dim=xr.DataArray(["x", "y"], dims="plot_axis"))
+    return xr.Dataset(coords)
+
+
 def plot_ecdf_pit(
     dt,
     *,
@@ -276,9 +304,7 @@ def plot_ecdf_pit(
         )
         gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
         highlight = (shapley_vals > gamma) & (p_values < alpha)
-        suspicious_mask = highlight.rename(
-            {dim: dim.replace("pit_dim", "ecdf_dim") for dim in highlight.dims if "pit_dim" in dim}
-        )
+        dt_suspicious = _sorted_pit_delta_coords(distribution, sample_dims)
         # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
         # to get the default y-limits for the plot.
         expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size_ds)) * 1.3
@@ -386,8 +412,8 @@ def plot_ecdf_pit(
             plot_collection.map(
                 scatter_xy,
                 "suspicious_points",
-                data=dt_ecdf,
-                mask=suspicious_mask,
+                data=dt_suspicious,
+                mask=highlight,
                 ignore_aes=suspicious_ignore,
                 **suspicious_kwargs,
             )

@@ -181,7 +181,7 @@ def plot_ppc_dist_pit(
         )
     )
 
-    pit_dt = get_ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, method)
+    pit_dt = get_ppc_pit(predictive_dist, observed_dist, sample_dims, method)
     pit_dims = pit_dt.ecdf_pit.dims
 
     if plot_collection is None:

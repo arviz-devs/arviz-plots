@@ -198,7 +198,7 @@ def plot_ppc_pit(
             f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
         )
 
-    new_dt = get_ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, method)
+    new_dt = get_ppc_pit(predictive_dist, observed_dist, sample_dims, method)
 
     visuals.setdefault("ylabel", {})
     visuals.setdefault("remove_axis", False)

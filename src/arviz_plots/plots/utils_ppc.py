@@ -104,8 +104,8 @@ def get_suspicious_mask_ds(observed_dist, pit_dt, alpha, gamma, method):
     )
 
 
-def get_ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, method):
-    """Compute PIT ECDF values, with optional coverage transformation and Pareto tail refinement.
+def get_ppc_pit(predictive_dist, observed_dist, sample_dims, method):
+    """Compute PIT values, with optional Pareto tail refinement.
 
     The probability of the posterior predictive being less than or equal to the observed data
     should be uniformly distributed. This function computes the PIT values with
@@ -119,8 +119,6 @@ def get_ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, method):
         The observed data.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce.
-    coverage : bool
-        Whether to compute the coverage.
     method : {"envelope", "pot_c", "prit_c", "piet_c"}
         The method to use for PIT computation.
     """
@@ -146,9 +144,6 @@ def get_ppc_pit(predictive_dist, observed_dist, sample_dims, coverage, method):
             vals_eq = (predictive_dist[var] == observed_dist[var]).mean(sample_dims)
             urvs = rng.uniform(size=vals_less.values.shape)
             vals = vals_less + urvs * vals_eq
-
-        if coverage:
-            vals = 2 * np.abs(vals - 0.5)
 
         dictio[var] = vals
 
