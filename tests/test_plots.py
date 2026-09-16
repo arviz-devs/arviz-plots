@@ -3,6 +3,7 @@
 
 import numpy as np
 import pytest
+import xarray as xr
 from arviz_base.labels import MapLabeller
 
 from arviz_plots import (
@@ -74,6 +75,74 @@ def test_plot_rank_multc(datatree):
     assert "title" in pc.viz.children
     assert "credible_interval" not in pc.viz.children
     assert "suspicious_points" in pc.viz.children
+
+
+@pytest.mark.parametrize(
+    ("visual", "stat_kwargs", "message"),
+    [
+        ("histogram2d", {"bins": 0}, "bins"),
+        ("histogram2d", {"range": ((1, 0), (0, 1))}, "max must be larger than min"),
+        ("hexbin", {"gridsize": 0}, "gridsize"),
+        ("hexbin", {"extent": (1, 0, 0, 1)}, "Extent upper bounds"),
+    ],
+)
+def test_plot_pair_bivariate_histogram_stat_errors(visual, stat_kwargs, message):
+    data = xr.Dataset(
+        {
+            "x": (("chain", "draw"), [[0.0, 0.5, 1.0]]),
+            "y": (("chain", "draw"), [[0.0, 0.5, 1.0]]),
+        }
+    )
+
+    with pytest.raises(ValueError, match=message):
+        plot_pair(
+            data,
+            marginal=False,
+            visuals={"scatter": False, visual: True},
+            stats={visual: stat_kwargs},
+            backend="none",
+        )
+
+
+@pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
+def test_plot_pair_bivariate_histogram_empty_samples(visual):
+    data = xr.Dataset(
+        {
+            "x": (("chain", "draw"), [[np.nan, np.nan]]),
+            "y": (("chain", "draw"), [[np.nan, np.nan]]),
+        }
+    )
+
+    with pytest.raises(ValueError, match="No finite paired samples"):
+        plot_pair(
+            data,
+            marginal=False,
+            visuals={"scatter": False, visual: True},
+            backend="none",
+        )
+
+
+@pytest.mark.parametrize("plot", ["pair", "focus"])
+@pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
+def test_bivariate_histogram_rejects_precomputed_dataset(plot, visual):
+    data = xr.Dataset(
+        {
+            "x": ("draw", [0.0, 0.5, 1.0]),
+            "y": ("draw", [0.0, 0.5, 1.0]),
+        }
+    )
+    kwargs = {
+        "visuals": {"scatter": False, visual: True},
+        "stats": {visual: xr.Dataset()},
+        "sample_dims": ["draw"],
+        "backend": "none",
+    }
+
+    with pytest.raises(TypeError, match=rf"stats\['{visual}'\] must be a mapping"):
+        if plot == "pair":
+            plot_pair(data, marginal=False, **kwargs)
+        else:
+            plot_pair_focus(data, focus_var="y", var_names=["x"], **kwargs)
 
 
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
@@ -619,6 +688,8 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "figure" in pc.viz.data_vars
         assert "divergence" in pc.viz.data_vars
         assert "scatter" in pc.viz.data_vars
+        assert "histogram2d" not in pc.viz.data_vars
+        assert "hexbin" not in pc.viz.data_vars
         assert "xlabel" in pc.viz.data_vars
         assert "ylabel" in pc.viz.data_vars
         assert "chain" in pc.viz["scatter"].dims
@@ -687,6 +758,157 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert pc.viz["contour"].dims == ("row_index", "col_index")
         assert pc.viz["contourf"].dims == ("row_index", "col_index")
         assert pc.viz["scatter"].dims == ("row_index", "col_index", "chain")
+
+    @pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
+    def test_plot_pair_bivariate_histograms(self, datatree, backend, visual):
+        stats = {
+            "histogram2d": {"bins": (4, 3), "density": False},
+            "hexbin": {"gridsize": (4, 3), "density": False},
+        }
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau", "theta"],
+            coords={"hierarchy": 0},
+            marginal=False,
+            visuals={
+                "scatter": False,
+                visual: {"alpha": 0.4, "cmap": "magma", "vmin": 0, "vmax": 25},
+            },
+            stats={visual: stats[visual]},
+            backend=backend,
+        )
+
+        assert visual in pc.viz.data_vars
+        assert pc.viz[visual].dims == ("row_index", "col_index")
+        rendered = pc.get_viz(visual, sel={"row_index": 1, "col_index": 0})
+        if backend == "none":
+            assert rendered["function"] == visual
+            assert rendered["alpha"] == 0.4
+            assert rendered["cmap"] == "magma"
+            assert rendered["vmin"] == 0
+            assert rendered["vmax"] == 25
+            if visual == "histogram2d":
+                assert rendered["values"].shape == (4, 3)
+            else:
+                assert rendered["values"].shape == (32,)
+            assert rendered["values"].sum() == 400
+
+    @pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
+    def test_plot_pair_bivariate_histograms_with_mapped_sample_dim(self, datatree, backend, visual):
+        stats = {
+            "histogram2d": {"bins": (4, 3), "density": False},
+            "hexbin": {"gridsize": (4, 3), "density": False},
+        }
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau"],
+            marginal=False,
+            visuals={"scatter": False, visual: True},
+            aes_by_visuals={visual: ["overlay"]},
+            stats={visual: stats[visual]},
+            backend=backend,
+        )
+
+        assert pc.viz[visual].dims == ("row_index", "col_index", "chain")
+        if backend == "none":
+            for chain in range(4):
+                rendered = pc.get_viz(visual, sel={"row_index": 1, "col_index": 0, "chain": chain})
+                assert rendered["values"].sum() == 100
+
+    def test_plot_pair_bivariate_histograms_can_overlay(self, datatree, backend):
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau"],
+            marginal=False,
+            visuals={"histogram2d": {"alpha": 0.4}, "hexbin": {"alpha": 0.4}},
+            stats={
+                "histogram2d": {"bins": 4, "density": False},
+                "hexbin": {"gridsize": (4, 3), "density": False},
+            },
+            backend=backend,
+        )
+
+        assert "histogram2d" in pc.viz.data_vars
+        assert "hexbin" in pc.viz.data_vars
+        assert "scatter" in pc.viz.data_vars
+        if backend == "none":
+            target = pc.viz["plot"].isel(row_index=1, col_index=0).item()
+            functions = [artist["function"] for artist in target]
+            assert functions[:3] == ["histogram2d", "hexbin", "scatter"]
+
+    @pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
+    def test_plot_pair_bivariate_histograms_keep_diagonal_marginals(
+        self, datatree, backend, visual
+    ):
+        stat_kwargs = {"bins": 4} if visual == "histogram2d" else {"gridsize": 4}
+        pc = plot_pair(
+            datatree,
+            var_names=["mu", "tau", "theta"],
+            coords={"hierarchy": 0},
+            marginal=True,
+            visuals={"scatter": False, visual: True},
+            stats={visual: stat_kwargs},
+            backend=backend,
+        )
+
+        assert "dist" in pc.viz.data_vars
+        assert pc.viz["dist"].dims == ("row_index", "col_index")
+        assert pc.get_viz("dist", sel={"row_index": 0, "col_index": 0}) is not None
+
+    @pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
+    def test_plot_pair_focus_bivariate_histograms(self, datatree, backend, visual):
+        stat_kwargs = (
+            {"bins": 4, "density": False}
+            if visual == "histogram2d"
+            else {
+                "gridsize": 4,
+                "density": False,
+            }
+        )
+        pc = plot_pair_focus(
+            datatree,
+            focus_var=datatree.posterior["theta"].sel(hierarchy=0),
+            var_names=["mu", "tau"],
+            visuals={"scatter": False, visual: True},
+            stats={visual: stat_kwargs},
+            backend=backend,
+        )
+
+        assert visual in pc.viz.children
+        assert pc.viz[visual]["mu"].dims == ()
+
+    @pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
+    def test_plot_pair_bivariate_histograms_subset_mapped_weights(self, backend, visual):
+        rng = np.random.default_rng(0)
+        data = xr.Dataset(
+            {
+                "x": (("group", "chain", "draw"), rng.normal(size=(2, 2, 20))),
+                "y": (("group", "chain", "draw"), rng.normal(size=(2, 2, 20))),
+            },
+            coords={"group": [0, 1]},
+        )
+        weights = xr.DataArray(
+            np.stack([np.ones((2, 20)), np.full((2, 20), 2.0)]),
+            dims=("group", "chain", "draw"),
+            coords={"group": [0, 1]},
+        )
+        stat_kwargs = {"bins": 4} if visual == "histogram2d" else {"gridsize": 4}
+
+        pc = plot_pair(
+            data,
+            var_names=["x", "y"],
+            marginal=False,
+            visuals={"scatter": False, visual: True},
+            aes_by_visuals={visual: ["group"]},
+            stats={visual: {**stat_kwargs, "density": False, "weights": weights}},
+            backend=backend,
+        )
+
+        assert pc.viz[visual].dims == ("row_index", "col_index")
+        if backend == "none":
+            for row, col, expected in ((2, 0, 40), (3, 1, 80)):
+                rendered = pc.get_viz(visual, sel={"row_index": row, "col_index": col})
+                assert rendered["values"].sum() == expected
 
     def test_plot_pair_sample(self, datatree_sample, backend):
         visuals = {"divergence": True}

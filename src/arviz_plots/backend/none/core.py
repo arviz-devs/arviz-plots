@@ -325,6 +325,60 @@ def hist(
     return artist_element
 
 
+def histogram2d(
+    x_edges,
+    y_edges,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface for a two-dimensional histogram."""
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    kwargs = {"cmap": cmap, "alpha": alpha, "vmin": vmin, "vmax": vmax}
+    artist_element = {
+        "function": "histogram2d",
+        "x_edges": np.asarray(x_edges),
+        "y_edges": np.asarray(y_edges),
+        "values": np.asarray(values),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
+def hexbin(
+    x_vertices,
+    y_vertices,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface for a precomputed hexagonal histogram."""
+    if not ALLOW_KWARGS and artist_kws:
+        raise ValueError(f"artist_kws not empty: {artist_kws}")
+    kwargs = {"cmap": cmap, "alpha": alpha, "vmin": vmin, "vmax": vmax}
+    artist_element = {
+        "function": "hexbin",
+        "x_vertices": np.asarray(x_vertices),
+        "y_vertices": np.asarray(y_vertices),
+        "values": np.asarray(values),
+        **_filter_kwargs(kwargs, artist_kws),
+    }
+    target.append(artist_element)
+    return artist_element
+
+
 def line(x, y, target, *, color=unset, alpha=unset, width=unset, linestyle=unset, **artist_kws):
     """Interface to a line plot.
 

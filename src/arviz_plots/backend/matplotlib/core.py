@@ -15,7 +15,7 @@ import matplotlib.transforms as mtransforms
 import numpy as np
 from matplotlib import ticker
 from matplotlib.cbook import normalize_kwargs
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection, PolyCollection
 from matplotlib.lines import Line2D
 from matplotlib.pyplot import rcParams, subplots
 from matplotlib.pyplot import show as _show
@@ -23,6 +23,7 @@ from matplotlib.text import Text
 
 from arviz_plots.backend.alias_utils import create_aesthetic_handlers
 from arviz_plots.backend.none import get_default_aes as get_agnostic_default_aes
+from arviz_plots.backend.utils import color_limits
 
 
 class UnsetDefault:
@@ -377,6 +378,58 @@ def hist(
         step="post",
         **_filter_kwargs(kwargs, None, artist_kws),
     )
+
+
+@expand_aesthetic_aliases
+def histogram2d(
+    x_edges,
+    y_edges,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface to Matplotlib for a two-dimensional histogram."""
+    artist_kws.setdefault("zorder", 1)
+    if "norm" not in artist_kws:
+        vmin, vmax = color_limits(values, vmin, vmax)
+    kwargs = {"cmap": cmap, "alpha": alpha, "vmin": vmin, "vmax": vmax}
+    return target.pcolormesh(
+        x_edges,
+        y_edges,
+        np.asarray(values).T,
+        **_filter_kwargs(kwargs, None, artist_kws),
+    )
+
+
+@expand_aesthetic_aliases
+def hexbin(
+    x_vertices,
+    y_vertices,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface to Matplotlib for a precomputed hexagonal histogram."""
+    artist_kws.setdefault("zorder", 1)
+    vertices = np.stack((x_vertices, y_vertices), axis=-1)
+    kwargs = {"array": np.asarray(values), "cmap": cmap, "alpha": alpha}
+    collection = PolyCollection(vertices, **_filter_kwargs(kwargs, PolyCollection, artist_kws))
+    if "norm" not in artist_kws:
+        vmin, vmax = color_limits(values, vmin, vmax)
+        collection.set_clim(vmin, vmax)
+    target.add_collection(collection)
+    target.autoscale_view()
+    return collection
 
 
 @expand_aesthetic_aliases
