@@ -27,30 +27,3 @@ pc = azp.plot_pair(
     backend="none",  # change to preferred backend
 )
 pc.show()
-
-# %%
-# Use a two-dimensional histogram when the scatter plot is too dense. Statistical
-# options, such as the number of bins, are set through ``stats``.
-pc = azp.plot_pair(
-    dt,
-    var_names=["theta", "tau"],
-    coords={"school": ["Lawrenceville", "Mt. Hermon"]},
-    visuals={"scatter": False, "histogram2d": True},
-    stats={"histogram2d": {"bins": 20}},
-    marginal=True,
-    backend="none",  # change to preferred backend
-)
-pc.show()
-
-# %%
-# Hexagonal bins are available through the same interface.
-pc = azp.plot_pair(
-    dt,
-    var_names=["theta", "tau"],
-    coords={"school": ["Lawrenceville", "Mt. Hermon"]},
-    visuals={"scatter": False, "hexbin": True},
-    stats={"hexbin": {"gridsize": 25}},
-    marginal=True,
-    backend="none",  # change to preferred backend
-)
-pc.show()
