@@ -1,6 +1,7 @@
 """Utilities for batteries included plots."""
 
 import warnings
+from collections.abc import Mapping
 from copy import copy
 from importlib import import_module
 
@@ -78,6 +79,16 @@ def get_visual_kwargs(visuals, name, default=None):
     if vis_kwargs is True:
         vis_kwargs = {}
     return vis_kwargs
+
+
+def split_stat_kwargs(stats, name):
+    """Copy a statistical options mapping and remove its optional sample weights."""
+    kwargs = stats.get(name, {})
+    if isinstance(kwargs, xr.Dataset) or not isinstance(kwargs, Mapping):
+        raise TypeError(f"stats[{name!r}] must be a mapping of statistical options")
+    kwargs = kwargs.copy()
+    weights = kwargs.pop("weights", None)
+    return kwargs, weights
 
 
 def process_group_variables_coords(dt, group, var_names, filter_vars, coords, allow_dict=True):

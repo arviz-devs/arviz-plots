@@ -28,3 +28,15 @@ pc = azp.plot_pair_focus(
     backend="none",  # change to preferred backend
 )
 pc.show()
+
+# %%
+# Dense relationships can use the same bivariate histogram visuals as ``plot_pair``.
+pc = azp.plot_pair_focus(
+    dt,
+    var_names=["theta"],
+    focus_var="log_tau",
+    visuals={"scatter": False, "hexbin": True},
+    stats={"hexbin": {"gridsize": 20}},
+    backend="none",  # change to preferred backend
+)
+pc.show()

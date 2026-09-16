@@ -17,6 +17,7 @@ from bokeh.models import (
     Div,
     FixedTicker,
     GridPlot,
+    LinearColorMapper,
     Range1d,
     Span,
     Title,
@@ -28,6 +29,7 @@ from bokeh.plotting import show as _show
 
 from arviz_plots.backend.alias_utils import create_aesthetic_handlers
 from arviz_plots.backend.none import get_default_aes as get_agnostic_default_aes
+from arviz_plots.backend.utils import color_limits
 
 
 class UnsetDefault:
@@ -508,6 +510,80 @@ def hist(
     kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
 
     return target.quad(top=y, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws))
+
+
+def _color_mapper(values, cmap, vmin, vmax):
+    """Create a color mapper for a bivariate histogram."""
+    from bokeh import palettes as bp
+
+    palette = getattr(bp, cmap)(256) if isinstance(cmap, str) else cmap
+    low, high = color_limits(values, vmin, vmax)
+    return LinearColorMapper(palette=palette, low=low, high=high)
+
+
+def histogram2d(
+    x_edges,
+    y_edges,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface to Bokeh for a two-dimensional histogram."""
+    values = np.asarray(values)
+    left, bottom = np.meshgrid(x_edges[:-1], y_edges[:-1], indexing="ij")
+    right, top = np.meshgrid(x_edges[1:], y_edges[1:], indexing="ij")
+    source = ColumnDataSource(
+        data={
+            "left": left.ravel(),
+            "right": right.ravel(),
+            "bottom": bottom.ravel(),
+            "top": top.ravel(),
+            "values": values.ravel(),
+        }
+    )
+    kwargs = {
+        "fill_color": {"field": "values", "transform": _color_mapper(values, cmap, vmin, vmax)},
+        "fill_alpha": alpha,
+        "line_color": None,
+    }
+    return target.quad(
+        left="left",
+        right="right",
+        bottom="bottom",
+        top="top",
+        source=source,
+        **_filter_kwargs(kwargs, artist_kws),
+    )
+
+
+def hexbin(
+    x_vertices,
+    y_vertices,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface to Bokeh for a precomputed hexagonal histogram."""
+    values = np.asarray(values)
+    source = ColumnDataSource(
+        data={"xs": list(x_vertices), "ys": list(y_vertices), "values": values}
+    )
+    kwargs = {
+        "fill_color": {"field": "values", "transform": _color_mapper(values, cmap, vmin, vmax)},
+        "fill_alpha": alpha,
+        "line_color": None,
+    }
+    return target.patches(xs="xs", ys="ys", source=source, **_filter_kwargs(kwargs, artist_kws))
 
 
 @expand_aesthetic_aliases
