@@ -213,8 +213,10 @@ def plot_rank(
     sample_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     # Compute ranks
     dt_ecdf_ranks = distribution.azstats.compute_ranks(dim=sample_dims)
+    # ecdf pit assumes inputs already scaled to [0, 1], so use relative ranks here
+    dt_ranks_rel = distribution.azstats.compute_ranks(dim=sample_dims, relative=True)
     # Compute ECDF
-    dt_ecdf = dt_ecdf_ranks.azstats.ecdf(dim=ecdf_dims, pit=True, npoints=sample_size)
+    dt_ecdf = dt_ranks_rel.azstats.ecdf(dim=ecdf_dims, pit=True, npoints=sample_size)
     dt_ecdf = dt_ecdf.rename(
         {
             dim: "ecdf_dim"
@@ -227,7 +229,6 @@ def plot_rank(
     if method == "mtc_c":
         alpha = 1 - envelope_prob
         gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
-        dt_ranks_rel = distribution.azstats.compute_ranks(dim=sample_dims, relative=True)
         mtc_c_kwargs = stats.get("mtc_c", {}).copy()
         p_values, b_shapley, w_shapley = dt_ranks_rel.azstats.mchain_uniformity_test(
             dim=sample_dims, **mtc_c_kwargs
