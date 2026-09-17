@@ -359,6 +359,9 @@ def plot_pair(
             **scatter_kwargs,
         )
 
+    # shared kde2d cache so contourf and contour don't recompute the same pair
+    kde_cache = {}
+
     contourf_kwargs = get_visual_kwargs(visuals, "contourf", False)
     if contourf_kwargs is not False:
         _, contourf_aes, contourf_ignore = filter_aes(
@@ -379,6 +382,7 @@ def plot_pair(
             filled=True,
             levels=levels,
             sample_dims=sample_dims,
+            kde_cache=kde_cache,
             **contourf_kwargs,
         )
 
@@ -399,6 +403,7 @@ def plot_pair(
             ignore_aes=contour_ignore,
             levels=levels,
             sample_dims=sample_dims,
+            kde_cache=kde_cache,
             **contour_kwargs,
         )
     # marginal
@@ -594,7 +599,50 @@ def plot_pair(
     return plot_matrix
 
 
-def _kde_couple(da_x, da_y, target, filled=False, levels=None, sample_dims=None, **kw):
+def _kde_cache_key(da, sample_dims):
+    """Stable hashable key for a DataArray: (name, non-sample coords)."""
+    sample_dims_set = set(sample_dims) if sample_dims is not None else set()
+    coords = tuple(
+        sorted(
+            (
+                k,
+                v.item() if hasattr(v, "item") else v,
+            )
+            for k, v in da.coords.items()
+            if k not in sample_dims_set
+        )
+    )
+    return (da.name, coords)
+
+
+def _kde_couple(
+    da_x, da_y, target, filled=False, levels=None, sample_dims=None, kde_cache=None, **kw
+):
+    """Compute (or retrieve from cache) the 2D KDE for a variable pair and draw it.
+
+    Parameters
+    ----------
+    da_x, da_y : xr.DataArray
+        The two variables whose joint density is being visualised.
+    target : plot target
+        Backend-specific plot object.
+    filled : bool, default False
+        When True, draw a filled contour (contourf); otherwise draw lines only.
+    levels : int or sequence of float, optional
+        Contour specification — forwarded to :func:`arviz_stats.kde2d`.
+    sample_dims : sequence of str, optional
+        Dimensions to marginalise over.
+    kde_cache : dict or None, optional
+        Mutable dict shared across multiple ``map_triangle`` calls inside
+        ``plot_pair``. When provided, the kde2d result for each unique
+        ``(da_x, da_y)`` pair is stored on first access and reused on
+        subsequent calls, avoiding redundant computation when both
+        ``contourf`` and ``contour`` visuals are active.
+        Pass ``None`` (the default) to disable caching.
+    **kw
+        Forwarded to :func:`~arviz_plots.visuals.contourf` or
+        :func:`~arviz_plots.visuals.contour`.
+    """
     if isinstance(levels, int):
         n_levels = levels
         hdi_probs = None
@@ -602,7 +650,14 @@ def _kde_couple(da_x, da_y, target, filled=False, levels=None, sample_dims=None,
         hdi_probs = np.sort(levels)[::-1]
         n_levels = None
 
-    result = kde2d(da_x, da_y, dim=sample_dims, hdi_probs=hdi_probs)
+    if kde_cache is not None:
+        # (name, coords) not id() — xarray makes new views on every internal slice
+        key = (_kde_cache_key(da_x, sample_dims), _kde_cache_key(da_y, sample_dims))
+        if key not in kde_cache:
+            kde_cache[key] = kde2d(da_x, da_y, dim=sample_dims, hdi_probs=hdi_probs)
+        result = kde_cache[key]
+    else:
+        result = kde2d(da_x, da_y, dim=sample_dims, hdi_probs=hdi_probs)
 
     if n_levels is not None and "contours" not in result:
         density_vals = result["density"].values
