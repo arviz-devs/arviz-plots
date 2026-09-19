@@ -114,7 +114,9 @@ Geoms
 
    ciliney
    fill_between_y
+   hexbin
    hist
+   histogram2d
    hline
    hspan
    line
