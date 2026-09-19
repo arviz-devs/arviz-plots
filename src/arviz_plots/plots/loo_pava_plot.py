@@ -136,7 +136,7 @@ def plot_loo_pava(
     References
     ----------
     .. [1] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
-        (2025) arXiv preprint https://arxiv.org/abs/2503.01509
+        (2026) JOVI 10.54337/jovi.v1i1.11478
 
     .. [2] Dimitriadis et al *Stable reliability diagrams for probabilistic classifiers*.
         PNAS, 118(8) (2021). https://doi.org/10.1073/pnas.2016191118
