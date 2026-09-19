@@ -54,7 +54,7 @@ See https://github.com/arviz-devs/arviz-stats/issues/56
         PNAS, 118(8) (2021). https://doi.org/10.1073/pnas.2016191118
 
     .. [2] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
-        (2025) arXiv preprint https://arxiv.org/abs/2503.01509
+        (2026) JOVI 10.54337/jovi.v1i1.11478
 
 
 ## Energy plot and divergences
@@ -72,7 +72,7 @@ See https://github.com/arviz-devs/arviz-stats/issues/56
         The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
 
     .. [2] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
-        (2025) arXiv preprint https://arxiv.org/abs/2503.01509
+        (2026) JOVI 10.54337/jovi.v1i1.11478
 
 ## ECDF-pit
 

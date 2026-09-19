@@ -147,7 +147,7 @@ def plot_dgof(
     References
     ----------
     .. [1] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
-        (2025) arXiv preprint https://arxiv.org/abs/2503.01509
+        (2026) JOVI 10.54337/jovi.v1i1.11478
 
     .. [2] Tesso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """

@@ -162,7 +162,7 @@ def plot_ppc_rootogram(
         The American Statistician, 70(3). (2016) https://doi.org/10.1080/00031305.2016.1173590
 
     .. [2] Säilynoja et al. *Recommendations for visual predictive checks in Bayesian workflow*.
-        (2025) arXiv preprint https://arxiv.org/abs/2503.01509
+        (2026) JOVI 10.54337/jovi.v1i1.11478
     """
     ci_prob = validate_ci_prob(ci_prob)
     point_estimate = validate_or_use_rcparam(point_estimate, "stats.point_estimate")
