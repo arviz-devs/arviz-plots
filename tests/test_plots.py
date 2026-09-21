@@ -481,10 +481,9 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             assert child not in pc.viz.children
 
     def test_plot_khat_missing_pareto_k(self, backend):
-        from arviz_stats.utils import ELPDData
+        from arviz_stats.utils import ELPDDataLOO
 
-        mock_elpd = ELPDData(
-            kind="loo",
+        mock_elpd = ELPDDataLOO(
             elpd=100.0,
             se=10.0,
             p=5.0,
