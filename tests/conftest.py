@@ -179,7 +179,7 @@ def datatree_with_loo_facets():
     """Fixture for an ELPDData object with facet dimensions."""
     import numpy as np
     import xarray as xr
-    from arviz_stats.utils import ELPDData
+    from arviz_stats.utils import ELPDDataLOO
 
     rng = np.random.default_rng(42)
 
@@ -205,8 +205,7 @@ def datatree_with_loo_facets():
         coords=pareto_k.coords,
     )
 
-    loo_result = ELPDData(
-        kind="loo",
+    loo_result = ELPDDataLOO(
         elpd=elpd_loo.sum().item(),
         se=10.0,
         p=5.0,
