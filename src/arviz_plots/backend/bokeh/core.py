@@ -1,6 +1,6 @@
 """Bokeh interface layer."""
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access, too-many-lines
 
 import math
 import warnings
@@ -578,10 +578,13 @@ def hexbin(
     source = ColumnDataSource(
         data={"xs": list(x_vertices), "ys": list(y_vertices), "values": values}
     )
+    mapper = _color_mapper(values, cmap, vmin, vmax)
+    color_field = {"field": "values", "transform": mapper}
     kwargs = {
-        "fill_color": {"field": "values", "transform": _color_mapper(values, cmap, vmin, vmax)},
+        "fill_color": color_field,
         "fill_alpha": alpha,
-        "line_color": None,
+        "line_color": color_field,
+        "line_alpha": alpha,
     }
     return target.patches(xs="xs", ys="ys", source=source, **_filter_kwargs(kwargs, artist_kws))
 

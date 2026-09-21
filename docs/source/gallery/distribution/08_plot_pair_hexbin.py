@@ -1,8 +1,7 @@
 """
 # Hexagonal histograms of all variables against each other
 
-Use hexagonal bins to show dense relationships between variables. Statistical options, such as
-the grid size, are set through ``stats``.
+Use hexagonal bins to show dense relationships between variables.
 
 ---
 
@@ -23,7 +22,6 @@ pc = azp.plot_pair(
     var_names=["theta", "tau"],
     coords={"school": ["Lawrenceville", "Mt. Hermon"]},
     visuals={"scatter": False, "hexbin": True},
-    stats={"hexbin": {"gridsize": 25}},
     marginal=True,
     backend="none",  # change to preferred backend
 )

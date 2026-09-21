@@ -420,7 +420,7 @@ def hexbin(
     **artist_kws,
 ):
     """Interface to Matplotlib for a precomputed hexagonal histogram."""
-    artist_kws.setdefault("zorder", 1)
+    artist_kws.setdefault("antialiased", False)
     vertices = np.stack((x_vertices, y_vertices), axis=-1)
     kwargs = {"array": np.asarray(values), "cmap": cmap, "alpha": alpha}
     collection = PolyCollection(vertices, **_filter_kwargs(kwargs, PolyCollection, artist_kws))

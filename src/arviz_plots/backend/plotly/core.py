@@ -545,7 +545,7 @@ def hexbin(
         x = np.concatenate((selected_x, selected_x[:, :1], separators), axis=1).ravel()
         y = np.concatenate((selected_y, selected_y[:, :1], separators), axis=1).ravel()
         color = "rgba(0, 0, 0, 0)" if color_index == -1 else colors[color_index]
-        line_kwargs = {"color": color, "width": 0, **line_artist_kws}
+        line_kwargs = {"color": color, "width": 1, **line_artist_kws}
         trace = go.Scatter(
             x=x,
             y=y,

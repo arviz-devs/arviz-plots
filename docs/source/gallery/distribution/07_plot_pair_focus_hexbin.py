@@ -2,7 +2,7 @@
 # Hexagonal histogram of one variable against other variables
 
 Use hexagonal bins to show dense relationships between one variable and other variables in the
-dataset. Statistical options, such as the grid size, are set through ``stats``.
+dataset.
 
 ---
 
@@ -26,7 +26,6 @@ pc = azp.plot_pair_focus(
     var_names=["theta"],
     focus_var="log_tau",
     visuals={"scatter": False, "hexbin": True},
-    stats={"hexbin": {"gridsize": 20}},
     backend="none",  # change to preferred backend
 )
 pc.show()
