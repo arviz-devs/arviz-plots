@@ -1,8 +1,7 @@
 """
 # 2D histogram of all variables against each other
 
-Use a two-dimensional histogram when a scatter plot is too dense. Statistical options, such as
-the number of bins, are set through ``stats``.
+Use a two-dimensional histogram when a scatter plot is too dense.
 
 ---
 
