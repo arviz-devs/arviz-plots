@@ -225,7 +225,7 @@ plot_options = st.sampled_from(
 
 
 @given(
-    expand=st.sampled_from(("column", "row")),
+    expand=st.sampled_from(("wrap", "column", "row")),
     random_plots=st.lists(plot_options, min_size=1, max_size=3),
 )
 def test_combine_plots(datatree, expand, random_plots):
@@ -238,11 +238,18 @@ def test_combine_plots(datatree, expand, random_plots):
         var_names=["mu"],
     )
     assert "figure" in pc.viz.data_vars
-    assert expand in pc.viz["plot"].dims
-    assert len(pc.viz["plot"].coords[expand]) == len(random_plots)
-    assert list(pc.viz["plot"].coords[expand].values) == plot_names
+    if expand == "wrap":
+        assert "item" in pc.viz["plot"].dims
+        item_coords = [str(value) for value in pc.viz["plot"].coords["item"].values]
+        assert len(item_coords) >= len(random_plots)
+        for plot_name in plot_names:
+            assert any(coord.startswith(f"{plot_name}::") for coord in item_coords)
+    else:
+        assert expand in pc.viz["plot"].dims
+        assert len(pc.viz["plot"].coords[expand]) == len(random_plots)
+        assert list(pc.viz["plot"].coords[expand].values) == plot_names
     assert all(
-        any(child_name.endswith(f"_{plot_name}") for child_name in pc.viz.children)
+        any(f"_{plot_name}::" in child_name for child_name in pc.viz.children)
         for plot_name in plot_names
     )
 
