@@ -1,7 +1,6 @@
 <a id="v1.3.2"></a>
 # [v1.3.2](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.3.2) - 2026-09-25
 
-
 ## What's Changed
 * Fix the func_label parameter name and a repeated word in PlotMatrix docs by [@VenishPaneliya](https://github.com/VenishPaneliya) in [#565](https://github.com/arviz-devs/arviz-plots/pull/565)
 * Name the matplotlib hspan argument ymax, as the other backends do by [@VenishPaneliya](https://github.com/VenishPaneliya) in [#564](https://github.com/arviz-devs/arviz-plots/pull/564)
