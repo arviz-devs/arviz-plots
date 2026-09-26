@@ -284,6 +284,7 @@ class PlotMatrix(PlotCollection):
         coords=None,
         ignore_aes=frozenset(),
         subset_info=False,
+        skip_all_nan=True,
         store_artist=True,
         artist_dims=None,
         **kwargs,
@@ -321,6 +322,8 @@ class PlotMatrix(PlotCollection):
             ``sel_x``, ``isel_x``, ``var_name_y``, ``sel_y`` and ``isel_y``.
             Moreover, if those were to be keys present in `**kwargs` their
             values in `**kwargs` would be ignored.
+        skip_all_nan : bool, default True
+            Skip couples where either input contains only NaN values.
         store_artist : boolean, default True
         artist_dims : mapping of {hashable : int}, optional
             Dictionary of sizes for proper allocation and storage when using
@@ -399,11 +402,12 @@ class PlotMatrix(PlotCollection):
                 for _, aes_sel, aes_isel in aes_loopers:
                     da_x = da_x_base.sel(aes_sel)
                     da_y = da_y_base.sel(aes_sel)
-                    try:
-                        if np.all(np.isnan(da_x)) or np.all(np.isnan(da_y)):
-                            continue
-                    except TypeError:
-                        pass
+                    if skip_all_nan:
+                        try:
+                            if np.all(np.isnan(da_x)) or np.all(np.isnan(da_y)):
+                                continue
+                        except TypeError:
+                            pass
                     sel_x = {**sel_x_base, **aes_sel}
                     sel_y = {**sel_y_base, **aes_sel}
                     isel_x = {**isel_x_base, **aes_isel}
@@ -416,7 +420,7 @@ class PlotMatrix(PlotCollection):
                     func_kwargs = {
                         **aes_kwargs,
                         **{
-                            key: process_kwargs_subset(values, var_name_x, aes_sel)
+                            key: process_kwargs_subset(values, var_name_x, sel_x)
                             for key, values in kwargs.items()
                         },
                     }

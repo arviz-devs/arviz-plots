@@ -20,6 +20,7 @@ from webcolors import hex_to_rgb, name_to_hex, name_to_rgb
 
 from arviz_plots.backend.alias_utils import create_aesthetic_handlers
 from arviz_plots.backend.none import get_default_aes as get_agnostic_default_aes
+from arviz_plots.backend.utils import color_limits
 
 
 class UnsetDefault:
@@ -479,6 +480,85 @@ def hist(
 
     target.add_trace(hist_object)
     return hist_object
+
+
+def histogram2d(
+    x_edges,
+    y_edges,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface to Plotly for a two-dimensional histogram."""
+    artist_kws.setdefault("showscale", False)
+    vmin, vmax = color_limits(values, vmin, vmax)
+    trace = go.Heatmap(
+        x=np.asarray(x_edges),
+        y=np.asarray(y_edges),
+        z=np.asarray(values).T,
+        colorscale=cmap,
+        zmin=vmin,
+        zmax=vmax,
+        **_filter_kwargs({"opacity": alpha}, artist_kws),
+    )
+    target.add_trace(trace)
+    return trace
+
+
+def hexbin(
+    x_vertices,
+    y_vertices,
+    values,
+    target,
+    *,
+    cmap="viridis",
+    alpha=unset,
+    vmin=None,
+    vmax=None,
+    **artist_kws,
+):
+    """Interface to Plotly for a precomputed hexagonal histogram."""
+    x_vertices = np.asarray(x_vertices)
+    y_vertices = np.asarray(y_vertices)
+    values = np.asarray(values)
+    artist_kws.setdefault("showlegend", False)
+    line_artist_kws = artist_kws.pop("line", {}).copy()
+    vmin, vmax = color_limits(values, vmin, vmax)
+    color_count = 256
+    colors = pc.sample_colorscale(cmap, np.linspace(0, 1, color_count))
+    finite = np.isfinite(values)
+    color_indices = np.full(values.shape, -1, dtype=int)
+    normalized = np.clip((values[finite] - vmin) / (vmax - vmin), 0, 1)
+    color_indices[finite] = np.rint(normalized * (color_count - 1)).astype(int)
+
+    traces = []
+    for color_index in np.unique(color_indices):
+        selected = color_indices == color_index
+        selected_x = x_vertices[selected]
+        selected_y = y_vertices[selected]
+        separators = np.full((selected_x.shape[0], 1), np.nan)
+        x = np.concatenate((selected_x, selected_x[:, :1], separators), axis=1).ravel()
+        y = np.concatenate((selected_y, selected_y[:, :1], separators), axis=1).ravel()
+        color = "rgba(0, 0, 0, 0)" if color_index == -1 else colors[color_index]
+        line_kwargs = {"color": color, "width": 1, **line_artist_kws}
+        trace = go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            fill="toself",
+            fillcolor=color,
+            line=line_kwargs,
+            **_filter_kwargs({"opacity": alpha}, artist_kws),
+        )
+        target.add_trace(trace)
+        traces.append(trace)
+
+    return traces[-1]
 
 
 @expand_aesthetic_aliases
