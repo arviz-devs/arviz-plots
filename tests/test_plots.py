@@ -121,27 +121,32 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             backend=backend,
         )
         assert "figure" in pc.viz.data_vars
+        assert "item" in pc.viz["plot"].dims
+        assert len(pc.viz["plot"].coords["item"]) == 2
 
-    def test_combine_plots_expand_row(self, datatree, backend):
+    def test_combine_plots_col_wrap(self, datatree, backend):
         pc = combine_plots(
             datatree,
             plots=[
                 (plot_dist, {}),
                 (plot_autocorr, {}),
             ],
-            expand="row",
-            var_names=["mu"],
+            expand="wrap",
+            col_wrap=1,
+            var_names=["mu", "tau"],
             backend=backend,
         )
         assert "figure" in pc.viz.data_vars
+        assert len(pc.viz["plot"].coords["item"]) == 4
 
-    def test_combine_plots_plot_names(self, datatree, backend):
+    def test_combine_plots_expand_column(self, datatree, backend):
         pc = combine_plots(
             datatree,
             plots=[
                 (plot_dist, {}),
                 (plot_autocorr, {}),
             ],
+            expand="column",
             plot_names=["distribution", "autocorrelation"],
             var_names=["mu"],
             backend=backend,
@@ -153,9 +158,37 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             "autocorrelation",
         ]
 
+    def test_combine_plots_expand_row(self, datatree, backend):
+        pc = combine_plots(
+            datatree,
+            plots=[
+                (plot_dist, {}),
+                (plot_autocorr, {}),
+            ],
+            expand="row",
+            plot_names=["distribution", "autocorrelation"],
+            var_names=["mu"],
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "row" in pc.viz["plot"].dims
+        assert list(pc.viz["plot"].coords["row"].values) == [
+            "distribution",
+            "autocorrelation",
+        ]
+
     def test_combine_plots_invalid_expand(self, datatree, backend):
-        with pytest.raises(ValueError, match="must be 'row' or 'column'"):
+        with pytest.raises(ValueError, match="must be 'wrap', 'column' or 'row'"):
             combine_plots(datatree, plots=[(plot_dist, {})], backend=backend, expand="diagonal")
+
+    def test_combine_plots_duplicate_plot_names(self, datatree, backend):
+        with pytest.raises(ValueError, match="`plot_names` must be unique"):
+            combine_plots(
+                datatree,
+                plots=[(plot_dist, {}), (plot_autocorr, {})],
+                plot_names=["same", "same"],
+                backend=backend,
+            )
 
     def test_plot_convergence_dist(self, datatree, backend):
         pc = plot_convergence_dist(datatree, backend=backend)
