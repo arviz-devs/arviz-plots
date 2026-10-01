@@ -1,5 +1,5 @@
 """
-# Predictive check with ECDF and PIT Δ-ECDFs.
+# Predictive check with ECDF and PIT Δ-ECDFs
 
 Plot of the ECDF (right) of the PIT values (left) for samples from the posterior predictive and observed data.
 
