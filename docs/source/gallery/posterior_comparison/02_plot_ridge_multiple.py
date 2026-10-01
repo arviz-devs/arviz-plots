@@ -1,5 +1,5 @@
 """
-# Ridge plot for multiple models
+# Ridge for two models
 
 Visual representation of marginal distributions over the y axis showing for multiple models
 

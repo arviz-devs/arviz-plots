@@ -96,7 +96,7 @@ html[data-theme="dark"] {
 
 /* Example Gallery Footer - Plot titles goes here */
 .example-gallery .sd-card-footer {
-  height: 40px;
+  height: 55px;
   padding: 5px;
   border-top: none !important;
 }

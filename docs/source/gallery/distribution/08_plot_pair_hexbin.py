@@ -1,5 +1,5 @@
 """
-# Hexagonal histograms of all variables against each other
+# Hexbin for pairs
 
 Use hexagonal bins to show dense relationships between variables.
 

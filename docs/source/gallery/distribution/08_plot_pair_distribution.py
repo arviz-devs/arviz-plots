@@ -1,5 +1,5 @@
 """
-# Scatterplot all variables against each other
+# Scatterplot
 
 Plot all variables against each other in the dataset.
 

@@ -9,7 +9,7 @@ _metadata = metadata("arviz-plots")
 
 project = _metadata["Name"]
 author = _metadata["Author-email"].split("<", 1)[0].strip()
-copyright = f"2022, {author}"
+copyright = f"2022-2026, {author}"
 
 version = _metadata["Version"]
 if os.environ.get("READTHEDOCS", False):

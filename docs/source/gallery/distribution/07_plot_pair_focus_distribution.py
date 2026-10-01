@@ -1,6 +1,5 @@
 """
-# Scatterplot one variable against all others
-
+# Scatterplot (Pair Focus)
 Plot one variable against other variables in the dataset.
 
 ---
