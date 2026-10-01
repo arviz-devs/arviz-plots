@@ -38,14 +38,13 @@ def plot_dgof_dist(
     backend=None,
     labeller=None,
     aes_by_visuals: Mapping[
-        Literal["dist", "ecdf_lines", "credible_interval", "title", "xlabel", "ylabel"],
+        Literal["dist", "ecdf_lines", "title", "xlabel", "ylabel"],
         Sequence[str],
     ] = None,
     visuals: Mapping[
         Literal[
             "dist",
             "ecdf_lines",
-            "credible_interval",
             "title",
             "xlabel",
             "ylabel",
@@ -86,12 +85,11 @@ def plot_dgof_dist(
     kind : {"kde", "hist", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
-    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+    method : {"pot_c", "prit_c", "piet_c"}, optional
         Method to use for the uniformity test. Defaults to "pot_c". Check the documentation of
         :func:`~arviz_plots.plot_ecdf_pit` for more details.
     envelope_prob : float, optional
-        If `method` is "envelope", indicates the probability that should be contained within the
-        envelope, otherwise indicates the probability threshold to highlight points.
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -108,7 +106,6 @@ def plot_dgof_dist(
           * "hist" -> passed to :func: `~arviz_plots.visuals.step_hist`
           * "dot" -> passed to :func:`~arviz_plots.visuals.scatter_xy`
 
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.line_xy`
         * title -> passed to :func:`~arviz_plots.visuals.title`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
@@ -119,8 +116,7 @@ def plot_dgof_dist(
         Valid keys are:
 
         * dist -> passed to kde, ecdf and qds for both dist plot and dgof plot
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit` or
-          :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
+        * ecdf_pit -> passed to :func:`~xarray.Dataset.azstats.uniformity_test`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`
@@ -224,7 +220,6 @@ def plot_dgof_dist(
     visuals_dgof = get_visual_kwargs(visuals, "dgof")
     visuals_dgof["title"] = get_visual_kwargs(visuals, "title")
     visuals_dgof["ecdf_lines"] = get_visual_kwargs(visuals, "ecdf_lines")
-    visuals_dgof["credible_interval"] = get_visual_kwargs(visuals, "credible_interval")
     visuals_dgof["xlabel"] = get_visual_kwargs(visuals, "xlabel")
     visuals_dgof["ylabel"] = get_visual_kwargs(visuals, "ylabel")
 

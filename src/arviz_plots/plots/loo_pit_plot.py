@@ -29,7 +29,6 @@ def plot_loo_pit(
     aes_by_visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "xlabel",
             "ylabel",
             "title",
@@ -39,7 +38,6 @@ def plot_loo_pit(
     visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "xlabel",
             "ylabel",
             "title",
@@ -77,11 +75,6 @@ def plot_loo_pit(
     ----------
     dt : DataTree
         Input data
-    envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
-        Defaults to ``rcParams["stats.envelope_prob"]``.
-    coverage : bool, optional
-        If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     var_names : str or list of str, optional
         One or more variables to be plotted. Currently only one variable is supported.
         Prefix the variables by ~ when you want to exclude them from the plot.
@@ -102,6 +95,8 @@ def plot_loo_pit(
     envelope_prob : float, optional
         Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
+    coverage : bool, optional
+        If True, plot the coverage of the central posterior credible intervals. Defaults to False.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -113,7 +108,6 @@ def plot_loo_pit(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -185,16 +179,9 @@ def plot_loo_pit(
             "'sample_dims' is currently not supported in plot_loo_pit and will be ignored"
         )
 
-    if method == "envelope":
-        warnings.warn(
-            "Method 'envelope' is not recommended for the LOO-PIT plot."
-            "As it assumes PIT values are independent, which is not the case for LOO-PIT values.",
-            UserWarning,
-        )
-
-    if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
+    if method not in {"pot_c", "prit_c", "piet_c"}:
         raise ValueError(
-            f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
+            f"Method {method} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
         )
 
     pareto_pit = method in ["pot_c", "piet_c"]

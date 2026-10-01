@@ -1,6 +1,5 @@
 """Plot PIT Δ-ECDF."""
 
-import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
@@ -14,7 +13,6 @@ from arviz_base.validate import (
     validate_or_use_rcparam,
     validate_sample_dims,
 )
-from arviz_stats.ecdf_utils import ecdf_pit
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -26,7 +24,6 @@ from arviz_plots.plots.utils import (
 from arviz_plots.visuals import (
     annotate_xy,
     ecdf_line,
-    fill_between_y,
     labelled_title,
     labelled_x,
     labelled_y,
@@ -83,7 +80,6 @@ def plot_ecdf_pit(
     aes_by_visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "suspicious_points",
             "p_value_text",
             "xlabel",
@@ -95,7 +91,6 @@ def plot_ecdf_pit(
     visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "suspicious_points",
             "p_value_text",
             "xlabel",
@@ -140,14 +135,11 @@ def plot_ecdf_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+    method : {"pot_c", "prit_c", "piet_c"}, optional
         Method to use for the uniformity test. See the "Notes" section for the full description of
         the different methods available.
     envelope_prob : float, optional
-        If `method` is "envelope", indicates the probability that should be contained within the
-        envelope, otherwise indicates the probability threshold to highlight points.
-        Defaults to ``rcParams["stats.envelope_prob"]``.
-    coverage : bool, optional
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
@@ -162,12 +154,9 @@ def plot_ecdf_pit(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`,
-          only when method is "envelope"
         * ref_line -> passed to :func:`~arviz_plots.visuals.line_xy`
         * suspicious_points -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * p_value_text -> passed to :func:`~arviz_plots.visuals.annotate_xy`
-          only when method is not "envelope"
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -176,8 +165,7 @@ def plot_ecdf_pit(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. or
-          :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
+        * ecdf_pit -> passed to :func:`~xarray.Dataset.azstats.uniformity_test`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -195,9 +183,6 @@ def plot_ecdf_pit(
     * piet_c: Use when you specifically want to evaluate tail deviations.
     * prit_c: Mostly compatible with PITs computed as normalized ranks.
       Don't use unless you have a specific reason to do so.
-    * envelope: Legacy method that uses simultaneous confidence bands. It can be used
-      when you have independent PIT values, as in the case of SBC analysis. The method
-      is described in method described in [1]_. Notice that pot_c is also valid in those cases.
 
     The methods "pot_c", "piet_c" and "prit_c" compute the points that contribute the most
     to deviations from uniformity as described in [2]_.
@@ -230,17 +215,11 @@ def plot_ecdf_pit(
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     alpha = 1 - envelope_prob
     visuals = validate_dict_argument(visuals, (plot_ecdf_pit, "visuals"))
-    if method == "envelope":
-        visuals.setdefault("remove_axis", True)
-    else:
-        visuals.setdefault("remove_axis", False)
+    visuals.setdefault("remove_axis", False)
     stats = validate_dict_argument(stats, (plot_ecdf_pit, "stats"))
 
     ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
-    if method == "envelope":
-        ecdf_pit_kwargs.setdefault("n_simulations", 1000)
-    else:
-        ecdf_pit_kwargs.setdefault("gamma", 0)
+    ecdf_pit_kwargs.setdefault("gamma", 0)
 
     if backend is None:
         if plot_collection is None:
@@ -261,15 +240,9 @@ def plot_ecdf_pit(
             for var, da in distribution.items()
         }
     )
-    if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
+    if method not in {"pot_c", "prit_c", "piet_c"}:
         raise ValueError(
-            f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
-        )
-    if method == "envelope":
-        warnings.warn(
-            "Method 'envelope' will be deprecated. As it assumes PIT values are independent.\n"
-            "Use 'pot_c' instead, which is valid for both independent and dependent PIT values.",
-            FutureWarning,
+            f"Method {method} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
         )
 
     # ensure we have PIT values between 0 and 1.
@@ -290,27 +263,16 @@ def plot_ecdf_pit(
             for var, da in distribution.items()
         }
     )
-    x_ci = lower_ci = upper_ci = None
+    p_values, shapley_vals, _ = distribution.azstats.uniformity_test(dim=sample_dims, method=method)
+    gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
+    highlight = (shapley_vals > gamma) & (p_values < alpha)
+    dt_suspicious = _sorted_pit_delta_coords(distribution, sample_dims)
+    # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
+    # to get the default y-limits for the plot.
+    expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size_ds)) * 1.3
 
-    if method == "envelope":
-        dummy_vals = np.linspace(0, 1, sample_size_ds.to_array().max())
-        x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
-        lower_ci = lower_ci - x_ci
-        upper_ci = upper_ci - x_ci
-
-    else:
-        p_values, shapley_vals, _ = distribution.azstats.uniformity_test(
-            dim=sample_dims, method=method
-        )
-        gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
-        highlight = (shapley_vals > gamma) & (p_values < alpha)
-        dt_suspicious = _sorted_pit_delta_coords(distribution, sample_dims)
-        # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
-        # to get the default y-limits for the plot.
-        expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size_ds)) * 1.3
-
-        actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y")))
-        epsilon = xr.where(expected_max > actual_max, expected_max, actual_max)
+    actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y")))
+    epsilon = xr.where(expected_max > actual_max, expected_max, actual_max)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -377,77 +339,56 @@ def plot_ecdf_pit(
             labels=["0", "25", "50", "75", "100"],
             store_artist=backend == "none",
         )
+    # suspicious points
+    suspicious_kwargs = get_visual_kwargs(visuals, "suspicious_points")
+    _, suspicious_aes, suspicious_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "suspicious_points", sample_dims
+    )
+    if suspicious_kwargs is not False:
+        if "color" not in suspicious_aes:
+            suspicious_kwargs.setdefault("color", "C1")
+        if "marker" not in suspicious_aes:
+            suspicious_kwargs.setdefault("marker", "C6")
 
-    if method == "envelope":
-        ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
-        _, _, ci_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "credible_interval", sample_dims
-        )
-        if ci_kwargs is not False:
-            ci_kwargs.setdefault("color", "B1")
-            ci_kwargs.setdefault("alpha", 0.1)
-
-            plot_collection.map(
-                fill_between_y,
-                "credible_interval",
-                data=dt_ecdf,
-                x=x_ci,
-                y_bottom=lower_ci,
-                y_top=upper_ci,
-                step=True,
-                ignore_aes=ci_ignore,
-                **ci_kwargs,
-            )
-    else:
-        suspicious_kwargs = get_visual_kwargs(visuals, "suspicious_points")
-        _, suspicious_aes, suspicious_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "suspicious_points", sample_dims
-        )
-        if suspicious_kwargs is not False:
-            if "color" not in suspicious_aes:
-                suspicious_kwargs.setdefault("color", "C1")
-            if "marker" not in suspicious_aes:
-                suspicious_kwargs.setdefault("marker", "C6")
-
-            plot_collection.map(
-                scatter_xy,
-                "suspicious_points",
-                data=dt_suspicious,
-                mask=highlight,
-                ignore_aes=suspicious_ignore,
-                **suspicious_kwargs,
-            )
-        limits_ds = xr.Dataset()
-        for var, da in epsilon.items():
-            ary = np.empty(1, dtype=object)
-            ary[0] = (-da.item(), da.item())
-            limits_ds[var] = ary
         plot_collection.map(
-            set_ylim,
-            "ylim",
-            limits=limits_ds.squeeze().reset_coords(),
-            store_artist=False,
-            ignore_aes="all",
+            scatter_xy,
+            "suspicious_points",
+            data=dt_suspicious,
+            mask=highlight,
+            ignore_aes=suspicious_ignore,
+            **suspicious_kwargs,
         )
-        # add p-values as annotations
-        p_value_kwargs = get_visual_kwargs(visuals, "p_value_text")
-        if p_value_kwargs is not False:
-            _, _, p_value_ignore = filter_aes(
-                plot_collection, aes_by_visuals, "p_value_text", sample_dims
-            )
-            p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
-            p_value_kwargs.setdefault("x", 0)
-            p_value_kwargs.setdefault("y", 0.85 * epsilon)
-            p_value_kwargs.setdefault("horizontal_align", "left")
+    limits_ds = xr.Dataset()
+    for var, da in epsilon.items():
+        ary = np.empty(1, dtype=object)
+        ary[0] = (-da.item(), da.item())
+        limits_ds[var] = ary
+    plot_collection.map(
+        set_ylim,
+        "ylim",
+        limits=limits_ds.squeeze().reset_coords(),
+        store_artist=False,
+        ignore_aes="all",
+    )
+    # add p-values as annotations
+    p_value_kwargs = get_visual_kwargs(visuals, "p_value_text")
+    if p_value_kwargs is not False:
+        _, _, p_value_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "p_value_text", sample_dims
+        )
+        p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
+        p_value_kwargs.setdefault("x", 0)
+        p_value_kwargs.setdefault("y", 0.85 * epsilon)
+        p_value_kwargs.setdefault("horizontal_align", "left")
 
-            plot_collection.map(
-                annotate_xy,
-                "p_value_text",
-                data=p_values,
-                ignore_aes=p_value_ignore,
-                store_artist=backend == "none",
-                **p_value_kwargs,
-            )
+        plot_collection.map(
+            annotate_xy,
+            "p_value_text",
+            data=p_values,
+            ignore_aes=p_value_ignore,
+            store_artist=backend == "none",
+            **p_value_kwargs,
+        )
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(

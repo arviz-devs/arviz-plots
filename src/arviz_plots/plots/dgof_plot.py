@@ -37,7 +37,6 @@ def plot_dgof(
     aes_by_visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "xlabel",
             "ylabel",
             "title",
@@ -47,7 +46,6 @@ def plot_dgof(
     visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "xlabel",
             "ylabel",
             "title",
@@ -87,12 +85,11 @@ def plot_dgof(
     kind : {"kde", "hist", "dot"}, optional
         Which method to diagnose the distribution fit.
         Defaults to ``rcParams["plot.density_kind"]``
-    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+    method : {"pot_c", "prit_c", "piet_c"}, optional
         Method to use for the uniformity test. Defaults to "pot_c". Check the documentation of
         :func:`~arviz_plots.plot_ecdf_pit` for more details.
     envelope_prob : float, optional
-        If method is "envelope", indicates the probability that should be contained within the
-        envelope, otherwise indicates the probability threshold to highlight points.
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
@@ -103,7 +100,6 @@ def plot_dgof(
     visuals : mapping of {str : mapping or bool}, optional
         Valid keys are:
 
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.line_xy`
         * title -> passed to :func:`~arviz_plots.visuals.title`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
@@ -113,8 +109,7 @@ def plot_dgof(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit` or
-          :func:`~xarray.Dataset.azstats.uniformity_test` depending on the value of `method`.
+        * ecdf_pit -> passed to :func:`~xarray.Dataset.azstats.uniformity_test`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`

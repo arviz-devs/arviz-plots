@@ -1,5 +1,6 @@
 """Plot fractional rank."""
 
+import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
@@ -13,7 +14,6 @@ from arviz_base.validate import (
     validate_or_use_rcparam,
     validate_sample_dims,
 )
-from arviz_stats.ecdf_utils import ecdf_pit
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -26,7 +26,6 @@ from arviz_plots.plots.utils import (
 from arviz_plots.visuals import (
     annotate_xy,
     ecdf_line,
-    fill_between_y,
     labelled_title,
     labelled_x,
     remove_axis,
@@ -52,7 +51,6 @@ def plot_rank(
     aes_by_visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "xlabel",
             "title",
         ],
@@ -61,7 +59,6 @@ def plot_rank(
     visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "xlabel",
             "title",
             "remove_axis",
@@ -69,7 +66,7 @@ def plot_rank(
         Mapping[str, Any] | bool,
     ] = None,
     stats: Mapping[
-        Literal["ecdf_pit", "mtc_c", "thin"],
+        Literal["ecdf_pit", "mtc_c"],
         Mapping[str, Any] | xr.Dataset,
     ] = None,
     **pc_kwargs,
@@ -105,14 +102,14 @@ def plot_rank(
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
-    method : {"mtc_c", "envelope"}, default "mtc_c"
-        Method to use for the rank plot. If "mtc_c", the multi-chain test is performed and
-        suspicious points are highlighted. If "envelope", the envelope is computed and plotted.
+    method : {"mtc_c"}, default "mtc_c"
+        Method to use for the rank plot. Currently, only "mtc_c" is supported, which performs the
+        multi-chain test and highlights suspicious points.
     thin : bool, default None
-        Whether to thin the data before plotting. Defaults to None, which means that it is set
-        to True if "method" is "envelope" and False otherwise.
+        Whether to thin the data before plotting. This
+        argument has no effect and it will be removed in future versions.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh", "plotly"}, optional
     labeller : labeller, optional
@@ -124,7 +121,6 @@ def plot_rank(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
         * remove_axis -> not passed anywhere, can only be ``False`` to skip calling this function
@@ -132,10 +128,7 @@ def plot_rank(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulations": 1000}``.
         * mtc_c -> passed to :func:`~arviz_stats.mchain_uniformity_test`.
-        * thin -> passed to :func:`~arviz_stats.thin`
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -144,11 +137,6 @@ def plot_rank(
     -------
     PlotCollection
 
-    Notes
-    -----
-    The preferred method is `mtc_c` as it takes into account the autocorrelation in the rank values
-    as described in [1]_. The "envelope" method is not longer recommended and it will likely be
-    removed in a future release.
 
     Examples
     --------
@@ -173,14 +161,20 @@ def plot_rank(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
+    if thin is not None:
+        warnings.warn(
+            "The 'thin' argument has no effect and will be deprecated in a future release.",
+            FutureWarning,
+        )
+
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_rank, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_rank, "visuals"))
     visuals.setdefault("remove_axis", True)
     stats = validate_dict_argument(stats, (plot_rank, "stats"))
 
-    if method not in ["mtc_c", "envelope"]:
-        raise ValueError(f"Invalid method {method}. Valid options are 'mtc_c' and 'envelope'.")
+    if method not in ["mtc_c"]:
+        raise ValueError(f"Invalid method {method}. Valid options are 'mtc_c'.")
 
     if backend is None:
         if plot_collection is None:
@@ -195,20 +189,7 @@ def plot_rank(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
-    ecdf_pit_kwargs = stats.get("ecdf_pit", {}).copy()
-    if method == "envelope":
-        ecdf_pit_kwargs.setdefault("n_simulations", 1000)
-        ecdf_pit_kwargs.setdefault("n_chains", distribution.sizes["chain"])
-    else:
-        ecdf_pit_kwargs.setdefault("gamma", 0)
-
     ecdf_dims = ["draw"]
-
-    if thin is None:
-        thin = method == "envelope"
-
-    if thin:
-        distribution = distribution.azstats.thin(sample_dims=ecdf_dims, **stats.get("thin", {}))
 
     sample_size = np.prod([len(distribution[dims]) for dims in ecdf_dims])
     # Compute ranks
@@ -226,32 +207,20 @@ def plot_rank(
     )
 
     # Compute multi-chain test p-values
-    if method == "mtc_c":
-        alpha = 1 - envelope_prob
-        gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
-        mtc_c_kwargs = stats.get("mtc_c", {}).copy()
-        p_values, b_shapley, w_shapley = dt_ranks_rel.azstats.mchain_uniformity_test(
-            dim=sample_dims, **mtc_c_kwargs
-        )
+    alpha = 1 - envelope_prob
+    gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
+    mtc_c_kwargs = stats.get("mtc_c", {}).copy()
+    p_values, b_shapley, w_shapley = dt_ranks_rel.azstats.mchain_uniformity_test(
+        dim=sample_dims, **mtc_c_kwargs
+    )
 
-        highlight = ((b_shapley > gamma) * (w_shapley > gamma)) & (p_values < alpha)
-        suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
-        # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
-        # to get the default y-limits for the plot.
-        expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size)) * 1.3
-        actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y").to_array())).item()
-        epsilon = max(expected_max, actual_max)
-    else:
-        p_values = None
-
-    # Compute envelope
-    if method == "mtc_c":
-        x_ci = lower_ci = upper_ci = None
-    else:
-        dummy_vals = np.linspace(0, 1, sample_size)
-        x_ci, _, lower_ci, upper_ci = ecdf_pit(dummy_vals, envelope_prob, **ecdf_pit_kwargs)
-        lower_ci = lower_ci - x_ci
-        upper_ci = upper_ci - x_ci
+    highlight = ((b_shapley > gamma) * (w_shapley > gamma)) & (p_values < alpha)
+    suspicious_mask = highlight.rename({"pit_dim": "ecdf_dim"})
+    # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
+    # to get the default y-limits for the plot.
+    expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size)) * 1.3
+    actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y").to_array())).item()
+    epsilon = max(expected_max, actual_max)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
@@ -291,73 +260,54 @@ def plot_rank(
             ignore_aes=ecdf_ls_ignore,
             **ecdf_ls_kwargs,
         )
+    # suspicious points
+    suspicious_kwargs = get_visual_kwargs(visuals, "suspicious_points")
+    _, suspicious_aes, suspicious_ignore = filter_aes(
+        plot_collection, aes_by_visuals, "suspicious_points", sample_dims
+    )
+    if suspicious_kwargs is not False:
+        if "color" not in suspicious_aes:
+            suspicious_kwargs.setdefault("color", "B1")
+        if "marker" not in suspicious_aes:
+            suspicious_kwargs.setdefault("marker", "C6")
 
-    ci_kwargs = get_visual_kwargs(visuals, "credible_interval")
-    _, _, ci_ignore = filter_aes(plot_collection, aes_by_visuals, "credible_interval", sample_dims)
-    if method == "envelope":
-        if ci_kwargs is not False:
-            ci_kwargs.setdefault("color", "B1")
-            ci_kwargs.setdefault("alpha", 0.1)
-
-            plot_collection.map(
-                fill_between_y,
-                "credible_interval",
-                data=dt_ecdf,
-                x=x_ci,
-                y_bottom=lower_ci,
-                y_top=upper_ci,
-                step=True,
-                ignore_aes=ci_ignore,
-                **ci_kwargs,
-            )
-    else:
-        suspicious_kwargs = get_visual_kwargs(visuals, "suspicious_points")
-        _, suspicious_aes, suspicious_ignore = filter_aes(
-            plot_collection, aes_by_visuals, "suspicious_points", sample_dims
-        )
-        if suspicious_kwargs is not False:
-            if "color" not in suspicious_aes:
-                suspicious_kwargs.setdefault("color", "B1")
-            if "marker" not in suspicious_aes:
-                suspicious_kwargs.setdefault("marker", "C6")
-
-            plot_collection.map(
-                scatter_xy,
-                "suspicious_points",
-                data=dt_ecdf,
-                mask=suspicious_mask,
-                ignore_aes=suspicious_ignore,
-                **suspicious_kwargs,
-            )
         plot_collection.map(
-            set_ylim,
-            "ylim",
-            limits=(-epsilon, epsilon),
-            store_artist=False,
-            ignore_aes="all",
+            scatter_xy,
+            "suspicious_points",
+            data=dt_ecdf,
+            mask=suspicious_mask,
+            ignore_aes=suspicious_ignore,
+            **suspicious_kwargs,
         )
-        # add p-values as annotations
-        p_value_kwargs = get_visual_kwargs(visuals, "p_value_text")
-        if p_value_kwargs is not False:
-            _, p_value_loop_dims, _, p_value_ignore = filter_aes_full(
-                plot_collection, aes_by_visuals, "p_value_text", sample_dims
-            )
-            # Only annotate variables whose p-value is scalar per subplot
-            annot_vars = [v for v, da in p_values.items() if set(da.dims) <= p_value_loop_dims]
-            if annot_vars:
-                p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
-                p_value_kwargs.setdefault("x", 0)
-                p_value_kwargs.setdefault("y", 0.85 * epsilon)
-                p_value_kwargs.setdefault("horizontal_align", "left")
+    plot_collection.map(
+        set_ylim,
+        "ylim",
+        limits=(-epsilon, epsilon),
+        store_artist=False,
+        ignore_aes="all",
+    )
+    # add p-values as annotations
+    p_value_kwargs = get_visual_kwargs(visuals, "p_value_text")
+    if p_value_kwargs is not False:
+        _, p_value_loop_dims, _, p_value_ignore = filter_aes_full(
+            plot_collection, aes_by_visuals, "p_value_text", sample_dims
+        )
+        # Only annotate variables whose p-value is scalar per subplot
+        annot_vars = [v for v, da in p_values.items() if set(da.dims) <= p_value_loop_dims]
+        if annot_vars:
+            p_value_kwargs.setdefault("text", lambda p: f"p={p:.2f}(α={alpha:.2f}) ")
+            p_value_kwargs.setdefault("x", 0)
+            p_value_kwargs.setdefault("y", 0.85 * epsilon)
+            p_value_kwargs.setdefault("horizontal_align", "left")
 
-                plot_collection.map(
-                    annotate_xy,
-                    "p_value_text",
-                    data=p_values[annot_vars],
-                    ignore_aes=p_value_ignore,
-                    store_artist=backend == "none",
-                    **p_value_kwargs,
-                )
+            plot_collection.map(
+                annotate_xy,
+                "p_value_text",
+                data=p_values[annot_vars],
+                ignore_aes=p_value_ignore,
+                store_artist=backend == "none",
+                **p_value_kwargs,
+            )
 
     # set xlabel
     _, xlabels_aes, xlabels_ignore = filter_aes(
