@@ -1,5 +1,5 @@
 """
-# Convergence diagnostics distribution
+# Distribution of convergence diagnostics
 
 Plot the distribution of ESS and R-hat.
 

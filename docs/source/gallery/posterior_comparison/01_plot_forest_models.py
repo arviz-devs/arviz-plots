@@ -1,5 +1,5 @@
 """
-# Posterior forest for two models
+# Forest for two models
 
 Forest plot summaries for 1D marginal distributions
 

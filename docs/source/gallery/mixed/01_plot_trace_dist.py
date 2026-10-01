@@ -1,5 +1,5 @@
 """
-# Trace and distribution plot
+# Trace and distribution
 
 Two column layout with marginal distributions on the left and MCMC traces on the right
 
