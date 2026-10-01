@@ -119,7 +119,7 @@ def get_ppc_pit(predictive_dist, observed_dist, sample_dims, method):
         The observed data.
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce.
-    method : {"envelope", "pot_c", "prit_c", "piet_c"}
+    method : {"pot_c", "prit_c", "piet_c"}
         The method to use for PIT computation.
     """
     rng = np.random.default_rng(214)

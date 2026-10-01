@@ -36,7 +36,6 @@ def plot_ppc_dist_pit(
             "predictive_dist",
             "observed_dist",
             "ecdf_lines",
-            "credible_interval",
             "suspicious_points",
             "p_value_text",
             "title",
@@ -48,7 +47,6 @@ def plot_ppc_dist_pit(
             "predictive_dist",
             "observed_dist",
             "ecdf_lines",
-            "credible_interval",
             "suspicious_points",
             "p_value_text",
             "xlabel_dist",
@@ -95,10 +93,10 @@ def plot_ppc_dist_pit(
         Defaults to ``rcParams["plot.density_kind"]``.
     num_samples : int, default 50
         Number of predictive draws to overlay in the dist column.
-    method : {"pot_c", "prit_c", "piet_c", "envelope"}, default "pot_c"
+    method : {"pot_c", "prit_c", "piet_c"}, default "pot_c"
         Uniformity-test method for the PIT column.
     envelope_prob : float, optional
-        Probability inside the simultaneous envelope.
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, default False
         If True, replace PIT with ``2|PIT - 0.5|`` to assess ETI coverage.
@@ -114,7 +112,6 @@ def plot_ppc_dist_pit(
         * predictive_dist  -> density lines for predictive draws
         * observed_dist    -> density line for observed data
         * ecdf_lines       -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> only when ``method="envelope"``
         * suspicious_points -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * p_value_text     -> passed to :func:`~arviz_plots.visuals.annotate_xy`
         * xlabel_dist      -> x-axis label for the dist column
@@ -158,10 +155,9 @@ def plot_ppc_dist_pit(
     gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
     alpha = 1 - envelope_prob
 
-    if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
+    if method not in {"pot_c", "prit_c", "piet_c"}:
         raise ValueError(
-            f"Method {method!r} not supported. "
-            "Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
+            f"Method {method!r} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
         )
 
     plot_bknd, pp_dims, sample_dims, predictive_dist, predictive_dist_sub, observed_dist = (
@@ -272,7 +268,7 @@ def plot_ppc_dist_pit(
 
     # Plot suspicious obs from uniformity test
     rug_kwargs = get_visual_kwargs(visuals, "suspicious_points")
-    if rug_kwargs is not False and method != "envelope":
+    if rug_kwargs is not False:
         suspicious_mask_ds = get_suspicious_mask_ds(observed_dist, pit_dt, alpha, gamma, method)
         rug_kwargs.setdefault("color", "C1")
         rug_kwargs.setdefault("marker", "|")
@@ -297,14 +293,14 @@ def plot_ppc_dist_pit(
         "xlabel": visuals.get("xlabel_pit", {"text": "ETI %" if coverage else "PIT"}),
         "title": visuals.get("title", {}),
     }
-    for key in ("ecdf_lines", "credible_interval", "suspicious_points", "p_value_text"):
+    for key in ("ecdf_lines", "suspicious_points", "p_value_text"):
         if key in visuals:
             pit_visuals[key] = visuals[key]
 
     pit_aes_by_visuals = {
         k: v
         for k, v in aes_by_visuals.items()
-        if k in ("ecdf_lines", "credible_interval", "suspicious_points", "p_value_text")
+        if k in ("ecdf_lines", "suspicious_points", "p_value_text")
     }
 
     plot_collection.coords = {"column": "pit"}
