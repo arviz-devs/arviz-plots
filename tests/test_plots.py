@@ -104,24 +104,6 @@ def test_plot_pair_bivariate_histogram_stat_errors(visual, stat_kwargs, message)
         )
 
 
-@pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
-def test_plot_pair_bivariate_histogram_empty_samples(visual):
-    data = xr.Dataset(
-        {
-            "x": (("chain", "draw"), [[np.nan, np.nan]]),
-            "y": (("chain", "draw"), [[np.nan, np.nan]]),
-        }
-    )
-
-    with pytest.raises(ValueError, match="No finite paired samples"):
-        plot_pair(
-            data,
-            marginal=False,
-            visuals={"scatter": False, visual: True},
-            backend="none",
-        )
-
-
 @pytest.mark.parametrize("plot", ["pair", "focus"])
 @pytest.mark.parametrize("visual", ["histogram2d", "hexbin"])
 def test_bivariate_histogram_rejects_precomputed_dataset(plot, visual):

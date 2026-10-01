@@ -482,6 +482,7 @@ def hist(
     return hist_object
 
 
+@expand_aesthetic_aliases
 def histogram2d(
     x_edges,
     y_edges,
@@ -510,6 +511,7 @@ def histogram2d(
     return trace
 
 
+@expand_aesthetic_aliases
 def hexbin(
     x_vertices,
     y_vertices,

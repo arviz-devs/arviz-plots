@@ -521,6 +521,7 @@ def _color_mapper(values, cmap, vmin, vmax):
     return LinearColorMapper(palette=palette, low=low, high=high)
 
 
+@expand_aesthetic_aliases
 def histogram2d(
     x_edges,
     y_edges,
@@ -561,6 +562,7 @@ def histogram2d(
     )
 
 
+@expand_aesthetic_aliases
 def hexbin(
     x_vertices,
     y_vertices,
