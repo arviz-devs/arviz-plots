@@ -14,7 +14,9 @@ Data plotting elements
    ecdf_line
    fill_between_y
    hline
+   hexbin
    hist
+   histogram2d
    hspan
    line
    multiple_lines

@@ -12,9 +12,10 @@ else:
     pytest.importorskip("plotly")
 
 import plotly.graph_objects as go
+from plotly import colors as pc
 from plotly.subplots import make_subplots
 
-from arviz_plots.backend.plotly import fill_between_y, line, multiple_lines
+from arviz_plots.backend.plotly import fill_between_y, hexbin, histogram2d, line, multiple_lines
 from arviz_plots.backend.plotly.core import PlotlyPlot
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.plotly]
@@ -109,3 +110,91 @@ def test_fill_between_y_args(figure):
 
     for visual in (fill_line_obj, figure.figure.data[1]):
         assert visual["fillcolor"] == "rgba(255, 0, 0, 0.500)"
+
+
+def test_histogram2d(figure):
+    x_edges = np.array([0, 1, 3])
+    y_edges = np.array([-1, 0, 2, 5])
+    values = np.arange(6).reshape(2, 3)
+
+    trace = histogram2d(
+        x_edges,
+        y_edges,
+        values,
+        figure,
+        alpha=0.4,
+        vmin=-1,
+        vmax=8,
+        hoverongaps=False,
+    )
+
+    assert isinstance(trace, go.Heatmap)
+    assert np.array_equal(trace.x, x_edges)
+    assert np.array_equal(trace.y, y_edges)
+    assert np.array_equal(trace.z, values.T)
+    assert trace.opacity == 0.4
+    assert trace.zmin == -1
+    assert trace.zmax == 8
+    assert trace.showscale is False
+    assert trace.hoverongaps is False
+    assert trace.colorscale == go.Heatmap(colorscale="viridis").colorscale
+
+
+def test_hexbin(figure):
+    x_vertices = np.array([[0, 1, 1, 0], [2, 3, 3, 2]])
+    y_vertices = np.array([[0, 0, 1, 1], [1, 1, 2, 2]])
+    values = np.array([2, 5])
+
+    trace = hexbin(
+        x_vertices,
+        y_vertices,
+        values,
+        figure,
+        alpha=0.6,
+        vmin=1,
+        vmax=7,
+        line={"width": 2},
+    )
+
+    assert isinstance(trace, go.Scatter)
+    assert len(figure.figure.data) == 2
+    expected_colors = pc.sample_colorscale("viridis", [(2 - 1) / 6, (5 - 1) / 6])
+    for polygon, x_vertex, y_vertex, color in zip(
+        figure.figure.data, x_vertices, y_vertices, expected_colors
+    ):
+        assert polygon.mode == "lines"
+        assert polygon.fill == "toself"
+        assert np.array_equal(polygon.x[:-2], x_vertex)
+        assert np.array_equal(polygon.y[:-2], y_vertex)
+        assert polygon.x[-2] == x_vertex[0]
+        assert polygon.y[-2] == y_vertex[0]
+        assert np.isnan(polygon.x[-1])
+        assert np.isnan(polygon.y[-1])
+        assert polygon.fillcolor == color
+        assert polygon.opacity == 0.6
+        assert polygon.line.width == 2
+
+
+@pytest.mark.parametrize("values", [np.full((2, 2), 4.0), np.full((2, 2), np.nan)])
+def test_histogram2d_degenerate_color_limits(figure, values):
+    trace = histogram2d([0, 1, 2], [0, 1, 2], values, figure)
+
+    assert np.isfinite([trace.zmin, trace.zmax]).all()
+    assert trace.zmin < trace.zmax
+
+
+@pytest.mark.parametrize("values", [np.full(2, 4.0), np.full(2, np.nan)])
+def test_hexbin_degenerate_color_limits(figure, values):
+    trace = hexbin(
+        [[0, 1, 1, 0], [2, 3, 3, 2]],
+        [[0, 0, 1, 1], [1, 1, 2, 2]],
+        values,
+        figure,
+    )
+
+    assert isinstance(trace, go.Scatter)
+    assert len(figure.figure.data) == 1
+    if np.isnan(values).all():
+        assert trace.fillcolor == "rgba(0, 0, 0, 0)"
+    else:
+        assert trace.fillcolor == pc.sample_colorscale("viridis", [0])[0]

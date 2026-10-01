@@ -9,6 +9,8 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_base.validate import validate_dict_argument, validate_sample_dims
+from arviz_stats import hexbin as compute_hexbin
+from arviz_stats import histogram2d as compute_histogram2d
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -17,8 +19,9 @@ from arviz_plots.plots.utils import (
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
+    split_stat_kwargs,
 )
-from arviz_plots.visuals import labelled_x, labelled_y, scatter_x, scatter_xy
+from arviz_plots.visuals import hexbin, histogram2d, labelled_x, labelled_y, scatter_x, scatter_xy
 
 
 def plot_pair_focus(
@@ -37,6 +40,8 @@ def plot_pair_focus(
     aes_by_visuals: Mapping[
         Literal[
             "scatter",
+            "histogram2d",
+            "hexbin",
             "divergence",
             "xlabel",
             "ylabel",
@@ -46,11 +51,17 @@ def plot_pair_focus(
     visuals: Mapping[
         Literal[
             "scatter",
+            "histogram2d",
+            "hexbin",
             "divergence",
             "xlabel",
             "ylabel",
         ],
         Mapping[str, Any] | bool,
+    ] = None,
+    stats: Mapping[
+        Literal["histogram2d", "hexbin"],
+        Mapping[str, Any],
     ] = None,
     **pc_kwargs,
 ):
@@ -90,9 +101,19 @@ def plot_pair_focus(
         Valid keys are:
 
         * scatter -> passed to :func:`~.visuals.scatter_x`
+        * histogram2d -> passed to :func:`~.visuals.histogram2d`. Defaults to False.
+        * hexbin -> passed to :func:`~.visuals.hexbin`. Defaults to False.
         * divergence -> passed to :func:`~.visuals.scatter_xy`. Defaults to False.
         * xlabel -> :func:`~.visuals.labelled_x`
         * ylabel -> :func:`~.visuals.labelled_y`
+
+    stats : mapping of {str : mapping}, optional
+        Statistical options for the bivariate histogram visuals. Valid keys are:
+
+        * histogram2d -> passed to :func:`arviz_stats.histogram2d`, including ``bins``,
+          ``range``, ``density``, and ``weights``.
+        * hexbin -> passed to :func:`arviz_stats.hexbin`, including ``gridsize``,
+          ``extent``, ``density``, and ``weights``.
 
     **pc_kwargs
         Passed to :meth:`arviz_plots.PlotCollection.wrap`
@@ -125,6 +146,7 @@ def plot_pair_focus(
     """
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_pair_focus, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_pair_focus, "visuals"))
+    stats = validate_dict_argument(stats, (plot_pair_focus, "stats"))
 
     if backend is None:
         if plot_collection is None:
@@ -169,6 +191,45 @@ def plot_pair_focus(
             distribution,
             backend=backend,
             **pc_kwargs,
+        )
+
+    aes_by_visuals["histogram2d"] = aes_by_visuals.get("histogram2d", {})
+    aes_by_visuals["hexbin"] = aes_by_visuals.get("hexbin", {})
+
+    histogram2d_kwargs = get_visual_kwargs(visuals, "histogram2d", False)
+    if histogram2d_kwargs is not False:
+        histogram2d_stats, histogram2d_weights = split_stat_kwargs(stats, "histogram2d")
+        histogram2d_dims, _, histogram2d_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "histogram2d", sample_dims
+        )
+        histogram2d_kwargs.setdefault("cmap", "viridis")
+        plot_collection.map(
+            _histogram2d_focus,
+            "histogram2d",
+            ignore_aes=histogram2d_ignore,
+            y=y,
+            sample_dims=histogram2d_dims,
+            stat_kwargs=histogram2d_stats,
+            weights=histogram2d_weights,
+            **histogram2d_kwargs,
+        )
+
+    hexbin_kwargs = get_visual_kwargs(visuals, "hexbin", False)
+    if hexbin_kwargs is not False:
+        hexbin_stats, hexbin_weights = split_stat_kwargs(stats, "hexbin")
+        hexbin_dims, _, hexbin_ignore = filter_aes(
+            plot_collection, aes_by_visuals, "hexbin", sample_dims
+        )
+        hexbin_kwargs.setdefault("cmap", "viridis")
+        plot_collection.map(
+            _hexbin_focus,
+            "hexbin",
+            ignore_aes=hexbin_ignore,
+            y=y,
+            sample_dims=hexbin_dims,
+            stat_kwargs=hexbin_stats,
+            weights=hexbin_weights,
+            **hexbin_kwargs,
         )
 
     # scatter
@@ -266,3 +327,13 @@ def plot_pair_focus(
         )
 
     return plot_collection
+
+
+def _histogram2d_focus(da_x, target, y, sample_dims=None, stat_kwargs=None, weights=None, **kwargs):
+    result = compute_histogram2d(da_x, y, dim=sample_dims, weights=weights, **(stat_kwargs or {}))
+    return histogram2d(result, target, **kwargs)
+
+
+def _hexbin_focus(da_x, target, y, sample_dims=None, stat_kwargs=None, weights=None, **kwargs):
+    result = compute_hexbin(da_x, y, dim=sample_dims, weights=weights, **(stat_kwargs or {}))
+    return hexbin(result, target, **kwargs)

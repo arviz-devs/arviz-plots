@@ -9,6 +9,8 @@ import xarray as xr
 from arviz_base import rcParams, xarray_sel_iter
 from arviz_base.labels import BaseLabeller
 from arviz_base.validate import validate_dict_argument, validate_sample_dims
+from arviz_stats import hexbin as compute_hexbin
+from arviz_stats import histogram2d as compute_histogram2d
 from arviz_stats import kde2d
 
 from arviz_plots.plot_matrix import PlotMatrix
@@ -19,10 +21,13 @@ from arviz_plots.plots.utils import (
     get_visual_kwargs,
     process_group_variables_coords,
     set_grid_layout,
+    split_stat_kwargs,
 )
 from arviz_plots.visuals import (
     contour,
     contourf,
+    hexbin,
+    histogram2d,
     label_plot,
     labelled_x,
     labelled_y,
@@ -50,6 +55,8 @@ def plot_pair(
     aes_by_visuals: Mapping[
         Literal[
             "scatter",
+            "histogram2d",
+            "hexbin",
             "contour",
             "contourf",
             "divergence",
@@ -66,6 +73,8 @@ def plot_pair(
     visuals: Mapping[
         Literal[
             "scatter",
+            "histogram2d",
+            "hexbin",
             "contour",
             "contourf",
             "divergence",
@@ -83,6 +92,8 @@ def plot_pair(
     stats: Mapping[
         Literal[
             "dist",
+            "histogram2d",
+            "hexbin",
             "credible_interval",
             "point_estimate",
         ],
@@ -133,6 +144,8 @@ def plot_pair(
         Valid keys are:
 
         * scatter -> passed to :func:`~.visuals.scatter_couple`
+        * histogram2d -> passed to :func:`~.visuals.histogram2d`. Defaults to False.
+        * hexbin -> passed to :func:`~.visuals.hexbin`. Defaults to False.
         * contour -> passed to :func:`~.visuals.contour`. Defaults to False.
         * divergence -> passed to :func:`~.visuals.scatter_couple`. Defaults to False.
         * dist -> depending on the value of `marginal_kind` passed to:
@@ -178,8 +191,14 @@ def plot_pair(
         Valid keys are:
 
         * dist -> passed to kde, ecdf, ...
+        * histogram2d -> mapping passed to :func:`arviz_stats.histogram2d`
+        * hexbin -> mapping passed to :func:`arviz_stats.hexbin`
         * credible_interval -> passed to eti or hdi
         * point_estimate -> passed to mean, median or mode
+
+        Precomputed datasets are supported for ``dist``, ``credible_interval``, and
+        ``point_estimate``. The ``histogram2d`` and ``hexbin`` entries must be mappings
+        of statistical options.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotMatrix`
@@ -267,6 +286,7 @@ def plot_pair(
     """
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_pair, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_pair, "visuals"))
+    stats = validate_dict_argument(stats, (plot_pair, "stats"))
     if labeller is None:
         labeller = BaseLabeller()
     if backend is None:
@@ -326,6 +346,8 @@ def plot_pair(
     aes_by_visuals["scatter"] = {"overlay"}.union(
         aes_by_visuals.get("scatter", plot_matrix.aes_set)
     )
+    aes_by_visuals["histogram2d"] = aes_by_visuals.get("histogram2d", {})
+    aes_by_visuals["hexbin"] = aes_by_visuals.get("hexbin", {})
     aes_by_visuals["contour"] = aes_by_visuals.get("contour", {})
     aes_by_visuals["contourf"] = aes_by_visuals.get("contourf", {})
     aes_by_visuals["divergence"] = {"overlay"}.union(aes_by_visuals.get("divergence", {}))
@@ -333,6 +355,45 @@ def plot_pair(
     aes_by_visuals["credible_interval"] = aes_by_visuals.get("credible_interval", {})
     aes_by_visuals["point_estimate"] = aes_by_visuals.get("point_estimate", {})
     aes_by_visuals["point_estimate_text"] = aes_by_visuals.get("point_estimate_text", {})
+
+    # histogram2d
+    histogram2d_kwargs = get_visual_kwargs(visuals, "histogram2d", False)
+    if histogram2d_kwargs is not False:
+        histogram2d_stats, histogram2d_weights = split_stat_kwargs(stats, "histogram2d")
+        histogram2d_dims, _, histogram2d_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "histogram2d", sample_dims
+        )
+        histogram2d_kwargs.setdefault("cmap", "viridis")
+        plot_matrix.map_triangle(
+            _histogram2d_couple,
+            "histogram2d",
+            triangle=triangle,
+            data=distribution,
+            ignore_aes=histogram2d_ignore,
+            sample_dims=histogram2d_dims,
+            stat_kwargs=histogram2d_stats,
+            weights=histogram2d_weights,
+            **histogram2d_kwargs,
+        )
+    # hexbin
+    hexbin_kwargs = get_visual_kwargs(visuals, "hexbin", False)
+    if hexbin_kwargs is not False:
+        hexbin_stats, hexbin_weights = split_stat_kwargs(stats, "hexbin")
+        hexbin_dims, _, hexbin_ignore = filter_aes(
+            plot_matrix, aes_by_visuals, "hexbin", sample_dims
+        )
+        hexbin_kwargs.setdefault("cmap", "viridis")
+        plot_matrix.map_triangle(
+            _hexbin_couple,
+            "hexbin",
+            triangle=triangle,
+            data=distribution,
+            ignore_aes=hexbin_ignore,
+            sample_dims=hexbin_dims,
+            stat_kwargs=hexbin_stats,
+            weights=hexbin_weights,
+            **hexbin_kwargs,
+        )
 
     # scatter
     scatter_kwargs = get_visual_kwargs(visuals, "scatter")
@@ -359,6 +420,7 @@ def plot_pair(
             **scatter_kwargs,
         )
 
+    # contourf
     contourf_kwargs = get_visual_kwargs(visuals, "contourf", False)
     if contourf_kwargs is not False:
         _, contourf_aes, contourf_ignore = filter_aes(
@@ -382,6 +444,7 @@ def plot_pair(
             **contourf_kwargs,
         )
 
+    # contour
     contour_kwargs = get_visual_kwargs(visuals, "contour", False)
     if contour_kwargs is not False:
         _, contour_aes, contour_ignore = filter_aes(
@@ -403,11 +466,6 @@ def plot_pair(
         )
     # marginal
     if marginal is not False:
-        if stats is None:
-            stats = {}
-        else:
-            stats = stats.copy()
-
         dist_plot_visuals = {}
         dist_plot_aes_by_visuals = {}
         dist_plot_stats = {}
@@ -633,3 +691,17 @@ def _kde_couple(da_x, da_y, target, filled=False, levels=None, sample_dims=None,
         levels=result["contours"],
         **kw,
     )
+
+
+def _histogram2d_couple(
+    da_x, da_y, target, sample_dims=None, stat_kwargs=None, weights=None, **kwargs
+):
+    result = compute_histogram2d(
+        da_x, da_y, dim=sample_dims, weights=weights, **(stat_kwargs or {})
+    )
+    return histogram2d(result, target, **kwargs)
+
+
+def _hexbin_couple(da_x, da_y, target, sample_dims=None, stat_kwargs=None, weights=None, **kwargs):
+    result = compute_hexbin(da_x, da_y, dim=sample_dims, weights=weights, **(stat_kwargs or {}))
+    return hexbin(result, target, **kwargs)
