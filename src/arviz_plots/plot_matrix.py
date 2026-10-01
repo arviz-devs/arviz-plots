@@ -387,7 +387,7 @@ class PlotMatrix(PlotCollection):
         if self._orientation is not None:
             raise ValueError(f"Orientation is set to {self._orientation}, it should be None")
 
-        for i, (var_name_x, sel_x_base, isel_x_base) in enumerate(plotters):
+        for i, (var_name_x, sel_x_base, isel_x_base) in enumerate(plotters):  # pylint: disable=too-many-nested-blocks
             upper_elements = plotters[:i]
             lower_elements = plotters[i + 1 :]
             if triangle == "lower":
