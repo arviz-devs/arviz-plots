@@ -512,7 +512,15 @@ def plot_ridge(
     if ticklabel_kwargs is not False:
         plot_bknd.xticks(
             np.arange(len(labels)),
-            [label.strip("_") for label in labellable_dims if label in labels],
+            [
+                (
+                    labeller.var_name_to_str(label.strip("_"))
+                    if label == "__variable__"
+                    else getattr(labeller, "dim_map", {}).get(label, label)
+                )
+                for label in labellable_dims
+                if label in labels
+            ],
             plot_collection.get_target(None, {"column": "labels"}),
             **ticklabel_kwargs,
         )
