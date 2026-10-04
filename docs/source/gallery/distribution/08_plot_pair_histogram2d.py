@@ -1,5 +1,5 @@
 """
-# 2D histogram of all variables against each other
+# 2D histogram
 
 Use a two-dimensional histogram when a scatter plot is too dense.
 

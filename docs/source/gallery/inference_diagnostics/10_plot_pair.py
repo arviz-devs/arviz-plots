@@ -1,5 +1,5 @@
 """
-# Scatter plot of all variables against each other with divergences
+# Scatter with divergences
 
 Plot all variables against each other in the dataset.
 
@@ -9,8 +9,6 @@ Plot all variables against each other in the dataset.
 API Documentation: {func}`~arviz_plots.plot_pair`
 :::
 """
-
-import numpy as np
 from arviz_base import load_arviz_data
 
 import arviz_plots as azp

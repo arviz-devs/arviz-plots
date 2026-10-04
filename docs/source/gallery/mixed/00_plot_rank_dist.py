@@ -1,5 +1,5 @@
 """
-# Rank and distribution plot
+# Rank and distribution
 
 Two column layout with marginal distributions on the left and fractional ranks on the right
 
