@@ -1,3 +1,21 @@
+<a id="v1.3.2"></a>
+# [v1.3.2](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.3.2) - 2026-09-25
+
+## What's Changed
+* Fix the func_label parameter name and a repeated word in PlotMatrix docs by [@VenishPaneliya](https://github.com/VenishPaneliya) in [#565](https://github.com/arviz-devs/arviz-plots/pull/565)
+* Name the matplotlib hspan argument ymax, as the other backends do by [@VenishPaneliya](https://github.com/VenishPaneliya) in [#564](https://github.com/arviz-devs/arviz-plots/pull/564)
+* Adapt to change in ecdf pit computation by [@aloctavodia](https://github.com/aloctavodia) in [#567](https://github.com/arviz-devs/arviz-plots/pull/567)
+* Update citation information by [@aloctavodia](https://github.com/aloctavodia) in [#569](https://github.com/arviz-devs/arviz-plots/pull/569)
+* Fix tests due to changes in ELPDData by [@aloctavodia](https://github.com/aloctavodia) in [#570](https://github.com/arviz-devs/arviz-plots/pull/570)
+
+## New Contributors
+* [@VenishPaneliya](https://github.com/VenishPaneliya) made their first contribution in [#565](https://github.com/arviz-devs/arviz-plots/pull/565)
+
+**Full Changelog**: https://github.com/arviz-devs/arviz-plots/compare/v1.3.1...v1.3.2
+
+[Changes][v1.3.2]
+
+
 <a id="v1.3.1"></a>
 # [v1.3.1](https://github.com/arviz-devs/arviz-plots/releases/tag/v1.3.1) - 2026-08-21
 
@@ -468,6 +486,7 @@
 [Changes][v0.4.0]
 
 
+[v1.3.2]: https://github.com/arviz-devs/arviz-plots/compare/v1.3.1...v1.3.2
 [v1.3.1]: https://github.com/arviz-devs/arviz-plots/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/arviz-devs/arviz-plots/compare/v1.1.0...v1.2.0

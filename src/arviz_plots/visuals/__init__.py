@@ -215,6 +215,39 @@ def scatter_couple(da_x, da_y, target, mask=None, **kwargs):
     return plot_backend.scatter(da_x.values, da_y.values, target, **kwargs)
 
 
+def histogram2d(values, target, **kwargs):
+    """Plot a two-dimensional histogram."""
+    plot_backend = backend_from_object(target)
+    return plot_backend.histogram2d(
+        values["x_edges"].values,
+        values["y_edges"].values,
+        values["histogram"].values,
+        target,
+        **kwargs,
+    )
+
+
+def hexbin(values, target, **kwargs):
+    """Plot a hexagonal histogram."""
+    x_centers = values["x_centers"].values
+    y_centers = values["y_centers"].values
+    x_step = 2 * np.min(np.diff(np.unique(x_centers)))
+    y_step = 2 * np.min(np.diff(np.unique(y_centers)))
+    unit_vertices = np.array([[0.5, -0.5], [0.5, 0.5], [0, 1], [-0.5, 0.5], [-0.5, -0.5], [0, -1]])
+    vertices = unit_vertices * np.array([x_step, y_step / 3])
+    x_vertices = x_centers[:, None] + vertices[:, 0]
+    y_vertices = y_centers[:, None] + vertices[:, 1]
+
+    plot_backend = backend_from_object(target)
+    return plot_backend.hexbin(
+        x_vertices,
+        y_vertices,
+        values["values"].values,
+        target,
+        **kwargs,
+    )
+
+
 def contour(x_coords, y_coords, density, target, *, levels=None, **kwargs):
     """Plot 2D KDE contours for a pairplot couple."""
     plot_backend = backend_from_object(target)

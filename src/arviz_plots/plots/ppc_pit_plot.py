@@ -33,7 +33,6 @@ def plot_ppc_pit(
     aes_by_visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "suspicious_points",
             "p_value_text",
             "xlabel",
@@ -45,7 +44,6 @@ def plot_ppc_pit(
     visuals: Mapping[
         Literal[
             "ecdf_lines",
-            "credible_interval",
             "suspicious_points",
             "p_value_text",
             "xlabel",
@@ -58,7 +56,7 @@ def plot_ppc_pit(
     stats: Mapping[Literal["ecdf_pit"], Mapping[str, Any] | xr.Dataset] = None,
     **pc_kwargs,
 ):
-    r"""PIT Δ-ECDF values with simultaneous confidence envelope.
+    r"""PIT Δ-ECDF values.
 
     For a calibrated model the Probability Integral Transform (PIT) values,
     $p(\tilde{y}_i \le y_i \mid y)$, should be uniformly distributed.
@@ -98,12 +96,12 @@ def plot_ppc_pit(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
-    method : {"pot_c", "prit_c", "piet_c", "envelope"}, optional
+    method : {"pot_c", "prit_c", "piet_c"}, optional
         Method to use for the uniformity test. Defaults to "pot_c".
         Check the documentation of :func:`~arviz_plots.plot_ecdf_pit` for
         more details.
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     coverage : bool, optional
         If True, plot the coverage of the central posterior credible intervals. Defaults to False.
@@ -118,12 +116,9 @@ def plot_ppc_pit(
         Valid keys are:
 
         * ecdf_lines -> passed to :func:`~arviz_plots.visuals.ecdf_line`
-        * credible_interval -> passed to :func:`~arviz_plots.visuals.fill_between_y`,
-          only when method is "envelope"
         * ref_line -> passed to :func:`~arviz_plots.visuals.line_xy`
         * suspicious_points -> passed to :func:`~arviz_plots.visuals.scatter_xy`
         * p_value_text -> passed to :func:`~arviz_plots.visuals.annotate_xy`
-          only when method is not "envelope"
         * xlabel -> passed to :func:`~arviz_plots.visuals.labelled_x`
         * ylabel -> passed to :func:`~arviz_plots.visuals.labelled_y`
         * title -> passed to :func:`~arviz_plots.visuals.labelled_title`
@@ -132,9 +127,7 @@ def plot_ppc_pit(
     stats : mapping, optional
         Valid keys are:
 
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulations": 1000}``.
-
+        * ecdf_pit -> passed to :func:`~xarray.Dataset.azstats.uniformity_test`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.wrap`
@@ -193,9 +186,9 @@ def plot_ppc_pit(
     warn_if_binary(observed_dist, predictive_dist)
     warn_if_prior_predictive(group)
 
-    if method not in {"envelope", "pot_c", "prit_c", "piet_c"}:
+    if method not in {"pot_c", "prit_c", "piet_c"}:
         raise ValueError(
-            f"Method {method} not supported. Choose from 'envelope', 'pot_c', 'prit_c' or 'piet_c'."
+            f"Method {method} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
         )
 
     new_dt = get_ppc_pit(predictive_dist, observed_dist, sample_dims, method)

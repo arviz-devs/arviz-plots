@@ -7,8 +7,7 @@ import numpy as np
 from arviz_base import rcParams
 from xarray import Dataset
 
-from arviz_plots import PlotCollection
-from arviz_plots.plot_collection import backend_from_object
+from arviz_plots.plot_collection import PlotCollection, backend_from_object
 from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_grid_layout,

@@ -1,5 +1,5 @@
 """
-# 2D KDE for all variables against each other
+# 2D KDE
 
 Plot all variables against each other in the dataset.
 

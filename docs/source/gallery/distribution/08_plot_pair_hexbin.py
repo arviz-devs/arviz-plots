@@ -1,7 +1,7 @@
 """
-# Scatterplot
+# Hexbin for pairs
 
-Plot all variables against each other in the dataset.
+Use hexagonal bins to show dense relationships between variables.
 
 ---
 
@@ -19,8 +19,10 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("centered_eight")
 pc = azp.plot_pair(
     data,
-    var_names=["mu", "theta", "tau"],
-    coords={"school": ["Choate", "Deerfield"]},
+    var_names=["theta", "tau"],
+    coords={"school": ["Lawrenceville", "Mt. Hermon"]},
+    visuals={"scatter": False, "hexbin": True},
+    marginal=True,
     backend="none",  # change to preferred backend
 )
 pc.show()

@@ -95,7 +95,7 @@ def plot_rank_dist(
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
     envelope_prob : float, optional
-        Indicates the probability that should be contained within the envelope.
+        Indicates the probability threshold to highlight points.
         Defaults to ``rcParams["stats.envelope_prob"]``.
     plot_collection : PlotCollection, optional
     backend : {"matplotlib", "bokeh"}, optional
@@ -125,8 +125,7 @@ def plot_rank_dist(
         Valid keys are:
 
         * dist -> passed to kde, ecdf, ...
-        * ecdf_pit -> passed to :func:`~arviz_stats.ecdf_utils.ecdf_pit`. Default is
-          ``{"n_simulations": 1000}``.
+        * ecdf_pit -> passed to :func:`~xarray.Dataset.azstats.uniformity_test`.
 
     **pc_kwargs
         Passed to :class:`arviz_plots.PlotCollection.grid`

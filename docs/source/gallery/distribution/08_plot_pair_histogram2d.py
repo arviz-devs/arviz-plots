@@ -1,7 +1,7 @@
 """
-# Scatterplot
+# 2D histogram
 
-Plot all variables against each other in the dataset.
+Use a two-dimensional histogram when a scatter plot is too dense.
 
 ---
 
@@ -19,8 +19,11 @@ azp.style.use("arviz-variat")
 data = load_arviz_data("centered_eight")
 pc = azp.plot_pair(
     data,
-    var_names=["mu", "theta", "tau"],
-    coords={"school": ["Choate", "Deerfield"]},
+    var_names=["theta", "tau"],
+    coords={"school": ["Lawrenceville", "Mt. Hermon"]},
+    visuals={"scatter": False, "histogram2d": True},
+    stats={"histogram2d": {"bins": 20}},
+    marginal=True,
     backend="none",  # change to preferred backend
 )
 pc.show()
