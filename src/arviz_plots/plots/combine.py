@@ -134,8 +134,8 @@ def combine_plots(
     .. plot::
         :context: close-figs
 
-        crabs_pois = azb.load_arviz_data('crabs_poisson')
-        crabs_hurdle = azb.load_arviz_data('crabs_hurdle_nb')
+        crabs_pois = load_arviz_data('crabs_poisson')
+        crabs_hurdle = load_arviz_data('crabs_hurdle_nb')
         azp.combine_plots(
             plots=[
             (azp.plot_dist, crabs_pois, {"visuals": {"title": {"text": "Poisson"}}}),
