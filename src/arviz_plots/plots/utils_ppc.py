@@ -140,10 +140,12 @@ def get_ppc_pit(predictive_dist, observed_dist, sample_dims, method):
                 kwargs={"rng": rng},
             )
         else:
-            vals_less = (predictive_dist[var] < observed_dist[var]).mean(sample_dims)
-            vals_eq = (predictive_dist[var] == observed_dist[var]).mean(sample_dims)
-            urvs = rng.uniform(size=vals_less.values.shape)
-            vals = vals_less + urvs * vals_eq
+            n_below = (predictive_dist[var] < observed_dist[var]).sum(sample_dims)
+            n_equal = (predictive_dist[var] == observed_dist[var]).sum(sample_dims)
+            n_samples = int(np.prod([predictive_dist[var].sizes[dim] for dim in sample_dims]))
+            vals = (n_below + (n_equal + 1) * rng.uniform(size=n_below.values.shape)) / (
+                n_samples + 1
+            )
 
         dictio[var] = vals
 
