@@ -224,7 +224,6 @@ def init_plotting_grid(
         fig = targets[0].get_figure()
         ax_ary = np.empty((n_rows, n_cols), dtype=object)
         ax_ary.reshape(-1)[:n_plots] = targets[:n_plots]
-        # ax_ary = np.array(targets[:n_plots], dtype=object).reshape(n_rows, n_cols)
         return fig, ax_ary
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
