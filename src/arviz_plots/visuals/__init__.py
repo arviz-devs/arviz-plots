@@ -167,7 +167,9 @@ def scatter_x(da, target, y=None, **kwargs):
     if np.asarray(y).size == 1:
         y = np.zeros_like(da) + (y.item() if hasattr(y, "item") else y)
     plot_backend = backend_from_object(target)
-    return plot_backend.scatter(da, y, target, **kwargs)
+    # `da` can keep several sample dims (e.g. a rug of chain and draw), but the
+    # backends' scatter takes 1d x and y
+    return plot_backend.scatter(np.ravel(da), np.ravel(y), target, **kwargs)
 
 
 def point_y(da, target, x=None, **kwargs):
