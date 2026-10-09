@@ -1,13 +1,16 @@
 # pylint: disable=too-many-lines, too-many-public-methods
 """Plot matrix class."""
 
-from importlib import import_module
-
 import numpy as np
 import xarray as xr
 from arviz_base import rcParams, xarray_sel_iter
 
-from arviz_plots.plot_collection import PlotCollection, concat_model_dict, process_kwargs_subset
+from arviz_plots.plot_collection import (
+    PlotCollection,
+    concat_model_dict,
+    init_plotting_grid,
+    process_kwargs_subset,
+)
 
 
 def subset_matrix_da(
@@ -82,7 +85,9 @@ class PlotMatrix(PlotCollection):
     arviz_plots.PlotCollection : Unidimensional facetting manager
     """
 
-    def __init__(self, data, facet_dims, aes=None, backend=None, figure_kwargs=None, **kwargs):
+    def __init__(
+        self, data, facet_dims, aes=None, backend=None, figure_kwargs=None, axes=None, **kwargs
+    ):
         """Initialize a PlotMatrix.
 
         Parameters
@@ -99,6 +104,12 @@ class PlotMatrix(PlotCollection):
         backend : str, optional
             Plotting backend. It will be stored and passed down to the plotting
             functions when using methods like :meth:`~arviz_plots.PlotMatrix.map`.
+        figure_kwargs : mapping, optional
+            Keyword arguments passed to the backend's ``create_plotting_grid``
+            function. Ignored if `axes` is provided.
+        axes : matplotlib Axes or array of Axes, optional
+            Pre-existing matplotlib axes to draw into, at least one per cell of
+            the matrix. Only supported with the matplotlib backend.
         **kwargs : mapping, optional
             Dictionary with :term:`aesthetics` as keys and as values a list
             of the values that should be taken by that aesthetic.
@@ -117,7 +128,7 @@ class PlotMatrix(PlotCollection):
 
         super().__init__(
             data=self._data,
-            viz_dt=self._generate_viz_dt(**figure_kwargs),
+            viz_dt=self._generate_viz_dt(axes=axes, **figure_kwargs),
             aes=aes,
             backend=backend,
             **kwargs,
@@ -128,7 +139,7 @@ class PlotMatrix(PlotCollection):
         """Facetting dimensions."""
         return set(dim for dim in self._facet_dims if dim != "__variable__")
 
-    def _generate_viz_dt(self, **figure_kwargs):
+    def _generate_viz_dt(self, axes=None, **figure_kwargs):
         """Generate ``.viz`` DataTree."""
         data = self._data
         facet_dims = self._facet_dims
@@ -144,9 +155,13 @@ class PlotMatrix(PlotCollection):
                 f"rcParams['plot.max_subplots']={max_plots}. "
                 "Reduce the number of plots or increase this limit."
             )
-        plot_bknd = import_module(f".backend.{self.backend}", package="arviz_plots")
-        fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_pairs, n_pairs, squeeze=False, **figure_kwargs
+        fig, ax_ary = init_plotting_grid(
+            n_plots,
+            n_pairs,
+            n_pairs,
+            backend=self.backend,
+            figure_kwargs=figure_kwargs,
+            axes=axes,
         )
         coords = {
             "col_index": np.arange(n_pairs),
