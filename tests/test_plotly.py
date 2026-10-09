@@ -5,6 +5,8 @@ import os
 
 import numpy as np
 import pytest
+import xarray as xr
+from numpy.testing import assert_array_equal
 
 if os.environ.get("ARVIZ_REQUIRE_ALL_DEPS", False):
     import plotly  # noqa: F401  # pylint: disable=unused-import
@@ -17,6 +19,7 @@ from plotly.subplots import make_subplots
 
 from arviz_plots.backend.plotly import fill_between_y, hexbin, histogram2d, line, multiple_lines
 from arviz_plots.backend.plotly.core import PlotlyPlot
+from arviz_plots.visuals import scatter_x
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.plotly]
 
@@ -198,3 +201,12 @@ def test_hexbin_degenerate_color_limits(figure, values):
         assert trace.fillcolor == "rgba(0, 0, 0, 0)"
     else:
         assert trace.fillcolor == pc.sample_colorscale("viridis", [0])[0]
+
+
+def test_scatter_x_flattens_sample_dims(figure):
+    # a rug keeps chain and draw, and plotly draws nothing from 2d x and y
+    da = xr.DataArray(np.arange(6.0).reshape(2, 3), dims=["chain", "draw"])
+    visual = scatter_x(da, figure, marker="|")
+    for scatter in (visual, figure.data[0]):
+        assert_array_equal(scatter.x, np.arange(6.0))
+        assert_array_equal(scatter.y, np.zeros(6))

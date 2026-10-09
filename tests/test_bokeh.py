@@ -5,6 +5,8 @@ import os
 
 import numpy as np
 import pytest
+import xarray as xr
+from numpy.testing import assert_array_equal
 
 if os.environ.get("ARVIZ_REQUIRE_ALL_DEPS", False):
     import bokeh  # noqa: F401  # pylint: disable=unused-import
@@ -16,6 +18,7 @@ from bokeh.models import GlyphRenderer, LinearColorMapper, Patches, Quad
 from bokeh.plotting import figure as make_figure
 
 from arviz_plots.backend.bokeh import hexbin, histogram2d
+from arviz_plots.visuals import scatter_x
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.bokeh]
 
@@ -107,3 +110,11 @@ def test_hexbin_degenerate_color_limits(figure, values):
 
     assert np.isfinite([mapper.low, mapper.high]).all()
     assert mapper.low < mapper.high
+
+
+def test_scatter_x_flattens_sample_dims(figure):
+    # a rug keeps chain and draw, and bokeh draws nothing from 2d x and y
+    da = xr.DataArray(np.arange(6.0).reshape(2, 3), dims=["chain", "draw"])
+    renderer = scatter_x(da, figure, marker="|")
+    assert_array_equal(renderer.data_source.data["x"], np.arange(6.0))
+    assert_array_equal(renderer.data_source.data["y"], np.zeros(6))
