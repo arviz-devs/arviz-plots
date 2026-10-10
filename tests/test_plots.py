@@ -1218,6 +1218,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "quantities" in pc.viz["plot"]["mu"].dims
         assert "mean" in pc.viz["plot"]["quantities"]
 
+    def test_plot_psense_quantities_sample(self, datatree_sample, backend):
+        pc = plot_psense_quantities(datatree_sample, backend=backend, sample_dims="sample")
+        assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.children
+        assert "quantities" in pc.viz["plot"]["mu"].dims
+        assert "mcse" in pc.viz.children
+
     def test_plot_rank(self, datatree, backend):
         pc = plot_rank(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
