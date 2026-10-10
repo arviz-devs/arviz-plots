@@ -17,7 +17,14 @@ import plotly.graph_objects as go
 from plotly import colors as pc
 from plotly.subplots import make_subplots
 
-from arviz_plots.backend.plotly import fill_between_y, hexbin, histogram2d, line, multiple_lines
+from arviz_plots.backend.plotly import (
+    fill_between_y,
+    hexbin,
+    hist,
+    histogram2d,
+    line,
+    multiple_lines,
+)
 from arviz_plots.backend.plotly.core import PlotlyPlot
 from arviz_plots.visuals import scatter_x
 
@@ -113,6 +120,15 @@ def test_fill_between_y_args(figure):
 
     for visual in (fill_line_obj, figure.figure.data[1]):
         assert visual["fillcolor"] == "rgba(255, 0, 0, 0.500)"
+
+
+def test_hist_bottom(figure):
+    hist_obj = hist(
+        np.array([1.0, 2.0]), np.array([0.0, 1.0]), np.array([1.0, 2.0]), figure, bottom=3
+    )
+    for visual in (hist_obj, figure.data[0]):
+        assert visual.base == 3
+        assert_array_equal(visual.y, [1.0, 2.0])
 
 
 def test_histogram2d(figure):
