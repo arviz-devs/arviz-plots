@@ -128,7 +128,7 @@ def plot_autocorr(
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
 
     acf_dataset = distribution.azstats.autocorr(dim=sample_dims).sel(draw=slice(0, max_lag - 1))
-    c_i = 1.96 / acf_dataset.sizes["draw"] ** 0.5
+    c_i = 1.96 / distribution.sizes["draw"] ** 0.5
     x_ci = np.arange(0, max_lag).astype(float)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
