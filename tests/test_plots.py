@@ -393,6 +393,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "tau" not in pc.viz["rope"].data_vars
         assert "tau" not in pc.viz["rope_text"].data_vars
 
+    def test_plot_dist_rope_sample(self, datatree_sample, backend):
+        pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", rope=(-0.5, 0.91))
+        assert "rope" in pc.viz.children
+        assert "rope_text" in pc.viz.children
+        assert "hierarchy" not in pc.viz["rope_text"]["mu"].dims
+        assert "hierarchy" in pc.viz["rope_text"]["theta"].dims
+
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_rope_disabled(self, datatree, backend, kind):
         visuals = {"rope": False, "rope_text": False}
