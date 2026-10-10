@@ -429,9 +429,9 @@ def create_plotting_grid(
             if row != 0 and sharey == "col":
                 subplot_kws_i["y_range"] = shared_yrange[col]
             if width_ratios is not None:
-                subplot_kws["width"] = plot_widths[col]
+                subplot_kws_i["width"] = plot_widths[col]
             if height_ratios is not None:
-                subplot_kws["height"] = plot_height[row]
+                subplot_kws_i["height"] = plot_height[row]
 
             if row * cols + (col + 1) > number:
                 figures[row, col] = None
