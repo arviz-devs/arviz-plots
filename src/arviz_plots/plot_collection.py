@@ -55,7 +55,7 @@ def concat_model_dict(data):
         ds_list = data.values()
         if not all(isinstance(ds, xr.Dataset) for ds in ds_list):
             raise TypeError("Provided data must be a Dataset or dictionary of Datasets")
-        data = xr.concat(ds_list, dim="model").assign_coords(model=list(data))
+        data = xr.concat(ds_list, dim="model", join="outer").assign_coords(model=list(data))
     return data
 
 
