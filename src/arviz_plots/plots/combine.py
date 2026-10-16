@@ -42,12 +42,13 @@ def combine_plots(
 
     Parameters
     ----------
-    dt : DataTree of dict of {str : DataTree}
-        Input data. In case of dictionary input, the keys are taken to be model names.
-        In such cases, a dimension "model" is generated and can be used to map to aesthetics.
-
-        Note that not all batteries included functions accept dictionary input, so it will
-        only work when all plotting functions requested in `plots` are compatible with it.
+    dt : DataTree or dict of {str : DataTree}, optional
+        Input data.
+        If None, the plotting functions must provide their own data via the 3-tuple form in `plots`.
+        In a dictionary, the keys are taken to be model names. In such cases, a dimension "model" is
+        generated and can be used to map to aesthetics. Note that not all batteries included
+        functions accept dictionaries as data input, so it will only work when all plotting
+        functions requested in `plots` are compatible with it.
     plots : list of tuple
         The plotting functions and the arguments to be used for each plot.
         - a 2-tuple ``(callable, kwargs)``. The `callable` is applied to the datatree
