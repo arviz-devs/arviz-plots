@@ -160,6 +160,7 @@ def combine_plots(
             func, kwargs = elem
             if dt is None:
                 raise ValueError("`dt` must be provided for 2-tuple entries.")
+            # The same `dt` is used for all plotting functions
             return func, dt, kwargs
         if len(elem) == 3:
             return elem
