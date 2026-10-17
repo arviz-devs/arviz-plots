@@ -454,10 +454,6 @@ def hist(
     """Interface to Plotly for a histogram plot."""
     artist_kws.setdefault("showlegend", False)
     widths = np.asarray(r_e) - np.asarray(l_e)
-    if np.any(bottom != 0):
-        height = y - bottom
-    else:
-        height = y
     if color is not unset:
         if facecolor is unset:
             facecolor = color
@@ -471,7 +467,7 @@ def hist(
     marker_kwargs["line"] = _filter_kwargs(line_kwargs, line_artist_kws)
     hist_object = go.Bar(
         x=(l_e + r_e) / 2,
-        y=height,
+        y=y,
         base=bottom,
         width=widths,
         marker=marker_kwargs,
