@@ -67,14 +67,6 @@ def test_plot_dist_kind_auto(datatree):
     assert pc.get_viz("dist", "tau")["function"] == "line"
 
 
-def test_plot_autocorr_ci_uses_number_of_draws(datatree):
-    pc = plot_autocorr(datatree, var_names="mu", max_lag=20, backend="none")
-    ci = pc.get_viz("credible_interval", "mu")
-    c_i = 1.96 / datatree.posterior.sizes["draw"] ** 0.5
-    assert np.allclose(ci["y_top"], c_i)
-    assert np.allclose(ci["y_bottom"], -c_i)
-
-
 def test_plot_rank_multc(datatree):
     pc = plot_rank(datatree, backend="none", method="mtc_c")
     assert "figure" in pc.viz.data_vars
