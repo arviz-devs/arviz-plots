@@ -41,7 +41,7 @@ funding = "https://opencollective.com/arviz"
 
 [project.optional-dependencies]
 matplotlib = ["matplotlib>=3.9"]
-bokeh = ["bokeh>=3.4"]
+bokeh = ["bokeh>=3.4,<4"]
 plotly = ["plotly>=5.19", "webcolors"]
 test = [
     "hypothesis",
