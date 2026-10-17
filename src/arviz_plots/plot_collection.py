@@ -191,6 +191,52 @@ def process_facet_dims(data, facet_dims):
     return n_facets, facets_per_var
 
 
+def process_axes(axes, n_plots):
+    """Turn axes into a flat list."""
+    if isinstance(axes, np.ndarray):
+        axes = list(axes.ravel())
+    elif isinstance(axes, (list, tuple)):
+        axes = list(np.asarray(axes, dtype=object).ravel())
+    else:
+        axes = [axes]
+    if len(axes) < n_plots:
+        raise ValueError(
+            f"Received {len(axes)} axes but {n_plots} plots are required. "
+            "Provide at least one axis per requested plot."
+        )
+    return axes
+
+
+def init_plotting_grid(
+    n_plots,
+    n_rows,
+    n_cols,
+    *,
+    backend,
+    figure_kwargs,
+    axes=None,
+):
+    """Create or bind the plotting grid."""
+    if axes is not None:
+        if backend != "matplotlib":
+            raise NotImplementedError("`axes` is only supported for the matplotlib backend.")
+        targets = process_axes(axes, n_plots)
+        fig = targets[0].get_figure()
+        ax_ary = np.empty((n_rows, n_cols), dtype=object)
+        ax_ary.reshape(-1)[:n_plots] = targets[:n_plots]
+        return fig, ax_ary
+
+    plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
+    fig, ax_ary = plot_bknd.create_plotting_grid(
+        n_plots,
+        n_rows,
+        n_cols,
+        squeeze=False,
+        **figure_kwargs,
+    )
+    return fig, ax_ary
+
+
 def leaf_dataset(dt, leaf_name):
     """Get leaf nodes named `leaf_name` from `dt`.
 
@@ -753,6 +799,7 @@ class PlotCollection:
         col_wrap=4,
         backend=None,
         figure_kwargs=None,
+        axes=None,
         **kwargs,
     ):
         """Instantiate a PlotCollection and generate a grid iterating over subsets and wrapping.
@@ -778,7 +825,10 @@ class PlotCollection:
         figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
             To add a figure title, use :meth:`~arviz_plots.PlotCollection.add_title` after
-            creating the PlotCollection.
+            creating the PlotCollection. Ignored when `axes` is provided.
+        axes : `~matplotlib.axes.Axes` or array_like of them, optional
+            Existing matplotlib axes to use instead of creating a new figure.
+            When provided, `figure_kwargs` is ignored. Only supported by the matplotlib backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.
@@ -822,9 +872,13 @@ class PlotCollection:
             n_rows = div_mod[0] + (div_mod[1] != 0)
             n_cols = col_wrap
 
-        plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-        fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_rows, n_cols, squeeze=False, **figure_kwargs
+        fig, ax_ary = init_plotting_grid(
+            n_plots,
+            n_rows,
+            n_cols,
+            backend=backend,
+            figure_kwargs=figure_kwargs,
+            axes=axes,
         )
         col_id, row_id = np.meshgrid(np.arange(n_cols), np.arange(n_rows))
         viz_dict = {}
@@ -914,6 +968,7 @@ class PlotCollection:
         rows=None,
         backend=None,
         figure_kwargs=None,
+        axes=None,
         **kwargs,
     ):
         """Instantiate a PlotCollection and generate a plot grid iterating over rows and columns.
@@ -937,7 +992,10 @@ class PlotCollection:
         figure_kwargs : mapping, optional
             Passed to :func:`~.backend.create_plotting_grid` of the chosen plotting backend.
             To add a figure title, use :meth:`~arviz_plots.PlotCollection.add_title` after
-            creating the PlotCollection.
+            creating the PlotCollection. Ignored when `axes` is provided.
+        axes : `~matplotlib.axes.Axes` or array_like of them, optional
+            Existing matplotlib axes to use instead of creating a new figure. When provided,
+            `figure_kwargs` is ignored. Only supported by the matplotlib backend.
         **kwargs : mapping, optional
             Passed as is to the initializer of ``PlotCollection``. That is,
             used for ``aes`` and ``**kwargs`` arguments.
@@ -972,9 +1030,13 @@ class PlotCollection:
                 f"rcParams['plot.max_subplots']={max_plots}. "
                 "Reduce the number of plots or increase this limit."
             )
-        plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
-        fig, ax_ary = plot_bknd.create_plotting_grid(
-            n_plots, n_rows, n_cols, squeeze=False, **figure_kwargs
+        fig, ax_ary = init_plotting_grid(
+            n_plots,
+            n_rows,
+            n_cols,
+            backend=backend,
+            figure_kwargs=figure_kwargs,
+            axes=axes,
         )
         col_id, row_id = np.meshgrid(np.arange(n_cols), np.arange(n_rows))
         viz_dict = {}

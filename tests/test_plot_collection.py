@@ -103,6 +103,63 @@ class TestFaceting:
         assert all(var_name in pc.viz["plot"].data_vars for var_name in ("theta", "eta"))
 
 
+class TestProvidedTargets:
+    """Tests binding PlotCollection facets to preexisting plot objects."""
+
+    @pytest.fixture(autouse=True)
+    def _close_figures(self):
+        yield
+        import matplotlib.pyplot as plt
+
+        plt.close("all")
+
+    def test_grid_axes(self, dataset):
+        import matplotlib.pyplot as plt
+
+        fig, axs = plt.subplots(1, 3)
+        pc = PlotCollection.grid(dataset[["theta"]], cols=["chain"], axes=axs)
+        assert pc.backend == "matplotlib"
+        assert pc.viz["figure"].item() is fig
+        assert all(
+            plot is ax for plot, ax in zip(pc.viz["plot"].values.ravel(), axs.ravel(), strict=True)
+        )
+
+    def test_wrap_axes_single(self, dataset):
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots()
+        pc = PlotCollection.wrap(dataset[["mu"]], cols=["__variable__"], axes=ax)
+        assert pc.viz["figure"].item() is fig
+        assert pc.viz["plot"]["mu"].item() is ax
+        assert pc.viz["row_index"]["mu"].item() == 0
+        assert pc.viz["col_index"]["mu"].item() == 0
+
+    def test_axes_too_few(self, dataset):
+        import matplotlib.pyplot as plt
+
+        _, axs = plt.subplots(1, 2)
+        with pytest.raises(ValueError, match="plots are required"):
+            PlotCollection.grid(dataset[["theta"]], cols=["chain"], axes=axs)
+
+    def test_axes_as_list(self, dataset):
+        import matplotlib.pyplot as plt
+
+        fig, axs = plt.subplots(1, 3)
+        pc = PlotCollection.grid(dataset[["theta"]], cols=["chain"], axes=list(axs))
+        assert pc.viz["figure"].item() is fig
+        assert all(
+            plot is ax for plot, ax in zip(pc.viz["plot"].values.ravel(), axs.ravel(), strict=True)
+        )
+
+    @pytest.mark.parametrize("backend", ["bokeh", "plotly"])
+    def test_axes_not_supported(self, dataset, backend):
+        import matplotlib.pyplot as plt
+
+        _, ax = plt.subplots()
+        with pytest.raises(NotImplementedError, match="only supported for the matplotlib"):
+            PlotCollection.wrap(dataset[["mu"]], cols=["__variable__"], axes=[ax], backend=backend)
+
+
 def test_wrap_missing_dim(dataset):
     with pytest.raises(ValueError, match="missing"):
         PlotCollection.wrap(dataset, cols=["hierarchy"])

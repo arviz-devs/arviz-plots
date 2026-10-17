@@ -127,6 +127,18 @@ def test_bivariate_histogram_rejects_precomputed_dataset(plot, visual):
             plot_pair_focus(data, focus_var="y", var_names=["x"], **kwargs)
 
 
+def test_plot_trace_axes(datatree):
+    import matplotlib.pyplot as plt
+
+    fig, (ax_trace, ax_custom) = plt.subplots(1, 2, figsize=(8, 2))
+    pc = plot_trace(datatree, var_names=["mu"], axes=ax_trace)
+    assert pc.viz["figure"].item() is fig
+    assert ax_trace.get_title() == "mu"
+    assert len(ax_trace.get_lines()) == 4
+    assert not ax_custom.get_lines()
+    plt.close(fig)
+
+
 @pytest.mark.parametrize("backend", ["matplotlib", "bokeh", "plotly", "none"])
 class TestPlots:  # pylint: disable=too-many-public-methods
     def test_autocorr(self, datatree, backend):

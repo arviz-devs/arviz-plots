@@ -230,3 +230,50 @@ def test_plot_matrix_map_triangle_scalar_coord(dataset, triangle):
                     assert not any(is_none)
                 else:
                     assert all(is_none)
+
+
+class TestMatrixProvidedAxes:
+    """Tests binding PlotMatrix cells to preexisting matplotlib axes."""
+
+    @pytest.fixture(autouse=True)
+    def _close_figures(self):
+        yield
+        import matplotlib.pyplot as plt
+
+        plt.close("all")
+
+    def test_axes_2d(self, dataset):
+        import matplotlib.pyplot as plt
+
+        fig, axs = plt.subplots(3, 3)
+        pc = PlotMatrix(dataset, ["__variable__"], axes=axs)
+        assert pc.backend == "matplotlib"
+        assert pc.viz["figure"].item() is fig
+        assert all(
+            plot is ax for plot, ax in zip(pc.viz["plot"].values.ravel(), axs.ravel(), strict=True)
+        )
+
+    def test_axes_flat_list(self, dataset):
+        import matplotlib.pyplot as plt
+
+        fig, axs = plt.subplots(3, 3)
+        pc = PlotMatrix(dataset, ["__variable__"], axes=list(axs.ravel()))
+        assert pc.viz["figure"].item() is fig
+        assert all(
+            plot is ax for plot, ax in zip(pc.viz["plot"].values.ravel(), axs.ravel(), strict=True)
+        )
+
+    def test_axes_too_few(self, dataset):
+        import matplotlib.pyplot as plt
+
+        _, axs = plt.subplots(2, 2)
+        with pytest.raises(ValueError, match="plots are required"):
+            PlotMatrix(dataset, ["__variable__"], axes=axs)
+
+    @pytest.mark.parametrize("backend", ["bokeh", "plotly"])
+    def test_axes_not_supported(self, dataset, backend):
+        import matplotlib.pyplot as plt
+
+        _, ax = plt.subplots()
+        with pytest.raises(NotImplementedError, match="only supported for the matplotlib"):
+            PlotMatrix(dataset, ["__variable__"], axes=[ax], backend=backend)
