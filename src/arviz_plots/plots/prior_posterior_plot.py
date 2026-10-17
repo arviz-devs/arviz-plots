@@ -75,8 +75,8 @@ def plot_prior_posterior(
         Prefix the variables by ~ when you want to exclude them from the plot.
     filter_vars : {None, "like", "regex"}, default=None
         If None, interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
+        If "like", interpret var_names as substrings of the real variables names.
+        If "regex", interpret var_names as regular expressions on the real variables names.
     group : None
         This argument is ignored. Have it here for compatibility with other plotting functions.
     coords : dict, optional

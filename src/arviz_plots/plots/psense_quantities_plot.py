@@ -77,10 +77,10 @@ def plot_psense_quantities(
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, optional, default=None
+    filter_vars : {None, "like", "regex"}, optional, default=None
         If None (default), interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
+        If "like", interpret var_names as substrings of the real variables names.
+        If "regex", interpret var_names as regular expressions on the real variables names.
     prior_var_names : str, optional.
         Name of the log-prior variables to include in the power scaling sensitivity diagnostic
     likelihood_var_names : str, optional.

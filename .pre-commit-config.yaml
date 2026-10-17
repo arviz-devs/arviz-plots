@@ -28,6 +28,13 @@ repos:
 
 - repo: local
   hooks:
+    - id: docstub
+      name: Generate stub files
+      entry: docstub run src/arviz_plots
+      language: system
+      types: [python]
+      pass_filenames: false
+      stages: [manual]
     - id: pylint
       name: pylint
       entry: pylint

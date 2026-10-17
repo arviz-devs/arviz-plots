@@ -9,6 +9,7 @@ import numpy as np
 import xarray as xr
 from _typeshed import Incomplete
 from arviz_base import convert_to_dataset, rcParams
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 from xarray import Dataset, DataTree
 
 from arviz_plots.plot_collection import PlotCollection
@@ -31,6 +32,7 @@ def plot_energy(
     aes_by_visuals: Mapping[
         Literal[
             "dist",
+            "face",
             "title",
             "bfmi_points",
         ],
@@ -39,12 +41,12 @@ def plot_energy(
     visuals: Mapping[
         Literal[
             "dist",
+            "face",
             "title",
             "legend",
             "remove_axis",
             "bfmi_points",
             "ref_line",
-            "title",
             "ylabel",
         ],
         Mapping[str, Any] | bool,
@@ -52,4 +54,6 @@ def plot_energy(
     stats: Mapping[Literal["dist"], Mapping[str, Any] | xr.Dataset] = ...,
     **pc_kwargs: Incomplete,
 ) -> PlotCollection: ...
-def _get_energy_ds(dt: Incomplete, sample_dims: Incomplete) -> tuple[Dataset, Dataset]: ...
+def _get_energy_ds(
+    sample_stats: Incomplete, sample_dims: Incomplete
+) -> tuple[Dataset, Dataset]: ...

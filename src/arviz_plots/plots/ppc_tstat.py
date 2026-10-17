@@ -80,11 +80,11 @@ def plot_ppc_tstat(
     var_names : str or list of str, optional
         One or more variables to be plotted.
         Prefix the variables by ~ when you want to exclude them from the plot.
-    filter_vars : {None, “like”, “regex”}, default=None
+    filter_vars : {None, "like", "regex"}, default=None
         If None, interpret var_names as the real variables names.
-        If “like”, interpret var_names as substrings of the real variables names.
-        If “regex”, interpret var_names as regular expressions on the real variables names.
-    group : str,
+        If "like", interpret var_names as substrings of the real variables names.
+        If "regex", interpret var_names as regular expressions on the real variables names.
+    group : str, default "posterior_predictive"
         Group to be plotted. Defaults to "posterior_predictive".
         It could also be "prior_predictive".
     coords : dict, optional
@@ -93,8 +93,8 @@ def plot_ppc_tstat(
         Defaults to ``rcParams["data.sample_dims"]``
     t_stat : str, float, or callable() default "median"
         Test statistics to compute from the observations and predictive distributions.
-        Allowed strings are “mean”, “median”, “std”, “var”, “min”, “max”, “iqr”
-        (interquartile range) and “mad” (median absolute deviation). Alternative a
+        Allowed strings are "mean", "median", "std", "var", "min", "max", "iqr"
+        (interquartile range) and "mad" (median absolute deviation). Alternative a
         quantile can be passed as a float (or str) in the interval (0, 1). Finally,
         a user defined function is also accepted.
     kind : {"kde", "hist", "ecdf", "dot"}, optional

@@ -89,7 +89,7 @@ def plot_loo_interval(
     point_estimate : {"mean", "median"}, optional
         Which point estimate to plot for the predictive distribution.
         Defaults to rcParam ``stats.point_estimate``.
-    ci_probs : (float, float), optional
+    ci_probs : tuple of (float, float), optional
         Indicates the probabilities for the inner (twig) and outer (trunk) credible intervals.
         Defaults to ``(0.5, rcParams["stats.ci_prob"])``. It's assumed that
         ``ci_probs[0] < ci_probs[1]``, otherwise they are sorted.

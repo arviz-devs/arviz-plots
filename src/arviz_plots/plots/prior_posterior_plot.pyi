@@ -9,6 +9,7 @@ import numpy as np
 import xarray as xr
 from _typeshed import Incomplete
 from arviz_base import extract, rcParams
+from arviz_base.validate import validate_dict_argument, validate_sample_dims
 from xarray import DataTree, concat
 
 from arviz_plots.plot_collection import PlotCollection

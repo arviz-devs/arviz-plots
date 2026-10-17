@@ -46,7 +46,7 @@ def legend(
 
     Returns
     -------
-    legend : legend object
+    legend : legend_object
         A scalar backend object representing the legend
     """
     return None
