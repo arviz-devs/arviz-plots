@@ -27,6 +27,7 @@ pc = azp.combine_plots(
     ],
     var_names=["theta", "mu", "tau"],
     coords={"school": ["Hotchkiss", "St. Paul's"]},
+    expand="column",
     backend="none",  # change to preferred backend
 )
 pc.show()
