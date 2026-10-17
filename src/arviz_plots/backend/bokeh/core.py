@@ -8,7 +8,6 @@ import warnings
 import bokeh.colors.named as named_colors
 import numpy as np
 from bokeh.colors import Color
-from bokeh.io import output_file, save
 from bokeh.io.export import export_png, export_svg
 from bokeh.layouts import GridBox, column, gridplot
 from bokeh.models import (
@@ -25,6 +24,7 @@ from bokeh.models import (
 )
 from bokeh.models.css import Styles
 from bokeh.plotting import figure as _figure
+from bokeh.plotting import output_file, save
 from bokeh.plotting import show as _show
 
 from arviz_plots.backend.alias_utils import create_aesthetic_handlers
