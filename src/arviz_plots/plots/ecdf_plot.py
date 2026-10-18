@@ -13,6 +13,7 @@ from arviz_base.validate import (
     validate_or_use_rcparam,
     validate_sample_dims,
 )
+from arviz_stats.ppc import validate_uni_test_method
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -212,6 +213,7 @@ def plot_ecdf_pit(
 
     .. [2] Tesso et al. *LOO-PIT predictive model checking* arXiv:2603.02928 (2026).
     """
+    validate_uni_test_method(method)
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     alpha = 1 - envelope_prob
     visuals = validate_dict_argument(visuals, (plot_ecdf_pit, "visuals"))
@@ -240,10 +242,6 @@ def plot_ecdf_pit(
             for var, da in distribution.items()
         }
     )
-    if method not in {"pot_c", "prit_c", "piet_c"}:
-        raise ValueError(
-            f"Method {method} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
-        )
 
     # ensure we have PIT values between 0 and 1.
     dist_max = distribution.max()

@@ -2,25 +2,6 @@
 
 import warnings
 
-import numpy as np
-
-
-def warn_if_binary(observed_dist, predictive_dist):
-    """Warn if data is binary."""
-    for dist, name in zip([observed_dist, predictive_dist], ["observed_data", "predictive"]):
-        if dist is None:
-            continue
-        binary_vars = [
-            var for var, da in dist.items() if (np.isclose(da, 0) | np.isclose(da, 1)).all()
-        ]
-        if binary_vars:
-            warnings.warn(
-                f"Variables {', '.join(binary_vars)} in '{name}' look binary. "
-                "For binary outcomes, plot_ppc_pava may be more appropriate.",
-                UserWarning,
-                stacklevel=2,
-            )
-
 
 def warn_if_discrete(observed_dist, predictive_dist, kind):
     """Warn if data is discrete."""
@@ -49,17 +30,6 @@ def raise_if_continuous(observed_dist, predictive_dist):
                 "Consider using other functions such as plot_ppc_dist\n"
                 "plot_ppc_pit, or plot_ppc_tstat.",
             )
-
-
-def warn_if_prior_predictive(group):
-    """Warn if group is prior_predictive."""
-    if group == "prior_predictive":
-        warnings.warn(
-            "This plot always uses the `observed_data` group."
-            "\nBe cautious when using it for prior predictive checks.",
-            UserWarning,
-            stacklevel=2,
-        )
 
 
 def get_discrete_flags(group):

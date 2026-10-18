@@ -13,6 +13,7 @@ from arviz_base.validate import (
     validate_sample_dims,
 )
 from arviz_stats.helper_stats import point_interval_unique, point_unique
+from arviz_stats.ppc import warn_if_binary
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import (
@@ -21,7 +22,7 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.plots.utils_plot_types import raise_if_continuous, warn_if_binary
+from arviz_plots.plots.utils_plot_types import raise_if_continuous
 from arviz_plots.visuals import (
     ci_line_y,
     grid,

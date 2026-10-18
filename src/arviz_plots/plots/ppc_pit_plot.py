@@ -9,11 +9,15 @@ from arviz_base.validate import (
     validate_or_use_rcparam,
     validate_sample_dims,
 )
+from arviz_stats.ppc import (
+    get_ppc_pit,
+    validate_uni_test_method,
+    warn_if_binary,
+    warn_if_prior_predictive,
+)
 
 from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 from arviz_plots.plots.utils import process_group_variables_coords
-from arviz_plots.plots.utils_plot_types import warn_if_binary, warn_if_prior_predictive
-from arviz_plots.plots.utils_ppc import get_ppc_pit
 
 
 def plot_ppc_pit(
@@ -174,6 +178,7 @@ def plot_ppc_pit(
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_pit, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_ppc_pit, "visuals"))
     stats = validate_dict_argument(stats, (plot_ppc_pit, "stats"))
+    validate_uni_test_method(method)
 
     predictive_dist = process_group_variables_coords(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
@@ -185,11 +190,6 @@ def plot_ppc_pit(
 
     warn_if_binary(observed_dist, predictive_dist)
     warn_if_prior_predictive(group)
-
-    if method not in {"pot_c", "prit_c", "piet_c"}:
-        raise ValueError(
-            f"Method {method} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
-        )
 
     new_dt = get_ppc_pit(predictive_dist, observed_dist, sample_dims, method)
 

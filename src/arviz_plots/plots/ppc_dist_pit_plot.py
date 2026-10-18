@@ -6,12 +6,13 @@ from typing import Any, Literal
 import xarray as xr
 from arviz_base.labels import BaseLabeller
 from arviz_base.validate import validate_dict_argument, validate_or_use_rcparam
+from arviz_stats.ppc import get_ppc_pit, validate_uni_test_method
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, set_grid_layout
-from arviz_plots.plots.utils_ppc import get_ppc_pit, get_suspicious_mask_ds, prepare_ppc_dist_data
+from arviz_plots.plots.utils_ppc import get_suspicious_mask_ds, prepare_ppc_dist_data
 from arviz_plots.visuals import trace_rug
 
 
@@ -152,13 +153,9 @@ def plot_ppc_dist_pit(
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_ppc_dist_pit, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_ppc_dist_pit, "visuals"))
     stats = validate_dict_argument(stats, (plot_ppc_dist_pit, "stats"))
+    validate_uni_test_method(method)
     gamma = stats.get("ecdf_pit", {}).get("gamma", 0)
     alpha = 1 - envelope_prob
-
-    if method not in {"pot_c", "prit_c", "piet_c"}:
-        raise ValueError(
-            f"Method {method!r} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
-        )
 
     plot_bknd, pp_dims, sample_dims, predictive_dist, predictive_dist_sub, observed_dist = (
         prepare_ppc_dist_data(

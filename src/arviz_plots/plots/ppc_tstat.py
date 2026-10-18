@@ -9,6 +9,7 @@ import xarray as xr
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_base.validate import validate_dict_argument, validate_sample_dims
+from arviz_stats.ppc import warn_if_binary
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.dist_plot import plot_dist
@@ -17,7 +18,6 @@ from arviz_plots.plots.utils import (
     process_group_variables_coords,
     set_wrap_layout,
 )
-from arviz_plots.plots.utils_plot_types import warn_if_binary
 from arviz_plots.visuals import scatter_x
 
 

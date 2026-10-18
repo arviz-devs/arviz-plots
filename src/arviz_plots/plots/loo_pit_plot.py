@@ -8,6 +8,7 @@ import xarray as xr
 from arviz_base import convert_to_datatree
 from arviz_base.validate import validate_dict_argument
 from arviz_stats.loo import loo_pit
+from arviz_stats.ppc import validate_uni_test_method
 
 from arviz_plots.plots.ecdf_plot import plot_ecdf_pit
 
@@ -169,6 +170,7 @@ def plot_loo_pit(
     """
     if group != "posterior_predictive":
         raise ValueError(f"Group {group} not supported. Only 'posterior_predictive' is supported.")
+    validate_uni_test_method(method)
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_loo_pit, "aes_by_visuals"))
     visuals = validate_dict_argument(visuals, (plot_loo_pit, "visuals"))
     stats = validate_dict_argument(stats, (plot_loo_pit, "stats"))
@@ -177,11 +179,6 @@ def plot_loo_pit(
     else:
         warnings.warn(
             "'sample_dims' is currently not supported in plot_loo_pit and will be ignored"
-        )
-
-    if method not in {"pot_c", "prit_c", "piet_c"}:
-        raise ValueError(
-            f"Method {method} not supported. Choose from 'pot_c', 'prit_c' or 'piet_c'."
         )
 
     pareto_pit = method in ["pot_c", "piet_c"]
