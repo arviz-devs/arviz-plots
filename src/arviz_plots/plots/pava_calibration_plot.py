@@ -9,10 +9,10 @@ from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_base.validate import validate_ci_prob, validate_dict_argument
 from arviz_stats.helper_stats import isotonic_fit
+from arviz_stats.ppc import warn_if_prior_predictive
 
 from arviz_plots.plot_collection import PlotCollection
 from arviz_plots.plots.utils import filter_aes, get_visual_kwargs, set_wrap_layout
-from arviz_plots.plots.utils_plot_types import warn_if_prior_predictive
 from arviz_plots.visuals import (
     dline,
     fill_between_y,
