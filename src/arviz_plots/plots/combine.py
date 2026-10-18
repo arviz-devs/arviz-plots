@@ -119,13 +119,13 @@ def combine_plots(
         >>>         (azp.plot_ppc_rootogram, {}),
         >>>     ],
         >>>     group="posterior_predictive",
-        >>>     # Customize the names of the plots in the returned :class:`PlotCollection`
         >>>     plot_names=["pit", "rootogram"],
         >>>     expand="column",
         >>> )
 
-    Now if we inspect the ``pc.viz`` attribute, we can see it has an ``item`` dimension
-    with one entry per variable of each plot:
+    We used `plot_names` to customize the names of the plots in the returned
+    :class:`PlotCollection`. Now if we inspect the ``pc.viz`` attribute, we can
+    see it has an ``item`` dimension with one entry per variable of each plot:
 
     >>> pc.viz
 
