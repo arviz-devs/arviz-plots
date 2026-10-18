@@ -103,7 +103,7 @@ def combine_plots(
 
     Examples
     --------
-    Customize the names of the plots in the returned :class:`PlotCollection`
+    Combine pit and rootogram posterior predictive plots.
 
     .. plot::
         :context: close-figs
@@ -119,18 +119,17 @@ def combine_plots(
         >>>         (azp.plot_ppc_rootogram, {}),
         >>>     ],
         >>>     group="posterior_predictive",
+        >>>     # Customize the names of the plots in the returned :class:`PlotCollection`
         >>>     plot_names=["pit", "rootogram"],
+        >>>     expand="column",
         >>> )
 
     Now if we inspect the ``pc.viz`` attribute, we can see it has an ``item`` dimension
     with one entry per variable of each plot:
 
-    .. plot::
-        :context: close-figs
+    >>> pc.viz
 
-        >>> pc.viz
-
-    Compare, side by side, posterior marginal distributions of different models.
+    Compare posterior marginal distributions of different models (one model per row).
 
     .. plot::
         :context: close-figs
@@ -145,7 +144,7 @@ def combine_plots(
                 ],
             group="posterior",
             var_names=["C(color)", "width"],
-            expand="column",
+            expand="row",
         );
 
     .. minigallery:: combine_plots
