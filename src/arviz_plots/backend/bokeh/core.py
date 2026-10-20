@@ -509,7 +509,9 @@ def hist(
 
     kwargs = {"bottom": bottom, "fill_color": facecolor, "line_color": edgecolor, "alpha": alpha}
 
-    return target.quad(top=y, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws))
+    return target.quad(
+        top=np.asarray(y) + bottom, left=l_e, right=r_e, **_filter_kwargs(kwargs, artist_kws)
+    )
 
 
 def _color_mapper(values, cmap, vmin, vmax):
