@@ -1612,6 +1612,7 @@ class PlotCollection:
         if "labeller" in kwargs and kwargs["labeller"] is None:
             kwargs["labeller"] = default_labeller
         self.map(func, func_label, data=plot_data, **kwargs)
+        return self
 
     def add_legend(
         self,
@@ -1719,7 +1720,7 @@ class PlotCollection:
 
         legend_title = None if text_only else title
 
-        self.viz[f"legend/{dim_str}"] = plot_bknd.legend(
+        legend = plot_bknd.legend(
             self,
             kwarg_list,
             label_list,
@@ -1729,3 +1730,5 @@ class PlotCollection:
             update_visuals=update_visuals,
             **kwargs,
         )
+        self.viz[f"legend/{dim_str}"] = legend
+        return legend
