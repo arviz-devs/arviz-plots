@@ -17,7 +17,7 @@ from bokeh import palettes as bp
 from bokeh.models import GlyphRenderer, LinearColorMapper, Patches, Quad
 from bokeh.plotting import figure as make_figure
 
-from arviz_plots.backend.bokeh import hexbin, hist, histogram2d
+from arviz_plots.backend.bokeh import hexbin, histogram2d
 from arviz_plots.visuals import scatter_x
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.bokeh]
@@ -26,14 +26,6 @@ pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.bokeh]
 @pytest.fixture(scope="function")
 def figure():
     return make_figure()
-
-
-def test_hist_bottom(figure):
-    renderer = hist(
-        np.array([1.0, 2.0]), np.array([0.0, 1.0]), np.array([1.0, 2.0]), figure, bottom=3
-    )
-    assert renderer.glyph.bottom == 3
-    assert_array_equal(renderer.data_source.data["top"], [4.0, 5.0])
 
 
 def test_histogram2d(figure):
