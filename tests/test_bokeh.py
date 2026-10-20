@@ -17,7 +17,7 @@ from bokeh import palettes as bp
 from bokeh.models import GlyphRenderer, LinearColorMapper, Patches, Quad
 from bokeh.plotting import figure as make_figure
 
-from arviz_plots.backend.bokeh import create_plotting_grid, hexbin, histogram2d
+from arviz_plots.backend.bokeh import hexbin, histogram2d
 from arviz_plots.visuals import scatter_x
 
 pytestmark = [pytest.mark.usefixtures("check_skips"), pytest.mark.bokeh]
@@ -110,20 +110,6 @@ def test_hexbin_degenerate_color_limits(figure, values):
 
     assert np.isfinite([mapper.low, mapper.high]).all()
     assert mapper.low < mapper.high
-
-
-def test_create_plotting_grid_ratios():
-    _, plots = create_plotting_grid(
-        4,
-        2,
-        2,
-        figsize=(800, 800),
-        figsize_units="dots",
-        width_ratios=[1, 3],
-        height_ratios=[1, 3],
-    )
-    assert [[plot.width for plot in row] for row in plots] == [[200, 600], [200, 600]]
-    assert [[plot.height for plot in row] for row in plots] == [[200, 200], [600, 600]]
 
 
 def test_scatter_x_flattens_sample_dims(figure):
