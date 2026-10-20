@@ -302,6 +302,9 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
     """
     if stats is None:
         stats = {}
+
+    if kind == "auto" and stats:
+        warnings.warn("The 'stats' argument is ignored when 'kind' is set to 'auto'.")
     # quick exit if pre-computed elements in `stats`
     stats_dist_value = stats.get("dist", {})
     if isinstance(stats_dist_value, xr.Dataset):
