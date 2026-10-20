@@ -304,8 +304,6 @@ def compute_dist(data, reduce_dims, active_dims, kind=None, stats=None):
         stats = {}
 
     if kind == "auto" and any(stats.values()):
-        # stats can be a dicctionary of empty dictionaries, we should not warn in that case.
-
         warnings.warn(
             "The 'stats' argument is ignored when 'kind' is set to 'auto'.",
             stacklevel=2,
