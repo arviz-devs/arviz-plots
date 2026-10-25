@@ -10,7 +10,7 @@ from arviz_base import extract, rcParams
 from arviz_base.validate import validate_dict_argument, validate_sample_dims
 from xarray import concat
 
-from arviz_plots.plot_collection import PlotCollection
+from arviz_plots.plot_collection import PlotCollection, concat_model_dict
 from arviz_plots.plots.dist_plot import plot_dist
 from arviz_plots.plots.utils import (
     get_visual_kwargs,
@@ -147,44 +147,60 @@ def plot_prior_posterior(
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")
 
-    sample_dims_prior = validate_sample_dims(sample_dims, data=dt.prior)
-    sample_dims = validate_sample_dims(sample_dims, data=dt.posterior)
-    prior_size = np.prod([dt.prior.sizes[dim] for dim in sample_dims_prior])
-    posterior_size = np.prod([dt.posterior.sizes[dim] for dim in sample_dims])
-    num_samples = min(prior_size, posterior_size)
+    def _extract_prior_posterior_dataset(target_dt):
+        sample_dims_prior = validate_sample_dims(sample_dims, data=target_dt.prior)
+        sample_dims_post = validate_sample_dims(sample_dims, data=target_dt.posterior)
+        prior_size = np.prod([target_dt.prior.sizes[dim] for dim in sample_dims_prior])
+        posterior_size = np.prod([target_dt.posterior.sizes[dim] for dim in sample_dims_post])
+        num_samples = min(prior_size, posterior_size)
 
-    ds_prior = extract(
-        dt,
-        group="prior",
-        sample_dims=sample_dims_prior,
-        combined=True,
-        num_samples=num_samples,
-        random_seed=0,
-        keep_dataset=True,
-    )
-    prior_dims_drop = list(set(sample_dims_prior).union(ds_prior.attrs["sample_dims"]))
-    sample_dims_prior = ds_prior.attrs["sample_dims"]
-    ds_prior = ds_prior.drop_vars(prior_dims_drop).assign_coords(
-        {sample_dims_prior[0]: np.arange(num_samples)}
-    )
-    ds_posterior = extract(
-        dt,
-        group="posterior",
-        sample_dims=sample_dims,
-        combined=True,
-        num_samples=num_samples,
-        random_seed=0,
-        keep_dataset=True,
-    )
-    posterior_dims_drop = list(set(sample_dims).union(ds_posterior.attrs["sample_dims"]))
-    sample_dims = ds_posterior.attrs["sample_dims"]
-    ds_posterior = ds_posterior.drop_vars(posterior_dims_drop).assign_coords(
-        {sample_dims[0]: np.arange(num_samples)}
-    )
+        ds_prior = extract(
+            target_dt,
+            group="prior",
+            sample_dims=sample_dims_prior,
+            combined=True,
+            num_samples=num_samples,
+            random_seed=0,
+            keep_dataset=True,
+        )
+        prior_dims_drop = list(set(sample_dims_prior).union(ds_prior.attrs["sample_dims"]))
+        sample_dims_prior = ds_prior.attrs["sample_dims"]
+        ds_prior = ds_prior.drop_vars(prior_dims_drop).assign_coords(
+            {sample_dims_prior[0]: np.arange(num_samples)}
+        )
+        ds_posterior = extract(
+            target_dt,
+            group="posterior",
+            sample_dims=sample_dims_post,
+            combined=True,
+            num_samples=num_samples,
+            random_seed=0,
+            keep_dataset=True,
+        )
+        posterior_dims_drop = list(set(sample_dims_post).union(ds_posterior.attrs["sample_dims"]))
+        sample_dims_post = ds_posterior.attrs["sample_dims"]
+        ds_posterior = ds_posterior.drop_vars(posterior_dims_drop).assign_coords(
+            {sample_dims_post[0]: np.arange(num_samples)}
+        )
 
-    distribution = concat([ds_prior, ds_posterior], dim="group").assign_coords(
-        {"group": ["prior", "posterior"]}
-    )
+        return (
+            concat([ds_prior, ds_posterior], dim="group").assign_coords(
+                {"group": ["prior", "posterior"]}
+            ),
+            sample_dims_post,
+        )
+
+    if isinstance(dt, dict):
+        dist_dict = {}
+        all_sample_dims = []
+        for model_name, model_dt in dt.items():
+            model_dist, s_dims = _extract_prior_posterior_dataset(model_dt)
+            dist_dict[model_name] = model_dist
+            all_sample_dims.extend(s_dims)
+        sample_dims = list(dict.fromkeys(all_sample_dims))
+        distribution = concat_model_dict(dist_dict)
+    else:
+        distribution, sample_dims = _extract_prior_posterior_dataset(dt)
 
     distribution = process_group_variables_coords(
         distribution,
@@ -198,12 +214,20 @@ def plot_prior_posterior(
         pc_kwargs["figure_kwargs"] = pc_kwargs.get("figure_kwargs", {}).copy()
 
         pc_kwargs["aes"] = pc_kwargs.get("aes", {}).copy()
-        pc_kwargs["aes"].setdefault("color", ["group"])
+        if "model" in distribution.dims:
+            pc_kwargs["aes"].setdefault("color", ["model"])
+            pc_kwargs["aes"].setdefault("linestyle", ["group"])
+        else:
+            pc_kwargs["aes"].setdefault("color", ["group"])
         pc_kwargs.setdefault("col_wrap", 4)
         pc_kwargs.setdefault(
             "cols",
             ["__variable__"]
-            + [dim for dim in distribution.dims if dim not in sample_dims + ["group"]],
+            + [
+                dim
+                for dim in distribution.dims
+                if dim not in set(sample_dims).union({"group", "model"})
+            ],
         )
 
         pc_kwargs = set_wrap_layout(pc_kwargs, plot_bknd, distribution)

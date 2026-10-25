@@ -1163,6 +1163,14 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "group" not in pc.viz["plot"].coords
         assert "group" in pc.viz["dist"].coords
 
+    def test_plot_prior_posterior_dict(self, datatree, backend):
+        models = {"m1": datatree, "m2": datatree}
+        pc = plot_prior_posterior(models, backend=backend)
+        assert "figure" in pc.viz.data_vars
+        assert "group" not in pc.viz["plot"].coords
+        assert "group" in pc.viz["dist"].coords
+        assert "model" in pc.viz["dist"].coords
+
     def test_plot_psense_dist(self, datatree, backend):
         pc = plot_psense_dist(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
