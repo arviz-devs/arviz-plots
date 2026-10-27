@@ -1,4 +1,4 @@
-# pylint: disable=no-self-use, redefined-outer-name
+# pylint: disable=no-self-use, redefined-outer-name, too-many-public-methods
 """Test utility functions for plotting."""
 
 import numpy as np
@@ -77,6 +77,42 @@ class TestUtils:
         assert isinstance(res, xr.Dataset)
         assert "mu" in res
         assert "theta" in res
+
+    def test_process_dataarray(self, datatree):
+        """Test processing a named DataArray."""
+        res = process_group_variables_coords(
+            datatree.posterior["mu"],
+            group="posterior",
+            var_names=None,
+            filter_vars=None,
+            coords=None,
+        )
+        assert isinstance(res, xr.Dataset)
+        assert list(res.data_vars) == ["mu"]
+
+    def test_process_unnamed_dataarray(self, datatree):
+        """Test processing an unnamed DataArray."""
+        res = process_group_variables_coords(
+            datatree.posterior["mu"].rename(None),
+            group="posterior",
+            var_names=None,
+            filter_vars=None,
+            coords=None,
+        )
+        assert isinstance(res, xr.Dataset)
+        assert list(res.data_vars) == ["_x_"]
+
+    def test_process_multi_model_dataarray(self, datatree):
+        """Test processing a dictionary of DataArrays."""
+        dt_dict = {"model_A": datatree.posterior["mu"], "model_B": datatree.posterior["mu"]}
+
+        res = process_group_variables_coords(
+            dt_dict, group="posterior", var_names=None, filter_vars=None, coords=None
+        )
+
+        assert "model" in res.dims
+        assert res.sizes["model"] == 2
+        assert "mu" in res
 
     def test_process_single_model_filtering(self, datatree):
         """Test filtering by var_names."""

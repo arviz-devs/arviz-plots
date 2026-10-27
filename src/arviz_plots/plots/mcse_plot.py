@@ -84,7 +84,7 @@ def plot_mcse(
 
     Parameters
     ----------
-    dt : DataTree or dict of {str : DataTree}
+    dt : DataTree, Dataset, or DataArray, or dict of {str : DataTree, Dataset, or DataArray}
         Input data. In case of dictionary input, the keys are taken to be model names.
         In such cases, a dimension "model" is generated and can be used to map to aesthetics.
     var_names : str or sequence of str, optional
