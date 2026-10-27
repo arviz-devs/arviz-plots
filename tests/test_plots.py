@@ -187,6 +187,16 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "item" in pc.viz["plot"].dims
         assert len(pc.viz["plot"].coords["item"]) == 2
 
+    def test_combine_plots_dict_input(self, datatree, backend):
+        pc = combine_plots(
+            {"m1": datatree, "m2": datatree},
+            plots=[(plot_dist, {})],
+            var_names=["mu"],
+            backend=backend,
+        )
+        assert "figure" in pc.viz.data_vars
+        assert "item" in pc.viz["plot"].dims
+
     def test_combine_plots_col_wrap(self, datatree, backend):
         pc = combine_plots(
             datatree,
