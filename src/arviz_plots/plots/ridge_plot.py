@@ -336,7 +336,7 @@ def plot_ridge(
                 np.linspace(-0.2, 0.2, distribution.sizes["chain"]),
                 coords={"chain": distribution.chain},
             )
-        y_ds = y_ds.max().to_array().max() - add_factor - y_ds - shift
+        y_ds = y_ds.max().to_dataarray().max() - add_factor - y_ds - shift
         plot_collection.update_aes_from_dataset("y", y_ds)
 
     aes_by_visuals.setdefault("edge", plot_collection.aes_set.difference({"alpha"}))
@@ -369,13 +369,13 @@ def plot_ridge(
         if kind == "hist":
             density.loc[{"plot_axis": "histogram"}] = (
                 density.sel(plot_axis="histogram")
-                / density.sel(plot_axis="histogram").max().to_array().max()
+                / density.sel(plot_axis="histogram").max().to_dataarray().max()
                 * ridge_height
             )
         else:
             density.loc[{"plot_axis": "y"}] = (
                 density.sel(plot_axis="y")
-                / density.sel(plot_axis="y").max().to_array().max()
+                / density.sel(plot_axis="y").max().to_dataarray().max()
                 * ridge_height
             )
 
@@ -389,7 +389,7 @@ def plot_ridge(
             face_density = distribution.azstats.qds(dim=edge_dims, **qds_face_kwargs)
             face_density.loc[{"plot_axis": "y"}] = (
                 face_density.sel(plot_axis="y")
-                / face_density.sel(plot_axis="y").max().to_array().max()
+                / face_density.sel(plot_axis="y").max().to_dataarray().max()
                 * ridge_height
             )
             face_density = (
@@ -464,8 +464,8 @@ def plot_ridge(
                 ignore_aes=shade_ignore,
                 **shade_kwargs,
             )
-            ci_global_min = x_range.min().to_array().min().item()
-            ci_global_max = x_range.max().to_array().max().item()
+            ci_global_min = x_range.min().to_dataarray().min().item()
+            ci_global_max = x_range.max().to_dataarray().max().item()
             ci_range_extend = 0.1 * (ci_global_max - ci_global_min)
             xlim_ridge = [ci_global_min - ci_range_extend, ci_global_max + ci_range_extend]
             plot_collection.map(

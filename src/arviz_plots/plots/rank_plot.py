@@ -219,7 +219,7 @@ def plot_rank(
     # use the Dvoretzky-Kiefer-Wolfowitz inequality plus a small padding
     # to get the default y-limits for the plot.
     expected_max = np.sqrt(np.log(2 / alpha) / (2 * sample_size)) * 1.3
-    actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y").to_array())).item()
+    actual_max = np.max(np.abs(dt_ecdf.sel(plot_axis="y").to_dataarray())).item()
     epsilon = max(expected_max, actual_max)
 
     plot_bknd = import_module(f".backend.{backend}", package="arviz_plots")

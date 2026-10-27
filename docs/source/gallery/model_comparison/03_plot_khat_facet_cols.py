@@ -22,7 +22,7 @@ import arviz_plots as azp
 azp.style.use("arviz-variat")
 
 idata = load_arviz_data("rugby")
-points_da = idata.log_likelihood.dataset[["home_points", "away_points"]].to_array(dim="field")
+points_da = idata.log_likelihood.dataset[["home_points", "away_points"]].to_dataarray(dim="field")
 idata.log_likelihood["points"] = points_da.assign_coords(field=["home", "away"])
 idata.log_likelihood.coords["year"] = ("match", np.repeat([2014, 2015, 2016, 2017], 15))
 
