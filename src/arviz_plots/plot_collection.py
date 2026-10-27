@@ -1225,11 +1225,11 @@ class PlotCollection:
         row_ds = self.viz["row_index"].dataset
         col_ds = self.viz["col_index"].dataset
         if row_index < 0:
-            row_index = int(row_ds.max().to_array().max() + 1 + row_index)
+            row_index = int(row_ds.max().to_dataarray().max() + 1 + row_index)
         if col_index < 0:
-            col_index = int(col_ds.max().to_array().max() + 1 + col_index)
+            col_index = int(col_ds.max().to_dataarray().max() + 1 + col_index)
         condition = (row_ds == row_index) & (col_ds == col_index)
-        var_condition = condition.any().to_array()
+        var_condition = condition.any().to_dataarray()
         if not var_condition.any():
             raise ValueError(
                 f"Mo match found for provided indexes (row: {row_index}, column: {col_index}). "
