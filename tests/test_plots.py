@@ -291,6 +291,12 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert all("hierarchy" in pc.viz[visual]["theta"].dims for visual in visuals)
 
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
+    def test_plot_dist_dataarray(self, datatree, backend, kind):
+        pc = plot_dist(datatree.posterior["mu"], backend=backend, kind=kind)
+        assert not pc.aes
+        assert "mu" in pc.viz["dist"].data_vars
+
+    @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_filled(self, datatree, backend, kind):
         visuals = {"face": {}}
         pc = plot_dist(datatree, backend=backend, kind=kind, visuals=visuals)

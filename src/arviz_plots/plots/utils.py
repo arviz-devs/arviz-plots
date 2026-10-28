@@ -97,7 +97,15 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
         coords = {}
     if isinstance(dt, dict) and not allow_dict:
         raise ValueError("Input data as dictionary not supported")
+    if isinstance(dt, xr.DataArray):
+        dt = dt.to_dataset(name=dt.name or "_x_")
     if isinstance(dt, dict):
+        dt = {
+            key: value.to_dataset(name=value.name or "_x_")
+            if isinstance(value, xr.DataArray)
+            else value
+            for key, value in dt.items()
+        }
         distribution = {}
         all_vars = []
         all_data_vars = []

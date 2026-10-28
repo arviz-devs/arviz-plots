@@ -57,7 +57,7 @@ def plot_trace(
 
     Parameters
     ----------
-    dt : DataTree
+    dt : DataTree, Dataset, or DataArray
         Input data
     var_names : str or list of str, optional
         One or more variables to be plotted.
