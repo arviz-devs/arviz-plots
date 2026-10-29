@@ -4,6 +4,7 @@ import warnings
 from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
+from arviz_stats.manipulation import thin as thin_data
 
 import numpy as np
 import xarray as xr
@@ -44,7 +45,7 @@ def plot_rank(
     sample_dims=None,
     envelope_prob=None,
     method="mtc_c",
-    thin=None,
+    thin=True,
     plot_collection=None,
     backend=None,
     labeller=None,
@@ -161,11 +162,16 @@ def plot_rank(
        its applications in goodness-of-fit evaluation and multiple sample comparison*.
        Statistics and Computing 32(32). (2022) https://doi.org/10.1007/s11222-022-10090-6
     """
-    if thin is not None:
-        warnings.warn(
-            "The 'thin' argument has no effect and will be deprecated in a future release.",
-            FutureWarning,
-        )
+    
+    if thin:
+        dt = thin_data(
+            dt,
+            sample_dims=sample_dims,
+            group=group,
+            var_names=var_names,
+            filter_vars=filter_vars,
+            coords=coords,
+    )
 
     envelope_prob = validate_or_use_rcparam(envelope_prob, "stats.envelope_prob")
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_rank, "aes_by_visuals"))
