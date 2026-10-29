@@ -623,7 +623,7 @@ def test_plot_forest(
 ):
     labels = labels_shade_label[0]
     shade_label = labels_shade_label[1]
-    stats = {key: datatree[key].ds for key in stats}
+    stats = {key: datatree[key].dataset for key in stats}
     pc = plot_forest(
         datatree,
         backend="none",

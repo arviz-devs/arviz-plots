@@ -34,7 +34,7 @@ pc = azp.plot_forest(
 pc.map(
     azp.visuals.scatter_x,
     "ess",
-    data=centered.posterior.ds.azstats.ess(),
+    data=centered.posterior.dataset.azstats.ess(),
     coords={"column": "ess"},
     color="C0",
 )

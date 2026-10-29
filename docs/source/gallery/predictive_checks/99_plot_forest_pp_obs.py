@@ -28,7 +28,7 @@ pc = azp.plot_forest(
 pc.map(
     azp.visuals.scatter_x,
     "observations",
-    data=idata.observed_data.ds,
+    data=idata.observed_data.dataset,
     coords={"column": "forest"},
     color="C0",
 )
