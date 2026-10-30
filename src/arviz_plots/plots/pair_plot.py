@@ -130,7 +130,7 @@ def plot_pair(
     marginal_kind : {"kde", "hist", "ecdf", "dot"}, optional
         How to represent the marginal density.
         Defaults to ``rcParams["plot.density_kind"]``
-    triangle : {"both", "upper", "lower"}, Defaults to "both"
+    triangle : {"both", "upper", "lower"}, default "lower"
         Which triangle of the pair plot to plot.
     plot_matrix : PlotMatrix, optional
     backend : {"matplotlib", "bokeh", "plotly", "none"}, optional
