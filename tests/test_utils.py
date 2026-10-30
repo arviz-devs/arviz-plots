@@ -32,7 +32,7 @@ class TestUtils:
         assert "mu" in group
 
         ds_input = datatree["posterior"]
-        assert get_group(ds_input, "posterior") == ds_input.ds
+        assert get_group(ds_input, "posterior") == ds_input.dataset
 
         fake_dict = {"my_group": datatree["posterior"]}
         group_from_dict = get_group(fake_dict, "my_group")
@@ -169,7 +169,9 @@ class TestUtils:
     def test_filter_aes_basic(self, datatree):
         """Test filter_aes correctly splits aesthetics and dimensions."""
         pc = PlotCollection.grid(
-            datatree["posterior"].ds, backend="none", aes={"color": ["chain"], "marker": ["draw"]}
+            datatree["posterior"].dataset,
+            backend="none",
+            aes={"color": ["chain"], "marker": ["draw"]},
         )
         aes_by_visuals = {"my_visual": ["color"]}
         sample_dims = ["chain", "draw"]
@@ -186,7 +188,9 @@ class TestUtils:
 
     def test_filter_aes_missing_visual(self, datatree):
         """Test filter_aes returns empty aesthetics for missing visual."""
-        pc = PlotCollection.grid(datatree["posterior"].ds, backend="none", aes={"color": ["chain"]})
+        pc = PlotCollection.grid(
+            datatree["posterior"].dataset, backend="none", aes={"color": ["chain"]}
+        )
         aes_by_visuals = {"other_visual": ["alpha"]}
         sample_dims = ["chain", "draw"]
 
@@ -202,7 +206,7 @@ class TestUtils:
 
     def test_set_wrap_layout(self, datatree):
         """Test set_wrap_layout sets figsize correctly for wrapping columns."""
-        ds = datatree["posterior"].ds
+        ds = datatree["posterior"].dataset
         pc_kwargs = {
             "figure_kwargs": {},
             "cols": ["chain"],
@@ -219,7 +223,7 @@ class TestUtils:
 
     def test_set_grid_layout(self, datatree):
         """Test set_grid_layout sets figsize for explicit grid."""
-        ds = datatree["posterior"].ds
+        ds = datatree["posterior"].dataset
         pc_kwargs = {
             "figure_kwargs": {},
             "cols": ["chain"],

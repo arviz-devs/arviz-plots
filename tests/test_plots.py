@@ -514,7 +514,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             .assign_coords(column=["labels", "forest", "ess"])
         )
         pc = plot_forest(dt_aux, combined=True, backend=backend)
-        mock_ess = datatree["posterior"].ds.mean(("chain", "draw"))
+        mock_ess = datatree["posterior"].dataset.mean(("chain", "draw"))
         pc.map(visuals.scatter_x, "ess", data=mock_ess, coords={"column": "ess"}, color="blue")
         assert "plot" in pc.viz.data_vars
         assert pc.viz["plot"].sizes["column"] == 3
@@ -1264,7 +1264,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             .assign_coords(column=["labels", "ridge", "ess"])
         )
         pc = plot_ridge(dt_aux, combined=True, backend=backend)
-        mock_ess = datatree["posterior"].ds.mean(("chain", "draw"))
+        mock_ess = datatree["posterior"].dataset.mean(("chain", "draw"))
         pc.map(visuals.scatter_x, "ess", data=mock_ess, coords={"column": "ess"}, color="blue")
         assert "plot" in pc.viz.data_vars
         assert pc.viz["plot"].sizes["column"] == 3

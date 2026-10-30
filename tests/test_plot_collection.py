@@ -397,7 +397,7 @@ def generate_plot_collection1(data):
 def generate_plot_collection2():
     centered = load_arviz_data("centered_eight")
     non_centered = load_arviz_data("non_centered_eight")
-    data = {"centered": centered.posterior.ds, "non_centered": non_centered.posterior.ds}
+    data = {"centered": centered.posterior.dataset, "non_centered": non_centered.posterior.dataset}
     coords = {"model": list(data), "school": centered.posterior.school}
     data = concat(data.values(), dim="model").assign_coords(coords)
     theta_plot = [f"theta_plot{i}" for i in range(8)]
