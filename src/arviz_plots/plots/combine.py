@@ -21,7 +21,7 @@ def render(da, target, **kwargs):
     plot_backend = import_module(f"arviz_plots.backend.{backend}")
     visuals = da.item().copy()
     plot_fun_name = visuals.pop("function")
-    return getattr(plot_backend, plot_fun_name)(target=target, **{**visuals, **kwargs})
+    return getattr(plot_backend, plot_fun_name)(target=target, **{**kwargs, **visuals})
 
 
 def combine_plots(
