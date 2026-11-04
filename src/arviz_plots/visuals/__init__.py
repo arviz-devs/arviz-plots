@@ -201,6 +201,8 @@ def scatter_xy(da, target, x=None, y=None, mask=None, **kwargs):
     If a mask is provided, it is applied to both x and y values.
     """
     plot_backend = backend_from_object(target)
+    # markers have no line style, but it can reach here through a `linestyle` aesthetic
+    kwargs.pop("linestyle", None)
     x, y = _process_da_x_y(da, x, y, mask)
     return plot_backend.scatter(x, y, target, **kwargs)
 
