@@ -185,10 +185,12 @@ def plot_psense_quantities(
         var_names=var_names,
         filter_vars=filter_vars,
         group="posterior",
+        sample_dims=sample_dims,
         combined=False,
         keep_dataset=True,
     )
     sample_dims = validate_sample_dims(sample_dims, data=ds_posterior)
+    posterior_dims = sample_dims
 
     ds_prior = power_scale_dataset(
         dt,
@@ -226,17 +228,17 @@ def plot_psense_quantities(
     if "mean" in quantities:
         to_concat_quantities.append(distribution.azstats.mean(sample_dims, round_to="none"))
         if mcse:
-            to_concat_mcse.append(ds_posterior.azstats.mcse(method="mean"))
+            to_concat_mcse.append(ds_posterior.azstats.mcse(posterior_dims, method="mean"))
         name_quantities.append("mean")
     if "sd" in quantities:
         to_concat_quantities.append(distribution.std(sample_dims))
         if mcse:
-            to_concat_mcse.append(ds_posterior.azstats.mcse(method="sd"))
+            to_concat_mcse.append(ds_posterior.azstats.mcse(posterior_dims, method="sd"))
         name_quantities.append("sd")
     if "median" in quantities:
         to_concat_quantities.append(distribution.azstats.median(sample_dims, round_to="none"))
         if mcse:
-            to_concat_mcse.append(ds_posterior.azstats.mcse(method="median"))
+            to_concat_mcse.append(ds_posterior.azstats.mcse(posterior_dims, method="median"))
         name_quantities.append("median")
     for val in quantities:
         if val.replace(".", "").isnumeric():
@@ -245,7 +247,9 @@ def plot_psense_quantities(
                 distribution.quantile(q, sample_dims).rename_vars({"quantile": f"q={val}"})
             )
             if mcse:
-                to_concat_mcse.append(ds_posterior.azstats.mcse(method="quantile", prob=q))
+                to_concat_mcse.append(
+                    ds_posterior.azstats.mcse(posterior_dims, method="quantile", prob=q)
+                )
             name_quantities.append(f"q={val}")
 
     ds_quantities = concat(to_concat_quantities, "quantities").assign_coords(
