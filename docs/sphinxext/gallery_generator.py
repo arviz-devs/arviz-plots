@@ -109,7 +109,7 @@ def main(app):
     ]
 
     backreferences = defaultdict(list)
-    api_regex = re.compile(r"azp\.(plot_[a-z_]+|combine_plots)\(")
+    api_regex = re.compile(r"azp\.(plot_[a-z_]+|add_[a-z_]+|combine_plots)\(")
 
     for folder, title in dir_title_map.items():
         category_dir = gallery_dir / folder
@@ -138,9 +138,10 @@ def main(app):
             for i, line in enumerate(code_text.splitlines()):
                 if 'backend="none"' in line:
                     emph_lines.append(str(i + 1))
-                match = api_regex.search(line)
-                if match is not None:
-                    api_funs.append(match.groups()[0])
+                for match in api_regex.finditer(line):
+                    fun = match.group(1)
+                    if fun not in api_funs:
+                        api_funs.append(fun)
 
             if emph_lines:
                 backend_line_emphasis = f":emphasize-lines: {','.join(emph_lines)}"
