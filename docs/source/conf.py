@@ -57,7 +57,7 @@ if skip_gallery:
 else:
     extensions.append("gallery_generator")
 
-suppress_warnings = ["mystnb.unknown_mime_type"]
+suppress_warnings = ["mystnb.unknown_mime_type", "design.card_legacy"]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 default_role = "autolink"
