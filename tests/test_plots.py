@@ -1179,6 +1179,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "group" not in pc.viz["plot"].coords
         assert "group" in pc.viz["dist"].coords
 
+    @pytest.mark.filterwarnings("ignore:Estimated shape parameter of Pareto")
     def test_plot_psense_dist(self, datatree, backend):
         pc = plot_psense_dist(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
@@ -1191,6 +1192,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "alpha" in pc.viz["credible_interval"]["mu"].dims
         assert "hierarchy" in pc.viz["credible_interval"]["theta"].dims
 
+    @pytest.mark.filterwarnings("ignore:Estimated shape parameter of Pareto")
     def test_plot_psense_dist_sample(self, datatree_sample, backend):
         pc = plot_psense_dist(datatree_sample, backend=backend, sample_dims="sample")
         assert "figure" in pc.viz.data_vars
@@ -1202,6 +1204,19 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "component_group" in pc.viz["credible_interval"]["mu"].dims
         assert "alpha" in pc.viz["credible_interval"]["mu"].dims
         assert "hierarchy" in pc.viz["credible_interval"]["theta"].dims
+
+    @pytest.mark.filterwarnings("ignore:Estimated shape parameter of Pareto")
+    def test_plot_psense_dist_pareto_k_highlight(self, datatree, backend):
+        pc = plot_psense_dist(datatree, var_names=["mu"], alphas=(0.1, 10.0), backend=backend)
+        assert "/linestyle" in pc.aes.groups
+        mapping = pc.aes["linestyle"].to_dataset()["mapping"]
+        assert "component_group" in mapping.dims
+        assert "alpha" in mapping.dims
+        # With extreme alphas (0.1, 10.0), alpha=0.1 has high pareto k and should be dashed
+        # whereas alpha=1.0 has base weights and should be solid
+        assert mapping.sel(component_group="prior", alpha=0.1) != mapping.sel(
+            component_group="prior", alpha=1.0
+        )
 
     def test_plot_psense_quantities(self, datatree, backend):
         pc = plot_psense_quantities(datatree, backend=backend)
