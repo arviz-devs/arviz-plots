@@ -266,7 +266,7 @@ def plot_psense_dist(
             group_var_names=prior_var_names,
             group_coords=prior_coords,
         )
-        lik_w_l, _, lik_k_l, lik_k_u = _get_power_scale_weights(
+        _, _, lik_k_l, lik_k_u = _get_power_scale_weights(
             dt,
             alphas=alphas,
             group="likelihood",
