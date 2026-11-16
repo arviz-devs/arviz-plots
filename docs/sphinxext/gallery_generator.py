@@ -54,8 +54,9 @@ grid_item_template = """
 
 :::
 
-+++
+:::{{card-footer}}
 {title}
+:::
 ::::
 """
 
@@ -74,8 +75,9 @@ minigallery_item_template_rst = """
    .. image:: /gallery/_images/{basename}.png
       :alt:
 
-   +++
-   {title}
+   .. card-footer::
+
+      {title}
 """
 
 minigallery_in_example = """

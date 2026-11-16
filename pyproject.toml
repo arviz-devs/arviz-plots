@@ -57,7 +57,7 @@ doc = [
     "sphinx-copybutton",
     "numpydoc",
     "sphinx>=6",
-    "sphinx-design",
+    "sphinx-design>=0.8",
     "jupyter-sphinx",
     "h5netcdf[h5py]",
     "plotly<6",
