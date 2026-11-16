@@ -51,6 +51,7 @@ def plot_prior_posterior(
             "title",
             "rug",
             "remove_axis",
+            "legend",
         ],
         Mapping[str, Any] | bool,
     ] = None,
@@ -136,6 +137,10 @@ def plot_prior_posterior(
     .. minigallery:: plot_prior_posterior
     """
     aes_by_visuals = validate_dict_argument(aes_by_visuals, (plot_dist, "aes_by_visuals"))
+    # the legend is added here, so it is not passed on to plot_dist
+    visuals = {} if visuals is None else dict(visuals)
+    legend_kwargs = get_visual_kwargs(visuals, "legend")
+    visuals.pop("legend", None)
     visuals = validate_dict_argument(visuals, (plot_dist, "visuals"))
     stats = validate_dict_argument(stats, (plot_dist, "stats"))
 
@@ -241,7 +246,6 @@ def plot_prior_posterior(
         **pc_kwargs,
     )
 
-    legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["group"])
         plot_collection.add_legend(**legend_kwargs)

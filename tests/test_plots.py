@@ -1191,6 +1191,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "alpha" in pc.viz["credible_interval"]["mu"].dims
         assert "hierarchy" in pc.viz["credible_interval"]["theta"].dims
 
+    @pytest.mark.parametrize("plot", [plot_prior_posterior, plot_psense_dist])
+    def test_legend_visuals(self, datatree, backend, plot):
+        pc = plot(datatree, backend=backend, visuals={"legend": {"title": "Custom"}})
+        assert "legend" in pc.viz.children
+        pc = plot(datatree, backend=backend, visuals={"legend": False})
+        assert "legend" not in pc.viz.children
+
     def test_plot_psense_dist_sample(self, datatree_sample, backend):
         pc = plot_psense_dist(datatree_sample, backend=backend, sample_dims="sample")
         assert "figure" in pc.viz.data_vars
