@@ -1037,6 +1037,16 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "diverging" not in pc.viz["xticks"].dims
         assert "labels" in pc.viz["xticks"].dims
 
+    def test_plot_parallel_single_divergence(self, datatree, backend):
+        # a single divergent draw gives a 1d subset when looping over `diverging`
+        diverging = xr.zeros_like(datatree.sample_stats["diverging"], dtype=bool)
+        diverging[0, 0] = True
+        dt = datatree.copy()
+        dt["sample_stats"] = dt["sample_stats"].to_dataset().assign(diverging=diverging)
+        pc = plot_parallel(dt, var_names=["theta", "tau", "mu"], backend=backend)
+        assert "line" in pc.viz.children
+        assert "diverging" in pc.viz["line"].dims
+
     @pytest.mark.parametrize("norm_method", (None, "normal", "minmax", "rank"))
     def test_plot_parallel_sample(self, datatree_sample, norm_method, backend):
         visuals = {"xticks": {"rotation": 30}}
