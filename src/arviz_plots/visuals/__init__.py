@@ -104,7 +104,8 @@ def multiple_lines(da, target, x_dim, xvalues=None, **kwargs):
     Parameters
     ----------
     da : DataArray
-        2d DataArray with `x_dim` as one of its dimensions.
+        2d DataArray with `x_dim` as one of its dimensions, or 1d DataArray
+        along `x_dim` for a single line.
     target : Any
         Object representing the target :term:`plot`
     x_dim : hashable
@@ -120,11 +121,14 @@ def multiple_lines(da, target, x_dim, xvalues=None, **kwargs):
     Any
         Object representing the generated :term:`visual`
     """
-    if da.ndim != 2:
-        raise ValueError(f"DataArray must be 2D, but has dims: {da.dims}")
-
     if x_dim not in da.dims:
         raise ValueError(f"overlay_dim '{x_dim}' not found in DataArray dims {da.dims}")
+
+    if da.ndim == 1:
+        # a single line, e.g. a subset with only one sample
+        da = da.expand_dims("__line__", axis=-1)
+    elif da.ndim != 2:
+        raise ValueError(f"DataArray must be 1D or 2D, but has dims: {da.dims}")
 
     da = da.transpose(x_dim, ...)
     yvalues = da.values
