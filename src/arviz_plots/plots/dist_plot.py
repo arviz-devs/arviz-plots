@@ -278,6 +278,7 @@ def plot_dist(
             rope, distribution, sample_dims=sample_dims, ref_dim="band_dim"
         )
         ci_in_rope_kwargs = stats.get("rope", {}).copy()
+        ci_in_rope_kwargs.setdefault("dim", sample_dims)
         ci_in_rope_kwargs.setdefault("ci_prob", ci_prob)
         ci_in_rope_kwargs.setdefault("ci_kind", ci_kind)
         rope_pct = ci_in_rope(distribution, rope=rope, **ci_in_rope_kwargs)

@@ -393,6 +393,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "tau" not in pc.viz["rope"].data_vars
         assert "tau" not in pc.viz["rope_text"].data_vars
 
+    def test_plot_dist_rope_sample(self, datatree_sample, backend):
+        pc = plot_dist(datatree_sample, backend=backend, sample_dims="sample", rope=(-0.5, 0.91))
+        assert "rope" in pc.viz.children
+        assert "rope_text" in pc.viz.children
+        assert "hierarchy" not in pc.viz["rope_text"]["mu"].dims
+        assert "hierarchy" in pc.viz["rope_text"]["theta"].dims
+
     @pytest.mark.parametrize("kind", ["kde", "hist", "ecdf"])
     def test_plot_dist_rope_disabled(self, datatree, backend, kind):
         visuals = {"rope": False, "rope_text": False}
@@ -1210,6 +1217,13 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "plot" in pc.viz.children
         assert "quantities" in pc.viz["plot"]["mu"].dims
         assert "mean" in pc.viz["plot"]["quantities"]
+
+    def test_plot_psense_quantities_sample(self, datatree_sample, backend):
+        pc = plot_psense_quantities(datatree_sample, backend=backend, sample_dims="sample")
+        assert "figure" in pc.viz.data_vars
+        assert "plot" in pc.viz.children
+        assert "quantities" in pc.viz["plot"]["mu"].dims
+        assert "mcse" in pc.viz.children
 
     def test_plot_rank(self, datatree, backend):
         pc = plot_rank(datatree, backend=backend)
