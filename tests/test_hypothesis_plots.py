@@ -1297,6 +1297,7 @@ def test_plot_prior_posterior(datatree, kind, visuals):
             )
 
 
+@pytest.mark.filterwarnings("ignore:Estimated shape parameter of Pareto")
 @given(
     visuals=st.fixed_dictionaries(
         {},

@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from importlib import import_module
 from typing import Any, Literal
 
+import numpy as np
 from arviz_base import rcParams
 from arviz_base.labels import BaseLabeller
 from arviz_base.validate import (
@@ -11,7 +12,8 @@ from arviz_base.validate import (
     validate_or_use_rcparam,
     validate_sample_dims,
 )
-from arviz_stats.psense import power_scale_dataset
+from arviz_stats.psense import _get_power_scale_weights, power_scale_dataset
+from arviz_stats.utils import _warn_pareto_k
 from xarray import Dataset, concat
 
 from arviz_plots.plot_collection import PlotCollection
@@ -178,6 +180,7 @@ def plot_psense_dist(
     visuals = validate_dict_argument(visuals, (plot_psense_dist, "visuals"))
     stats = validate_dict_argument(stats, (plot_psense_dist, "stats"))
     sample_dims = validate_sample_dims(sample_dims)
+    raw_sample_dims = sample_dims
 
     if alphas is None:
         alphas = (0.8, 1.25)
@@ -254,6 +257,49 @@ def plot_psense_dist(
 
     visuals.setdefault("point_estimate_text", False)
 
+    if "linestyle" not in plot_collection.aes_set:
+        prior_w_l, _, prior_k_l, prior_k_u = _get_power_scale_weights(
+            dt,
+            alphas=alphas,
+            group="prior",
+            sample_dims=raw_sample_dims,
+            group_var_names=prior_var_names,
+            group_coords=prior_coords,
+        )
+        _, _, lik_k_l, lik_k_u = _get_power_scale_weights(
+            dt,
+            alphas=alphas,
+            group="likelihood",
+            sample_dims=raw_sample_dims,
+            group_var_names=likelihood_var_names,
+            group_coords=likelihood_coords,
+        )
+        all_k = np.array([float(prior_k_l), float(prior_k_u), float(lik_k_l), float(lik_k_u)])
+        _, good_k = _warn_pareto_k(all_k, n_samples=prior_w_l.size, usage="power_scale")
+
+        solid = plot_bknd.get_default_aes("linestyle", 2, {})[0]
+        dashed = plot_bknd.get_default_aes("linestyle", 2, {})[1]
+
+        prior_ls = [
+            dashed if float(prior_k_l) > good_k else solid,
+            solid,
+            dashed if float(prior_k_u) > good_k else solid,
+        ]
+        lik_ls = [
+            dashed if float(lik_k_l) > good_k else solid,
+            solid,
+            dashed if float(lik_k_u) > good_k else solid,
+        ]
+        ds_ls = Dataset(
+            {"mapping": (["component_group", "alpha"], [prior_ls, lik_ls])},
+            coords={"component_group": ["prior", "likelihood"], "alpha": [alphas[0], 1, alphas[1]]},
+        )
+        plot_collection.update_aes_from_dataset("linestyle", ds_ls)
+
+    if kind != "dot":
+        aes_by_visuals.setdefault("dist", ["color", "linestyle"])
+    else:
+        aes_by_visuals.setdefault("dist", ["color"])
     aes_by_visuals.setdefault("point_estimate", ["color", "y"])
     aes_by_visuals.setdefault("credible_interval", ["color", "y"])
 
