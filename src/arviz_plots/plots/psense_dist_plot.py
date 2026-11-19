@@ -274,6 +274,10 @@ def plot_psense_dist(
     if kind == "ecdf" and visuals.get("dist") is False:
         visuals.setdefault("remove_axis", True)
 
+    # the legend is added here, so it is not passed on to plot_dist
+    legend_kwargs = get_visual_kwargs(visuals, "legend")
+    visuals.pop("legend", None)
+
     plot_dist(
         distribution,
         var_names=None,
@@ -293,7 +297,6 @@ def plot_psense_dist(
     )
 
     # legend
-    legend_kwargs = get_visual_kwargs(visuals, "legend")
     if legend_kwargs is not False:
         legend_kwargs.setdefault("dim", ["alpha"])
         legend_kwargs.setdefault("title", "Power Scale Factor")
