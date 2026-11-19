@@ -460,6 +460,8 @@ def add_lines(
         >>>     var_names=["mu"],
         >>> )
         >>> add_lines(pc, values=[0, 5])
+
+    .. minigallery:: add_lines
     """
     if visuals is None:
         visuals = {}
@@ -588,6 +590,8 @@ def add_bands(
         >>> dt = load_arviz_data('centered_eight')
         >>> pc = plot_dist(dt)
         >>> add_bands(pc, values=[[-2, 2], [-5, 5]])
+
+    .. minigallery:: add_bands
     """
     if visuals is None:
         visuals = {}
