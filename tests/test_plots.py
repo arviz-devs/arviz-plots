@@ -1353,6 +1353,18 @@ class TestPlots:  # pylint: disable=too-many-public-methods
             assert "hierarchy" in pc.viz["plot"]["theta"].dims
 
     @pytest.mark.parametrize("compact", (True, False))
+    @pytest.mark.parametrize("combined", (True, False))
+    def test_plot_trace_dist_dot(self, datatree, backend, compact, combined):
+        pc = plot_trace_dist(
+            datatree, backend=backend, kind="dot", compact=compact, combined=combined
+        )
+        assert "theta" in pc.viz["dist"].data_vars
+
+    def test_plot_dist_dot_linestyle_aes(self, datatree, backend):
+        pc = plot_dist(datatree, backend=backend, kind="dot", aes={"linestyle": ["hierarchy"]})
+        assert "hierarchy" in pc.viz["dist"]["theta"].dims
+
+    @pytest.mark.parametrize("compact", (True, False))
     def test_plot_trace_dist_sample(self, datatree_sample, backend, compact):
         pc = plot_trace_dist(
             datatree_sample, backend=backend, sample_dims="sample", compact=compact
