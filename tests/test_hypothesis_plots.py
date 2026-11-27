@@ -1375,6 +1375,7 @@ def test_plot_psense_quantities(datatree, quantities, mcse, visuals):
             )
 
 
+@pytest.mark.filterwarnings("ignore:At least one parameter has an ESS below ")
 @given(
     visuals=st.fixed_dictionaries(
         {},
@@ -1406,6 +1407,7 @@ def test_plot_rank(datatree, envelope_prob, visuals):
             )
 
 
+@pytest.mark.filterwarnings("ignore:At least one parameter has an ESS below ")
 @pytest.mark.filterwarnings("ignore:nquantiles .* must be .*number of data points.*;using")
 @given(
     visuals=st.fixed_dictionaries(
@@ -1480,6 +1482,7 @@ def test_plot_ridge(datatree, combined, visuals, labels_shade_label):
             )
 
 
+@pytest.mark.filterwarnings("ignore:At least one parameter has an ESS below ")
 @given(
     visuals=st.fixed_dictionaries(
         {},
@@ -1509,6 +1512,7 @@ def test_plot_trace(datatree, visuals):
             )
 
 
+@pytest.mark.filterwarnings("ignore:At least one parameter has an ESS below ")
 @given(
     visuals=st.fixed_dictionaries(
         {},

@@ -139,6 +139,32 @@ def process_group_variables_coords(dt, group, var_names, filter_vars, coords, al
     return distribution
 
 
+def warn_low_ess(distribution, sample_dims):
+    """Warn when any parameter's ESS low.
+
+    Low effective sample size makes rank-based diagnostics unreliable, so plots
+    that report a single p-value warn instead of silently producing a number.
+
+    Parameters
+    ----------
+    distribution : Dataset
+        Sample group of the plotted data.
+    sample_dims : sequence of hashable
+        Chain and draw dimensions of ``distribution``.
+    """
+    if "chain" not in distribution.sizes:
+        return
+    threshold = 100 * distribution.sizes["chain"]
+    ess = distribution.azstats.ess(sample_dims=sample_dims)
+    if np.any((ess < threshold).values()):
+        warnings.warn(
+            f"At least one parameter has an ESS below {threshold}."
+            "A higher ESS is recommended for reliable results.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+
 def filter_aes(pc, aes_by_visuals, visual, sample_dims):
     """Simplified version of `filter_aes_full` that doesn't return "active_dimensions"."""
     reduce_dims, _, artist_aes, ignore_aes = filter_aes_full(

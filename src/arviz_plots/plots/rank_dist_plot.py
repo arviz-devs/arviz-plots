@@ -37,6 +37,7 @@ def plot_rank_dist(
     coords=None,
     sample_dims=None,
     compact=True,
+    thin=None,
     combined=False,
     kind=None,
     envelope_prob=None,
@@ -86,6 +87,9 @@ def plot_rank_dist(
     sample_dims : str or sequence of hashable, optional
         Dimensions to reduce unless mapped to an aesthetic.
         Defaults to ``rcParams["data.sample_dims"]``
+    thin : bool, default None
+        Whether to thin the data before plotting. This
+        argument has no effect and it will be removed in future versions.
     compact : bool, default True
         Plot multidimensional variables in a single :term:`plot`.
     combined : bool, default False
@@ -359,6 +363,7 @@ def plot_rank_dist(
         filter_vars=filter_vars,
         group=group,
         coords=coords,
+        thin=thin,
         sample_dims=sample_dims,
         envelope_prob=envelope_prob,
         plot_collection=plot_collection,
