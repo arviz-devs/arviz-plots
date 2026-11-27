@@ -67,8 +67,16 @@ def test_plot_dist_kind_auto(datatree):
     assert pc.get_viz("dist", "tau")["function"] == "line"
 
 
-def test_plot_rank_multc(datatree):
-    pc = plot_rank(datatree, backend="none", method="mtc_c")
+@pytest.mark.filterwarnings("ignore:At least one parameter's ESS is at or below")
+@pytest.mark.parametrize("method", ("mtc_c", "hypergeom", "geyer", "hypergeom_corrected"))
+def test_plot_rank_multc(datatree, method):
+    pc = plot_rank(datatree, backend="none", method=method)
+    assert "figure" in pc.viz.data_vars
+
+
+@pytest.mark.filterwarnings("ignore:At least one parameter's ESS is at or below")
+def test_plot_rank_multc_stats_method(datatree):
+    pc = plot_rank(datatree, backend="none", stats={"mtc_c": {"method": "geyer"}})
     assert "figure" in pc.viz.data_vars
     assert "plot" not in pc.viz.data_vars
     assert "plot" in pc.viz.children
@@ -127,6 +135,7 @@ def test_bivariate_histogram_rejects_precomputed_dataset(plot, visual):
             plot_pair_focus(data, focus_var="y", var_names=["x"], **kwargs)
 
 
+@pytest.mark.filterwarnings("ignore:At least one parameter's ESS is at or below")
 def test_plot_trace_axes(datatree):
     import matplotlib.pyplot as plt
 
@@ -1211,6 +1220,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "quantities" in pc.viz["plot"]["mu"].dims
         assert "mean" in pc.viz["plot"]["quantities"]
 
+    @pytest.mark.filterwarnings("ignore:At least one parameter's ESS is at or below")
     def test_plot_rank(self, datatree, backend):
         pc = plot_rank(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
@@ -1224,6 +1234,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
+    @pytest.mark.filterwarnings("ignore:At least one parameter's ESS is at or below")
     def test_plot_rank_dist(self, datatree, backend, compact, combined):
         pc = plot_rank_dist(datatree, backend=backend, compact=compact, combined=combined)
         assert "figure" in pc.viz.data_vars
@@ -1321,6 +1332,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
         assert "mu" in pc.viz["variable_label"]
         assert _get_label_text(label_artist, backend) == "MY_MU"
 
+    @pytest.mark.filterwarnings("ignore:At least one parameter's ESS is at or below")
     def test_plot_trace(self, datatree, backend):
         pc = plot_trace(datatree, backend=backend)
         assert "figure" in pc.viz.data_vars
@@ -1337,6 +1349,7 @@ class TestPlots:  # pylint: disable=too-many-public-methods
 
     @pytest.mark.parametrize("compact", (True, False))
     @pytest.mark.parametrize("combined", (True, False))
+    @pytest.mark.filterwarnings("ignore:At least one parameter's ESS is at or below")
     def test_plot_trace_dist(self, datatree, backend, compact, combined):
         pc = plot_trace_dist(datatree, backend=backend, compact=compact, combined=combined)
         assert "figure" in pc.viz.data_vars

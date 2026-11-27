@@ -16,6 +16,7 @@ from arviz_plots.plots.utils import (
     get_visual_kwargs,
     process_group_variables_coords,
     set_wrap_layout,
+    warn_low_ess,
 )
 from arviz_plots.visuals import labelled_title, labelled_x, line, ticklabel_props, trace_rug
 
@@ -118,6 +119,8 @@ def plot_trace(
         dt, group=group, var_names=var_names, filter_vars=filter_vars, coords=coords
     )
     sample_dims = validate_sample_dims(sample_dims, data=distribution)
+
+    warn_low_ess(distribution, sample_dims)
 
     if backend is None:
         if plot_collection is None:
